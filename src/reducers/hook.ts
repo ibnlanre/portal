@@ -10,10 +10,5 @@ export function usePortalReducers<S, A>(): PortalReducersContext<S, A> {
   const context = useContext<PortalReducersContext<S, A>>(
     portalReducers as unknown as Context<PortalReducersContext<S, A>>
   );
-  if (!context) {
-    throw new Error(
-      "usePortalReducers must be used within a PortalReducerProvider"
-    );
-  }
   return context;
 }

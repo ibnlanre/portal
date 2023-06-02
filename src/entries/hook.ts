@@ -10,10 +10,5 @@ export function usePortalEntries<K, V>(): PortalEntriesContext<K, V> {
   const context = useContext<PortalEntriesContext<K, V>>(
     portalEntries as unknown as Context<PortalEntriesContext<K, V>>
   );
-  if (!context) {
-    throw new Error(
-      "usePortalEntries must be used within a PortalEntriesProvider"
-    );
-  }
   return context;
 }

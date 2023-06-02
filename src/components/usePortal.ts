@@ -42,23 +42,39 @@ export function usePortal<S, A>(
   reducer?: Reducer<S, A>
 ) {
   const [entries, setEntries] = usePortalEntries<string, BehaviorSubject<S>>();
-  const observable = entries.get(key) ?? new BehaviorSubject(initialState as S);
-  if (!entries.has(key)) setEntries(key, observable);
-
   const [reducers, setReducers] = usePortalReducers<S, A>();
-  const dispatch = reducers.get(key) ?? reducer;
-  if (reducer && !reducers.has(key)) setReducers(key, reducer);
 
-  const [state, setState] = useState(initialState as S);
-  const subRef = useRef<Subscription>();
+  try {
+    const subject = new BehaviorSubject(initialState as S);
+    const observable = entries.get(key) ?? subject;
+    const dispatch = reducers.get(key) ?? reducer;
 
-  useEffect(() => {
-    subRef.current = observable.subscribe(setState);
+    const [state, setState] = useState(initialState as S);
+    const subRef = useRef<Subscription>();
 
-    // Unsubscribes when the component unmounts from the DOM
-    return () => subRef.current?.unsubscribe();
-  }, []);
+    useEffect(() => {
+      if (!entries.has(key)) setEntries(key, observable);
+      if (reducer && !reducers.has(key)) setReducers(key, reducer);
+    }, []);
 
-  const setter = updateState<S, A>(observable, state, dispatch);
-  return [state, setter];
+    useEffect(() => {
+      subRef.current = observable.subscribe(setState);
+
+      // Unsubscribes when the component unmounts from the DOM
+      return () => subRef.current?.unsubscribe();
+    }, []);
+
+    const setter = updateState<S, A>(observable, state, dispatch);
+    return [state, setter];
+  } catch (e) {
+    if (!entries) {
+      throw new Error("usePortalEntries must be used within a PortalProvider");
+    }
+
+    if (!reducers) {
+      throw new Error("usePortalReducers must be used within a PortalProvider");
+    }
+  }
+
+  return [];
 }
