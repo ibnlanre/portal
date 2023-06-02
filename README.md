@@ -151,7 +151,7 @@ All contributions are welcome and appreciated. Thanks for taking the time to con
 
 ```shell
 yarn version --new-version <major|minor|patch>
-yarn publish
+yarn publish --access public
 git push origin master --tags
 ```
 
