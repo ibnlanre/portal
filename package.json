@@ -1,6 +1,6 @@
 {
   "name": "@ibnlanre/portal",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "React state management library based on RxJS Behavior Subject",
   "main": "dist/index",
   "files": [
@@ -36,7 +36,8 @@
     "node": ">=14.0.0"
   },
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "package": "yarn build & yarn publish --access public"
   },
   "author": "Ridwan Olanrewaju",
   "license": "MIT",
