@@ -1,19 +1,33 @@
 {
   "name": "@ibnlanre/portal",
-  "version": "0.1.0",
-  "description": "simple state management library",
+  "version": "0.0.1",
+  "description": "React state management library based on RxJS Behavior Subject",
   "main": "dist/index.js",
   "files": [
     "dist"
   ],
   "tsup": {
     "entry": [
-      "src/index.ts"
+      "src/index.tsx"
     ],
-    "dts": true,
-    "splitting": false,
     "sourcemap": "inline",
-    "clean": true
+    "clean": true,
+    "dts": true,
+    "jsx": true
+  },
+  "release-it": {
+    "git": {
+      "commitMessage": "chore(release): v${version}"
+    },
+    "github": {
+      "release": true
+    },
+    "npm": {
+      "publish": true
+    }
+  },
+  "engines": {
+    "node": ">=14.0.0"
   },
   "scripts": {
     "build": "tsup"
@@ -25,6 +39,7 @@
     "@types/node": "^20.2.3",
     "@types/react": "^18.2.6",
     "react-dom": "^18.1.0",
+    "release-it": "^15.10.3",
     "tsup": "^6.7.0",
     "typescript": "^5.0.4"
   },
