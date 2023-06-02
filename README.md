@@ -146,6 +146,15 @@ Ridwan Olanrewaju, [root.i.ng](https://www.root.i.ng), [@ibnlanre](https://linke
 
 All contributions are welcome and appreciated. Thanks for taking the time to contribute to `@ibnlanre/portal`!
 
+## Releasing
+---
+
+```shell
+yarn version --new-version <major|minor|patch>
+yarn publish
+git push origin master --tags
+```
+
 ## License
 ---
 
