@@ -6,7 +6,6 @@ Inspired by [React Holmes](https://github.com/devx-os/react-holmes), `@ibnlanre/
 - `usePortal`: A hook that allows you to create, access and update the state.
 
 ## Installation
----
 
 To install `@ibnlanre/portal`, you can use npm or yarn. Run the following command in your project directory:
 
@@ -21,7 +20,6 @@ yarn add @ibnlanre/portal
 ```
 
 ## Usage
----
 
 1. Import the necessary components and hooks:
 
@@ -41,7 +39,7 @@ function App() {
 }
 ```
 
-3. Create state with the `usePortal` hook within your components
+3. Create state with the `usePortal` hook within your components. As a third argument, you can include a reducer for quick state updates.
 
 ```js
 import { usePortal } from "@ibnlanre/portal";
@@ -50,6 +48,7 @@ const initialState = {
     count: 0,
 };
 
+// This reducer is optional
 const reducer = (state, action) => {
     switch (action.type) {
         case "increment":
@@ -110,7 +109,7 @@ const reducer = (state, action) => {
     }
     ```
 
-4. Use the `usePortal` hook to access the state with another component:
+4. Use the `usePortal` hook to access states created within other components:
 
 ```js
 function MyComponent() {
@@ -122,7 +121,6 @@ function MyComponent() {
 ```
 
 ## API
----
 
 ### `PortalProvider`
 A provider component that wraps your application and manages the state.
@@ -137,17 +135,14 @@ A hook that allows you to access the state and dispatch actions.
 - A tuple containing the state and dispatch function.
 
 ## Author
----
 
 Ridwan Olanrewaju, [root.i.ng](https://www.root.i.ng), [@ibnlanre](https://linkedin.com/in/ibnlanre)
 
 ## Contributions
----
 
 All contributions are welcome and appreciated. Thanks for taking the time to contribute to `@ibnlanre/portal`!
 
 ## Releasing
----
 
 ```shell
 yarn version --new-version <major|minor|patch>
@@ -156,7 +151,6 @@ git push origin master --tags
 ```
 
 ## License
----
 
 This library is licensed under the [MIT License](https://opensource.org/licenses/MIT).
 
