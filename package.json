@@ -1,6 +1,6 @@
 {
   "name": "@ibnlanre/portal",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "React state management library based on RxJS Behavior Subject",
   "main": "dist/index",
   "files": [
@@ -39,7 +39,19 @@
     "build": "tsup",
     "package": "yarn build & yarn publish --access public"
   },
-  "author": "Ridwan Olanrewaju",
+  "keywords": [
+    "state",
+    "context"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ibnlanre/portal.git"
+  },
+  "author": "Ridwan Olanrewaju <olaitanlanre28@gmail.com>",
+  "bugs": {
+    "url": "https://github.com/ibnlanre/portal/issues"
+  },
+  "homepage": "https://github.com/ibnlanre/portal#readme",
   "license": "MIT",
   "devDependencies": {
     "@swc/core": "^1.3.61",

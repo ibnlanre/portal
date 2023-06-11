@@ -49,14 +49,14 @@ export function usePortal<S, A>(
     const observable = entries.get(key) ?? subject;
     const dispatch = reducers.get(key) ?? reducer;
 
-    const [state, setState] = useState(initialState as S);
-    const subRef = useRef<Subscription>();
-
+    const [state, setState] = useState(observable.getValue());
+    
     useEffect(() => {
-      if (!entries.has(key)) setEntries(key, observable);
+      if (!entries.has(key)) setEntries(key, subject);
       if (reducer && !reducers.has(key)) setReducers(key, reducer);
     }, []);
-
+    
+    const subRef = useRef<Subscription>();
     useEffect(() => {
       subRef.current = observable.subscribe(setState);
 
