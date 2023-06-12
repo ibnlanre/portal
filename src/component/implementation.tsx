@@ -30,30 +30,25 @@ export function usePortalImplementation<S, A>(
 ): UsePortalResult<S, A> {
   const [entries, setEntries] = usePortalEntries<string, BehaviorSubject<S>>();
   const [reducers, setReducers] = usePortalReducers<S, A>();
-  const [state, setState] = useState(initialState as S);
 
   try {
-    const subjectRef = useRef<BehaviorSubject<S>>();
+    const subject = new BehaviorSubject(initialState as S);
+    const observable = entries.get(key) ?? subject;
+
+    const [state, setState] = useState(observable.getValue());
 
     useEffect(() => {
-      const storedState = store?.getItem(key);
-      const parsedState: S = storedState
-        ? JSON.parse(storedState)
-        : initialState;
-      subjectRef.current = new BehaviorSubject(parsedState);
-
-      if (!entries.has(key)) setEntries(key, subjectRef.current);
+      if (!entries.has(key)) setEntries(key, subject);
       if (reducer && !reducers.has(key)) setReducers(key, reducer);
     }, []);
 
-    const observable = entries.get(key) ?? subjectRef.current!;
     const subscriptionRef = useRef<Subscription>();
-
     useEffect(() => {
       subscriptionRef.current = observable.subscribe((value) => {
         setState(value);
         store?.setItem(key, JSON.stringify(value));
       });
+
       // Unsubscribes when the component unmounts from the DOM
       return () => subscriptionRef.current?.unsubscribe();
     }, []);
@@ -71,5 +66,5 @@ export function usePortalImplementation<S, A>(
     }
   }
 
-  return [state, setState as Dispatcher<S, A>];
+  return [] as any;
 }

@@ -1,4 +1,4 @@
-import type { Reducer } from "react";
+import { useState, useEffect, type Reducer } from "react";
 import { usePortalImplementation, UsePortalResult } from "./implementation";
 
 /**
@@ -18,7 +18,15 @@ export function usePortalWithLocalStorage<S, A = undefined>(
   initialState?: S,
   reducer?: Reducer<S, A>
 ): UsePortalResult<S, A> {
+  const [storedState, setStoredState] = useState(initialState);
+
+  useEffect(() => {
+    const storedState = localStorage?.getItem(key);
+    if (storedState) setStoredState(JSON.parse(storedState));
+    else localStorage?.setItem(key, JSON.stringify(initialState));
+  }, []);
+
   return typeof window !== "undefined"
-    ? usePortalImplementation(key, initialState, reducer, localStorage)
+    ? usePortalImplementation(key, storedState, reducer, localStorage)
     : usePortalImplementation(key, initialState, reducer);
 }
