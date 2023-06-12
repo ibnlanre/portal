@@ -4,6 +4,8 @@ Inspired by [React Holmes](https://github.com/devx-os/react-holmes), `@ibnlanre/
 
 - `PortalProvider`: A provider component that wraps your application and manages the state.
 - `usePortal`: A hook that allows you to create, access and update the state.
+    - `.local`: to persist state in Local Storage.
+    - `.session`: to persist state in Session Storage.  
 
 ## Installation
 
@@ -23,102 +25,107 @@ yarn add @ibnlanre/portal
 
 1. Import the necessary components and hooks:
 
-```js
-import { PortalProvider, usePortal } from "@ibnlanre/portal";
-```
+    ```js
+    import { PortalProvider, usePortal } from "@ibnlanre/portal";
+    ```
 
 2. Wrap your application with the `PortalProvider` component:
 
-```js
-function App() {
-    return (
-        <PortalProvider>
-            {/* Your application components */}
-        </PortalProvider>
-    );
-}
-```
-
-3. Create state with the `usePortal` hook within your components. As a third argument, you can include a reducer for quick state updates.
-
-```js
-import { usePortal } from "@ibnlanre/portal";
-
-const initialState = {
-    count: 0,
-};
-
-// This reducer is optional
-const reducer = (state, action) => {
-    switch (action.type) {
-        case "increment":
-            return { ...state, count: state.count + 1 };
-        case "decrement":
-            return { ...state, count: state.count - 1 };
-        case "reset":
-            return { ...state, count: 0 };
-        default:
-            return state;
-  }
-};
-```
-
-- Component without a reducer function
-
     ```js
-    function Counter() {
-        const [state, setState] = usePortal("counter", initialState);
-            
-        const handleIncrement = () => { 
-            setState((prev) => ({ count: prev + 1 }));
-        };
-        const handleDecrement = () => { 
-            setState((prev) => ({ count: prev - 1 }));
-        };
-        const handleReset = () => { setState(initialState) };
-
-    return (
-        <div>
-            <p>Count: {state.count}</p>
-            <button onClick={handleIncrement}>Increment</button>
-            <button onClick={handleDecrement}>Decrement</button>
-            <button onClick={handleReset}>Reset</button>
-        </div>
-    );
-    }
-    ```
-
-- Component with a reducer function
-
-    ```js
-    function ReducerCounter() {
-        const [state, dispatch] = usePortal("counter.reducer", initialState, reducer);
-
-        const handleIncrement = () => { dispatch({ type: "increment" }) };
-        const handleDecrement = () => { dispatch({ type: "decrement" }) };
-        const handleReset = () => { dispatch({ type: "reset" }) };
-
+    function App() {
         return (
-            <div>
-                <p>Count: {state.count}</p>
-                <button onClick={handleIncrement}>Increment</button>
-                <button onClick={handleDecrement}>Decrement</button>
-                <button onClick={handleReset}>Reset</button>
-            </div>
+            <PortalProvider>
+                {/* Your application components */}
+            </PortalProvider>
         );
     }
     ```
 
+3. Create a marker for the state by passing a `key` to the `usePortal` hook.
+    
+    ```js
+    import { usePortal } from "@ibnlanre/portal";
+
+    const initialState = { 
+        count: 0,
+    };
+    ```
+
+    - Optionally, pass in an `initial value` for your state.
+
+        ```js
+        function Counter() {
+            const [state, setState] = usePortal("counter", initialState);
+
+            // persist state in Local Storage
+            const [localState, setLocalState] = usePortal.local("local.counter", initialState);
+
+            // persist state in Session Storage
+            const [sessionState, setSessionState] = usePortal.session("session.counter", initialState);
+                
+            const handleIncrement = () => { 
+                setState((prev) => ({ count: prev + 1 }));
+            };
+            const handleDecrement = () => { 
+                setState((prev) => ({ count: prev - 1 }));
+            };
+            const handleReset = () => { setState(initialState) };
+
+            return (
+                <div>
+                    <p>Count: {state.count}</p>
+                    <button onClick={handleIncrement}>Increment</button>
+                    <button onClick={handleDecrement}>Decrement</button>
+                    <button onClick={handleReset}>Reset</button>
+                </div>
+            );
+        }
+        ```
+
+    - Additionally, you can include a `reducer` for quick state updates.
+
+        ```js
+        const reducer = (state, action) => {
+            switch (action.type) {
+                case "increment":
+                    return { ...state, count: state.count + 1 };
+                case "decrement":
+                    return { ...state, count: state.count - 1 };
+                case "reset":
+                    return { ...state, count: 0 };
+                default:
+                    return state;
+            }
+        };
+
+        function ReducerCounter() {
+            const [state, dispatch] = usePortal("counter.reducer", initialState, reducer);
+
+            const handleIncrement = () => dispatch({ type: "increment" });
+            const handleDecrement = () => dispatch({ type: "decrement" });
+            const handleReset = () => dispatch({ type: "reset" });
+
+            return (
+                <div>
+                    <p>Count: {state.count}</p>
+                    <button onClick={handleIncrement}>Increment</button>
+                    <button onClick={handleDecrement}>Decrement</button>
+                    <button onClick={handleReset}>Reset</button>
+                </div>
+            );
+        }
+        ```
+
 4. Use the `usePortal` hook to access states created within other components:
 
-```js
-function MyComponent() {
-    const [store, dispatch] = usePortal("counter.reducer");
-    const [state, setState] = usePortal("counter");
+    ```js
+    function MyComponent() {
+        const [store, dispatch] = usePortal("counter.reducer");
+        const [state, setState] = usePortal("counter");
 
-    // Your component logic
-}
-```
+        // Your component logic
+    }
+    ```
 
 ## API
 
@@ -142,12 +149,10 @@ Ridwan Olanrewaju, [root.i.ng](https://www.root.i.ng), [@ibnlanre](https://linke
 
 All contributions are welcome and appreciated. Thanks for taking the time to contribute to `@ibnlanre/portal`!
 
-## Releasing
+## Release
 
 ```shell
-yarn version --new-version <major|minor|patch>
-yarn publish --access public
-git push origin master --tags
+yarn package
 ```
 
 ## License
@@ -155,5 +160,5 @@ git push origin master --tags
 This library is licensed under the [MIT License](https://opensource.org/licenses/MIT).
 
 ```txt
-Feel free to customize the content and formatting according to your needs.
+Feel free to customize the content according to your needs. But, do leave a shoutout. Thanks 😊.
 ```

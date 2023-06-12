@@ -1,6 +1,7 @@
 import { isFunction } from "./isFuntion";
 import type { Reducer, SetStateAction } from "react";
 import { type BehaviorSubject } from "rxjs";
+import { Dispatcher } from "src/component/implementation";
 
 /**
  *
@@ -10,11 +11,11 @@ import { type BehaviorSubject } from "rxjs";
  * @param dispatch - Optional reducer function to handle state updates.
  * @returns A function that takes a value or action and updates the state accordingly.
  */
-export function updateState<S, A>(
+export function updateState<S, A = undefined>(
   observable: BehaviorSubject<S>,
   prevState: S,
   dispatch?: Reducer<any, A>
-) {
+): Dispatcher<S, A> {
   /**
    *
    * Update the state of an observable based on the provided value or action.
@@ -34,5 +35,5 @@ export function updateState<S, A>(
       ? observable.next(value(prevState))
       : observable.next(value as S);
   };
-  return setter;
+  return setter as Dispatcher<S, A>;
 }
