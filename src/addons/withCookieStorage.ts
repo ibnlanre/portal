@@ -112,7 +112,7 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions) {
       }
     }, [key, initialState]);
 
-    const [state, setState] = usePortalImplementation(
+    const [state, setState] = usePortalImplementation<S, A>(
       key,
       cookieState,
       reducer

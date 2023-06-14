@@ -41,7 +41,11 @@ export function usePortalWithLocalStorage<S, A = undefined>(
     }
   });
 
-  const [state, setState] = usePortalImplementation(key, storedState, reducer);
+  const [state, setState] = usePortalImplementation<S, A>(
+    key,
+    storedState,
+    reducer
+  );
 
   useEffect(() => {
     try {

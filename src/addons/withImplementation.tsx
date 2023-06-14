@@ -43,9 +43,15 @@ export function usePortalImplementation<S, A>(
   >();
 
   try {
-    const [subject] = useState<BehaviorSubject<S>>(
-      () => new BehaviorSubject(undefined as S)
-    );
+    const [subject] = useState<BehaviorSubject<S>>(() => {
+      const computedState =
+        initialState instanceof Promise
+          ? undefined
+          : isFunction(initialState)
+          ? initialState()
+          : initialState;
+      return new BehaviorSubject(computedState as S);
+    });
 
     useEffect(() => {
       let isSubscribed = true;
@@ -54,10 +60,8 @@ export function usePortalImplementation<S, A>(
         initialState.then((value) => {
           if (isSubscribed) subject.next(value);
         });
-      } else if (isFunction(initialState)) {
-        subject.next(initialState());
-      } else subject.next(initialState as S);
-
+      }
+      
       return () => {
         isSubscribed = false;
       };

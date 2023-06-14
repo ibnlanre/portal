@@ -41,7 +41,11 @@ export function usePortalWithSessionStorage<S, A>(
     }
   });
 
-  const [state, setState] = usePortalImplementation(key, storedState, reducer);
+  const [state, setState] = usePortalImplementation<S, A>(
+    key,
+    storedState,
+    reducer
+  );
 
   useEffect(() => {
     try {
