@@ -1,16 +1,21 @@
 import type { Dispatch, Reducer, SetStateAction } from "react";
 
-import { usePortalImplementation, UsePortalResult } from "./implementation";
-import { usePortalWithLocalStorage } from "./withLocalStorage";
-import { usePortalWithSessionStorage } from "./withSessionStorage";
+import {
+  usePortalImplementation,
+  usePortalWithLocalStorage,
+  usePortalWithSessionStorage,
+  usePortalWithDelete,
+  usePortalWithCookieOptions,
+} from "../addons";
+import type { UsePortalResult } from "../addons";
 
 /**
  * Custom hook for creating a portal with basic state management.
  * @template S The type of the state.
- * 
+ *
  * @param {string} key - Unique key identifier for the portal.
  * @param {S?} initialState - Optional initial state of the portal.
- * 
+ *
  * @returns {[S, Dispatch<SetStateAction<S>>]} A tuple containing the state and dispatch function for updating the state.
  */
 export function usePortal<S>(
@@ -57,3 +62,5 @@ export function usePortal<S, A = undefined>(
 
 usePortal.local = usePortalWithLocalStorage;
 usePortal.session = usePortalWithSessionStorage;
+usePortal.cookie = usePortalWithCookieOptions;
+usePortal.delete = usePortalWithDelete;

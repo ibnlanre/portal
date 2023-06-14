@@ -14,12 +14,18 @@ export type PortalReducersSetter<S, A> = (
 ) => void;
 
 /**
+ * Function type for removing an item in the portal entries.
+ */
+export type PortalEntriesRemover = (key: string) => void;
+
+/**
  * Context type for the portal reducers.
  */
-export type PortalReducersContext<S, A> = [
-  PortalReducersType<S, A>,
-  PortalReducersSetter<S, A>
-];
+export type PortalReducersContext<S, A> = {
+  reducers: PortalReducersType<S, A>;
+  addItemToReducers: PortalReducersSetter<S, A>;
+  removeItemFromReducers: PortalEntriesRemover;
+};
 
 /**
  * Context for the portal reducers.

@@ -11,12 +11,18 @@ export type PortalEntriesType<K, V> = Map<K, V>;
 export type PortalEntriesSetter<K, V> = (key: K, value: V) => void;
 
 /**
+ * Function type for removing an item in the portal entries.
+ */
+export type PortalEntriesRemover<K> = (key: K) => void;
+
+/**
  * Context type for the portal entries.
  */
-export type PortalEntriesContext<K, V> = [
-  PortalEntriesType<K, V>,
-  PortalEntriesSetter<K, V>
-];
+export type PortalEntriesContext<K, V> = {
+  entries: PortalEntriesType<K, V>;
+  addItemToEntries: PortalEntriesSetter<K, V>;
+  removeItemFromEntries: PortalEntriesRemover<K>;
+};
 
 /**
  * Context for the portal entries.

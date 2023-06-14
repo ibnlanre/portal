@@ -1,7 +1,8 @@
-import { isFunction } from "./isFuntion";
 import type { Reducer, SetStateAction } from "react";
 import { type BehaviorSubject } from "rxjs";
-import { Dispatcher } from "src/component/implementation";
+
+import { Dispatcher } from "src/addons/withImplementation";
+import { isFunction } from "./isFunction";
 
 /**
  *
