@@ -7,7 +7,7 @@ import {
   usePortalWithDelete,
   usePortalWithCookieOptions,
 } from "../addons";
-import type { UsePortalResult } from "../addons";
+import type { Initial, UsePortalResult } from "../addons";
 
 /**
  * Custom hook for creating a portal with basic state management.
@@ -20,7 +20,7 @@ import type { UsePortalResult } from "../addons";
  */
 export function usePortal<S>(
   key: string,
-  initialState?: S
+  initialState?: Initial<S>
 ): [S, Dispatch<SetStateAction<S>>];
 
 /**
@@ -36,7 +36,7 @@ export function usePortal<S>(
  */
 export function usePortal<S, A>(
   key: string,
-  initialState: S,
+  initialState: Initial<S>,
   reducer?: Reducer<S, A>
 ): UsePortalResult<S, A>;
 
@@ -54,7 +54,7 @@ export function usePortal<S, A>(
  */
 export function usePortal<S, A = undefined>(
   key: string,
-  initialState?: S,
+  initialState?: Initial<S>,
   reducer?: Reducer<S, A>
 ): UsePortalResult<S, A> {
   return usePortalImplementation(key, initialState, reducer);

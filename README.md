@@ -5,7 +5,9 @@ Inspired by [React Holmes](https://github.com/devx-os/react-holmes), `@ibnlanre/
 - `PortalProvider`: A provider component that wraps your application and manages the state.
 - `usePortal`: A hook that allows you to create, access and update the state.
     - `.local`: to persist state in Local Storage.
-    - `.session`: to persist state in Session Storage.  
+    - `.session`: to persist state in Session Storage.
+    - `.cookie`: to store state in Document Cookie.
+    - `.delete`: to remove value from the Cache.
 
 ## Installation
 
@@ -62,6 +64,13 @@ yarn add @ibnlanre/portal
 
             // persist state in Session Storage
             const [sessionState, setSessionState] = usePortal.session("session.counter", initialState);
+
+            // persist data in Cookie Storage
+            const [cookieState, setCookieState] = usePortal({
+                path: '/',
+                expires: 30,
+                secure: true
+            }).cache("cookie.counter", initialState)
                 
             const handleIncrement = () => { 
                 setState((prev) => ({ count: prev + 1 }));
@@ -123,7 +132,8 @@ yarn add @ibnlanre/portal
         const [store, dispatch] = usePortal("counter.reducer");
         const [state, setState] = usePortal("counter");
 
-        // Your component logic
+        // delete stored value within portal system
+        usePortal.delete("counter");
     }
     ```
 

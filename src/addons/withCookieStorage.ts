@@ -1,5 +1,10 @@
 import { useState, useEffect, type Reducer } from "react";
-import { usePortalImplementation, type UsePortalResult } from "./withImplementation";
+import {
+  usePortalImplementation,
+  type Initial,
+  type UsePortalResult,
+} from "./withImplementation";
+import { isFunction } from "../utilities";
 
 type CookieOptions = {
   path?: string;
@@ -79,10 +84,10 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions) {
    */
   function usePortalWithCookieStorage<S, A = undefined>(
     key: string,
-    initialState?: S,
+    initialState?: Initial<S>,
     reducer?: Reducer<S, A>
   ): UsePortalResult<S, A> {
-    const [cookieState, setCookieState] = useState<S>(initialState as S);
+    const [cookieState, setCookieState] = useState<S | undefined>(undefined);
 
     useEffect(() => {
       const cookieValue = getCookieValue(key);
@@ -90,11 +95,22 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions) {
         const parsedState = JSON.parse(decodeURIComponent(cookieValue));
         setCookieState(parsedState);
       } else {
-        const encodedState = encodeURIComponent(JSON.stringify(initialState));
-        const cookieOptionsString = formatCookieOptions(cookieOptions);
-        document.cookie = `${key}=${encodedState}${cookieOptionsString}`;
+        if (initialState instanceof Promise) {
+          initialState.then((value) => {
+            const encodedState = encodeURIComponent(JSON.stringify(value));
+            const cookieOptionsString = formatCookieOptions(cookieOptions);
+            document.cookie = `${key}=${encodedState}${cookieOptionsString}`;
+          });
+        } else {
+          const plainState = isFunction(initialState)
+            ? initialState()
+            : initialState;
+          const encodedState = encodeURIComponent(JSON.stringify(plainState));
+          const cookieOptionsString = formatCookieOptions(cookieOptions);
+          document.cookie = `${key}=${encodedState}${cookieOptionsString}`;
+        }
       }
-    }, []);
+    }, [key, initialState]);
 
     const [state, setState] = usePortalImplementation(
       key,
@@ -115,5 +131,3 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions) {
     cache: usePortalWithCookieStorage,
   };
 }
-
-usePortalWithCookieOptions().cache("");

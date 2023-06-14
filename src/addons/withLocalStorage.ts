@@ -1,6 +1,7 @@
 import { useState, useEffect, type Reducer } from "react";
 import {
   usePortalImplementation,
+  type Initial,
   type UsePortalResult,
 } from "./withImplementation";
 
@@ -18,7 +19,7 @@ import {
  */
 export function usePortalWithLocalStorage<S, A = undefined>(
   key: string,
-  initialState?: S,
+  initialState?: Initial<S>,
   reducer?: Reducer<S, A>
 ): UsePortalResult<S, A> {
   const [store] = useState(() => {
