@@ -1,14 +1,13 @@
-import { useState, type ComponentProps } from "react";
+import { useState, type ReactNode } from "react";
 import {
   portalEntries,
   type PortalEntriesContext,
   type PortalEntriesType,
 } from "./index";
 
-interface IPortalEntriesProvider
-  extends ComponentProps<
-    React.Provider<PortalEntriesContext<string, unknown>>
-  > {}
+interface IPortalEntriesProvider {
+  children: ReactNode;
+}
 
 /**
  * Provider component for the portal entries.

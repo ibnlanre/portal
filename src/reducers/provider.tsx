@@ -1,14 +1,13 @@
-import { useState, type ComponentProps, type Reducer } from "react";
+import { useState, type Reducer, type ReactNode } from "react";
 import {
   portalReducers,
   PortalReducersType,
   type PortalReducersContext,
 } from "./index";
 
-interface IPortalReducersProvider
-  extends ComponentProps<
-    React.Provider<PortalReducersContext<string, unknown>>
-  > {}
+interface IPortalReducersProvider {
+  children: ReactNode;
+}
 
 /**
  * Provider component for the portal reducers.

@@ -162,6 +162,7 @@ All contributions are welcome and appreciated. Thanks for taking the time to con
 ## Release
 
 ```shell
+git add .
 yarn package
 ```
 
