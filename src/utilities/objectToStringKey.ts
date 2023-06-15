@@ -1,7 +1,8 @@
 /**
  * Converts a reference type to a string representation that can be used as a key.
- * @param value - The value to convert.
- * @returns The string representation of the value.
+ * 
+ * @param {any} value The value to convert.
+ * @returns {string} The string representation of the value.
  */
 export function objectToStringKey(value: any): string {
   if (typeof value === "object" && value !== null) {

@@ -8,7 +8,8 @@ export type CookieOptions = {
 
 /**
  * Formats the provided cookie options into a string format compatible with the document.cookie API.
- * @param {CookieOptions} [options] - The cookie options to format.
+ * 
+ * @param {CookieOptions} [options] The cookie options to format.
  * @returns {string} The formatted cookie options as a string.
  */
 export function formatCookieOptions(options?: CookieOptions): string {

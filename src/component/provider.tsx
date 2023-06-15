@@ -8,7 +8,7 @@ interface IPortalEntriesProvider {
 
 /**
  * Provider component for the portal system.
- * @param children - The child components.
+ * @param children The child components.
  * @returns The PortalProvider component.
  */
 export function PortalProvider<S, A>({ children }: IPortalEntriesProvider) {
@@ -16,8 +16,13 @@ export function PortalProvider<S, A>({ children }: IPortalEntriesProvider) {
 
   /**
    * Updates the portal entries by adding a new key-value pair.
-   * @param key - The key.
-   * @param entry - The value.
+   * @template S The type of the state.
+   * @template A The type of the actions. 
+   * 
+   * @param {any} key The key.
+   * @param {PortalEntry<S, A>} entry The value.
+   * 
+   * @returns {void}
    */
   function addItemToEntries<S, A>(key: string, entry: PortalEntry<S, A>): void {
     setEntries((originalMap) => {
@@ -29,7 +34,9 @@ export function PortalProvider<S, A>({ children }: IPortalEntriesProvider) {
 
   /**
    * Removes an item from the portal entries based on the specified key.
-   * @param key - The key of the item to remove.
+   * 
+   * @param {any} key The key of the item to remove.
+   * @returns {void}
    */
   function removeItemFromEntries(key: string): void {
     setEntries((prevEntries) => {

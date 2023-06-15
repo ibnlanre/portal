@@ -10,35 +10,41 @@ import type { Initial, PortalEntries, PortalResult } from "../entries";
 import { usePortalEntries } from "../entries";
 import { convertMapToObject } from "../utilities";
 
-
+/**
+ * Custom hook to access portal entries and perform deletes.
+ *
+ * @returns {Object} The portal entries and operators.
+ * @throws {Error} If used outside of a PortalProvider component.
+ */
 export function usePortal(): PortalEntries;
 
 /**
- * Custom hook for creating a portal with basic state management.
+ * Custom hook to access and manage state in the portal system.
  * @template S The type of the state.
  *
- * @param {any} key - Unique key identifier for the portal.
- * @param {S?} initialState - Optional initial state of the portal.
+ * @param {any} key Unique key identifier for the portal.
+ * @param {S} [initialState] The initial state value.
  *
- * @returns {[S, Dispatch<SetStateAction<S>>]} A tuple containing the state and dispatch function for updating the state.
+ * @returns {[S, Dispatch<SetStateAction<S>>]} A tuple containing the state and a function for updating the state.
+ * @throws {Error} If used outside of a PortalProvider component.
  */
 export function usePortal<S>(
-  key?: any,
+  key: any,
   initialState?: Initial<S>
 ): [S, Dispatch<SetStateAction<S>>];
 
 /**
- * Custom hook for creating a portal with an optional reducer to update the state.
+ * Custom hook to access and manage state in the portal system.
  * @template S The type of the state.
  * @template A The type of the actions.
  *
- * @param {any} key - Unique key identifier for the portal.
- * @param {S} initialState - Initial state of the portal, which could be a reducer state.
- * @param {Reducer<S, A>?} reducer - Optional reducer function to handle state updates.
+ * @param {any} [key] Unique key identifier for the portal.
+ * @param {S} [initialState] The initial state value.
+ * @param {Reducer<S, A>} [reducer] The reducer function to handle state updates.
  *
- * @returns {PortalResult<S, A>} A tuple containing the current state and a function to update the state.
+ * @returns {PortalResult<S, A>} A tuple containing the state and a function for updating the state.
+ * @throws {Error} If used outside of a PortalProvider component.
  */
-
 export function usePortal<S, A>(
   key: any,
   initialState: Initial<S>,
@@ -46,18 +52,9 @@ export function usePortal<S, A>(
 ): PortalResult<S, A>;
 
 /**
- * Custom hook to access and manage state in the portal system.
  * @template S The type of the state.
  * @template A The type of the actions.
- *
- * @param {any} key The key to identify the state in the portal system.
- * @param {S?} initialState The initial state value.
- * @param {Reducer<S, A>?} reducer The reducer function to handle state updates.
- *
- * @returns {PortalResult<S, A>} A tuple containing the current state and a function to update the state.
- * @throws {Error} If used outside of a PortalProvider component.
  */
-
 export function usePortal<S, A = undefined>(
   key?: any,
   initialState?: Initial<S>,
@@ -66,10 +63,14 @@ export function usePortal<S, A = undefined>(
   const { entries, removeItemFromEntries, clearEntries } = usePortalEntries();
   if (!key) {
     return {
+      /**
+       * Object containing a record of each portal value and reducer function
+       * @type {Object}
+       */
       entries: convertMapToObject(entries),
       /**
        * Function for deleting a key from the portal system.
-       * @param {any} key - The key to delete.
+       * @param {any} key The key to delete.
        * @returns {void}
        */
       remove: removeItemFromEntries,

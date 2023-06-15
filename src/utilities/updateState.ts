@@ -1,15 +1,18 @@
 import type { Reducer, SetStateAction } from "react";
 import { type BehaviorSubject } from "rxjs";
 
-import { Dispatcher } from "src/addons/withImplementation";
 import { isFunction } from "./isFunction";
+import type { Dispatcher } from "../entries";
 
 /**
- *
  * Update the state of an observable using the provided value and dispatch function (optional).
- * @param observable - BehaviorSubject representing the state.
- * @param prevState - Previous state value.
- * @param dispatch - Optional reducer function to handle state updates.
+ * @template S The type of the state.
+ * @template A The type of the actions.
+ * 
+ * @param {BehaviorSubject} observable BehaviorSubject representing the state.
+ * @param {any} prevState Previous state value.
+ * @param {Function} dispatch Optional reducer function to handle state updates.
+ * 
  * @returns A function that takes a value or action and updates the state accordingly.
  */
 export function updateState<S, A = undefined>(
@@ -18,9 +21,11 @@ export function updateState<S, A = undefined>(
   dispatch?: Reducer<any, A>
 ): Dispatcher<S, A> {
   /**
-   *
    * Update the state of an observable based on the provided value or action.
-   * @param value - Value or action to update the state with.
+   * @template S The type of the state.
+   * @template A The type of the actions.
+   *
+   * @param {SetStateAction<S> | A} value Value or action to update the state with.
    * @returns void
    *
    * @summary If a dispatch function is provided, it is used to process the state update based on the previous state and the value or action.
