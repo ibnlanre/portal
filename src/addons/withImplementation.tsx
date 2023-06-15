@@ -1,19 +1,16 @@
 import { useState, useEffect, type Reducer } from "react";
 import { BehaviorSubject } from "rxjs";
 
-import {
-  usePortalEntries,
-  type Initial,
-  type UsePortalResult,
-} from "../entries";
-import { isFunction, updateState } from "../utilities";
+import { usePortalEntries, type Initial, type PortalState } from "../entries";
+import { isFunction, objectToStringKey, updateState } from "../utilities";
 
 export function usePortalImplementation<S, A>(
-  key: string,
+  key: any,
   initialState?: Initial<S>,
   reducer?: Reducer<S, A>
-): UsePortalResult<S, A> {
+): PortalState<S, A> {
   const { entries, addItemToEntries } = usePortalEntries<S, A>();
+  const stringKey = objectToStringKey(key);
 
   try {
     const [subject] = useState<BehaviorSubject<S>>(() => {
@@ -40,12 +37,12 @@ export function usePortalImplementation<S, A>(
       };
     }, [initialState, subject]);
 
-    const observable = entries.get(key)?.observable ?? subject;
+    const observable = entries.get(stringKey)?.observable ?? subject;
     const [state, setState] = useState(observable.getValue());
 
     useEffect(() => {
-      if (!entries.has(key)) {
-        addItemToEntries(key, { observable, reducer });
+      if (!entries.has(stringKey)) {
+        addItemToEntries(stringKey, { observable, reducer });
       }
     }, []);
 
@@ -56,7 +53,7 @@ export function usePortalImplementation<S, A>(
       return () => subscription?.unsubscribe();
     }, []);
 
-    const dispatch = entries?.get(key)?.reducer ?? reducer;
+    const dispatch = entries?.get(stringKey)?.reducer ?? reducer;
     const setter = updateState<S, A>(observable, state, dispatch);
     return [state, setter];
   } catch (e) {

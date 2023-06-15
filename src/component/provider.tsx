@@ -1,5 +1,5 @@
 import { useState, type ReactNode, type Provider } from "react";
-import type { PortalContext, PortalEntry, PortalType } from "../entries";
+import type { PortalEntriesContext, PortalEntry, PortalMap } from "../entries";
 import { portalEntries } from "../entries";
 
 interface IPortalEntriesProvider {
@@ -12,7 +12,7 @@ interface IPortalEntriesProvider {
  * @returns The PortalProvider component.
  */
 export function PortalProvider<S, A>({ children }: IPortalEntriesProvider) {
-  const [entries, setEntries] = useState<PortalType<any, any>>(new Map());
+  const [entries, setEntries] = useState<PortalMap<any, any>>(new Map());
 
   /**
    * Updates the portal entries by adding a new key-value pair.
@@ -21,7 +21,7 @@ export function PortalProvider<S, A>({ children }: IPortalEntriesProvider) {
    */
   function addItemToEntries<S, A>(key: string, entry: PortalEntry<S, A>): void {
     setEntries((originalMap) => {
-      const copiedMap = new Map(originalMap) as PortalType<any, any>;
+      const copiedMap = new Map(originalMap) as PortalMap<any, any>;
       copiedMap.set(key, entry);
       return copiedMap;
     });
@@ -66,7 +66,7 @@ export function PortalProvider<S, A>({ children }: IPortalEntriesProvider) {
   };
 
   const EntriesProvider = portalEntries.Provider as Provider<
-    PortalContext<S, A>
+    PortalEntriesContext<S, A>
   >;
 
   return (

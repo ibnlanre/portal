@@ -1,21 +1,21 @@
 import { useContext, createContext, type Context } from "react";
-import { PortalContext } from ".";
+import { PortalEntriesContext } from ".";
 
 /**
  * Context for the portal entries.
  */
-export const portalEntries = createContext<PortalContext<unknown, unknown>>(
-  {} as unknown as PortalContext<unknown, unknown>
-);
+export const portalEntries = createContext<
+  PortalEntriesContext<unknown, unknown>
+>({} as unknown as PortalEntriesContext<unknown, unknown>);
 
 /**
  * Custom hook for accessing the portal entries context.
  * @returns The portal entries context.
  * @throws Error if used outside the PortalEntriesProvider.
  */
-export function usePortalEntries<S, A>(): PortalContext<S, A> {
-  const context = useContext<PortalContext<S, A>>(
-    portalEntries as unknown as Context<PortalContext<S, A>>
+export function usePortalEntries<S, A>(): PortalEntriesContext<S, A> {
+  const context = useContext<PortalEntriesContext<S, A>>(
+    portalEntries as unknown as Context<PortalEntriesContext<S, A>>
   );
   return context;
 }

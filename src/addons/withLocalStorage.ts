@@ -1,9 +1,7 @@
 import { useState, useEffect, type Reducer } from "react";
-import {
-  usePortalImplementation,
-  type Initial,
-  type UsePortalResult,
-} from "./withImplementation";
+
+import { usePortalImplementation } from "./withImplementation";
+import type { Initial, PortalState } from "../entries";
 
 /**
  * Custom hook to access and manage state in the portal system with localStorage support.
@@ -14,14 +12,14 @@ import {
  * @param {S?} initialState The initial state value.
  * @param {Reducer<S, A>?} reducer The reducer function to handle state updates.
  *
- * @returns {UsePortalResult<S, A>} A tuple containing the current state and a function to update the state.
+ * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
  * @throws {Error} If used outside of a PortalProvider component.
  */
 export function usePortalWithLocalStorage<S, A = undefined>(
   key: string,
   initialState?: Initial<S>,
   reducer?: Reducer<S, A>
-): UsePortalResult<S, A> {
+): PortalState<S, A> {
   const [store] = useState(() => {
     try {
       if (typeof localStorage !== "undefined") return localStorage;
