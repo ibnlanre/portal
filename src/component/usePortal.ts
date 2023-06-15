@@ -4,10 +4,13 @@ import {
   usePortalImplementation,
   usePortalWithLocalStorage,
   usePortalWithSessionStorage,
-  usePortalWithDelete,
   usePortalWithCookieOptions,
 } from "../addons";
-import type { Initial, UsePortalResult } from "../addons";
+import { Initial, PortalFns, UsePortalResult } from "../entries";
+import { usePortalEntries } from "../entries";
+import { convertMapToObject } from "src/utilities";
+
+export function usePortal(): PortalFns
 
 /**
  * Custom hook for creating a portal with basic state management.
@@ -19,7 +22,7 @@ import type { Initial, UsePortalResult } from "../addons";
  * @returns {[S, Dispatch<SetStateAction<S>>]} A tuple containing the state and dispatch function for updating the state.
  */
 export function usePortal<S>(
-  key: string,
+  key?: string,
   initialState?: Initial<S>
 ): [S, Dispatch<SetStateAction<S>>];
 
@@ -34,6 +37,7 @@ export function usePortal<S>(
  *
  * @returns {UsePortalResult<S, A>} A tuple containing the current state and a function to update the state.
  */
+
 export function usePortal<S, A>(
   key: string,
   initialState: Initial<S>,
@@ -52,15 +56,32 @@ export function usePortal<S, A>(
  * @returns {UsePortalResult<S, A>} A tuple containing the current state and a function to update the state.
  * @throws {Error} If used outside of a PortalProvider component.
  */
+
 export function usePortal<S, A = undefined>(
-  key: string,
+  key?: string,
   initialState?: Initial<S>,
   reducer?: Reducer<S, A>
 ): UsePortalResult<S, A> {
+  const { entries, removeItemFromEntries, clearEntries } = usePortalEntries();
+  if (!key) {
+    return {
+      entries: convertMapToObject(entries),
+      /**
+       * Function for deleting a key from the portal system.
+       * @param {string} key - The key to delete.
+       * @returns {void}
+       */
+      remove: removeItemFromEntries,
+      /**
+       * Function for clearing all entries from the portal system.
+       * @returns {void}
+       */
+      clear: clearEntries,
+    };
+  }
   return usePortalImplementation(key, initialState, reducer);
 }
 
 usePortal.local = usePortalWithLocalStorage;
 usePortal.session = usePortalWithSessionStorage;
 usePortal.cookie = usePortalWithCookieOptions;
-usePortal.delete = usePortalWithDelete;

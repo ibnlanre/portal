@@ -1,46 +1,19 @@
-import { useState, useEffect } from "react";
-import type { Reducer, SetStateAction, Dispatch } from "react";
+import { useState, useEffect, type Reducer } from "react";
 import { BehaviorSubject } from "rxjs";
 
-import { usePortalEntries } from "../entries";
-import { usePortalReducers } from "../reducers";
+import {
+  usePortalEntries,
+  type Initial,
+  type UsePortalResult,
+} from "../entries";
 import { isFunction, updateState } from "../utilities";
-
-/**
- * @template S
- * @template A
- * @typedef {Dispatch<A | SetStateAction<S>>} Dispatcher
- */
-export type Dispatcher<S, A> = A extends undefined
-  ? Dispatch<SetStateAction<S>>
-  : Dispatch<A>;
-
-/**
- * @template S
- * @template A
- * @typedef {typeof initialState, Dispatcher<S, A>} UsePortalResult
- */
-export type UsePortalResult<S, A = undefined> = [S, Dispatcher<S, A>];
-
-/**
- * @template S
- * @typedef {S | (() => S) | Promise<S>} Initial
- */
-export type Initial<S> = S | (() => S) | Promise<S>;
-
-type IsString<K> = K extends string ? K : never;
-export type PortalKeys<T extends Record<string, any>> = IsString<keyof T>;
 
 export function usePortalImplementation<S, A>(
   key: string,
   initialState?: Initial<S>,
   reducer?: Reducer<S, A>
 ): UsePortalResult<S, A> {
-  const { reducers, addItemToReducers } = usePortalReducers<S, A>();
-  const { entries, addItemToEntries } = usePortalEntries<
-    string,
-    BehaviorSubject<S>
-  >();
+  const { entries, addItemToEntries } = usePortalEntries<S, A>();
 
   try {
     const [subject] = useState<BehaviorSubject<S>>(() => {
@@ -61,18 +34,19 @@ export function usePortalImplementation<S, A>(
           if (isSubscribed) subject.next(value);
         });
       }
-      
+
       return () => {
         isSubscribed = false;
       };
     }, [initialState, subject]);
 
-    const observable = entries.get(key) ?? subject;
+    const observable = entries.get(key)?.observable ?? subject;
     const [state, setState] = useState(observable.getValue());
 
     useEffect(() => {
-      if (!entries.has(key)) addItemToEntries(key, subject);
-      if (reducer && !reducers.has(key)) addItemToReducers(key, reducer);
+      if (!entries.has(key)) {
+        addItemToEntries(key, { observable, reducer });
+      }
     }, []);
 
     useEffect(() => {
@@ -82,11 +56,11 @@ export function usePortalImplementation<S, A>(
       return () => subscription?.unsubscribe();
     }, []);
 
-    const dispatch = reducers.get(key) ?? reducer;
+    const dispatch = entries?.get(key)?.reducer ?? reducer;
     const setter = updateState<S, A>(observable, state, dispatch);
     return [state, setter];
   } catch (e) {
-    if (!entries || !reducers) {
+    if (!entries) {
       throw new Error("usePortal must be used within a PortalProvider");
     }
   }
