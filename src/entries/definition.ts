@@ -29,6 +29,12 @@ export type PortalEntryAdder<S, A> = (
 export type PortalMap<S, A> = Map<string, PortalEntry<S, A>>;
 
 /**
+ * Represents a storage type.
+ * @typedef {"local" | "session" | "cookie"} StorageType
+ */
+export type StorageType = "local" | "session" | "cookie";
+
+/**
  * Context type for the portal entries.
  * @template S The type of the store value.
  * @template A The type of the action for the reducer.
@@ -36,7 +42,7 @@ export type PortalMap<S, A> = Map<string, PortalEntry<S, A>>;
 export type PortalEntriesContext<S, A> = {
   entries: PortalMap<any, any>;
   addItemToEntries: PortalEntryAdder<S, A>;
-  removeItemFromEntries: (key: string) => void;
+  removeItemFromEntries: (key: any, storageTypes: Array<StorageType>) => void;
   clearEntries: () => void;
 };
 
@@ -62,7 +68,7 @@ export type PortalEntryObject = {
  */
 export type PortalEntries = {
   entries: Record<string, PortalEntryObject>;
-  remove(key: string): void;
+  remove(key: any, storageTypes: Array<StorageType>): void;
   clear(): void;
 };
 
@@ -84,11 +90,11 @@ export type PortalResult<S, A = undefined> = PortalState<S, A> | PortalEntries;
  * Represents the implementation of a portal.
  * @template S The type of the store value.
  * @template A The type of the action for the reducer.
- * 
+ *
  * @param {any} key The key associated with the portal.
  * @param {Initial<S>} [initialState] The initial state of the portal.
  * @param {Reducer<S, A>} [reducer] The reducer function for the portal.
- * 
+ *
  * @returns {PortalState<S, A>} A tuple containing the state and a function for updating the state.
  */
 export type PortalImplementation = <S, A = undefined>(

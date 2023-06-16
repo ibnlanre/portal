@@ -7,7 +7,6 @@ Inspired by [React Holmes](https://github.com/devx-os/react-holmes), `@ibnlanre/
     - `.local`: to persist state in Local Storage.
     - `.session`: to persist state in Session Storage.
     - `.cookie`: to store state in Document Cookie.
-    - `.delete`: to remove value from the Cache.
 
 ## Installation
 
@@ -131,10 +130,29 @@ yarn add @ibnlanre/portal
     function MyComponent() {
         const [store, dispatch] = usePortal("counter.reducer");
         const [state, setState] = usePortal("counter");
-
-        // delete stored value within portal system
-        usePortal.delete("counter");
     }
+    ```
+
+5. To `remove` an item from the `portal` system
+
+    ```js
+    const { entries, remove, clear } = usePortal();
+
+    // Remove the item both in the application state,
+    // as well as, in the browser storage state.
+    remove("counter");
+
+    // Remove the item from both local and session storage only.
+    remove("counter", ["local", "session"]);
+
+    // Remove the item from cookie storage only.
+    remove("counter", ["cookie"]);
+
+    // Remove the item from application state only.
+    remove("counter");
+
+    // clear the portal system.
+    clear();
     ```
 
 ## API
