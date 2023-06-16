@@ -42,7 +42,7 @@ export type StorageType = "local" | "session" | "cookie";
 export type PortalEntriesContext<S, A> = {
   entries: PortalMap<any, any>;
   addItemToEntries: PortalEntryAdder<S, A>;
-  removeItemFromEntries: (key: any, storageTypes: Array<StorageType>) => void;
+  removeItemFromEntries: (key: any, storageTypes?: Array<StorageType>) => void;
   clearEntries: () => void;
 };
 
@@ -68,7 +68,7 @@ export type PortalEntryObject = {
  */
 export type PortalEntries = {
   entries: Record<string, PortalEntryObject>;
-  remove(key: any, storageTypes: Array<StorageType>): void;
+  remove(key: any, storageTypes?: Array<StorageType>): void;
   clear(): void;
 };
 
