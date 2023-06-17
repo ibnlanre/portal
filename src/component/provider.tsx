@@ -42,8 +42,8 @@ export function PortalProvider<S, A>({ children }: IPortalEntriesProvider) {
   /**
    * Removes an item from the portal entries and browser storage based on the specified key and storage types.
    *
-   * @param {any} key - The key of the item to remove.
-   * @param {("local" | "session" | "cookie")[]} [storageTypes] - An optional array of storage types to remove the item from (e.g., "local", "session", "cookie").
+   * @param {any} key The key of the item to remove.
+   * @param {("local" | "session" | "cookie")[]} [storageTypes] An optional array of storage types to remove the item from (e.g., "local", "session", "cookie").
    *
    * @returns {void}
    */

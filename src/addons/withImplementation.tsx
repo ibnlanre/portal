@@ -24,16 +24,21 @@ export function usePortalImplementation<S, A>(
     });
 
     useEffect(() => {
-      let isSubscribed = true;
+      const abortController = new AbortController();
 
       if (initialState instanceof Promise) {
-        initialState.then((value) => {
-          if (isSubscribed) subject.next(value);
-        });
+        const isSubscribed = !abortController.signal.aborted;
+        initialState
+          .then((value) => {
+            if (isSubscribed) subject.next(value);
+          })
+          .catch((error) => {
+            if (isSubscribed) console.error("Error occurred:", error);
+          });
       }
 
       return () => {
-        isSubscribed = false;
+        abortController.abort();
       };
     }, [initialState, subject]);
 
