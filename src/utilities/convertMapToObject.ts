@@ -11,7 +11,7 @@ export function convertMapToObject(map: PortalMap<any, any>) {
 
   map.forEach(({ observable, reducer }, key) => {
     result[key] = {
-      value: observable.getValue(),
+      value: observable.value,
       reducer: reducer,
     };
   });

@@ -1,5 +1,5 @@
 import type { Reducer, SetStateAction } from "react";
-import { type BehaviorSubject } from "rxjs";
+import { type BehaviorSubject } from "../subject";
 
 import { isFunction } from "./isFunction";
 import type { Dispatcher } from "../entries";
