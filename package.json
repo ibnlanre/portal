@@ -1,6 +1,6 @@
 {
   "name": "@ibnlanre/portal",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "React state management library based on RxJS Behavior Subject",
   "main": "dist/index",
   "files": [
@@ -66,6 +66,7 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "react": "^18.2.0"
+    "react": "^18.2.0",
+    "rxjs": "^7.8.1"
   }
 }

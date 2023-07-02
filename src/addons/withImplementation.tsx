@@ -2,7 +2,7 @@ import { useState, useEffect, type Reducer } from "react";
 
 import { usePortalEntries, type Initial, type PortalState } from "../entries";
 import { isFunction, objectToStringKey, updateState } from "../utilities";
-import { BehaviorSubject } from "src/subject";
+import { BehaviorSubject } from "rxjs";
 
 export function usePortalImplementation<S, A>(
   key: any,
@@ -42,15 +42,17 @@ export function usePortalImplementation<S, A>(
       };
     }, [initialState, subject]);
 
-    const observable = entries.get(stringKey)?.observable ?? subject;
+    const entry = entries.get(stringKey)?.observable;
+    const observable = (entry as BehaviorSubject<S>) ?? subject;
     const [state, setState] = useState(observable.value);
 
     useEffect(() => {
       if (!entries.has(stringKey)) {
         addItemToEntries(stringKey, { observable, reducer });
       }
+      const subscriber = observable.subscribe(setState);
       // Unsubscribes when the component unmounts from the DOM
-      return observable.subscribe(setState);
+      return subscriber.unsubscribe;
     }, []);
 
     const dispatch = entries?.get(stringKey)?.reducer ?? reducer;

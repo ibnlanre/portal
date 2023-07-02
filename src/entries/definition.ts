@@ -1,5 +1,5 @@
 import type { Reducer, SetStateAction, Dispatch } from "react";
-import type { BehaviorSubject } from "../subject";
+import type { BehaviorSubject } from "rxjs";
 
 /**
  * Represents a record of the store value and reducer in the portal entries.
