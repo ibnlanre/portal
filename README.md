@@ -7,6 +7,7 @@ Inspired by [React Holmes](https://github.com/devx-os/react-holmes), `@ibnlanre/
     - `.local`: to persist state in Local Storage.
     - `.session`: to persist state in Session Storage.
     - `.cookie`: to store state in Document Cookie.
+    - `.atom`: to access the state of an Atom.
 
 ## Installation
 
@@ -27,113 +28,105 @@ yarn add @ibnlanre/portal
 1. Import the necessary components and hooks:
 
     ```js
-    import { PortalProvider, usePortal } from "@ibnlanre/portal";
+    import { usePortal, PortalProvider, Atom } from "@ibnlanre/portal";
     ```
 
 2. Wrap your application with the `PortalProvider` component:
 
     ```js
-    function App() {
-        return (
-            <PortalProvider>
-                {/* Your application components */}
-            </PortalProvider>
-        );
-    }
+    import { usePortal, PortalProvider, Atom } from "@ibnlanre/portal";
+
+    <PortalProvider>
+        {/* Your application components */}
+    </PortalProvider>
     ```
 
 3. Create a marker for the state by passing a `key` to the `usePortal` hook.
     
-    ```js
-    import { usePortal } from "@ibnlanre/portal";
-
-    const initialState = { 
-        count: 0,
-    };
-    ```
-
     - Optionally, pass in an `initial value` for your state.
 
-        ```js
-        function Counter() {
-            const [state, setState] = usePortal("counter", initialState);
+    ```js
+    // the initial state is optional
+    const [state, setState] = usePortal("counter", 0);
+    ```
 
-            // persist state in Local Storage
-            const [localState, setLocalState] = usePortal.local("local.counter", initialState);
+    - To persist the state in `localStorage`, use:
 
-            // persist state in Session Storage
-            const [sessionState, setSessionState] = usePortal.session("session.counter", initialState);
+    ```js
+    // an array is used as the key, but could be anything
+    const [state, setState] = usePortal.local(["counter", "local"], 1);
+    ```
 
-            // persist data in Cookie Storage
-            const [cookieState, setCookieState] = usePortal({
-                path: '/',
-                expires: 30,
-                secure: true
-            }).cache("cookie.counter", initialState)
-                
-            const handleIncrement = () => { 
-                setState((prev) => ({ count: prev + 1 }));
-            };
-            const handleDecrement = () => { 
-                setState((prev) => ({ count: prev - 1 }));
-            };
-            const handleReset = () => { setState(initialState) };
+    - To persist the state in `sessionStorage`, use:
 
-            return (
-                <div>
-                    <p>Count: {state.count}</p>
-                    <button onClick={handleIncrement}>Increment</button>
-                    <button onClick={handleDecrement}>Decrement</button>
-                    <button onClick={handleReset}>Reset</button>
-                </div>
-            );
+    ```js
+    // an object is used as the key, but could be anything
+    const [state, setState] = usePortal.session({ counter: "session" }, 2);
+    ```
+
+    - To cache the state in `document.cookie`, use:
+
+    ```js
+    const [cookieState, setCookieState] = usePortal({
+        path: '/',
+        expires: 30,
+        secure: true
+    }).cache("cookie.counter", 3)
+    ```
+
+    - You can as well include a `reducer` for quick state updates.
+
+    ```js
+    const reducer = (state, action) => {
+        switch (action.type) {
+            case "increment":
+                return { ...state, count: state.count + 1 };
+            case "reset":
+                return { ...state, count: 0 };
+            default:
+                return state;
         }
-        ```
-
-    - Additionally, you can include a `reducer` for quick state updates.
-
-        ```js
-        const reducer = (state, action) => {
-            switch (action.type) {
-                case "increment":
-                    return { ...state, count: state.count + 1 };
-                case "decrement":
-                    return { ...state, count: state.count - 1 };
-                case "reset":
-                    return { ...state, count: 0 };
-                default:
-                    return state;
-            }
-        };
-
-        function ReducerCounter() {
-            const [state, dispatch] = usePortal("counter.reducer", initialState, reducer);
-
-            const handleIncrement = () => dispatch({ type: "increment" });
-            const handleDecrement = () => dispatch({ type: "decrement" });
-            const handleReset = () => dispatch({ type: "reset" });
-
-            return (
-                <div>
-                    <p>Count: {state.count}</p>
-                    <button onClick={handleIncrement}>Increment</button>
-                    <button onClick={handleDecrement}>Decrement</button>
-                    <button onClick={handleReset}>Reset</button>
-                </div>
-            );
-        }
-        ```
+    };
+    
+    const initialState = { count: 4 }
+    const [state, dispatch] = usePortal("counter.reducer", initialState, reducer);
+    
+    const handleDecrement = () => dispatch({ type: "decrement" });
+    const handleReset = () => dispatch({ type: "reset" });
+    ```
 
 4. Use the `usePortal` hook to access states created within other components:
 
     ```js
-    function MyComponent() {
-        const [store, dispatch] = usePortal("counter.reducer");
-        const [state, setState] = usePortal("counter");
-    }
+    const [store, dispatch] = usePortal("counter.reducer");
+    const [state, setState] = usePortal("counter");
     ```
 
-5. To `remove` an item from the `portal` system
+5. To access a `Portal` outside of a component, create an `Atom`.
+
+    - Create the `atom` with a key, value, and optional reducer:
+
+    ```js
+    const counterAtom = new Atom(["counter", "atom"], 5)
+    ```
+
+    - To access the value from the atom:
+
+    ```js
+    const [state, setState] = usePortal.atom(counterAtom);
+    
+    // Doing so in a parent componenet, would make this value
+    // available within the portal system, and accessible by
+    // children components
+    ```
+
+    - Subsequently, you can access the stored value by its key:
+
+    ```js
+    const [state, setState] = usePortal(["counter", "atom"]);
+    ```
+
+6. To `remove` an item from the `portal` system
 
     ```js
     const { entries, remove, clear } = usePortal();
@@ -149,7 +142,7 @@ yarn add @ibnlanre/portal
     remove("counter", ["cookie"]);
 
     // Remove the item from application state only.
-    remove("counter");
+    remove("counter", []);
 
     // clear the portal system.
     clear();

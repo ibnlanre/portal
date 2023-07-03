@@ -66,8 +66,10 @@ export class BehaviorSubject<T> {
     this._subscribers.add(callback);
     callback(this._value); // Call the callback immediately with the current value
 
-    return () => {
-      this._subscribers.delete(callback);
+    return {
+      unsubscribe: () => {
+        this._subscribers.delete(callback);
+      },
     };
   }
 

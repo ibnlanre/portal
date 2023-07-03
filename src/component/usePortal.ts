@@ -5,10 +5,13 @@ import {
   usePortalWithLocalStorage,
   usePortalWithSessionStorage,
   usePortalWithCookieOptions,
+  usePortalWithAtomStorage,
 } from "../addons";
-import type { Initial, PortalEntries, PortalResult } from "../entries";
-import { usePortalEntries } from "../entries";
 import { convertMapToObject } from "../utilities";
+import { usePortalEntries } from "../entries";
+
+import type { Initial, PortalEntries, PortalResult } from "../entries";
+
 
 /**
  * Custom hook to access portal entries and perform deletes.
@@ -87,3 +90,4 @@ export function usePortal<S, A = undefined>(
 usePortal.local = usePortalWithLocalStorage;
 usePortal.session = usePortalWithSessionStorage;
 usePortal.cookie = usePortalWithCookieOptions;
+usePortal.atom = usePortalWithAtomStorage
