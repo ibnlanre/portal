@@ -34,8 +34,7 @@ yarn add @ibnlanre/portal
 2. Wrap your application with the `PortalProvider` component:
 
     ```js
-    import { usePortal, PortalProvider, Atom } from "@ibnlanre/portal";
-
+    // This should be used within a React Component
     <PortalProvider>
         {/* Your application components */}
     </PortalProvider>
@@ -46,25 +45,25 @@ yarn add @ibnlanre/portal
     - Optionally, pass in an `initial value` for your state.
 
     ```js
-    // the initial state is optional
+    // The key can be any value
     const [state, setState] = usePortal("counter", 0);
     ```
 
-    - To persist the state in `localStorage`, use:
+    - To persist the state in `localStorage`:
 
     ```js
-    // an array is used as the key, but could be anything
+    // A array is used as the key, but could be anything
     const [state, setState] = usePortal.local(["counter", "local"], 1);
     ```
 
-    - To persist the state in `sessionStorage`, use:
+    - To persist the state in `sessionStorage`:
 
     ```js
-    // an object is used as the key, but could be anything
+    // An object is used as the key, but could be anything
     const [state, setState] = usePortal.session({ counter: "session" }, 2);
     ```
 
-    - To cache the state in `document.cookie`, use:
+    - To cache the state in `document.cookie`:
 
     ```js
     const [cookieState, setCookieState] = usePortal({
