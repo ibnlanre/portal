@@ -117,7 +117,7 @@ yarn add @ibnlanre/portal
     
     // Doing so in a parent componenet, would make this value
     // available within the portal system, and accessible by
-    // children components
+    // children components through the Portal Provider
     ```
 
     - Subsequently, you can access the stored value by its key:
