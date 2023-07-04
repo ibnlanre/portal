@@ -7,7 +7,6 @@ import {
   usePortalWithCookieOptions,
   usePortalWithAtomStorage,
 } from "../addons";
-import { convertMapToObject } from "../utilities";
 import { usePortalEntries } from "../entries";
 
 import type { Initial, PortalEntries, PortalResult } from "../entries";
@@ -41,8 +40,8 @@ export function usePortal<S>(
  * @template S The type of the state.
  * @template A The type of the actions.
  *
- * @param {any} [key] Unique key identifier for the portal.
- * @param {S} [initialState] The initial state value.
+ * @param {any} key Unique key identifier for the portal.
+ * @param {S} initialState The initial state value.
  * @param {Reducer<S, A>} [reducer] The reducer function to handle state updates.
  *
  * @returns {PortalResult<S, A>} A tuple containing the state and a function for updating the state.
@@ -67,10 +66,10 @@ export function usePortal<S, A = undefined>(
   if (!key) {
     return {
       /**
-       * Object containing a record of each portal value and reducer function
-       * @type {Object}
+       * Map containing a record of each portal value and reducer function
+       * @type {Map}
        */
-      entries: convertMapToObject(entries),
+      entries,
       /**
        * Function for deleting a key from the portal system.
        * @param {any} key The key to delete.

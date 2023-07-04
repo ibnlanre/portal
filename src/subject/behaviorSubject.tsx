@@ -3,8 +3,8 @@
  * @template T The type of the initial and emitted values.
  */
 export class BehaviorSubject<T> {
-  private _value: T;
-  private _subscribers: Set<Function>;
+  private state: T;
+  private subscribers: Set<Function>;
 
   /**
    * Creates a new instance of BehaviorSubject.
@@ -15,13 +15,13 @@ export class BehaviorSubject<T> {
      * The current value of the subject.
      * @type {T}
      */
-    this._value = initialValue;
+    this.state = initialValue;
 
     /**
      * The set of subscribers to the subject.
      * @type {Set<Function>}
      */
-    this._subscribers = new Set();
+    this.subscribers = new Set();
   }
 
   /**
@@ -29,9 +29,9 @@ export class BehaviorSubject<T> {
    * @private
    */
   private notifySubscribers() {
-    this._subscribers.forEach((callback) => {
+    this.subscribers.forEach((callback) => {
       try {
-        callback(this._value);
+        callback(this.state);
       } catch (err) {
         console.error("Error occurred in subscriber callback:", err);
       }
@@ -43,7 +43,7 @@ export class BehaviorSubject<T> {
    * @returns {T} The current value.
    */
   get value(): T {
-    return this._value;
+    return this.state;
   }
 
   /**
@@ -51,8 +51,8 @@ export class BehaviorSubject<T> {
    * @param {T} value The new value to emit.
    */
   next(value: T) {
-    if (!Object.is(this._value, value)) {
-      this._value = value;
+    if (!Object.is(this.state, value)) {
+      this.state = value;
       this.notifySubscribers();
     }
   }
@@ -63,12 +63,12 @@ export class BehaviorSubject<T> {
    * @returns {Function} A function to unsubscribe the callback.
    */
   subscribe(callback: Function) {
-    this._subscribers.add(callback);
-    callback(this._value); // Call the callback immediately with the current value
+    this.subscribers.add(callback);
+    callback(this.state); // Call the callback immediately with the current value
 
     return {
       unsubscribe: () => {
-        this._subscribers.delete(callback);
+        this.subscribers.delete(callback);
       },
     };
   }
@@ -77,6 +77,6 @@ export class BehaviorSubject<T> {
    * Unsubscribes all subscribers from the subject.
    */
   unsubscribe(): void {
-    this._subscribers.clear();
+    this.subscribers.clear();
   }
 }

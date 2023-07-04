@@ -67,7 +67,7 @@ export type PortalEntryObject = {
  * Represents the portal entries with specialized methods for managing the entries.
  */
 export type PortalEntries = {
-  entries: Record<string, PortalEntryObject>;
+  entries: PortalMap<any, any>;
   remove(key: any, storageTypes?: Array<StorageType>): void;
   clear(): void;
 };

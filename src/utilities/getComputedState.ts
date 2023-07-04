@@ -1,16 +1,12 @@
-import { Initial } from "../entries";
 import { isFunction } from "./isFunction";
 
 /**
- * Computes the initial state asynchronously based on the provided initial value.
- *
- * @template S The type of the state.
- * @param {Initial<S>} initialState The initial state value, a function to compute the state,
- * or a promise that resolves to the state, or a function that returns a promise that resolves to the state.
- * @returns {Promise<S | (() => S)>} A promise that resolves to the computed initial state.
+ * Gets the actual state value from the provided initial state.
+ * @template S The type of the initial state value.
+ * @param {S | (() => S)} initialState The initial state value or a function that returns the initial state.
+ * @returns {S} The actual state value.
  */
-export async function getComputedState<S>(initialState: Initial<S>) {
+export function getComputedState<S>(initialState: S | (() => S)) {
   if (isFunction(initialState)) return initialState();
-  if (initialState instanceof Promise) return await initialState;
   return initialState;
 }
