@@ -11,7 +11,7 @@ Inspired by [React Holmes](https://github.com/devx-os/react-holmes), `@ibnlanre/
     <tbody>
         <tr>
             <td colspan="">Atom</td>
-            <td colspan="5">a class that facilitates the creation and sharing of states among components.</td>
+            <td colspan="5">A class that facilitates creating states outside the React context.</td>
         </tr>
         <tr>
             <td colspan="2">PortalProvider</td>
@@ -50,13 +50,13 @@ Inspired by [React Holmes](https://github.com/devx-os/react-holmes), `@ibnlanre/
         </tr>
         <tr>
             <td></td>
-            <td colspan="2">.getCookieValue</td>
+            <td colspan="2">.getCookie</td>
             <td colspan="5">A function to retrieve a stored cookie value.</td>
         </tr>
         <tr>
             <td></td>
             <td colspan="2">.atom</td>
-            <td colspan="5">A hook to access the state of an Atom</td>
+            <td colspan="5">A hook to access the state of an Atom.</td>
         </tr>
     </tbody>
 </table>
@@ -116,13 +116,20 @@ yarn add @ibnlanre/portal
    - To cache the state in `document.cookie`:
 
    ```js
-   const cookies = = usePortal({
-       path: '/',
-       expires: 30 * 1000, // milliseconds
-       secure: true
+   const cookies = usePortal.cookie({
+     path: "/",
+     expires: 30 * 1000, // milliseconds
+     maxAge: 30, // seconds
+     secure: true,
    });
 
-   const [cookieState, setCookieState]  = cookies.cache("cookie.counter", 3);
+   // get cookie value outside of a component
+   const cookie = usePortal.getCookie("cookie.counter");
+
+   // get cookie value in a React component
+   const [cookieState, setCookieState] = cookies.cache("cookie.counter", 3);
+
+   // update previously set cookie options
    cookies.options({ sameSite: "lax" });
    ```
 
