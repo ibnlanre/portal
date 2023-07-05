@@ -1,9 +1,3 @@
-/**
- * Retrieves the value of the cookie with the specified name from the document.cookie.
- * 
- * @param {string} name The name of the cookie.
- * @returns {string|null} The value of the cookie, or null if the cookie is not found.
- */
 export function getCookieValue(name: string) {
   try {
     const cookies = document?.cookie?.split(";");

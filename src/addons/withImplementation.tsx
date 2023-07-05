@@ -12,7 +12,8 @@ import { BehaviorSubject } from "../subject";
 export function usePortalImplementation<S, A>(
   key: any,
   initialState?: Initial<S>,
-  reducer?: Reducer<S, A>
+  reducer?: Reducer<S, A>,
+  override = false
 ): PortalState<S, A> {
   const { entries, addItemToEntries } = usePortalEntries<S, A>();
   const stringKey = objectToStringKey(key);
@@ -22,7 +23,7 @@ export function usePortalImplementation<S, A>(
   }
 
   const subject = useMemo<PortalEntry<S, A>>(() => {
-    if (entries.has(stringKey)) {
+    if (!override && entries.has(stringKey)) {
       return entries.get(stringKey) as PortalEntry<S, A>;
     }
 

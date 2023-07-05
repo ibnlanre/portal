@@ -1,5 +1,6 @@
 import type { Dispatch, Reducer, SetStateAction } from "react";
 
+import { getCookieValue } from "../utilities";
 import {
   usePortalImplementation,
   usePortalWithLocalStorage,
@@ -10,7 +11,6 @@ import {
 import { usePortalEntries } from "../entries";
 
 import type { Initial, PortalEntries, PortalResult } from "../entries";
-
 
 /**
  * Custom hook to access portal entries and perform deletes.
@@ -86,7 +86,60 @@ export function usePortal<S, A = undefined>(
   return usePortalImplementation(key, initialState, reducer);
 }
 
+/**
+ * Custom hook to access and manage state in the portal system with localStorage support.
+ * @template S The type of the state.
+ * @template A The type of the actions.
+ *
+ * @param {any} key The key to identify the state in the portal system and localStorage.
+ * @param {S} [initialState] The initial state value.
+ * @param {Reducer<S, A>} [reducer] The reducer function to handle state updates.
+ *
+ * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
+ * @throws {Error} If used outside of a PortalProvider component.
+ */
+usePortal.atom = usePortalWithAtomStorage;
+
+/**
+ * Custom hook to access and manage state in the portal system with localStorage support.
+ * @template S The type of the state.
+ * @template A The type of the actions.
+ *
+ * @param {any} key The key to identify the state in the portal system and localStorage.
+ * @param {S} [initialState] The initial state value.
+ * @param {Reducer<S, A>} [reducer] The reducer function to handle state updates.
+ *
+ * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
+ * @throws {Error} If used outside of a PortalProvider component.
+ */
 usePortal.local = usePortalWithLocalStorage;
+
+/**
+ * Custom hook to access and manage state in the portal system with sessionStorage support.
+ * @template S The type of the state.
+ * @template A The type of the actions.
+ *
+ * @param {any} key The key to identify the state in the portal system and sessionStorage.
+ * @param {S} [initialState] The initial state value.
+ * @param {Reducer<S, A>} [reducer] The reducer function to handle state updates.
+ *
+ * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
+ * @throws {Error} If used outside of a PortalProvider component.
+ */
 usePortal.session = usePortalWithSessionStorage;
+
+/**
+ * Custom hook to access and manage document.cookie state within the portal system.
+ *
+ * @param {CookieOptions} [cookieOptions] The cookie options to format.
+ * @returns {{ cache: PortalImplementation }} Hook to manage state.
+ */
 usePortal.cookie = usePortalWithCookieOptions;
-usePortal.atom = usePortalWithAtomStorage
+
+/**
+ * Retrieves the value of the cookie with the specified name from the document.cookie.
+ *
+ * @param {string} name The name of the cookie.
+ * @returns {string|null} The value of the cookie, or null if the cookie is not found.
+ */
+usePortal.getCookie = getCookieValue;

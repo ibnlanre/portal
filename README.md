@@ -2,6 +2,7 @@
 
 Inspired by [React Holmes](https://github.com/devx-os/react-holmes), `@ibnlanre/portal` is a simple React state management library based on RxJS Behavior Subject. It provides a convenient way to manage state using React context. This library exports the following component and hooks:
 
+- `Atom`: a class that facilitates the creation and sharing of states among components.
 - `PortalProvider`: A provider component that wraps your application and manages the state.
 - `usePortal`: A hook that allows you to create, access and update the state.
     - `.local`: to persist state in Local Storage.
@@ -66,11 +67,14 @@ yarn add @ibnlanre/portal
     - To cache the state in `document.cookie`:
 
     ```js
-    const [cookieState, setCookieState] = usePortal({
+    const cookies = = usePortal({
         path: '/',
-        expires: 30,
+        expires: 30 * 1000, // milliseconds
         secure: true
-    }).cache("cookie.counter", 3)
+    });
+
+    const [cookieState, setCookieState]  = cookies.cache("cookie.counter", 3);
+    cookies.options({ sameSite: "lax" });
     ```
 
     - You can as well include a `reducer` for quick state updates.
