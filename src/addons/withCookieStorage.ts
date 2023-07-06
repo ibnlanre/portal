@@ -10,6 +10,50 @@ import {
 import type { Initial, PortalImplementation, PortalState } from "../entries";
 import type { CookieOptions } from "../utilities";
 
+function usePortalWithCookieStorage<S, A = undefined>(
+  key: any,
+  initialState?: Initial<S>,
+  reducer?: Reducer<S, A>,
+  currentOptions?: CookieOptions
+): PortalState<S, A> {
+  const stringKey = objectToStringKey(key);
+  let overrideApplicationState = false;
+
+  const [cookieState] = useState(() => {
+    const cookieValue = getCookieValue(stringKey);
+    if (cookieValue !== null) {
+      overrideApplicationState = true;
+      return cookieValue as S;
+    }
+    return initialState;
+  });
+
+  const [state, setState] = usePortalImplementation<S, A>(
+    stringKey,
+    cookieState,
+    reducer,
+    overrideApplicationState
+  );
+
+  useEffect(() => {
+    try {
+      if (typeof state !== "string") {
+        throw TypeError("Cookie value should resolve to a string.");
+      }
+  
+      const cookieOptionsString = formatCookieOptions(currentOptions);
+      document.cookie = `${stringKey}=${state}${cookieOptionsString}`;
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        if (error instanceof TypeError) {
+          console.warn(error.message, state);
+        } else console.error(error)
+      }
+    }
+  }, [state]);
+
+  return [state, setState];
+}
 
 export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
   /**
@@ -23,6 +67,7 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
    *
    * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
    * @throws {Error} If used outside of a PortalProvider component.
+   * @throws {TypeError} If the cookie value does not resolve to a string.
    */
   cache: PortalImplementation;
   /**
@@ -31,52 +76,28 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
    * @param {CookieOptions} cookieOptions The new cookie options to be set.
    * @returns {void}
    */
-  options: (cookieOptions: CookieOptions) => void;
+  options: (cookieOptions: CookieOptions) => CookieOptions;
 } {
-  let currentCookieOptions = cookieOptions;
-
-  function usePortalWithCookieStorage<S, A = undefined>(
-    key: any,
-    initialState?: Initial<S>,
-    reducer?: Reducer<S, A>
-  ): PortalState<S, A> {
-    const stringKey = objectToStringKey(key);
-    let overrideApplicationState = false;
-
-    const [cookieState] = useState<S | undefined>(() => {
-      const cookieValue = getCookieValue(stringKey);
-      if (cookieValue !== null) {
-        overrideApplicationState = true;
-        return JSON.parse(decodeURIComponent(cookieValue));
-      }
-      return initialState;
-    });
-
-    const [state, setState] = usePortalImplementation<S, A>(
-      stringKey,
-      cookieState,
-      reducer,
-      overrideApplicationState
-    );
-
-    useEffect(() => {
-      const encodedState = encodeURIComponent(JSON.stringify(state));
-      const cookieOptionsString = formatCookieOptions(currentCookieOptions);
-      document.cookie = `${stringKey}=${encodedState}${cookieOptionsString}`;
-    }, [state, currentCookieOptions]);
-
-    return [state, setState];
-  }
-
-  function options(cookieOptions: CookieOptions): void {
-    currentCookieOptions = {
-      ...currentCookieOptions,
-      ...cookieOptions,
-    };
-  }
+  let currentOptions = cookieOptions;
 
   return {
-    cache: usePortalWithCookieStorage,
-    options,
+    cache<S, A = undefined>(
+      key: any,
+      initialState?: Initial<S>,
+      reducer?: Reducer<S, A>
+    ) {
+      return usePortalWithCookieStorage(
+        key,
+        initialState,
+        reducer,
+        currentOptions
+      );
+    },
+    options(cookieOptions) {
+      return currentOptions = {
+        ...currentOptions,
+        ...cookieOptions,
+      };
+    },
   };
 }

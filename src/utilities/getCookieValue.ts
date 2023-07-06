@@ -1,5 +1,6 @@
 export function getCookieValue(name: string) {
   try {
+    if (typeof document === "undefined") return null;
     const cookies = document?.cookie?.split(";");
 
     for (let i = 0; i < cookies.length; i++) {
