@@ -121,8 +121,7 @@ yarn add @ibnlanre/portal
     - This should be used within the root `Component`:
 
       ```jsx
-      // builder is optional, and is undefined by default.
-      <PortalProvider builder={builder}>
+      <PortalProvider>
         {/* Your application components */}
       </PortalProvider>
       ```
@@ -249,7 +248,7 @@ yarn add @ibnlanre/portal
     - Call `usePortal` without any arguments:
 
       ```js
-      const { builder, entries, remove, clear } = usePortal();
+      const { entries, remove, clear } = usePortal();
       ```
 
     - Remove items from the portal system:
@@ -301,17 +300,14 @@ yarn add @ibnlanre/portal
 
       ```js
       builder.use(); // value
-      builder.use().foo.bar; // 1
       builder.use().foo.baz(4); // "/bazaar/4"
+      builder.use().foo.bar; // 1
       ```
 
 8.  Efficiently create `states` using the `builder` pattern:
 
     ```js
-    // Destructure builder from usePortal.
-    const { builder } = usePortal();
-
-    // Use the builder to generate required arguments
+    // Use the builder to generate required arguments.
     const [barzaar, setBarzaar] = usePortal(
       builder.foo.bar.use(), // ["foo", "bar"]
       builder.use().foo.bar // 1

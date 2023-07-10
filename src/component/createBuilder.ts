@@ -6,7 +6,7 @@ import { Builder } from "../entries";
  * @template T The type of the object.
  * 
  * @param {T} obj The object to traverse and retrieve the nested keys.
- * @param {string[]} [path=[]] The current path of keys (used internally for recursion).
+ * @param {string[]} [prefix=[]] An optional prefix to prepend to keys array in the builder object.
  *
  * @returns {Builder<T>} A builder object with callable functions representing the nested keys.
  *
@@ -15,13 +15,13 @@ import { Builder } from "../entries";
  */
 export function createBuilder<T extends Record<string, any>>(
   obj: T,
-  path: string[] = []
+  prefix: string[] = []
 ): Builder<T> {
   const keys = Object.keys(obj) as Array<keyof T>;
 
   const builder = keys.reduce((acc, key) => {
     const value = obj[key];
-    const newPath = [...path, key as string];
+    const newPath = [...prefix, key as string];
 
     if (typeof value === "function") {
       return {

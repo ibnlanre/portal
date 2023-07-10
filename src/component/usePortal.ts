@@ -62,14 +62,9 @@ export function usePortal<S, A = undefined>(
   initialState?: Initial<S>,
   reducer?: Reducer<S, A>
 ): PortalResult<S, A> {
-  const { entries, removeItemFromEntries, clearEntries, builder } = usePortalEntries();
+  const { entries, removeItemFromEntries, clearEntries } = usePortalEntries();
   if (!key) {
     return {
-      /**
-       * A builder object with callable functions representing the nested keys.
-       * @type {Object}
-       */
-      builder,
       /**
        * Map containing a record of each portal value and reducer function
        * @type {Map}

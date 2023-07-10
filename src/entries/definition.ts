@@ -4,10 +4,7 @@ import type { BehaviorSubject } from "../subject";
 type Key<K, P extends string[] = []> = { use: () => [...P, K] };
 type TupleOf<T> = T extends any[] ? T : [T];
 
-type KeyBuilder<
-  T extends Record<string, any>,
-  P extends string[] = []
-> = {
+type KeyBuilder<T extends Record<string, any>, P extends string[] = []> = {
   [K in keyof T]: T[K] extends (...args: infer R) => any
     ? {
         use: (
@@ -24,7 +21,6 @@ export type Builder<T extends Record<string, any>, P extends string[] = []> = {
 } & KeyBuilder<T, P>;
 
 export interface PortalEntriesProvider {
-  builder?: Builder<Record<string, any>, string[]>;
   children: ReactNode;
 }
 
@@ -71,7 +67,6 @@ export type PortalEntriesContext<S, A> = {
   addItemToEntries: PortalEntryAdder<S, A>;
   removeItemFromEntries: (key: any, storageTypes?: Array<StorageType>) => void;
   clearEntries: () => void;
-  builder?: Builder<Record<string, any>, string[]>;
 };
 
 /**
@@ -95,7 +90,6 @@ export type PortalEntryObject = {
  * Represents the portal entries with specialized methods for managing the entries.
  */
 export type PortalEntries = {
-  builder?: Builder<Record<string, any>, string[]>;
   entries: PortalMap<any, any>;
   remove(key: any, storageTypes?: Array<StorageType>): void;
   clear(): void;

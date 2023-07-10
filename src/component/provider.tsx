@@ -13,14 +13,11 @@ import type {
 
 /**
  * Provider component for the portal system.
+ *
  * @param children The child components.
- * @param builder A builder object with callable functions representing the nested keys.
  * @returns The PortalProvider component.
  */
-export function PortalProvider<S, A>({
-  children,
-  builder,
-}: PortalEntriesProvider) {
+export function PortalProvider<S, A>({ children }: PortalEntriesProvider) {
   const [entries, setEntries] = useState<PortalMap<any, any>>(new Map());
 
   /**
@@ -159,7 +156,6 @@ export function PortalProvider<S, A>({
         clearEntries,
         removeItemFromEntries,
         addItemToEntries,
-        builder,
       }}
     >
       {children}
