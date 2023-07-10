@@ -1,19 +1,15 @@
-import { useState, type ReactNode, type Provider } from "react";
+import { useState, type Provider } from "react";
+
+import { portalEntries } from "../entries";
+import { getCookieValue, objectToStringKey } from "../utilities";
 
 import type {
   PortalEntriesContext,
+  PortalEntriesProvider,
   PortalEntry,
   PortalMap,
   StorageType,
 } from "../entries";
-import { portalEntries } from "../entries";
-import { getCookieValue, objectToStringKey } from "../utilities";
-import { Builder } from "../entries";
-
-interface IPortalEntriesProvider {
-  builder?: Builder<Record<string, any>, string[]>;
-  children: ReactNode;
-}
 
 /**
  * Provider component for the portal system.
@@ -24,7 +20,7 @@ interface IPortalEntriesProvider {
 export function PortalProvider<S, A>({
   children,
   builder,
-}: IPortalEntriesProvider) {
+}: PortalEntriesProvider) {
   const [entries, setEntries] = useState<PortalMap<any, any>>(new Map());
 
   /**

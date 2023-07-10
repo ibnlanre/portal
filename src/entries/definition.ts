@@ -1,4 +1,4 @@
-import type { Reducer, SetStateAction, Dispatch } from "react";
+import type { Reducer, SetStateAction, Dispatch, ReactNode } from "react";
 import type { BehaviorSubject } from "../subject";
 
 type Key<K, P extends string[] = []> = { use: () => [...P, K] };
@@ -22,6 +22,11 @@ type KeyBuilder<
 export type Builder<T extends Record<string, any>, P extends string[] = []> = {
   use: () => T;
 } & KeyBuilder<T, P>;
+
+export interface PortalEntriesProvider {
+  builder?: Builder<Record<string, any>, string[]>;
+  children: ReactNode;
+}
 
 /**
  * Represents a record of the store value and reducer in the portal entries.

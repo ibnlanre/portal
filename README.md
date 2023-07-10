@@ -172,6 +172,9 @@ yarn add @ibnlanre/portal
       ```js
       // A array is used as the key, but could be anything
       const [state, setState] = usePortal.local(["counter", "local"], 1);
+
+      // Accessing the identifier later, doesn't require the use of [local]
+      const [counter, setCounter] = usePortal(["counter", "local"]);
       ```
 
     - To persist the state in `sessionStorage`:
@@ -179,6 +182,9 @@ yarn add @ibnlanre/portal
       ```js
       // An object is used as the key, but could be anything
       const [state, setState] = usePortal.session({ counter: "session" }, 2);
+
+      // Accessing the identifier later, doesn't require the use of [session]
+      const [counter, setCounter] = usePortal({ counter: "session" });
       ```
 
     - To persist the state in `cookieStore`:
@@ -214,14 +220,7 @@ yarn add @ibnlanre/portal
 
      </details>
 
-5.  Use the `usePortal` hook to access states created within other components:
-
-    ```js
-    const [store, dispatch] = usePortal("counter.reducer");
-    const [state, setState] = usePortal("counter");
-    ```
-
-6.  To access a `Portal` outside of a component, create an `Atom`.
+5.  To access a `Portal` outside of a component, create an `Atom`.
 
     - Create the `atom` with a key, value, and optional reducer:
 
@@ -245,7 +244,7 @@ yarn add @ibnlanre/portal
       const [state, setState] = usePortal(["counter", "atom"]);
       ```
 
-7.  To `access` the internals of the `portal` system.
+6.  To `access` the internals of the `portal` system.
 
     - Call `usePortal` without any arguments:
 
@@ -276,7 +275,7 @@ yarn add @ibnlanre/portal
       clear();
       ```
 
-8.  To create a `builder` pattern for access.
+7.  To create a `builder` pattern for property access.
 
     - Make of nested record of a `key` and `value` pair:
 
@@ -306,17 +305,18 @@ yarn add @ibnlanre/portal
       builder.use().foo.baz(4); // "/bazaar/4"
       ```
 
-    - Efficiently create a `states`:
+8.  Efficiently create `states` using the `builder` pattern:
 
-      ```js
-      const [barzaar, setBarzaar] = usePortal(
-        builder.foo.bar.use(),
-        builder.use().foo.bar
-      );
+    ```js
+    // Destructure builder from usePortal.
+    const { builder } = usePortal();
 
-      // Destructure builder from usePortal.
-      const { builder } = usePortal();
-      ```
+    // Use the builder to generate required arguments
+    const [barzaar, setBarzaar] = usePortal(
+      builder.foo.bar.use(), // ["foo", "bar"]
+      builder.use().foo.bar // 1
+    );
+    ```
 
 ## Author
 
