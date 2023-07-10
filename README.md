@@ -94,179 +94,229 @@ yarn add @ibnlanre/portal
             </td>
             <td colspan="5">A <strong>hook</strong> to access the state of an Atom.</td>
         </tr>
+        <tr>
+            <td colspan="2">
+                <code>createBuilder</code>
+            </td>
+            <td colspan="5">Create a <strong>builder</strong> object for defining keys and values in a type-safe manner.</td>
+        </tr>
     </tbody>
 </table>
 
 ## Usage
 
-1. Import the necessary components and hooks:
+1.  Import the necessary components and hooks:
 
-   ```js
-   import { usePortal, PortalProvider, Atom } from "@ibnlanre/portal";
-   ```
+    ```js
+    import {
+      usePortal,
+      PortalProvider,
+      Atom,
+      createBuilder,
+    } from "@ibnlanre/portal";
+    ```
 
-2. Wrap your application with the `PortalProvider` component:
+2.  Wrap your application with the `PortalProvider` component.
 
-   ```jsx
-   // This should be used within a React Component
-   <PortalProvider>{/* Your application components */}</PortalProvider>
-   ```
+    - This should be used within the root `Component`:
 
-3. Provide a marker for the state by passing a `key` to the `usePortal` hook.
+      ```jsx
+      // builder is optional, and is undefined by default.
+      <PortalProvider builder={builder}>
+        {/* Your application components */}
+      </PortalProvider>
+      ```
 
-    <details>
-    <summary>To create an application <code>state</code>:</summary>
+3.  Provide a marker for the state by passing a `key` to the `usePortal` hook.
 
-   ```js
-   // The key can be any value
-   const [state, setState] = usePortal("counter", 0);
-   ```
+    - To create an application `state`:
 
-    </details>
+      ```js
+      // The key can be any value
+      const [state, setState] = usePortal("counter", 0);
+      ```
 
-    <details>
-    <summary>To include a <code>reducer</code> for quick state updates:</summary>
+    - To include a `reducer` for quick state updates:
 
-   - Create the reducer function:
+      ```js
+      // Create the reducer function:
+      const reducer = (state, action) => {
+        switch (action.type) {
+          case "increment":
+            return { ...state, count: state.count + 1 };
+          case "reset":
+            return { ...state, count: 0 };
+          default:
+            return state;
+        }
+      };
+      ```
 
-     ```js
-     const reducer = (state, action) => {
-       switch (action.type) {
-         case "increment":
-           return { ...state, count: state.count + 1 };
-         case "reset":
-           return { ...state, count: 0 };
-         default:
-           return state;
-       }
-     };
-     ```
+    - Include the reducer as the third argument:
 
-   - Include the reducer as the third argument:
+      ```js
+      const [state, dispatch] = usePortal(
+        "counter.reducer",
+        { count: 4 },
+        reducer
+      );
 
-     ```js
-     const [state, dispatch] = usePortal(
-       "counter.reducer",
-       { count: 4 },
-       reducer
-     );
+      const handleDecrement = () => dispatch({ type: "decrement" });
+      const handleReset = () => dispatch({ type: "reset" });
+      ```
 
-     const handleDecrement = () => dispatch({ type: "decrement" });
-     const handleReset = () => dispatch({ type: "reset" });
-     ```
+4.  Persist the state by utilizing browser storage mechanisms.
 
-    </details>
+    - To persist the state in `localStorage`:
 
-4. Persist the state by utilizing browser storage mechanisms.
+      ```js
+      // A array is used as the key, but could be anything
+      const [state, setState] = usePortal.local(["counter", "local"], 1);
+      ```
 
-    <details>
-    <summary>To persist the state in <code>localStorage</code>:</summary>
+    - To persist the state in `sessionStorage`:
 
-   ```js
-   // A array is used as the key, but could be anything
-   const [state, setState] = usePortal.local(["counter", "local"], 1);
-   ```
+      ```js
+      // An object is used as the key, but could be anything
+      const [state, setState] = usePortal.session({ counter: "session" }, 2);
+      ```
 
-    </details>
+    - To persist the state in `cookieStore`:
 
-    <details>
-    <summary>To persist the state in <code>sessionStorage</code>:</summary>
+      ```js
+      // Assign placeholder cookie options:
+      const counterCookie = usePortal.cookie({
+        path: "/",
+        expires: 30 * 1000, // milliseconds
+        maxAge: 30, // seconds
+        secure: true,
+      }); // use this API outside of a Component
 
-   ```js
-   // An object is used as the key, but could be anything
-   const [state, setState] = usePortal.session({ counter: "session" }, 2);
-   ```
+      // Instantiate cookie state within a React Component
+      const [cookieState, setCookieState] = counterCookie.cache(
+        "cookie.counter",
+        3
+      );
 
-    </details>
+      // Update previously set cookie options
+      counterCookie.options({ sameSite: "lax" });
+      ```
 
-    <details>
-    <summary>To persist the state in <code>cookieStore</code>:</summary>
+    - Access the previously created cookie:
 
-   - Assign placeholder cookie options:
+      ```js
+      // Retrieve cookie value outside of a Component
+      const cookie = usePortal.getCookie("cookie.counter");
 
-     ```js
-     // Note: use this API outside of a React Component
-     const counterCookie = usePortal.cookie({
-       path: "/",
-       expires: 30 * 1000, // milliseconds
-       maxAge: 30, // seconds
-       secure: true,
-     });
+      // Manage cookie state through the Portal system
+      const [cookieState, setCookieState] = usePortal("cookie.counter");
+      ```
 
-     // Instantiate cookie state within a React Component
-     const [cookieState, setCookieState] = counterCookie.cache(
-       "cookie.counter",
-       3
-     );
+     </details>
 
-     // Update previously set cookie options
-     counterCookie.options({ sameSite: "lax" });
-     ```
+5.  Use the `usePortal` hook to access states created within other components:
 
-   - Access the previously created cookie:
+    ```js
+    const [store, dispatch] = usePortal("counter.reducer");
+    const [state, setState] = usePortal("counter");
+    ```
 
-     ```js
-     // Retrieve cookie value outside of a Component
-     const cookie = usePortal.getCookie("cookie.counter");
+6.  To access a `Portal` outside of a component, create an `Atom`.
 
-     // Manage cookie state through the Portal system
-     const [cookieState, setCookieState] = usePortal("cookie.counter");
-     ```
+    - Create the `atom` with a key, value, and optional reducer:
 
-    </details>
+      ```js
+      const counterAtom = new Atom(["counter", "atom"], 5);
+      ```
 
-5. Use the `usePortal` hook to access states created within other components:
+    - To access the value from the atom:
 
-   ```js
-   const [store, dispatch] = usePortal("counter.reducer");
-   const [state, setState] = usePortal("counter");
-   ```
+      ```js
+      const [state, setState] = usePortal.atom(counterAtom);
 
-6. To access a `Portal` outside of a component, create an `Atom`.
+      // Doing so in a parent componenet, would make this value
+      // available within the portal system, and accessible by
+      // children components through the Portal Provider
+      ```
 
-   - Create the `atom` with a key, value, and optional reducer:
+    - Subsequently, you can access the stored value by its key:
 
-   ```js
-   const counterAtom = new Atom(["counter", "atom"], 5);
-   ```
+      ```js
+      const [state, setState] = usePortal(["counter", "atom"]);
+      ```
 
-   - To access the value from the atom:
+7.  To `access` the internals of the `portal` system.
 
-   ```js
-   const [state, setState] = usePortal.atom(counterAtom);
+    - Call `usePortal` without any arguments:
 
-   // Doing so in a parent componenet, would make this value
-   // available within the portal system, and accessible by
-   // children components through the Portal Provider
-   ```
+      ```js
+      const { builder, entries, remove, clear } = usePortal();
+      ```
 
-   - Subsequently, you can access the stored value by its key:
+    - Remove items from the portal system:
 
-   ```js
-   const [state, setState] = usePortal(["counter", "atom"]);
-   ```
+      ```js
+      // Remove the item both in the application state,
+      // as well as, in the browser storage state.
+      remove("counter");
 
-7. To `remove` an item from the `portal` system
+      // Remove the item from both local and session storage only.
+      remove("counter", ["local", "session"]);
 
-   ```js
-   const { entries, remove, clear } = usePortal();
+      // Remove the item from cookie storage only.
+      remove("counter", ["cookie"]);
 
-   // Remove the item both in the application state,
-   // as well as, in the browser storage state.
-   remove("counter");
+      // Remove the item from application state only.
+      remove("counter", []);
+      ```
 
-   // Remove the item from both local and session storage only.
-   remove("counter", ["local", "session"]);
+    - Clear the entire `portal` system:
 
-   // Remove the item from cookie storage only.
-   remove("counter", ["cookie"]);
+      ```js
+      clear();
+      ```
 
-   // Remove the item from application state only.
-   remove("counter", []);
+8.  To create a `builder` pattern for access.
 
-   // clear the portal system.
-   clear();
-   ```
+    - Make of nested record of a `key` and `value` pair:
+
+      ```js
+      const value = {
+        foo: {
+          baz: (id: number) => `/bazaar/${id}`,
+          bar: 1,
+        },
+      };
+
+      const builder = createBuilder(value);
+      ```
+
+    - Access the `keys`:
+
+      ```js
+      builder.foo.use(); // ["foo"]
+      builder.foo.baz.use(7); // ["foo", "baz", 7]
+      ```
+
+    - Get nested `values`:
+
+      ```js
+      builder.use(); // value
+      builder.use().foo.bar; // 1
+      builder.use().foo.baz(4); // "/bazaar/4"
+      ```
+
+    - Efficiently create a `states`:
+
+      ```js
+      const [barzaar, setBarzaar] = usePortal(
+        builder.foo.bar.use(),
+        builder.use().foo.bar
+      );
+
+      // Destructure builder from usePortal.
+      const { builder } = usePortal();
+      ```
 
 ## Author
 

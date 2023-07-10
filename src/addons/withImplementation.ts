@@ -1,13 +1,10 @@
-import { useState, useEffect, type Reducer, useMemo } from "react";
+import { useState, useEffect, useMemo, type Reducer } from "react";
 
-import {
-  usePortalEntries,
-  type Initial,
-  type PortalState,
-  PortalEntry,
-} from "../entries";
+import { usePortalEntries } from "../entries";
 import { getComputedState, objectToStringKey, updateState } from "../utilities";
 import { BehaviorSubject } from "../subject";
+
+import type { Initial, PortalState, PortalEntry } from "../entries";
 
 export function usePortalImplementation<S, A>(
   key: any,

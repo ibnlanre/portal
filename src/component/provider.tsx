@@ -8,17 +8,23 @@ import type {
 } from "../entries";
 import { portalEntries } from "../entries";
 import { getCookieValue, objectToStringKey } from "../utilities";
+import { Builder } from "../entries";
 
 interface IPortalEntriesProvider {
+  builder?: Builder<Record<string, any>, string[]>;
   children: ReactNode;
 }
 
 /**
  * Provider component for the portal system.
  * @param children The child components.
+ * @param builder A builder object with callable functions representing the nested keys.
  * @returns The PortalProvider component.
  */
-export function PortalProvider<S, A>({ children }: IPortalEntriesProvider) {
+export function PortalProvider<S, A>({
+  children,
+  builder,
+}: IPortalEntriesProvider) {
   const [entries, setEntries] = useState<PortalMap<any, any>>(new Map());
 
   /**
@@ -153,10 +159,11 @@ export function PortalProvider<S, A>({ children }: IPortalEntriesProvider) {
   return (
     <EntriesProvider
       value={{
+        entries,
         clearEntries,
         removeItemFromEntries,
         addItemToEntries,
-        entries,
+        builder,
       }}
     >
       {children}
