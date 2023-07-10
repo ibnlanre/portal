@@ -46,8 +46,12 @@
     "hooks",
     "typescript",
     "state",
+    "manager",
+    "management",
     "context",
-    "portal"
+    "store",
+    "portal",
+    "redux"
   ],
   "repository": {
     "type": "git",
