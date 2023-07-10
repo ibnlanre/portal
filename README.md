@@ -19,11 +19,6 @@ yarn add @ibnlanre/portal
 ## API
 
 <table>
-    <thead>
-        <tr>
-            <th colspan="7"></th>
-        </tr>
-    </thead>
     <tbody>
         <tr>
             <td colspan="">
@@ -121,9 +116,7 @@ yarn add @ibnlanre/portal
     - This should be used within the root `Component`:
 
       ```jsx
-      <PortalProvider>
-        {/* Your application components */}
-      </PortalProvider>
+      <PortalProvider>{/* Your application components */}</PortalProvider>
       ```
 
 3.  Provide a marker for the state by passing a `key` to the `usePortal` hook.
@@ -216,8 +209,6 @@ yarn add @ibnlanre/portal
       // Manage cookie state through the Portal system
       const [cookieState, setCookieState] = usePortal("cookie.counter");
       ```
-
-     </details>
 
 5.  To access a `Portal` outside of a component, create an `Atom`.
 
