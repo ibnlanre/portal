@@ -4,7 +4,7 @@ import { Builder } from "../entries";
  * Returns a builder object that represents the nested keys of the provided object.
  *
  * @template T The type of the object.
- * 
+ *
  * @param {T} obj The object to traverse and retrieve the nested keys.
  * @param {string[]} [prefix=[]] An optional prefix to prepend to keys array in the builder object.
  *
@@ -21,12 +21,14 @@ export function createBuilder<T extends Record<string, any>>(
 
   const builder = keys.reduce((acc, key) => {
     const value = obj[key];
-    const newPath = [...prefix, key as string];
+    const newPath = prefix.concat([key as string]);
 
     if (typeof value === "function") {
       return {
         ...acc,
-        [key]: (...args: Parameters<typeof value>) => [...newPath, ...args],
+        [key]: {
+          use: (...args: Parameters<typeof value>) => [...newPath, ...args],
+        },
       };
     }
 
@@ -44,7 +46,7 @@ export function createBuilder<T extends Record<string, any>>(
       ...acc,
       [key]: { use: () => newPath },
     };
-  }, {}) as Builder<T>;
+  }, {} as Builder<T>);
 
   return builder;
 }

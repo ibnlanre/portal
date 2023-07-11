@@ -100,7 +100,7 @@ yarn add @ibnlanre/portal
 
 ## Usage
 
-1.  Import the necessary components and hooks:
+1.  **Import the necessary components and hooks.**
 
     ```js
     import {
@@ -111,7 +111,7 @@ yarn add @ibnlanre/portal
     } from "@ibnlanre/portal";
     ```
 
-2.  Wrap your application with the `PortalProvider` component.
+2.  **Wrap your application with the `PortalProvider` component.**
 
     - This should be used within the root `Component`:
 
@@ -119,7 +119,7 @@ yarn add @ibnlanre/portal
       <PortalProvider>{/* Your application components */}</PortalProvider>
       ```
 
-3.  Provide a marker for the state by passing a `key` to the `usePortal` hook.
+3.  **Provide a marker for the state by passing a `key` to the `usePortal` hook.**
 
     - To create an application `state`:
 
@@ -157,7 +157,7 @@ yarn add @ibnlanre/portal
       const handleReset = () => dispatch({ type: "reset" });
       ```
 
-4.  Persist the state by utilizing browser storage mechanisms.
+4.  **Persist the state by utilizing browser storage mechanisms.**
 
     - To persist the state in `localStorage`:
 
@@ -165,7 +165,7 @@ yarn add @ibnlanre/portal
       // A array is used as the key, but could be anything
       const [state, setState] = usePortal.local(["counter", "local"], 1);
 
-      // Accessing the identifier later, doesn't require the use of [local]
+      // Accessing the identifier later, doesn't require the use of [.local]
       const [counter, setCounter] = usePortal(["counter", "local"]);
       ```
 
@@ -175,7 +175,7 @@ yarn add @ibnlanre/portal
       // An object is used as the key, but could be anything
       const [state, setState] = usePortal.session({ counter: "session" }, 2);
 
-      // Accessing the identifier later, doesn't require the use of [session]
+      // Accessing the identifier later, doesn't require the use of [.session]
       const [counter, setCounter] = usePortal({ counter: "session" });
       ```
 
@@ -210,7 +210,7 @@ yarn add @ibnlanre/portal
       const [cookieState, setCookieState] = usePortal("cookie.counter");
       ```
 
-5.  To access a `Portal` outside of a component, create an `Atom`.
+5.  **To access a `Portal` outside of a component, create an `Atom`.**
 
     - Create the `atom` with a key, value, and optional reducer:
 
@@ -234,7 +234,7 @@ yarn add @ibnlanre/portal
       const [state, setState] = usePortal(["counter", "atom"]);
       ```
 
-6.  To `access` the internals of the `portal` system.
+6.  **To `access` the internals of the `portal` system.**
 
     - Call `usePortal` without any arguments:
 
@@ -265,7 +265,7 @@ yarn add @ibnlanre/portal
       clear();
       ```
 
-7.  To create a `builder` pattern for property access.
+7.  **To create a `builder` pattern for property access.**
 
     - Make of nested record of a `key` and `value` pair:
 
@@ -295,7 +295,7 @@ yarn add @ibnlanre/portal
       builder.use().foo.bar; // 1
       ```
 
-8.  Efficiently create `states` using the `builder` pattern:
+8.  **Efficiently create `states` using the `builder` pattern.**
 
     ```js
     // Use the builder to generate required arguments.
