@@ -21,6 +21,6 @@
     "emitDeclarationOnly": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "baseUrl": "."
+    "baseUrl": "./src",
   }
 }

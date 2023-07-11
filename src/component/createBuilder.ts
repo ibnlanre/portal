@@ -1,4 +1,4 @@
-import { Builder } from "../entries";
+import { Builder, KeyBuilder } from "../entries";
 
 /**
  * Returns a builder object that represents the nested keys of the provided object.
@@ -13,15 +13,15 @@ import { Builder } from "../entries";
  * @summary By using the createBuilder function, you can define nested keys and associated values, allowing you to build complex key structures for various purposes.
  * @description The builder object can be used to enforce type safety and provide auto-completion support when working with the defined keys.
  */
-export function createBuilder<T extends Record<string, any>>(
-  obj: T,
-  prefix: string[] = []
-): Builder<T> {
+export function createBuilder<
+  T extends Record<string, any>,
+  P extends string[] = []
+>(obj: T, prefix?: P): Builder<T, P> {
   const keys = Object.keys(obj) as Array<keyof T>;
 
   const builder = keys.reduce((acc, key) => {
     const value = obj[key];
-    const newPath = prefix.concat([key as string]);
+    const newPath = prefix ? prefix.concat([key as string]) : [key as string];
 
     if (typeof value === "function") {
       return {
@@ -46,7 +46,7 @@ export function createBuilder<T extends Record<string, any>>(
       ...acc,
       [key]: { use: () => newPath },
     };
-  }, {} as Builder<T>);
+  }, {} as KeyBuilder<T>);
 
-  return builder;
+  return Object.assign({ use: () => obj }, builder) as Builder<T, P>;
 }

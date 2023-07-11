@@ -1,3 +1,4 @@
+export * from "./convertArrayToObject";
 export * from "./convertMapToObject";
 export * from "./formatCookieOptions";
 export * from "./getComputedState";

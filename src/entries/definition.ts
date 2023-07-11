@@ -1,29 +1,13 @@
 import type { Reducer, SetStateAction, Dispatch, ReactNode } from "react";
 import type { BehaviorSubject } from "../subject";
 
-// type Key<K, P extends string[] = []> = { use: () => [...P, K] };
-// type TupleOf<T> = T extends any[] ? T : [T];
-
-// type KeyBuilder<T extends Record<string, any>, P extends string[] = []> = {
-//   [K in keyof T]: T[K] extends (...args: infer R) => any
-//     ? {
-//         use: (
-//           ...args: Parameters<T[K]>
-//         ) => [...P, Extract<K, string>, ...TupleOf<R>];
-//       }
-//     : T[K] extends Record<string, any>
-//     ? Key<K, P> & KeyBuilder<T[K], [...P, Extract<K, string>]>
-//     : Key<K, P>;
-// };
-
-// export type Builder<T extends Record<string, any>, P extends string[] = []> = {
-//   use: () => T;
-// } & KeyBuilder<T, P>;
-
 type Key<K, P extends string[] = []> = { use: () => [...P, K] };
 type TupleOf<T> = T extends any[] ? T : [T];
 
-type KeyBuilder<T extends Record<string, any>, P extends string[] = []> = {
+export type KeyBuilder<
+  T extends Record<string, any>,
+  P extends string[] = []
+> = {
   [K in keyof T]: T[K] extends (...args: infer R) => any
     ? {
         use: (
@@ -38,6 +22,17 @@ type KeyBuilder<T extends Record<string, any>, P extends string[] = []> = {
 export type Builder<T extends Record<string, any>, P extends string[] = []> = {
   use: () => T;
 } & KeyBuilder<T, P>;
+
+export type NestedObject<
+  T extends Record<string, any>,
+  P extends string[]
+> = P extends [infer First, ...infer Rest]
+  ? First extends string
+    ? Rest extends string[]
+      ? { [K in First]: NestedObject<T, Rest> }
+      : never
+    : never
+  : T;
 
 export interface PortalEntriesProvider {
   children: ReactNode;
