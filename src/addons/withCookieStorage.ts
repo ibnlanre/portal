@@ -40,14 +40,14 @@ function usePortalWithCookieStorage<S, A = undefined>(
       if (typeof state !== "string") {
         throw TypeError("Cookie value should resolve to a string.");
       }
-  
+
       const cookieOptionsString = formatCookieOptions(currentOptions);
       document.cookie = `${stringKey}=${state}${cookieOptionsString}`;
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
         if (error instanceof TypeError) {
           console.warn(error.message, state);
-        } else console.error(error)
+        } else console.error(error);
       }
     }
   }, [state]);
@@ -77,6 +77,14 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
    * @returns {void}
    */
   options: (cookieOptions: CookieOptions) => CookieOptions;
+  /**
+   * Set a cookie with the specified key, and value.
+   *
+   * @param {any} key - The key of the cookie.
+   * @param {string} value - The value of the cookie.
+   * @returns {void}
+   */
+  set: (key: any, value: string) => void;
 } {
   let currentOptions = cookieOptions;
 
@@ -94,10 +102,27 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
       );
     },
     options(cookieOptions) {
-      return currentOptions = {
+      return (currentOptions = {
         ...currentOptions,
         ...cookieOptions,
-      };
+      });
+    },
+    set(key: any, value: string) {
+      const stringKey = objectToStringKey(key);
+      try {
+        if (typeof value !== "string") {
+          throw TypeError("Cookie value should resolve to a string.");
+        }
+
+        const cookieOptionsString = formatCookieOptions(currentOptions);
+        document.cookie = `${stringKey}=${value}${cookieOptionsString}`;
+      } catch (error) {
+        if (process.env.NODE_ENV === "development") {
+          if (error instanceof TypeError) {
+            console.warn(error.message, value);
+          } else console.error(error);
+        }
+      }
     },
   };
 }

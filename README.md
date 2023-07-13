@@ -77,6 +77,14 @@ yarn add @ibnlanre/portal
         </tr>
         <tr>
             <td></td>
+            <td></td>
+            <td colspan="2">
+                <code>.set</code>
+            </td>
+            <td colspan="3">A <strong>function</strong> to set a cookie value.</td>
+        </tr>
+        <tr>
+            <td></td>
             <td colspan="2">
                 <code>.getCookie</code>
             </td>
@@ -149,7 +157,7 @@ yarn add @ibnlanre/portal
       ```js
       const [state, dispatch] = usePortal(
         "counter.reducer",
-        { count: 4 },
+        { count: 1 },
         reducer
       );
 
@@ -163,7 +171,7 @@ yarn add @ibnlanre/portal
 
       ```js
       // A array is used as the key, but could be anything
-      const [state, setState] = usePortal.local(["counter", "local"], 1);
+      const [state, setState] = usePortal.local(["counter", "local"], 2);
 
       // Accessing the identifier later, doesn't require the use of [.local]
       const [counter, setCounter] = usePortal(["counter", "local"]);
@@ -173,11 +181,13 @@ yarn add @ibnlanre/portal
 
       ```js
       // An object is used as the key, but could be anything
-      const [state, setState] = usePortal.session({ counter: "session" }, 2);
+      const [state, setState] = usePortal.session({ counter: "session" }, 3);
 
       // Accessing the identifier later, doesn't require the use of [.session]
       const [counter, setCounter] = usePortal({ counter: "session" });
       ```
+
+5.  **Cache state as a cookie in the browser storage.**
 
     - To persist the state in `cookieStore`:
 
@@ -193,14 +203,21 @@ yarn add @ibnlanre/portal
       // Instantiate cookie state within a React Component
       const [cookieState, setCookieState] = counterCookie.cache(
         "cookie.counter",
-        3
+        4
       );
-
-      // Update previously set cookie options
-      counterCookie.options({ sameSite: "lax" });
       ```
 
-    - Access the previously created cookie:
+    - To update the state in `cookieStore`:
+
+      ```js
+      // Update previously set cookie options
+      counterCookie.options({ sameSite: "lax" });
+
+      // Set the cookie value outside of a Component
+      counterCookie.set("cookie.counter", 5);
+      ```
+
+    - Access previously created data in `cookieStore`:
 
       ```js
       // Retrieve cookie value outside of a Component
@@ -210,12 +227,13 @@ yarn add @ibnlanre/portal
       const [cookieState, setCookieState] = usePortal("cookie.counter");
       ```
 
-5.  **To access a `Portal` outside of a component, create an `Atom`.**
+6.  **To access a `Portal` outside of a component, create an `Atom`.**
 
     - Create the `atom` with a key, value, and optional reducer:
 
       ```js
-      const counterAtom = new Atom(["counter", "atom"], 5);
+      // Atoms should be created outside Components
+      const counterAtom = new Atom(["counter", "atom"], 6);
       ```
 
     - To access the value from the atom:
@@ -225,7 +243,7 @@ yarn add @ibnlanre/portal
 
       // Doing so in a parent componenet, would make this value
       // available within the portal system, and accessible by
-      // children components through the Portal Provider
+      // children components through the Portal Provider.
       ```
 
     - Subsequently, you can access the stored value by its key:
@@ -234,7 +252,7 @@ yarn add @ibnlanre/portal
       const [state, setState] = usePortal(["counter", "atom"]);
       ```
 
-6.  **To `access` the internals of the `portal` system.**
+7.  **To `access` the internals of the `portal` system.**
 
     - Call `usePortal` without any arguments:
 
@@ -265,7 +283,7 @@ yarn add @ibnlanre/portal
       clear();
       ```
 
-7.  **To create a `builder` pattern for property access.**
+8.  **To create a `builder` pattern for property access.**
 
     - Make of nested record of a `key` and `value` pair:
 
@@ -273,7 +291,7 @@ yarn add @ibnlanre/portal
       const value = {
         foo: {
           baz: (id: number) => `/bazaar/${id}`,
-          bar: 1,
+          bar: 7,
         },
       };
 
@@ -284,24 +302,24 @@ yarn add @ibnlanre/portal
 
       ```js
       builder.foo.use(); // ["foo"]
-      builder.foo.baz.use(7); // ["foo", "baz", 7]
+      builder.foo.baz.use(8); // ["foo", "baz", 8]
       ```
 
     - Get nested `values`:
 
       ```js
       builder.use(); // value
-      builder.use().foo.baz(4); // "/bazaar/4"
-      builder.use().foo.bar; // 1
+      builder.use().foo.baz(9); // "/bazaar/9"
+      builder.use().foo.bar; // 7
       ```
 
-8.  **Efficiently create `states` using the `builder` pattern.**
+9.  **Efficiently create `states` using the `builder` pattern.**
 
     ```js
     // Use the builder to generate required arguments.
     const [barzaar, setBarzaar] = usePortal(
       builder.foo.bar.use(), // ["foo", "bar"]
-      builder.use().foo.bar // 1
+      builder.use().foo.bar // 7
     );
     ```
 

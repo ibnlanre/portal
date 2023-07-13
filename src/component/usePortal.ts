@@ -132,7 +132,11 @@ usePortal.session = usePortalWithSessionStorage;
  * Custom hook to access and manage document.cookie state within the portal system.
  *
  * @param {CookieOptions} [cookieOptions] The cookie options to format.
- * @returns {{ cache: PortalImplementation }} Hook to manage state.
+ * @returns {{ 
+ *  cache: PortalImplementation,
+ *  options: (cookieOptions: CookieOptions) => CookieOptions,
+ *  set: (key: string, value: string) => void 
+ * }} Hook to manage state.
  */
 usePortal.cookie = usePortalWithCookieOptions;
 

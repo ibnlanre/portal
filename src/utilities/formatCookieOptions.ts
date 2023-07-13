@@ -55,30 +55,21 @@ export type CookieOptions = {
 export function formatCookieOptions(options?: CookieOptions): string {
   if (!options) return "";
 
-  const {
-    path = "",
-    domain = "",
-    expires = "",
-    secure = false,
-    sameSite = "",
-    maxAge = "",
-    httpOnly = false,
-    partitioned = false,
-  } = options;
-
   let optionsString = "";
-  if (path) optionsString += `;path=${path}`;
-  if (domain) optionsString += `;domain=${domain}`;
-  if (secure) optionsString += ";secure";
-  if (expires || maxAge) {
-    let expiresDate;
-    if (maxAge) expiresDate = new Date(Date.now() + maxAge * 1000);
-    else expiresDate = new Date(expires);
-    optionsString += `;expires=${expiresDate.toUTCString()}`;
+  if (options.path) optionsString += `; path=${options.path}`;
+  if (options.domain) optionsString += `; domain=${options.domain}`;
+  if (options.secure) optionsString += "; secure";
+  if (options.expires) {
+    const expires =
+      options.expires instanceof Date
+        ? options.expires.toUTCString()
+        : options.expires;
+    optionsString += `; expires=${expires}`;
   }
-  if (httpOnly) optionsString += ";httponly";
-  if (sameSite) optionsString += `;samesite=${sameSite}`;
-  if (partitioned) optionsString += ";partitioned";
+  if (options.sameSite) optionsString += `; samesite=${options.sameSite}`;
+  if (options.maxAge) optionsString += `; max-age=${options.maxAge}`;
+  if (options.httpOnly) optionsString += "; httpOnly";
+  if (options.partitioned) optionsString += "; partitioned";
 
   return optionsString;
 }
