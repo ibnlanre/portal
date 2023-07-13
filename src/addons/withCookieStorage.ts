@@ -111,7 +111,7 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
       const stringKey = objectToStringKey(key);
       try {
         if (typeof value !== "string") {
-          throw TypeError("Cookie value should resolve to a string.");
+          throw TypeError("Cookie value should be a string.");
         }
 
         const cookieOptionsString = formatCookieOptions(currentOptions);
