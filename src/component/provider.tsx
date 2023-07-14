@@ -1,7 +1,8 @@
-import { useState, type Provider } from "react";
+import { useState, type Provider, useEffect } from "react";
 
-import { portalEntries } from "../entries";
-import { getCookieValue, objectToStringKey } from "../utilities";
+import { portalEntries } from "entries";
+import { getCookieValue, objectToStringKey } from "utilities";
+import { portal } from "subject";
 
 import type {
   PortalEntriesContext,
@@ -9,7 +10,7 @@ import type {
   PortalEntry,
   PortalMap,
   StorageType,
-} from "../entries";
+} from "entries";
 
 /**
  * Provider component for the portal system.
@@ -19,6 +20,18 @@ import type {
  */
 export function PortalProvider<S, A>({ children }: PortalEntriesProvider) {
   const [entries, setEntries] = useState<PortalMap<any, any>>(new Map());
+
+  useEffect(() => {
+    // Confirm that entries was not changed by portal.
+    if (Object.is(portal.value, entries)) return;
+    else portal.next(entries);
+  }, [entries]);
+
+  useEffect(() => {
+    // Subscribe to direct changes to portal.
+    const subscription = portal.subscribe(setEntries);
+    return subscription.unsubscribe;
+  }, []);
 
   /**
    * Updates the portal entries by adding a new key-value pair.

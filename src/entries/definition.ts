@@ -1,5 +1,5 @@
 import type { Reducer, SetStateAction, Dispatch, ReactNode } from "react";
-import type { BehaviorSubject } from "../subject";
+import type { BehaviorSubject } from "subject";
 
 type Key<K, P extends string[] = []> = { use: () => [...P, K] };
 type TupleOf<T> = T extends any[] ? T : [T];

@@ -1,8 +1,8 @@
 import type { Reducer, SetStateAction } from "react";
-import { type BehaviorSubject } from "../subject";
+import { type BehaviorSubject } from "subject";
+import type { Dispatcher } from "entries";
 
 import { isFunction } from "./isFunction";
-import type { Dispatcher } from "../entries";
 
 /**
  * Update the state of an observable using the provided value and dispatch function (optional).

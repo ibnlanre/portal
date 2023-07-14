@@ -1,8 +1,8 @@
 import { useState, useEffect, type Reducer } from "react";
 
-import { objectToStringKey } from "../utilities";
+import { objectToStringKey } from "utilities";
 import { usePortalImplementation } from "./withImplementation";
-import type { Initial, PortalState } from "../entries";
+import type { Initial, PortalState } from "entries";
 
 export function usePortalWithLocalStorage<S, A = undefined>(
   key: any,
@@ -20,7 +20,7 @@ export function usePortalWithLocalStorage<S, A = undefined>(
     }
     return undefined;
   });
-  
+
   const [storedState] = useState(() => {
     try {
       const item = store?.getItem(stringKey);

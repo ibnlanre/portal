@@ -63,8 +63,8 @@ export class BehaviorSubject<T> {
    * @returns {Function} A function to unsubscribe the callback.
    */
   subscribe(callback: Function) {
+    // Add the callback as a member in the subscribers list
     this.subscribers.add(callback);
-    callback(this.state); // Call the callback immediately with the current value
 
     return {
       unsubscribe: () => {

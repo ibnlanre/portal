@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 
 import { usePortalImplementation } from "./withImplementation";
-import type { PortalState } from "../entries";
-import type { Atom } from "../component";
+import type { PortalState } from "entries";
+import type { Atom } from "component";
 
 export function usePortalWithAtomStorage<S, A = undefined>(
   store: Atom<S, A>

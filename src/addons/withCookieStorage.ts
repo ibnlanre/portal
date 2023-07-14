@@ -5,10 +5,11 @@ import {
   formatCookieOptions,
   getCookieValue,
   objectToStringKey,
-} from "../utilities";
+} from "utilities";
 
-import type { Initial, PortalImplementation, PortalState } from "../entries";
-import type { CookieOptions } from "../utilities";
+import type { Initial, PortalImplementation, PortalState } from "entries";
+import type { CookieOptions } from "utilities";
+import { setPortalValue } from "subject";
 
 function usePortalWithCookieStorage<S, A = undefined>(
   key: any,
@@ -38,17 +39,24 @@ function usePortalWithCookieStorage<S, A = undefined>(
   useEffect(() => {
     try {
       if (typeof state !== "string") {
-        throw TypeError("Cookie value should resolve to a string.");
+        if (process.env.NODE_ENV === "development") {
+          throw new Error(
+            `Cookie value should resolve to a string: ${state} is a ${typeof state}.`
+          );
+        } else {
+          console.warn(
+            "Cookie value should resolve to a string:",
+            "\n",
+            state,
+            `is a ${typeof state}.`
+          );
+        }
       }
 
       const cookieOptionsString = formatCookieOptions(currentOptions);
       document.cookie = `${stringKey}=${state}${cookieOptionsString}`;
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        if (error instanceof TypeError) {
-          console.warn(error.message, state);
-        } else console.error(error);
-      }
+      console.error(error);
     }
   }, [state]);
 
@@ -111,17 +119,26 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
       const stringKey = objectToStringKey(key);
       try {
         if (typeof value !== "string") {
-          throw TypeError("Cookie value should be a string.");
+          if (process.env.NODE_ENV === "development") {
+            throw new Error(
+              `Cookie value should resolve to a string: ${value} is a ${typeof value}.`
+            );
+          } else {
+            console.warn(
+              "Cookie value should resolve to a string:",
+              "\n",
+              value,
+              `is a ${typeof value}.`
+            );
+          }
         }
 
         const cookieOptionsString = formatCookieOptions(currentOptions);
         document.cookie = `${stringKey}=${value}${cookieOptionsString}`;
+
+        setPortalValue(key, value);
       } catch (error) {
-        if (process.env.NODE_ENV === "development") {
-          if (error instanceof TypeError) {
-            console.warn(error.message, value);
-          } else console.error(error);
-        }
+        console.error(error);
       }
     },
   };

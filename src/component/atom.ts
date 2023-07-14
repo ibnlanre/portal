@@ -1,8 +1,8 @@
 import type { Reducer } from "react";
 
-import { getComputedState, objectToStringKey } from "../utilities";
-import { BehaviorSubject } from "../subject";
-import type { Initial, PortalEntry } from "../entries";
+import { getComputedState, objectToStringKey } from "utilities";
+import { BehaviorSubject } from "subject";
+import type { Initial, PortalEntry } from "entries";
 
 export class Atom<S, A = undefined> {
   private portal = new Map();

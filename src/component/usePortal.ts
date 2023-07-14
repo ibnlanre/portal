@@ -1,16 +1,16 @@
 import type { Dispatch, Reducer, SetStateAction } from "react";
 
-import { getCookieValue } from "../utilities";
+import { getCookieValue } from "utilities";
 import {
   usePortalImplementation,
   usePortalWithLocalStorage,
   usePortalWithSessionStorage,
   usePortalWithCookieOptions,
   usePortalWithAtomStorage,
-} from "../addons";
-import { usePortalEntries } from "../entries";
+} from "addons";
+import { usePortalEntries } from "entries";
 
-import type { Initial, PortalEntries, PortalResult } from "../entries";
+import type { Initial, PortalEntries, PortalResult } from "entries";
 
 /**
  * Custom hook to access portal entries and perform deletes.

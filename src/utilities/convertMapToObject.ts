@@ -1,4 +1,4 @@
-import { PortalMap } from "../entries";
+import { PortalMap } from "entries";
 
 /**
  * Converts a Map of { observable, reducer } entries to an object of { value, reducer }.

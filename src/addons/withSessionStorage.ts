@@ -1,8 +1,8 @@
 import { useState, useEffect, type Reducer } from "react";
 
-import { objectToStringKey } from "../utilities";
+import { objectToStringKey } from "utilities";
 import { usePortalImplementation } from "./withImplementation";
-import type { Initial, PortalState } from "../entries";
+import type { Initial, PortalState } from "entries";
 
 export function usePortalWithSessionStorage<S, A>(
   key: any,
