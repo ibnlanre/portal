@@ -60,12 +60,13 @@ export class BehaviorSubject<T> {
   /**
    * Subscribes to the subject and receives emitted values.
    * @param {Function} callback The callback function to be called with emitted values.
+   * @param {boolean} [initiate=true] Whether to initiate the callback immediately with the current state. Defaults to `true`.
    * @returns {Function} A function to unsubscribe the callback.
    */
-  subscribe(callback: Function) {
+  subscribe(callback: Function, initiate: boolean = true) {
     // Add the callback as a member in the subscribers list
     this.subscribers.add(callback);
-
+    if (initiate) callback(this.state);
     return {
       unsubscribe: () => {
         this.subscribers.delete(callback);

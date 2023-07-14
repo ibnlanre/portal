@@ -22,14 +22,12 @@ export function PortalProvider<S, A>({ children }: PortalEntriesProvider) {
   const [entries, setEntries] = useState<PortalMap<any, any>>(new Map());
 
   useEffect(() => {
-    // Confirm that entries was not changed by portal.
-    if (Object.is(portal.value, entries)) return;
-    else portal.next(entries);
+    portal.next(entries);
   }, [entries]);
 
   useEffect(() => {
     // Subscribe to direct changes to portal.
-    const subscription = portal.subscribe(setEntries);
+    const subscription = portal.subscribe(setEntries, false);
     return subscription.unsubscribe;
   }, []);
 
