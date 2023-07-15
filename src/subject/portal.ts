@@ -1,6 +1,6 @@
 import { objectToStringKey } from "utilities";
 import { BehaviorSubject } from "./behaviorSubject";
-import type { PortalEntry, PortalMap } from "entries";
+import type { PortalMap } from "entries";
 
 /**
  * Represents a BehaviorSubject containing the portal map.
@@ -10,20 +10,30 @@ import type { PortalEntry, PortalMap } from "entries";
 export const portal = new BehaviorSubject<PortalMap<any, any>>(new Map());
 
 /**
+ * Check if portal has the specified key.
+ *
+ * @param {any} v Key to be checked.
+ * @returns {boolean} `true` if the value is a function, `false` otherwise.
+ */
+const hasKey = (v: any): v is true => portal.value.has(v);
+
+/**
  * Sets the value of a portal entry in the portal map.
+ * @description
  * If the entry already exists, its value will be replaced with the new value.
- * If the entry does not exist, a new entry will be created.
+ * If the entry does not exist, a `warning` would be displayed in the `console`.
  * @param {any} key The key of the portal entry.
  * @param {any} value The value to be set for the portal entry.
- * @returns {Map<string, PortalEntry<any, any>>} The updated portal map.
+ * @returns {void}
  */
 export function setPortalValue(key: any, value: any) {
   const stringKey = objectToStringKey(key);
-  const originalValue = portal.value.get(stringKey);
-  const copiedMap = new Map(portal.value);
-  copiedMap.set(stringKey, {
-    ...(originalValue as PortalEntry<any, any>),
-    observable: new BehaviorSubject(value),
-  });
-  return copiedMap;
+  if (hasKey(stringKey)) {
+    const originalValue = portal.value.get(stringKey);
+    originalValue?.observable.next(value);
+  } else {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("The key:", key, "does not exist in portal entries");
+    }
+  }
 }

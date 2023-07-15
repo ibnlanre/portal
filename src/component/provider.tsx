@@ -19,17 +19,12 @@ import type {
  * @returns The PortalProvider component.
  */
 export function PortalProvider<S, A>({ children }: PortalEntriesProvider) {
-  const [entries, setEntries] = useState<PortalMap<any, any>>(new Map());
+  const [entries, setEntries] = useState<PortalMap<any, any>>(portal.value);
 
   useEffect(() => {
+    // Subscribe portal to changes to entries.
     portal.next(entries);
   }, [entries]);
-
-  useEffect(() => {
-    // Subscribe to direct changes to portal.
-    const subscription = portal.subscribe(setEntries, false);
-    return subscription.unsubscribe;
-  }, []);
 
   /**
    * Updates the portal entries by adding a new key-value pair.
