@@ -57,7 +57,7 @@ yarn add @ibnlanre/portal
             <td colspan="2">
                 <code>.cookie</code>
             </td>
-            <td colspan="4">A <strong>function</strong> to instantiate a cookie value store.</td>
+            <td colspan="4">A <strong>function</strong> that creates a cookie options state.</td>
         </tr>
         <tr>
             <td></td>
@@ -288,14 +288,14 @@ yarn add @ibnlanre/portal
     - Make of nested record of a `key` and `value` pair:
 
       ```js
-      const value = {
+      const store = {
         foo: {
           baz: (id: number) => `/bazaar/${id}`,
           bar: 7,
         },
       };
 
-      const builder = createBuilder(value);
+      const builder = createBuilder(store);
       ```
 
     - Access the `keys`:
@@ -308,7 +308,7 @@ yarn add @ibnlanre/portal
     - Get nested `values`:
 
       ```js
-      builder.use(); // value
+      builder.use(); // store
       builder.use().foo.baz(9); // "/bazaar/9"
       builder.use().foo.bar; // 7
       ```

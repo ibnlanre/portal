@@ -40,17 +40,9 @@ function usePortalWithCookieStorage<S, A = undefined>(
     try {
       if (typeof state !== "string") {
         if (process.env.NODE_ENV === "development") {
-          throw new Error(
-            `Cookie value should resolve to a string: ${state} is a ${typeof state}.`
-          );
-        } else {
-          console.warn(
-            "Cookie value should resolve to a string:",
-            "\n",
-            state,
-            `is a ${typeof state}.`
-          );
+          console.warn("Cookie value should resolve to a string:", state);
         }
+        return;
       }
 
       const cookieOptionsString = formatCookieOptions(currentOptions);
@@ -120,17 +112,9 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
       try {
         if (typeof value !== "string") {
           if (process.env.NODE_ENV === "development") {
-            throw new Error(
-              `Cookie value should resolve to a string: ${value} is a ${typeof value}.`
-            );
-          } else {
-            console.warn(
-              "Cookie value should resolve to a string:",
-              "\n",
-              value,
-              `is a ${typeof value}.`
-            );
+            console.warn("Cookie value should be a string:", value);
           }
+          return;
         }
 
         const cookieOptionsString = formatCookieOptions(currentOptions);
