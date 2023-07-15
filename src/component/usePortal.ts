@@ -135,7 +135,7 @@ usePortal.session = usePortalWithSessionStorage;
  * @returns {{ 
  *  cache: PortalImplementation,
  *  options: (cookieOptions: CookieOptions) => CookieOptions,
- *  set: (key: string, value: string) => void 
+ *  set: (key: any, value: string) => void 
  * }} Hook to manage state.
  */
 usePortal.cookie = usePortalWithCookieOptions;

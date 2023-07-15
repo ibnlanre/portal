@@ -58,7 +58,7 @@ export function formatCookieOptions(options?: CookieOptions): string {
   let optionsString = "";
   if (options.path) optionsString += `; path=${options.path}`;
   if (options.domain) optionsString += `; domain=${options.domain}`;
-  if (options.secure) optionsString += "; secure";
+  if (options.secure || options.httpOnly) optionsString += "; secure";
   if (options.expires) {
     const expires =
       options.expires instanceof Date

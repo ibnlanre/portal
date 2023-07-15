@@ -57,7 +57,7 @@ function usePortalWithCookieStorage<S, A = undefined>(
 
 export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
   /**
-   * Custom hook to access and manage state in the portal system with sessionStorage support.
+   * Custom hook to access and manage state in the portal system with the `Cookie` store.
    * @template S The type of the state.
    * @template A The type of the actions.
    *
@@ -78,10 +78,10 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
    */
   options: (cookieOptions: CookieOptions) => CookieOptions;
   /**
-   * Set a cookie with the specified key, and value.
+   * Set a cookie with the specified key and value.
    *
-   * @param {any} key - The key of the cookie.
-   * @param {string} value - The value of the cookie.
+   * @param {any} key The key of the cookie.
+   * @param {string} value The value of the cookie.
    * @returns {void}
    */
   set: (key: any, value: string) => void;
@@ -110,13 +110,6 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
     set(key: any, value: string) {
       const stringKey = objectToStringKey(key);
       try {
-        if (typeof value !== "string") {
-          if (process.env.NODE_ENV === "development") {
-            console.warn("Cookie value should be a string:", value);
-          }
-          return;
-        }
-
         const cookieOptionsString = formatCookieOptions(currentOptions);
         document.cookie = `${stringKey}=${value}${cookieOptionsString}`;
 
