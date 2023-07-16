@@ -1,6 +1,6 @@
 # @ibnlanre/portal
 
-Inspired by [React Holmes](https://github.com/devx-os/react-holmes), `@ibnlanre/portal` is a simple React state management library based on RxJS Behavior Subject. It provides a convenient way to manage state using React context. This library exports the following component and hooks:
+Inspired by [React Holmes](https://github.com/devx-os/react-holmes), `@ibnlanre/portal` is a simple React state management library based on RxJS Behavior Subject. It provides a convenient way to manage state using React context.
 
 ## Installation
 
@@ -17,6 +17,8 @@ yarn add @ibnlanre/portal
 ```
 
 ## API
+
+This library exports the following APIs to enhance state management and facilitate state manipulation:
 
 <table>
     <tbody>

@@ -19,6 +19,7 @@ const hasKey = (v: any): v is true => portal.value.has(v);
 
 /**
  * Sets the value of a portal entry in the portal map.
+ * 
  * @description
  * If the entry already exists, its value will be replaced with the new value.
  * If the entry does not exist, a `warning` would be displayed in the `console`.

@@ -41,7 +41,7 @@ export function usePortalImplementation<S, A>(
     if (!entries.has(stringKey)) addItemToEntries(stringKey, subject);
     const subscriber = subject.observable.subscribe(setState);
 
-    if (initialState) {
+    if (typeof initialState !== "undefined") {
       if (initialState instanceof Promise) {
         initialState.then(subject.observable.next);
       } else {
