@@ -45,8 +45,10 @@ function usePortalWithCookieStorage<S, A = undefined>(
         return;
       }
 
-      const cookieOptionsString = formatCookieOptions(currentOptions);
-      document.cookie = `${stringKey}=${state}${cookieOptionsString}`;
+      if (typeof document !== "undefined") {
+        const cookieOptionsString = formatCookieOptions(currentOptions);
+        document.cookie = `${stringKey}=${state}${cookieOptionsString}`;
+      }
     } catch (error) {
       console.error(error);
     }
@@ -108,12 +110,13 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
       });
     },
     set(key: any, value: string) {
-      const stringKey = objectToStringKey(key);
       try {
-        const cookieOptionsString = formatCookieOptions(currentOptions);
-        document.cookie = `${stringKey}=${value}${cookieOptionsString}`;
-
-        setPortalValue(key, value);
+        if (typeof document !== "undefined") {
+          const stringKey = objectToStringKey(key);
+          const cookieOptionsString = formatCookieOptions(currentOptions);
+          document.cookie = `${stringKey}=${value}${cookieOptionsString}`;
+          setPortalValue(key, value);
+        }
       } catch (error) {
         console.error(error);
       }
