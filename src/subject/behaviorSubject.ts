@@ -22,6 +22,12 @@ export class BehaviorSubject<T> {
      * @type {Set<Function>}
      */
     this.subscribers = new Set();
+
+    // bindings to protect against undefined `this`.
+    this.notifySubscribers = this.notifySubscribers.bind(this);
+    this.next = this.next.bind(this);
+    this.subscribe = this.subscribe.bind(this);
+    this.unsubscribe = this.unsubscribe.bind(this);
   }
 
   /**

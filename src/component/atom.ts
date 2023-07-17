@@ -34,6 +34,11 @@ export class Atom<S, A = undefined> {
    */
   constructor(key: any, initialState: Initial<S>, reducer?: Reducer<S, A>) {
     this.key = objectToStringKey(key);
+    
+    // bind to protect against undefined `this`.
+    this.destructure = this.destructure.bind(this);
+    this.getItem = this.getItem.bind(this);
+    this.setItem = this.setItem.bind(this);
 
     const resolveInitialState = (state: S) => {
       this.state = state;
