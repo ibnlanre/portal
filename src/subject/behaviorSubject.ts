@@ -1,8 +1,16 @@
+abstract class Subject<T> {
+  abstract next(value: T): void;
+  abstract subscribe(observer: (value: T) => void): {
+    unsubscribe(): void;
+  };
+  abstract unsubscribe(): void;
+}
+
 /**
  * Represents a subject that maintains a current value and emits it to subscribers.
  * @template T The type of the initial and emitted values.
  */
-export class BehaviorSubject<T> {
+export class BehaviorSubject<T> implements Subject<T> {
   private state: T;
   private subscribers: Set<Function>;
 
@@ -25,16 +33,16 @@ export class BehaviorSubject<T> {
 
     // bindings to protect against undefined `this`.
     this.notifySubscribers = this.notifySubscribers.bind(this);
-    this.next = this.next.bind(this);
-    this.subscribe = this.subscribe.bind(this);
     this.unsubscribe = this.unsubscribe.bind(this);
+    this.subscribe = this.subscribe.bind(this);
+    this.next = this.next.bind(this);
   }
 
   /**
    * Notifies all subscribers with the current value.
-   * @private
+   * @protected
    */
-  private notifySubscribers() {
+  protected notifySubscribers() {
     this.subscribers.forEach((callback) => {
       try {
         callback(this.state);
@@ -65,17 +73,17 @@ export class BehaviorSubject<T> {
 
   /**
    * Subscribes to the subject and receives emitted values.
-   * @param {Function} callback The callback function to be called with emitted values.
+   * @param {Function} observer The callback function to be called with emitted values.
    * @param {boolean} [initiate=true] Whether to initiate the callback immediately with the current state. Defaults to `true`.
-   * @returns {Function} A function to unsubscribe the callback.
+   * @returns {{ unsubscribe: Function }} An object with a function to unsubscribe the callback.
    */
-  subscribe(callback: Function, initiate: boolean = true) {
+  subscribe(observer: Function, initiate: boolean = true) {
     // Add the callback as a member in the subscribers list
-    this.subscribers.add(callback);
-    if (initiate) callback(this.state);
+    this.subscribers.add(observer);
+    if (initiate) observer(this.state);
     return {
       unsubscribe: () => {
-        this.subscribers.delete(callback);
+        this.subscribers.delete(observer);
       },
     };
   }

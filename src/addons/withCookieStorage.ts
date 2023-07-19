@@ -111,6 +111,13 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
     },
     set(key: any, value: string) {
       try {
+        if (typeof value !== "string") {
+          if (process.env.NODE_ENV === "development") {
+            console.warn("Cookie value should be a string:", value);
+          }
+          return;
+        }
+
         if (typeof document !== "undefined") {
           const stringKey = objectToStringKey(key);
           const cookieOptionsString = formatCookieOptions(currentOptions);
