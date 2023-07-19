@@ -25,6 +25,12 @@ export function PortalProvider<S, A>({ children }: PortalEntriesProvider) {
     // Subscribe portal to changes to entries.
     portal.next(entries);
   }, [entries]);
+  
+  useEffect(() => {
+    // Subscribe to direct changes to portal.
+    const subscription = portal.subscribe(setEntries, false);
+    return subscription.unsubscribe;
+  }, []);
 
   /**
    * Updates the portal entries by adding a new key-value pair.

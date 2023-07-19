@@ -19,7 +19,7 @@ const hasKey = (v: any): v is true => portal.value.has(v);
 
 /**
  * Sets the value of a portal entry in the portal map.
- * 
+ *
  * @description
  * If the entry already exists, its value will be replaced with the new value.
  * If the entry does not exist, a `warning` would be displayed in the `console`.
@@ -36,5 +36,12 @@ export function setPortalValue(key: any, value: any) {
     if (process.env.NODE_ENV === "development") {
       console.warn("The key:", key, "does not exist in portal entries");
     }
+
+    const copiedMap = new Map(portal.value);
+    copiedMap.set(stringKey, {
+      observable: new BehaviorSubject(value),
+      reducer: undefined,
+    });
+    portal.next(copiedMap);
   }
 }
