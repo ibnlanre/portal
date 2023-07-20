@@ -109,7 +109,7 @@ This library exports the following APIs to enhance state management and facilita
             <td colspan="2">
                 <code>cookieStorage</code>
             </td>
-            <td colspan="5">A <strong>object</strong> representing the Cookie Storage API with methods for getting and setting cookies.</td>
+            <td colspan="5">An <strong>object</strong> representing the Cookie Storage API with methods for getting and setting cookies.</td>
         </tr>
     </tbody>
 </table>
