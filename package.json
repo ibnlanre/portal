@@ -65,8 +65,8 @@
   "homepage": "https://github.com/ibnlanre/portal#readme",
   "license": "MIT",
   "peerDependencies": {
-    "react": "^16.8",
-    "react-dom": "^16.8"
+    "react": ">16.7",
+    "react-dom": ">16.7"
   },
   "devDependencies": {
     "@jest/globals": "^29.6.1",
