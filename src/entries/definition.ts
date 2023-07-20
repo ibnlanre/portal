@@ -104,8 +104,21 @@ export type PortalEntryObject = {
  * Represents the portal entries with specialized methods for managing the entries.
  */
 export type PortalEntries = {
+  /**
+   * Map containing a record of each portal value and reducer function
+   * @type {Map}
+   */
   entries: PortalMap<any, any>;
+  /**
+   * Function for deleting a key from the portal system.
+   * @param {any} key The key to delete.
+   * @returns {void}
+   */
   remove(key: any, storageTypes?: Array<StorageType>): void;
+  /**
+   * Function for clearing all entries from the portal system.
+   * @returns {void}
+   */
   clear(): void;
 };
 

@@ -105,6 +105,12 @@ This library exports the following APIs to enhance state management and facilita
             </td>
             <td colspan="5">Create a <strong>builder</strong> object for defining keys and values in a type-safe manner.</td>
         </tr>
+        <tr>
+            <td colspan="2">
+                <code>cookieStorage</code>
+            </td>
+            <td colspan="5">A <strong>object</strong> representing the Cookie Storage API with methods for getting and setting cookies.</td>
+        </tr>
     </tbody>
 </table>
 

@@ -1,6 +1,5 @@
 import type { Dispatch, Reducer, SetStateAction } from "react";
 
-import { getCookieValue } from "utilities";
 import {
   usePortalImplementation,
   usePortalWithLocalStorage,
@@ -9,6 +8,7 @@ import {
   usePortalWithAtomStorage,
 } from "addons";
 import { usePortalEntries } from "entries";
+import { getCookieValue } from "cookies";
 
 import type { Initial, PortalEntries, PortalResult } from "entries";
 
@@ -65,21 +65,8 @@ export function usePortal<S, A = undefined>(
   const { entries, removeItemFromEntries, clearEntries } = usePortalEntries();
   if (!key) {
     return {
-      /**
-       * Map containing a record of each portal value and reducer function
-       * @type {Map}
-       */
       entries,
-      /**
-       * Function for deleting a key from the portal system.
-       * @param {any} key The key to delete.
-       * @returns {void}
-       */
       remove: removeItemFromEntries,
-      /**
-       * Function for clearing all entries from the portal system.
-       * @returns {void}
-       */
       clear: clearEntries,
     };
   }

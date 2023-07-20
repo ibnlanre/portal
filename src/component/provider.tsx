@@ -1,7 +1,8 @@
 import { useState, type Provider, useEffect } from "react";
 
 import { portalEntries } from "entries";
-import { getCookieValue, objectToStringKey } from "utilities";
+import { objectToStringKey } from "utilities";
+import { getCookieValue } from "cookies";
 import { portal } from "subject";
 
 import type {
@@ -25,12 +26,6 @@ export function PortalProvider<S, A>({ children }: PortalEntriesProvider) {
     // Subscribe portal to changes to entries.
     portal.next(entries);
   }, [entries]);
-  
-  useEffect(() => {
-    // Subscribe to direct changes to portal.
-    const subscription = portal.subscribe(setEntries, false);
-    return subscription.unsubscribe;
-  }, []);
 
   /**
    * Updates the portal entries by adding a new key-value pair.
@@ -114,7 +109,7 @@ export function PortalProvider<S, A>({ children }: PortalEntriesProvider) {
             if (typeof document !== "undefined") {
               const cookieValue = getCookieValue(stringKey);
               if (cookieValue) {
-                document.cookie = `${stringKey}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+                document.cookie = `${stringKey}=; expires=Thu, 01 Jan 1970 00:00:00 UTC;`;
               }
             }
           } catch (error) {

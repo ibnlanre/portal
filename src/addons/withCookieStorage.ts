@@ -1,15 +1,12 @@
 import { useState, useEffect, type Reducer } from "react";
 
 import { usePortalImplementation } from "./withImplementation";
-import {
-  formatCookieOptions,
-  getCookieValue,
-  objectToStringKey,
-} from "utilities";
+import { objectToStringKey } from "utilities";
+import { setPortalValue } from "subject";
+import { formatCookieOptions, getCookieValue } from "cookies";
 
 import type { Initial, PortalImplementation, PortalState } from "entries";
-import type { CookieOptions } from "utilities";
-import { setPortalValue } from "subject";
+import type { CookieOptions } from "cookies";
 
 function usePortalWithCookieStorage<S, A = undefined>(
   key: any,
