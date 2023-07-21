@@ -1,2 +1,2 @@
 export * from "./behaviorSubject";
-export * from "./portal";
+export * from "../portal";

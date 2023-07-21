@@ -53,10 +53,9 @@ export type CookieOptions = {
  * @returns {string} The formatted cookie options as a string.
  */
 export function formatCookieOptions(options?: CookieOptions): string {
-  if (!options) return "";
+  if (!options) return "; path=/";
 
-  let optionsString = "";
-  if (options.path) optionsString += `; path=${options.path}`;
+  let optionsString = `; path=${options.path ?? "/"}`;
   if (options.domain) optionsString += `; domain=${options.domain}`;
   if (options.secure || options.httpOnly) optionsString += "; secure";
   if (options.expires) {

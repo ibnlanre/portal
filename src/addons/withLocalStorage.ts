@@ -32,12 +32,12 @@ export function usePortalWithLocalStorage<S, A = undefined>(
     }
   });
 
-  const [state, setState] = usePortalImplementation<S, A>(
-    stringKey,
-    storedState,
+  const [state, setState] = usePortalImplementation<S, A>({
+    key: stringKey,
+    initialState: storedState,
+    override: overrideApplicationState,
     reducer,
-    overrideApplicationState
-  );
+  });
 
   useEffect(() => {
     try {

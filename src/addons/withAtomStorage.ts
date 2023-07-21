@@ -1,22 +1,20 @@
-import { useEffect } from "react";
-
 import { usePortalImplementation } from "./withImplementation";
-import type { PortalState } from "entries";
-import type { Atom } from "component";
+import type { Atomic, PortalState } from "entries";
 
 export function usePortalWithAtomStorage<S, A = undefined>(
-  store: Atom<S, A>
+  store: Atomic<S, A>,
+  isolate: boolean = true
 ): PortalState<S, A> {
-  const { key, storedState, reducer } = store.destructure();
-  const [state, setState] = usePortalImplementation<S, A>(
-    key,
-    storedState,
-    reducer
-  );
+  const { key, reducer, storedState } = store.destructure();
 
-  useEffect(() => {
-    store.setItem(state);
-  }, [state]);
+  const [state, setState] = usePortalImplementation<S, A>({
+    key,
+    initialState: storedState,
+    reducer,
+    override: true,
+    atom: store,
+    isolate,
+  });
 
   return [state, setState];
 }

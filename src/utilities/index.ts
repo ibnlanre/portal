@@ -1,4 +1,3 @@
-export * from "./convertArrayToObject";
 export * from "./convertMapToObject";
 export * from "./getComputedState";
 export * from "./isFunction";

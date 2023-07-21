@@ -84,13 +84,25 @@ export type PortalEntriesContext<S, A> = {
 };
 
 /**
+ * Represents the type of an action that can be dispatched to update the state.
+ * 
+ * @description
+ * If the generic type `A` is defined, the action type is `A`, otherwise, it's `SetStateAction<S>`.
+ *
+ * @template S The type of the state.
+ * @template A The type of the action (optional).
+ */
+export type Action<S, A> = A extends undefined ? SetStateAction<S> : A;
+
+/**
  * Type for the dispatcher function based on the action type.
+ * If the type `A` (actions) is `undefined`, the value is of type `S`.
+ * Otherwise, the value is of type `A`.
+ *
  * @template S The type of the store value.
  * @template A The type of the action for the reducer.
  */
-export type Dispatcher<S, A> = A extends undefined
-  ? Dispatch<SetStateAction<S>>
-  : Dispatch<A>;
+export type Dispatcher<S, A> = Dispatch<Action<S, A>>;
 
 /**
  * Represents the entry object in the portal entries.
@@ -158,3 +170,21 @@ export type PortalImplementation = <S, A = undefined>(
  * @template S The type of the store value.
  */
 export type Initial<S> = S | (() => S) | Promise<S>;
+
+/**
+ * Represents an Atom in the portal system.
+ * An Atom is a special type of portal entry that allows you to manage and update state.
+ *
+ * @template S The type of the state.
+ * @template A The type of the actions (if a reducer is provided).
+ */
+export type Atomic<S, A = undefined> = {
+  destructure(): {
+    key: string;
+    storedState: S;
+    subject: PortalEntry<S, A>;
+    reducer?: Reducer<S, A>;
+  };
+  setItem(value: Action<S, A>): void;
+  getItem<T = S>(): T;
+};

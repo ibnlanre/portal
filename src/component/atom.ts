@@ -1,17 +1,18 @@
 import type { Reducer } from "react";
 
-import { getComputedState, objectToStringKey } from "utilities";
+import { getComputedState, objectToStringKey, updateState } from "utilities";
 import { BehaviorSubject } from "subject";
-import type { Initial, PortalEntry } from "entries";
 
-export class Atom<S, A = undefined> {
-  private portal = new Map<string, PortalEntry<S, A>>();
-  private state: S | undefined;
+import type { Action, Atomic, Initial, PortalEntry } from "entries";
+
+export class Atom<S, A = undefined> implements Atomic<S, A> {
   private key: string;
-  private reducer?: Reducer<S, A>;
+  private subject: PortalEntry<S, A> = {
+    observable: new BehaviorSubject(undefined as S),
+    reducer: undefined,
+  };
 
   /**
-   * Custom hook to access and manage state in the portal system.
    * @template S The type of the state.
    *
    * @param {any} key Unique key identifier for the portal.
@@ -22,7 +23,6 @@ export class Atom<S, A = undefined> {
   constructor(key: any, initialState?: Initial<S>);
 
   /**
-   * Custom hook to access and manage state in the portal system.
    * @template S The type of the state.
    * @template A The type of the actions.
    *
@@ -34,8 +34,6 @@ export class Atom<S, A = undefined> {
    */
   constructor(key: any, initialState: Initial<S>, reducer?: Reducer<S, A>) {
     this.key = objectToStringKey(key);
-    this.state = undefined;
-    this.reducer = reducer;
 
     // bind to protect against undefined `this`.
     this.destructure = this.destructure.bind(this);
@@ -43,14 +41,8 @@ export class Atom<S, A = undefined> {
     this.setItem = this.setItem.bind(this);
 
     const resolveInitialState = (state: S) => {
-      this.state = state;
-      this.reducer = reducer;
-
-      const entry: PortalEntry<S, A> = {
-        observable: new BehaviorSubject(this.state),
-        reducer,
-      };
-      this.portal.set(this.key, entry);
+      this.subject.observable.next(state);
+      this.subject.reducer = reducer;
     };
 
     if (initialState instanceof Promise) {
@@ -66,30 +58,36 @@ export class Atom<S, A = undefined> {
    * @returns {Object} An object containing the key, stored state, and reducer.
    */
   destructure() {
+    const entry = this.subject;
     return {
+      subject: entry,
+      storedState: entry.observable.value,
+      reducer: entry.reducer,
       key: this.key,
-      storedState: this.state,
-      reducer: this.reducer,
     };
   }
 
   /**
-   * Retrieves the entry associated with the Atom instance from the portal map.
-   * @returns {PortalEntry<S, A> | undefined} The entry associated with the Atom instance.
+   * Retrieves the current value of the observable stored in the subject.
+   *
+   * @template T The type of the value stored in the observable.
+   * @returns {T} The current value of the observable.
    */
-  getItem() {
-    return this.portal.get(this.key);
+  getItem<T = S>() {
+    return this.subject.observable.value as unknown as T;
   }
 
   /**
    * Sets the value of the Atom instance in the portal map.
    * @param {S} value The new value to set.
    */
-  setItem(value: S) {
-    const entry = this.portal.get(this.key);
-    if (entry) {
-      entry.observable.next(value);
-      this.state = value;
-    }
+  setItem(value: Action<S, A>) {
+    const entry = this.subject;
+    const setter = updateState<S, A>(
+      entry.observable,
+      entry.observable.value,
+      entry.reducer
+    );
+    setter(value);
   }
 }

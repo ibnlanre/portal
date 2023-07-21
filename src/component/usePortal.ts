@@ -8,7 +8,6 @@ import {
   usePortalWithAtomStorage,
 } from "addons";
 import { usePortalEntries } from "entries";
-import { getCookieValue } from "cookies";
 
 import type { Initial, PortalEntries, PortalResult } from "entries";
 
@@ -70,20 +69,18 @@ export function usePortal<S, A = undefined>(
       clear: clearEntries,
     };
   }
-  return usePortalImplementation(key, initialState, reducer);
+  return usePortalImplementation({ key, initialState, reducer });
 }
 
 /**
- * Custom hook to access and manage state in the portal system with localStorage support.
+ * Custom hook to access and manage an isolated state within an Atom storage.
  * @template S The type of the state.
  * @template A The type of the actions.
  *
- * @param {any} key The key to identify the state in the portal system and localStorage.
- * @param {S} [initialState] The initial state value.
- * @param {Reducer<S, A>} [reducer] The reducer function to handle state updates.
+ * @param {Atom<S, A>} store The Atom storage from which to access the state.
+ * @param {boolean} [isolate=true] Whether the storage should be isolated from the global portal.
  *
  * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
- * @throws {Error} If used outside of a PortalProvider component.
  */
 usePortal.atom = usePortalWithAtomStorage;
 
@@ -119,18 +116,10 @@ usePortal.session = usePortalWithSessionStorage;
  * Custom hook to access and manage document.cookie state within the portal system.
  *
  * @param {CookieOptions} [cookieOptions] The cookie options to format.
- * @returns {{ 
+ * @returns {{
  *  cache: PortalImplementation,
  *  options: (cookieOptions: CookieOptions) => CookieOptions,
- *  set: (key: any, value: string) => void 
+ *  set: (key: any, value: string) => void
  * }} Hook to manage state.
  */
 usePortal.cookie = usePortalWithCookieOptions;
-
-/**
- * Retrieves the value of the cookie with the specified name from the document.cookie.
- *
- * @param {string} name The name of the cookie.
- * @returns {string|null} The value of the cookie, or null if the cookie is not found.
- */
-usePortal.getCookie = getCookieValue;

@@ -14,13 +14,20 @@ export function setCookieValue(
   options?: CookieOptions
 ) {
   try {
-    if (typeof document === "undefined") return;
+    if (typeof value !== "string") {
+      if (process.env.NODE_ENV === "development") {
+        console.warn("Cookie value should be a string:", value);
+      }
+      return;
+    }
 
-    // Format the cookie options string
-    const cookieOptionsString = formatCookieOptions(options);
+    if (typeof document !== "undefined") {
+      // Format the cookie options string
+      const cookieOptionsString = formatCookieOptions(options);
 
-    // Set the cookie with the provided name, value, and options
-    document.cookie = `${name}=${value}${cookieOptionsString}`;
+      // Set the cookie with the provided name, value, and options
+      document.cookie = `${name}=${value}${cookieOptionsString}`;
+    }
   } catch (error) {
     console.error("Error occurred while setting cookie:", error);
   }
