@@ -1,7 +1,10 @@
 import type { PortalMap } from "entries";
+import { BehaviorSubject } from "subject";
 
 /**
  * Represents a mapping of keys (stringified) to portal entries.
- * @type {PortalMap<any, any>}
+ * @type {BehaviorSubject<PortalMap<any, any>>}
  */
-export const portal: PortalMap<any, any> = new Map();
+export const portal: BehaviorSubject<PortalMap<any, any>> = new BehaviorSubject(
+  new Map()
+);

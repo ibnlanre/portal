@@ -1,4 +1,4 @@
-import { useState, useEffect, Reducer } from "react";
+import { useState, useEffect, useMemo, type Reducer } from "react";
 
 import { usePortalEntries } from "entries";
 import { getComputedState, objectToStringKey, updateState } from "utilities";
@@ -77,7 +77,7 @@ export function usePortalImplementation<S, A>({
     throw new Error("usePortal must be used within a PortalProvider");
   }
 
-  const [subject] = useState<PortalEntry<S, A>>(() => {
+  const subject = useMemo<PortalEntry<S, A>>(() => {
     if (atom) return atom.getItem();
 
     if (!override && entries.has(stringKey)) {
@@ -93,7 +93,7 @@ export function usePortalImplementation<S, A>({
       observable: new BehaviorSubject(state as S),
       reducer,
     };
-  });
+  }, [entries]);
 
   const [state, setState] = useState(subject.observable.value);
 
