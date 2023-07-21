@@ -4,7 +4,7 @@ import { usePortalEntries } from "entries";
 import { getComputedState, objectToStringKey, updateState } from "utilities";
 import { BehaviorSubject } from "subject";
 
-import type { PortalState, PortalEntry, Initial, Atomic } from "entries";
+import type { PortalState, PortalEntry, Initial } from "entries";
 
 /**
  * Represents the configuration options for the implementation of a custom hook
@@ -40,9 +40,9 @@ export type Implementation<S, A = undefined> = {
   isolate?: boolean;
 
   /**
-   * The Atom instance to use for state storage and management.
+   * The Atom's subject used for state storage and management.
    */
-  atom?: Atomic<S, A>;
+  atom?: PortalEntry<S, A>;
 };
 
 /**
@@ -56,7 +56,7 @@ export type Implementation<S, A = undefined> = {
  * @param {Reducer<S, A>} [options.reducer] The reducer function to handle state updates.
  * @param {boolean} [options.override=false] If `true`, override an existing portal entry with the same key.
  * @param {boolean} [options.isolate=false] If `true`, isolate the portal entry from the global portal entries.
- * @param {Atomic<S, A>} [options.atom] The Atom instance to use for state storage and management.
+ * @param {PortalEntry<S, A>} [options.atom] The Atom's subject used for state storage and management.
  *
  * @returns {PortalState<S, A>} An object containing the current state and a function to update the state.
  * @throws {TypeError} If the provided initialState is a Promise that doesn't resolve to type `S`.
@@ -78,7 +78,7 @@ export function usePortalImplementation<S, A>({
   }
 
   const subject = useMemo<PortalEntry<S, A>>(() => {
-    if (atom) return atom.getItem();
+    if (atom) return atom;
 
     if (!override && entries.has(stringKey)) {
       return entries.get(stringKey) as PortalEntry<S, A>;
