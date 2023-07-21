@@ -26,13 +26,13 @@ This library exports the following APIs to enhance state management and facilita
             <td colspan="">
                 <code>Atom</code>
             </td>
-            <td colspan="6">A <strong>class</strong> that facilitates creating states outside the React context.</td>
+            <td colspan="6">A <strong>class</strong> for creating isolated states outside a component.</td>
         </tr>
         <tr>
             <td colspan="2">
                 <code>PortalProvider</code>
             </td>
-            <td colspan="5">A provider <strong>component</strong> that wraps your application and manages the state.</td>
+            <td colspan="5">A provider <strong>component</strong> that wraps your application.</td>
         </tr>
         <tr>
             <td colspan="2">
@@ -88,13 +88,6 @@ This library exports the following APIs to enhance state management and facilita
         <tr>
             <td></td>
             <td colspan="2">
-                <code>.getCookie</code>
-            </td>
-            <td colspan="5">A <strong>function</strong> to retrieve a stored cookie value.</td>
-        </tr>
-        <tr>
-            <td></td>
-            <td colspan="2">
                 <code>.atom</code>
             </td>
             <td colspan="5">A <strong>hook</strong> to access the state of an Atom.</td>
@@ -124,6 +117,7 @@ This library exports the following APIs to enhance state management and facilita
       PortalProvider,
       Atom,
       createBuilder,
+      cookieStorage,
     } from "@ibnlanre/portal";
     ```
 
@@ -215,24 +209,37 @@ This library exports the following APIs to enhance state management and facilita
       );
       ```
 
-    - To update the state in `cookieStore`:
+    - To update the cookie options in `cookieStore`:
 
       ```js
-      // Update previously set cookie options
+      // Update previously set cookie options.
       counterCookie.options({ sameSite: "lax" });
-
-      // Set the cookie value outside of a Component
-      counterCookie.set("cookie.counter", 5);
       ```
 
     - Access previously created data in `cookieStore`:
 
       ```js
-      // Retrieve cookie value outside of a Component
-      const cookie = usePortal.getCookie("cookie.counter");
+      // Retrieve cookie value outside of a Component.
+      const cookie = cookieStorage.getItem("cookie.counter");
 
-      // Manage cookie state through the Portal system
+      // Manage cookie state through the Portal system.
       const [cookieState, setCookieState] = usePortal("cookie.counter");
+      ```
+
+    - To update the state in `cookieStore`:
+
+      ```js
+      // To set the cookie value within a Component.
+      useEffect(() => {
+        setCookieState(5);
+      }, []);
+
+      // Set the cookie value outside of a Component.
+      // This API triggers a re-render.
+      counterCookie.set("cookie.counter", 6);
+
+      // This API doesn't trigger a re-render.
+      cookieStorage.setItem("cookie.counter", 7);
       ```
 
 6.  **To access a `Portal` outside of a component, create an `Atom`.**
@@ -241,13 +248,20 @@ This library exports the following APIs to enhance state management and facilita
 
       ```js
       // Atoms should be created outside Components
-      const counterAtom = new Atom(["counter", "atom"], 6);
+      const counterAtom = new Atom(["counter", "atom"], 8);
       ```
 
     - To access the value from the atom:
 
       ```js
+      // An atom state is isolated from the portal system
+      // and would not be available except by explicitly exporting
+      // and importing the atom from where it was declared.
       const [state, setState] = usePortal.atom(counterAtom);
+
+      // You can disable this isolation, allowing you to retrieve
+      // the state by its key, across all components.
+      const [state, setState] = usePortal.atom(counterAtom, false);
 
       // Doing so in a parent componenet, would make this value
       // available within the portal system, and accessible by
@@ -299,7 +313,7 @@ This library exports the following APIs to enhance state management and facilita
       const store = {
         foo: {
           baz: (id: number) => `/bazaar/${id}`,
-          bar: 7,
+          bar: 9,
         },
       };
 
@@ -310,15 +324,15 @@ This library exports the following APIs to enhance state management and facilita
 
       ```js
       builder.foo.use(); // ["foo"]
-      builder.foo.baz.use(8); // ["foo", "baz", 8]
+      builder.foo.baz.use(10); // ["foo", "baz", 10]
       ```
 
     - Get nested `values`:
 
       ```js
       builder.use(); // store
-      builder.use().foo.baz(9); // "/bazaar/9"
-      builder.use().foo.bar; // 7
+      builder.use().foo.baz(11); // "/bazaar/11"
+      builder.use().foo.bar; // 9
       ```
 
 9.  **Efficiently create `states` using the `builder` pattern.**
@@ -327,7 +341,7 @@ This library exports the following APIs to enhance state management and facilita
     // Use the builder to generate required arguments.
     const [barzaar, setBarzaar] = usePortal(
       builder.foo.bar.use(), // ["foo", "bar"]
-      builder.use().foo.bar // 7
+      builder.use().foo.bar // 9
     );
     ```
 

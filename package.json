@@ -36,10 +36,10 @@
     "node": ">=14.0.0"
   },
   "scripts": {
-    "build": "tsup",
+    "lint": "tsc --pretty --noEmit --project tsconfig-test.json",
     "package": "yarn build & yarn publish --access public",
     "test": "jest --config jest.config.ts",
-    "lint": "tsc --pretty --noEmit --project tsconfig-test.json"
+    "build": "tsup"
   },
   "keywords": [
     "web",
