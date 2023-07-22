@@ -1,15 +1,20 @@
 import type { Dispatch, Reducer, SetStateAction } from "react";
 
 import {
+  clearEntries,
+  portal,
+  removeItemFromEntries,
+  setEntryValue,
+} from "subject";
+import {
   usePortalImplementation,
   usePortalWithLocalStorage,
   usePortalWithSessionStorage,
   usePortalWithCookieOptions,
   usePortalWithAtomStorage,
 } from "addons";
-import { usePortalEntries } from "entries";
 
-import type { Initial, PortalEntries, PortalResult } from "entries";
+import type { Initial, PortalEntries, PortalResult } from "definition";
 
 /**
  * Custom hook to access portal entries and perform deletes.
@@ -61,10 +66,9 @@ export function usePortal<S, A = undefined>(
   initialState?: Initial<S>,
   reducer?: Reducer<S, A>
 ): PortalResult<S, A> {
-  const { entries, removeItemFromEntries, clearEntries } = usePortalEntries();
   if (!key) {
     return {
-      entries,
+      entries: portal,
       remove: removeItemFromEntries,
       clear: clearEntries,
     };
@@ -78,8 +82,6 @@ export function usePortal<S, A = undefined>(
  * @template A The type of the actions.
  *
  * @param {Atom<S, A>} store The Atom storage from which to access the state.
- * @param {boolean} [isolate=true] Whether the storage should be isolated from the global portal.
- *
  * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
  */
 usePortal.atom = usePortalWithAtomStorage;
@@ -123,3 +125,16 @@ usePortal.session = usePortalWithSessionStorage;
  * }} Hook to manage state.
  */
 usePortal.cookie = usePortalWithCookieOptions;
+
+/**
+ * Sets the value of a portal entry in the portal map.
+ *
+ * @description
+ * If the entry already exists, its value will be replaced with the new value.
+ * If the entry does not exist, a `warning` would be displayed in the `console`.
+ *
+ * @param {any} key The key of the portal entry.
+ * @param {any} value The value to be set for the portal entry.
+ * @returns {void}
+ */
+usePortal.set = setEntryValue;

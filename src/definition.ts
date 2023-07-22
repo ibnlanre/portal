@@ -72,27 +72,15 @@ export type PortalMap<S, A> = Map<string, PortalEntry<S, A>>;
 export type StorageType = "local" | "session" | "cookie";
 
 /**
- * Context type for the portal entries.
- * @template S The type of the store value.
- * @template A The type of the action for the reducer.
- */
-export type PortalEntriesContext<S, A> = {
-  entries: PortalMap<any, any>;
-  addItemToEntries: PortalEntryAdder<S, A>;
-  removeItemFromEntries: (key: any, storageTypes?: Array<StorageType>) => void;
-  clearEntries: () => void;
-};
-
-/**
  * Represents the type of an action that can be dispatched to update the state.
- * 
+ *
  * @description
  * If the generic type `A` is defined, the action type is `A`, otherwise, it's `SetStateAction<S>`.
  *
  * @template S The type of the state.
  * @template A The type of the action (optional).
  */
-export type Action<S, A> = A extends undefined ? SetStateAction<S> : A;
+export type Action<S, A> = A | SetStateAction<S>;
 
 /**
  * Type for the dispatcher function based on the action type.
@@ -179,11 +167,9 @@ export type Initial<S> = S | (() => S) | Promise<S>;
  * @template A The type of the actions (if a reducer is provided).
  */
 export type Atomic<S, A = undefined> = {
-  destructure(): {
-    key: string;
-    storedState: S;
+  props: {
     subject: PortalEntry<S, A>;
-    reducer?: Reducer<S, A>;
+    key: string;
   };
   setItem(value: Action<S, A>): void;
   getItem<T = S>(): T;

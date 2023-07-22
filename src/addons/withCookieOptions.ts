@@ -7,7 +7,7 @@ import { cookieStorage } from "component";
 import { usePortalWithCookieStorage } from "./withCookieStorage";
 
 import type { CookieOptions } from "cookies";
-import type { PortalImplementation, Initial } from "entries";
+import type { PortalImplementation, Initial } from "definition";
 
 export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
   /**

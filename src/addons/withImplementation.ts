@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo, type Reducer } from "react";
 
-import { usePortalEntries } from "entries";
-import { getComputedState, objectToStringKey, updateState } from "utilities";
-import { BehaviorSubject } from "subject";
+import { getComputedState, objectToStringKey } from "utilities";
+import { BehaviorSubject, addItemToEntries, portal } from "subject";
 
-import type { PortalState, PortalEntry, Initial } from "entries";
+import type { PortalState, PortalEntry, Initial } from "definition";
 
 /**
  * Represents the configuration options for the implementation of a custom hook
@@ -33,16 +32,6 @@ export type Implementation<S, A = undefined> = {
    * If true, override an existing portal entry with the same key.
    */
   override?: boolean;
-
-  /**
-   * If true, isolate the portal entry from the global portal entries.
-   */
-  isolate?: boolean;
-
-  /**
-   * The Atom's subject used for state storage and management.
-   */
-  atom?: PortalEntry<S, A>;
 };
 
 /**
@@ -55,8 +44,6 @@ export type Implementation<S, A = undefined> = {
  * @param {Initial<S>} [options.initialState] The initial state value.
  * @param {Reducer<S, A>} [options.reducer] The reducer function to handle state updates.
  * @param {boolean} [options.override=false] If `true`, override an existing portal entry with the same key.
- * @param {boolean} [options.isolate=false] If `true`, isolate the portal entry from the global portal entries.
- * @param {PortalEntry<S, A>} [options.atom] The Atom's subject used for state storage and management.
  *
  * @returns {PortalState<S, A>} An object containing the current state and a function to update the state.
  * @throws {TypeError} If the provided initialState is a Promise that doesn't resolve to type `S`.
@@ -67,21 +54,12 @@ export function usePortalImplementation<S, A>({
   initialState,
   reducer,
   override = false,
-  isolate = false,
-  atom,
 }: Implementation<S, A>): PortalState<S, A> {
-  const { entries, addItemToEntries } = usePortalEntries<S, A>();
   const stringKey = objectToStringKey(key);
 
-  if (!entries) {
-    throw new Error("usePortal must be used within a PortalProvider");
-  }
-
   const subject = useMemo<PortalEntry<S, A>>(() => {
-    if (atom) return atom;
-
-    if (!override && entries.has(stringKey)) {
-      return entries.get(stringKey) as PortalEntry<S, A>;
+    if (!override && portal.has(stringKey)) {
+      return portal.get(stringKey) as PortalEntry<S, A>;
     }
 
     const state =
@@ -93,16 +71,13 @@ export function usePortalImplementation<S, A>({
       observable: new BehaviorSubject(state as S),
       reducer,
     };
-  }, [entries]);
+  }, [portal]);
 
   const [state, setState] = useState(subject.observable.value);
 
   useEffect(() => {
     const subscriber = subject.observable.subscribe(setState);
-
-    if (!isolate && !entries.has(stringKey)) {
-      addItemToEntries(stringKey, subject);
-    }
+    if (!portal.has(stringKey)) addItemToEntries(stringKey, subject);
 
     if (typeof initialState !== "undefined") {
       if (initialState instanceof Promise) {
@@ -117,6 +92,6 @@ export function usePortalImplementation<S, A>({
     return subscriber.unsubscribe;
   }, [subject]);
 
-  const setter = updateState<S, A>(subject.observable, state, subject.reducer);
+  const setter = subject.observable.watch(subject.reducer);
   return [state, setter];
 }

@@ -4,7 +4,7 @@ import { cookieStorage } from "component";
 import { objectToStringKey } from "utilities";
 import { getCookieValue } from "cookies";
 
-import type { Initial, PortalState } from "entries";
+import type { Initial, PortalState } from "definition";
 import type { CookieOptions } from "cookies";
 
 import { usePortalImplementation } from "./withImplementation";

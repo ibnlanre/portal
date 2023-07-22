@@ -1,6 +1,11 @@
-abstract class Subject<T> {
-  abstract next(value: T): void;
-  abstract subscribe(observer: (value: T) => void): {
+import { isAction, isSetStateFunction } from "utilities";
+
+import type { Action } from "definition";
+import type { Reducer } from "react";
+
+abstract class Subject<S> {
+  abstract next(value: S): void;
+  abstract subscribe(observer: (value: S) => void): {
     unsubscribe(): void;
   };
   abstract unsubscribe(): void;
@@ -8,20 +13,20 @@ abstract class Subject<T> {
 
 /**
  * Represents a subject that maintains a current value and emits it to subscribers.
- * @template T The type of the initial and emitted values.
+ * @template S The type of the initial and emitted values.
  */
-export class BehaviorSubject<T> implements Subject<T> {
-  private state: T;
+export class BehaviorSubject<S> implements Subject<S> {
+  private state: S;
   private subscribers: Set<Function>;
 
   /**
    * Creates a new instance of BehaviorSubject.
-   * @param {T} initialValue The initial value of the subject.
+   * @param {S} initialValue The initial value of the subject.
    */
-  constructor(initialValue: T) {
+  constructor(initialValue: S) {
     /**
      * The current value of the subject.
-     * @type {T}
+     * @type {S}
      */
     this.state = initialValue;
 
@@ -54,21 +59,55 @@ export class BehaviorSubject<T> implements Subject<T> {
 
   /**
    * Returns the current value of the subject.
-   * @returns {T} The current value.
+   * @returns {S} The current value.
    */
-  get value(): T {
+  get value(): S {
     return this.state;
   }
 
   /**
    * Emits a new value to the subject and notifies subscribers.
-   * @param {T} value The new value to emit.
+   * @param {S} value The new value to emit.
    */
-  next(value: T) {
+  next(value: S) {
     if (!Object.is(this.state, value)) {
       this.state = value;
       this.notifySubscribers();
     }
+  }
+
+  /**
+   * Watch the creation of a state update function for the observable.
+   *
+   * @template A The type of the actions.
+   * @param {Reducer<any, A>} dispatch Optional reducer function to handle state updates.
+   * @returns A function that takes a value or action and updates the state accordingly.
+   */
+  watch<A = undefined>(dispatch?: Reducer<any, A>) {
+    /**
+     * Update the state using the provided value or action.
+     * @template S The type of the state.
+     * @template A The type of the actions.
+     *
+     * @param {Action<S, A>} value Value or action to update the state with.
+     *
+     * @summary If a dispatch function is provided, it is used to process the state update based on the previous state and the value or action.
+     * @summary If the dispatch function is not provided and the value is a function, it is called with the previous state and the return value is used as the new state.
+     * @summary If neither a dispatch function is provided nor the value is a function, the value itself is used as the new state.
+     *
+     * @description The updated state is emitted through the observable.next() method.
+     *
+     * @returns void
+     */
+    const setter = (value: Action<S, A>) => {
+      isAction<S, A>(value, dispatch)
+        ? this.next(dispatch?.(this.state, value as A))
+        : isSetStateFunction<S>(value)
+        ? this.next(value(this.state))
+        : this.next(value);
+    };
+
+    return setter;
   }
 
   /**

@@ -1,4 +1,4 @@
-import type { PortalMap } from "entries";
+import type { PortalMap } from "definition";
 
 /**
  * Converts a Map of { observable, reducer } entries to an object of { value, reducer }.

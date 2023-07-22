@@ -1,20 +1,17 @@
-import { usePortalImplementation } from "./withImplementation";
-import type { Atomic, PortalState } from "entries";
+import { useEffect, useState } from "react";
+import type { Atomic, PortalState } from "definition";
 
 export function usePortalWithAtomStorage<S, A = undefined>(
-  store: Atomic<S, A>,
-  isolate: boolean = true
+  store: Atomic<S, A>
 ): PortalState<S, A> {
-  const { key, reducer, storedState, subject } = store.destructure();
+  const { subject } = store.props;
+  const [state, setState] = useState(subject.observable.value);
 
-  const [state, setState] = usePortalImplementation<S, A>({
-    key,
-    initialState: storedState,
-    reducer,
-    override: true,
-    atom: subject,
-    isolate,
-  });
+  useEffect(() => {
+    const subscriber = subject.observable.subscribe(setState);
+    return subscriber.unsubscribe;
+  }, []);
 
-  return [state, setState];
+  const setter = subject.observable.watch(subject.reducer);
+  return [state, setter];
 }

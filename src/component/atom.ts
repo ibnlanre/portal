@@ -1,9 +1,9 @@
 import type { Reducer } from "react";
 
-import { getComputedState, objectToStringKey, updateState } from "utilities";
+import { getComputedState, objectToStringKey } from "utilities";
 import { BehaviorSubject } from "subject";
 
-import type { Action, Atomic, Initial, PortalEntry } from "entries";
+import type { Action, Atomic, Initial, PortalEntry } from "definition";
 
 export class Atom<S, A = undefined> implements Atomic<S, A> {
   private key: string;
@@ -36,7 +36,6 @@ export class Atom<S, A = undefined> implements Atomic<S, A> {
     this.key = objectToStringKey(key);
 
     // bind to protect against undefined `this`.
-    this.destructure = this.destructure.bind(this);
     this.getItem = this.getItem.bind(this);
     this.setItem = this.setItem.bind(this);
 
@@ -54,15 +53,12 @@ export class Atom<S, A = undefined> implements Atomic<S, A> {
   }
 
   /**
-   * Retrieves the key, stored state, and reducer associated with the Atom instance.
-   * @returns {Object} An object containing the key, stored state, and reducer.
+   * Retrieves the key and subject associated with the Atom instance.
+   * @returns {Object} An object containing the key and subject.
    */
-  destructure() {
-    const entry = this.subject;
+  get props() {
     return {
-      subject: entry,
-      storedState: entry.observable.value,
-      reducer: entry.reducer,
+      subject: this.subject,
       key: this.key,
     };
   }
@@ -83,11 +79,7 @@ export class Atom<S, A = undefined> implements Atomic<S, A> {
    */
   setItem(value: Action<S, A>) {
     const entry = this.subject;
-    const setter = updateState<S, A>(
-      entry.observable,
-      entry.observable.value,
-      entry.reducer
-    );
+    const setter = entry.observable.watch(entry.reducer);
     setter(value);
   }
 }
