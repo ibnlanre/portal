@@ -8,14 +8,11 @@ import type { CookieEntry, Dispatcher } from "definition";
 
 import { usePortalImplementation } from "./withImplementation";
 
-export function usePortalWithCookieStorage<
-  S extends CookieEntry,
-  A = undefined
->(
+export function usePortalWithCookieStorage<S = CookieEntry, A = undefined>(
   key: any,
-  initialState: S,
+  initialState?: S,
   reducer?: Reducer<S, A>
-): [string, Dispatcher<S, A>] {
+): [string | undefined, Dispatcher<S, A>] {
   const stringKey = objectToStringKey(key);
   let overrideApplicationState = false;
 
@@ -23,9 +20,9 @@ export function usePortalWithCookieStorage<
     const value = getCookieValue(stringKey);
     if (value !== null) {
       overrideApplicationState = true;
-      return { ...initialState, value };
+      return { ...initialState, value } as S;
     }
-    return initialState;
+    return initialState as S;
   });
 
   const [state, setState] = usePortalImplementation<S, A>({
@@ -35,10 +32,10 @@ export function usePortalWithCookieStorage<
     reducer,
   });
 
+  const { value, ...options } = { ...state } as CookieEntry;
   useEffect(() => {
-    const { value, ...options } = state;
-    cookieStorage.setItem(stringKey, state.value, options);
-  }, [state]);
+    if (value) cookieStorage.setItem(stringKey, value, options);
+  }, [value]);
 
-  return [state.value, setState];
+  return [value, setState];
 }

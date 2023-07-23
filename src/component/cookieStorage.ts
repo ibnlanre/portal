@@ -7,8 +7,6 @@ import {
   setCookieValue,
 } from "cookies";
 
-export { CookieEntry } from "definition";
-
 /**
  * An object representing a cookie storage with various methods to interact with cookies.
  */
