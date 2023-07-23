@@ -113,6 +113,6 @@ usePortal.session = usePortalWithSessionStorage;
  * @param {S} [initialState] The initial state value with the cookie options to be set.
  * @param {Reducer<S, A>} [reducer] The reducer function to handle state updates.
  *
- * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
+ * @returns {[string, Dispatcher<S, A>]} A tuple containing the current state and a function to update the state.
  */
 usePortal.cookie = usePortalWithCookieStorage;

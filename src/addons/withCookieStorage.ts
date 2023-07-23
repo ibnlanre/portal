@@ -4,14 +4,18 @@ import { cookieStorage } from "component";
 import { objectToStringKey } from "utilities";
 import { getCookieValue } from "cookies";
 
-import type { PortalState, CookieEntry } from "definition";
+import type { CookieEntry, Dispatcher } from "definition";
 
 import { usePortalImplementation } from "./withImplementation";
 
 export function usePortalWithCookieStorage<
   S extends CookieEntry,
   A = undefined
->(key: any, initialState: S, reducer?: Reducer<S, A>): PortalState<S, A> {
+>(
+  key: any,
+  initialState: S,
+  reducer?: Reducer<S, A>
+): [string, Dispatcher<S, A>] {
   const stringKey = objectToStringKey(key);
   let overrideApplicationState = false;
 
@@ -36,5 +40,5 @@ export function usePortalWithCookieStorage<
     cookieStorage.setItem(stringKey, state.value, options);
   }, [state]);
 
-  return [state, setState];
+  return [state.value, setState];
 }
