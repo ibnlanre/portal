@@ -6,7 +6,7 @@ import {
   usePortalWithLocalStorage,
   usePortalWithSessionStorage,
   usePortalWithAtomStorage,
-  usePortalWithCookieOptions,
+  usePortalWithCookieStorage,
 } from "addons";
 
 import type { Initial, PortalEntries, PortalResult } from "definition";
@@ -104,5 +104,15 @@ usePortal.local = usePortalWithLocalStorage;
  */
 usePortal.session = usePortalWithSessionStorage;
 
-
-usePortal.cookie = usePortalWithCookieOptions;
+/**
+ * Custom hook to access and manage state in the `Cookie` store through the portal system.
+ * @template S The type of the state.
+ * @template A The type of the actions.
+ *
+ * @param {any} key The key to identify the state in the portal system.
+ * @param {S} [initialState] The initial state value with the cookie options to be set.
+ * @param {Reducer<S, A>} [reducer] The reducer function to handle state updates.
+ *
+ * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
+ */
+usePortal.cookie = usePortalWithCookieStorage;

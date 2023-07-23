@@ -1,5 +1,5 @@
 export * from "./withAtomStorage";
-export * from "./withCookieOptions";
+export * from "./withCookieStorage";
 export * from "./withImplementation";
 export * from "./withLocalStorage";
 export * from "./withSessionStorage";

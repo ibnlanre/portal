@@ -1,40 +1,29 @@
 import { useState, useEffect, type Reducer } from "react";
 
 import { cookieStorage } from "component";
-import { objectToStringKey } from "utilities";
+import { isCookieEntry, objectToStringKey } from "utilities";
 import { getCookieValue } from "cookies";
 
-import type { Initial, PortalState, CookieOptions } from "definition";
+import type { Initial, PortalState, CookieEntry } from "definition";
 
 import { usePortalImplementation } from "./withImplementation";
 
-/**
- * Custom hook to access and manage state in the portal system with the `Cookie` store.
- * @template S The type of the state.
- * @template A The type of the actions.
- *
- * @param {any} key The key to identify the state in the portal system.
- * @param {S} [initialState] The initial state value.
- * @param {Reducer<S, A>} [reducer] The reducer function to handle state updates.
- * @param {CookieOptions} [cookieOptions] The cookie options to be set.
- *
- * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
- * @throws {TypeError} If the cookie value does not resolve to a string.
- */
-export function usePortalWithCookieStorage<S extends string, A = undefined>(
+export function usePortalWithCookieStorage<
+  S extends string | CookieEntry,
+  A = undefined
+>(
   key: any,
   initialState?: Initial<S>,
-  reducer?: Reducer<S, A>,
-  cookieOptions?: CookieOptions
+  reducer?: Reducer<S, A>
 ): PortalState<S, A> {
   const stringKey = objectToStringKey(key);
   let overrideApplicationState = false;
 
   const [cookieState] = useState(() => {
-    const cookieValue = getCookieValue(stringKey);
-    if (cookieValue !== null) {
+    const value = getCookieValue(stringKey);
+    if (value !== null) {
       overrideApplicationState = true;
-      return cookieValue as S;
+      return value as S;
     }
     return initialState;
   });
@@ -47,7 +36,12 @@ export function usePortalWithCookieStorage<S extends string, A = undefined>(
   });
 
   useEffect(() => {
-    cookieStorage.setItem(stringKey, state, cookieOptions);
+    if (typeof state === "string") cookieStorage.setItem(stringKey, state);
+    else if (isCookieEntry(state)) {
+      const { value, ...options } = { ...state };
+      const prevValue = cookieStorage.getItem(stringKey) ?? "";
+      cookieStorage.setItem(stringKey, value ?? prevValue, options);
+    }
   }, [state]);
 
   return [state, setState];

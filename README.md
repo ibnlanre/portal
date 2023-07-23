@@ -196,17 +196,18 @@ This library exports the following APIs to enhance state management and facilita
 
       ```js
       // Assign placeholder cookie options:
-      const counterCookie = usePortal.cookie({
-        path: "/",
-        expires: 30 * 1000, // milliseconds
-        maxAge: 30, // seconds
-        secure: true,
-      }); // use this API outside of a Component
+      const counterCookie = usePortal.cookie(); // use this API outside of a Component
 
       // Instantiate cookie state within a React Component
-      const [cookieState, setCookieState] = counterCookie.cache(
+      const [cookieState, setCookieState] = usePortal.cookie(
         "cookie.counter",
-        "5"
+        {
+          value: "5",
+          path: "/",
+          expires: 30 * 1000, // milliseconds
+          maxAge: 30, // seconds
+          secure: true,
+        }
       );
       ```
 
@@ -214,7 +215,7 @@ This library exports the following APIs to enhance state management and facilita
 
       ```js
       // Update previously set cookie options.
-      counterCookie.options({ sameSite: "lax" });
+      cookieStorage.setItem("cookie.counter", { sameSite: "lax" });
       ```
 
     - Access previously created data in `cookieStore`:
@@ -234,10 +235,6 @@ This library exports the following APIs to enhance state management and facilita
       useEffect(() => {
         setCookieState(6);
       }, []);
-
-      // Set the cookie value outside of a Component.
-      // This API triggers a re-render.
-      counterCookie.set("cookie.counter", "7");
 
       // This API doesn't trigger a re-render.
       cookieStorage.setItem("cookie.counter", "8");

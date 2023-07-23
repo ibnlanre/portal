@@ -50,9 +50,9 @@ export type CookieOptions = {
  * Represents a cookie entry with additional properties for storing state data.
  * @template S The type of the state value to be stored in the cookie entry.
  */
-export type CookieEntry<S> = CookieOptions & {
+export type CookieEntry = CookieOptions & {
   /**
-   * The value of the cookie entry, which is of type `S`.
+   * The value of the cookie entry, which is of type `string`.
    */
-  value: S;
+  value: string;
 };

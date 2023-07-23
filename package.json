@@ -10,7 +10,7 @@
     "entry": [
       "src/index.ts"
     ],
-    "sourcemap": "inline",
+    "sourcemap": true,
     "banner": {
       "js": "\"use client\";"
     },
