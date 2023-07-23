@@ -1,13 +1,11 @@
 import { isAction, isSetStateFunction } from "utilities";
 
-import type { Action } from "definition";
+import type { Action, Subscription } from "definition";
 import type { Reducer } from "react";
 
 abstract class Subject<S> {
   abstract next(value: S): void;
-  abstract subscribe(observer: (value: S) => void): {
-    unsubscribe(): void;
-  };
+  abstract subscribe(observer: (value: S) => void): Subscription;
   abstract unsubscribe(): void;
 }
 
@@ -35,19 +33,13 @@ export class BehaviorSubject<S> implements Subject<S> {
      * @type {Set<Function>}
      */
     this.subscribers = new Set();
-
-    // bindings to protect against undefined `this`.
-    this.notifySubscribers = this.notifySubscribers.bind(this);
-    this.unsubscribe = this.unsubscribe.bind(this);
-    this.subscribe = this.subscribe.bind(this);
-    this.next = this.next.bind(this);
   }
 
   /**
    * Notifies all subscribers with the current value.
    * @protected
    */
-  protected notifySubscribers() {
+  protected notifySubscribers = () => {
     this.subscribers.forEach((callback) => {
       try {
         callback(this.state);
@@ -55,7 +47,7 @@ export class BehaviorSubject<S> implements Subject<S> {
         console.error("Error occurred in subscriber callback:", err);
       }
     });
-  }
+  };
 
   /**
    * Returns the current value of the subject.
@@ -69,12 +61,12 @@ export class BehaviorSubject<S> implements Subject<S> {
    * Emits a new value to the subject and notifies subscribers.
    * @param {S} value The new value to emit.
    */
-  next(value: S) {
+  next = (value: S) => {
     if (!Object.is(this.state, value)) {
       this.state = value;
       this.notifySubscribers();
     }
-  }
+  };
 
   /**
    * Watch the creation of a state update function for the observable.
@@ -83,7 +75,7 @@ export class BehaviorSubject<S> implements Subject<S> {
    * @param {Reducer<any, A>} dispatch Optional reducer function to handle state updates.
    * @returns A function that takes a value or action and updates the state accordingly.
    */
-  watch<A = undefined>(dispatch?: Reducer<any, A>) {
+  watch = <A = undefined>(dispatch?: Reducer<any, A>) => {
     /**
      * Update the state using the provided value or action.
      * @template S The type of the state.
@@ -108,7 +100,7 @@ export class BehaviorSubject<S> implements Subject<S> {
     };
 
     return setter;
-  }
+  };
 
   /**
    * Subscribes to the subject and receives emitted values.
@@ -116,7 +108,7 @@ export class BehaviorSubject<S> implements Subject<S> {
    * @param {boolean} [initiate=true] Whether to initiate the callback immediately with the current state. Defaults to `true`.
    * @returns {{ unsubscribe: Function }} An object with a function to unsubscribe the callback.
    */
-  subscribe(observer: Function, initiate: boolean = true) {
+  subscribe = (observer: Function, initiate: boolean = true): Subscription => {
     // Add the callback as a member in the subscribers list
     this.subscribers.add(observer);
     if (initiate) observer(this.state);
@@ -125,12 +117,12 @@ export class BehaviorSubject<S> implements Subject<S> {
         this.subscribers.delete(observer);
       },
     };
-  }
+  };
 
   /**
    * Unsubscribes all subscribers from the subject.
    */
-  unsubscribe(): void {
+  unsubscribe = (): void => {
     this.subscribers.clear();
-  }
+  };
 }

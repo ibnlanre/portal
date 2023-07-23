@@ -1,4 +1,5 @@
-import { CookieOptions, formatCookieOptions } from "./formatCookieOptions";
+import { CookieOptions } from "definition";
+import { formatCookieOptions } from "./formatCookieOptions";
 
 /**
  * Sets a cookie with the specified name and value.

@@ -1,53 +1,23 @@
-import { useState, useEffect, useMemo, type Reducer } from "react";
+import { useState, useEffect } from "react";
 
-import { getComputedState, objectToStringKey } from "utilities";
-import { BehaviorSubject, addItemToEntries, portal } from "subject";
+import { getComputedState } from "utilities";
+import { portal } from "subject";
 
-import type { PortalState, PortalEntry, Initial } from "definition";
+import type { Implementation, PortalEntry, PortalState } from "definition";
 
 /**
- * Represents the configuration options for the implementation of a custom hook
- * to access and manage state in the portal system with Atom storage support.
+ * Internal function to handle state and subscriptions for the `usePortal` hook.
  *
  * @template S The type of the state.
  * @template A The type of the actions.
- */
-export type Implementation<S, A = undefined> = {
-  /**
-   * Unique key identifier for the portal.
-   */
-  key: any;
-
-  /**
-   * The initial state value.
-   */
-  initialState?: Initial<S>;
-
-  /**
-   * The reducer function to handle state updates.
-   */
-  reducer?: Reducer<S, A>;
-
-  /**
-   * If true, override an existing portal entry with the same key.
-   */
-  override?: boolean;
-};
-
-/**
- * Custom hook to access and manage state in the portal system with Atom storage support.
- * @template S The type of the state.
- * @template A The type of the actions.
  *
- * @param {Object} options The options object containing configuration properties for the hook.
- * @param {any} options.key Unique key identifier for the portal.
+ * @param {Implementation<S, A>} options The options object containing configuration properties for the hook.
+ * @param {any} options.key The key of the portal entry.
  * @param {Initial<S>} [options.initialState] The initial state value.
- * @param {Reducer<S, A>} [options.reducer] The reducer function to handle state updates.
  * @param {boolean} [options.override=false] If `true`, override an existing portal entry with the same key.
+ * @param {Reducer<S, A>} [options.reducer] The reducer function to handle state updates.
  *
- * @returns {PortalState<S, A>} An object containing the current state and a function to update the state.
- * @throws {TypeError} If the provided initialState is a Promise that doesn't resolve to type `S`.
- * @throws {Error} If the Atom instance is not provided.
+ * @returns {PortalState<S, A>} An array containing the state and the setter function for state updates.
  */
 export function usePortalImplementation<S, A>({
   key,
@@ -55,43 +25,58 @@ export function usePortalImplementation<S, A>({
   reducer,
   override = false,
 }: Implementation<S, A>): PortalState<S, A> {
-  const stringKey = objectToStringKey(key);
+  /**
+   * Retrieve the portal entry associated with the specified key or create a new one if not found.
+   *
+   * @type {PortalEntry<S, A>}
+   */
+  const subject = portal.getItem(key, override) as PortalEntry<S, A>;
 
-  const subject = useMemo<PortalEntry<S, A>>(() => {
-    if (!override && portal.has(stringKey)) {
-      return portal.get(stringKey) as PortalEntry<S, A>;
-    }
-
-    const state =
-      initialState instanceof Promise
-        ? undefined
-        : getComputedState(initialState);
-
-    return {
-      observable: new BehaviorSubject(state as S),
-      reducer,
-    };
-  }, [portal]);
-
+  /**
+   * Store the current value of the state.
+   * @type {S}
+   */
   const [state, setState] = useState(subject.observable.value);
 
+  /**
+   * Subscribe to state changes and update the component's state accordingly.
+   */
   useEffect(() => {
+    /**
+     * Check if the `initialState` is a Promise, and if so, resolve it and set the state.
+     * Else, change the value of the observable to the `initialState` provided.
+     */
+    initialState instanceof Promise
+      ? initialState.then(subject.observable.next)
+      : subject.observable.next(getComputedState(initialState) as S);
+
+    /**
+     * Subscribe to state changes using the BehaviorSubject and update the component's state.
+     * @type {Subscription}
+     */
     const subscriber = subject.observable.subscribe(setState);
-    if (!portal.has(stringKey)) addItemToEntries(stringKey, subject);
 
-    if (typeof initialState !== "undefined") {
-      if (initialState instanceof Promise) {
-        initialState.then(subject.observable.next);
-      } else {
-        const state = getComputedState(initialState);
-        subject.observable.next(state);
-      }
-    }
+    /**
+     * Set the reducer function for state updates if provided.
+     */
+    if (reducer) subject.reducer = reducer;
 
-    // Unsubscribes when the component unmounts from the DOM
-    return subscriber.unsubscribe;
+    /**
+     * Unsubscribe from state changes when the component is unmounted.
+     * @returns {void}
+     */
+    return () => subscriber.unsubscribe();
   }, [subject]);
 
+  /**
+   * Create the setter function to update the state using the reducer if available.
+   * @type {SetterFunction<S, A>}
+   */
   const setter = subject.observable.watch(subject.reducer);
+
+  /**
+   * Return an array containing the current state and the setter function for state updates.
+   * @type {PortalState<S, A>}
+   */
   return [state, setter];
 }

@@ -35,10 +35,6 @@ export class Atom<S, A = undefined> implements Atomic<S, A> {
   constructor(key: any, initialState: Initial<S>, reducer?: Reducer<S, A>) {
     this.key = objectToStringKey(key);
 
-    // bind to protect against undefined `this`.
-    this.getItem = this.getItem.bind(this);
-    this.setItem = this.setItem.bind(this);
-
     const resolveInitialState = (state: S) => {
       this.subject.observable.next(state);
       this.subject.reducer = reducer;
@@ -69,7 +65,7 @@ export class Atom<S, A = undefined> implements Atomic<S, A> {
    * @template T The type of the value stored in the observable.
    * @returns {T} The current value of the observable.
    */
-  getItem<T = S>() {
+  getItem = <T = S>() => {
     return this.subject.observable.value as unknown as T;
   }
 
@@ -77,7 +73,7 @@ export class Atom<S, A = undefined> implements Atomic<S, A> {
    * Sets the value of the Atom instance in the portal map.
    * @param {S} value The new value to set.
    */
-  setItem(value: Action<S, A>) {
+  setItem = (value: Action<S, A>) => {
     const entry = this.subject;
     const setter = entry.observable.watch(entry.reducer);
     setter(value);

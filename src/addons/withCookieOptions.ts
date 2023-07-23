@@ -1,13 +1,12 @@
 import type { Reducer } from "react";
 
-import { setEntryValue } from "subject";
+import { portal } from "subject";
 import { objectToStringKey } from "utilities";
 import { cookieStorage } from "component";
 
-import { usePortalWithCookieStorage } from "./withCookieStorage";
+import type { PortalImplementation, Initial, CookieOptions } from "definition";
 
-import type { CookieOptions } from "cookies";
-import type { PortalImplementation, Initial } from "definition";
+import { usePortalWithCookieStorage } from "./withCookieStorage";
 
 export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
   /**
@@ -23,7 +22,7 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
    * @throws {Error} If used outside of a PortalProvider component.
    * @throws {TypeError} If the cookie value does not resolve to a string.
    */
-  cache: PortalImplementation;
+  cache: PortalImplementation<string>;
   /**
    * Updates the cookie options.
    *
@@ -43,7 +42,7 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
   let currentOptions = cookieOptions;
 
   return {
-    cache<S, A = undefined>(
+    cache<S extends string, A = undefined>(
       key: any,
       initialState?: Initial<S>,
       reducer?: Reducer<S, A>
@@ -67,7 +66,7 @@ export function usePortalWithCookieOptions(cookieOptions?: CookieOptions): {
         cookieStorage.setItem(stringKey, value);
 
         // update the value in the portal system
-        setEntryValue(key, value);
+        portal.setItem(key, value);
       } catch (error) {
         console.error(error);
       }

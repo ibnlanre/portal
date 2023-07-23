@@ -1,14 +1,14 @@
 {
   "name": "@ibnlanre/portal",
   "version": "1.0.2",
-  "description": "React state management library based on RxJS Behavior Subject",
+  "description": "React state management library",
   "main": "dist/index",
   "files": [
     "dist"
   ],
   "tsup": {
     "entry": [
-      "src/index.tsx"
+      "src/index.ts"
     ],
     "sourcemap": "inline",
     "banner": {

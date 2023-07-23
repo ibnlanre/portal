@@ -114,10 +114,10 @@ This library exports the following APIs to enhance state management and facilita
 
     ```js
     import {
+      usePortal,
       Atom,
       createBuilder,
       cookieStorage,
-      usePortal,
     } from "@ibnlanre/portal";
     ```
 
@@ -158,7 +158,7 @@ This library exports the following APIs to enhance state management and facilita
       const handleDecrement = () => dispatch({ type: "decrement" });
       ```
 
-3. **Update portal state outside of a component.**
+3.  **Update portal state outside of a component.**
 
     ```js
     // An action is passed because the state has a reducer.
@@ -206,7 +206,7 @@ This library exports the following APIs to enhance state management and facilita
       // Instantiate cookie state within a React Component
       const [cookieState, setCookieState] = counterCookie.cache(
         "cookie.counter",
-        5
+        "5"
       );
       ```
 
@@ -221,7 +221,7 @@ This library exports the following APIs to enhance state management and facilita
 
       ```js
       // Retrieve cookie value outside of a Component.
-      const cookie = cookieStorage.getItem("cookie.counter");
+      const cookie = cookieStorage.getItem("cookie.counter"); // "5"
 
       // Manage cookie state through the Portal system.
       const [cookieState, setCookieState] = usePortal("cookie.counter");
@@ -237,10 +237,10 @@ This library exports the following APIs to enhance state management and facilita
 
       // Set the cookie value outside of a Component.
       // This API triggers a re-render.
-      counterCookie.set("cookie.counter", 7);
+      counterCookie.set("cookie.counter", "7");
 
       // This API doesn't trigger a re-render.
-      cookieStorage.setItem("cookie.counter", 8);
+      cookieStorage.setItem("cookie.counter", "8");
       ```
 
 6.  **To access a `Portal` outside of a component, create an `Atom`.**
@@ -322,7 +322,7 @@ This library exports the following APIs to enhance state management and facilita
       builder.use().foo.bar; // 10
       ```
 
-8.  **Efficiently create `states` using the `builder` pattern.**
+9.  **Efficiently create `states` using the `builder` pattern.**
 
     ```js
     // Use the builder to generate required arguments.

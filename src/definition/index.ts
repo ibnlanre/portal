@@ -1,4 +1,4 @@
-import type { Reducer, SetStateAction, Dispatch, ReactNode } from "react";
+import type { Reducer, SetStateAction, Dispatch } from "react";
 import type { BehaviorSubject } from "subject";
 
 type Key<K, P extends string[] = []> = { use: () => [...P, K] };
@@ -34,10 +34,6 @@ export type NestedObject<
     : never
   : T;
 
-export interface PortalEntriesProvider {
-  children: ReactNode;
-}
-
 /**
  * Represents a record of the store value and reducer in the portal entries.
  * @template S The type of the store value.
@@ -47,16 +43,6 @@ export type PortalEntry<S, A> = {
   observable: BehaviorSubject<S>;
   reducer?: Reducer<S, A>;
 };
-
-/**
- * Function type for adding a key-value pair to the portal entries.
- * @template S The type of the store value.
- * @template A The type of the action for the reducer.
- */
-export type PortalEntryAdder<S, A> = (
-  key: string,
-  value: PortalEntry<S, A>
-) => void;
 
 /**
  * Represents a map of keys and values in the portal entries.
@@ -83,6 +69,13 @@ export type StorageType = "local" | "session" | "cookie";
 export type Action<S, A> = A | SetStateAction<S>;
 
 /**
+ * Represents the type of a subscription to a `Subject`.
+ */
+export type Subscription = {
+  unsubscribe: () => void;
+};
+
+/**
  * Type for the dispatcher function based on the action type.
  * If the type `A` (actions) is `undefined`, the value is of type `S`.
  * Otherwise, the value is of type `A`.
@@ -91,14 +84,6 @@ export type Action<S, A> = A | SetStateAction<S>;
  * @template A The type of the action for the reducer.
  */
 export type Dispatcher<S, A> = Dispatch<Action<S, A>>;
-
-/**
- * Represents the entry object in the portal entries.
- */
-export type PortalEntryObject = {
-  value: any;
-  reducer?: any;
-};
 
 /**
  * Represents the portal entries with specialized methods for managing the entries.
@@ -137,6 +122,12 @@ export type PortalState<S, A = undefined> = [S, Dispatcher<S, A>];
 export type PortalResult<S, A = undefined> = PortalState<S, A> | PortalEntries;
 
 /**
+ * Represents the initial value for the portal store.
+ * @template S The type of the store value.
+ */
+export type Initial<S> = S | (() => S) | Promise<S>;
+
+/**
  * Represents the implementation of a portal.
  * @template S The type of the store value.
  * @template A The type of the action for the reducer.
@@ -147,17 +138,11 @@ export type PortalResult<S, A = undefined> = PortalState<S, A> | PortalEntries;
  *
  * @returns {PortalState<S, A>} A tuple containing the state and a function for updating the state.
  */
-export type PortalImplementation = <S, A = undefined>(
+export type PortalImplementation<T> = <S extends T, A = undefined>(
   key: any,
   initialState?: Initial<S>,
   reducer?: Reducer<S, A>
 ) => PortalState<S, A>;
-
-/**
- * Represents the initial value for the portal store.
- * @template S The type of the store value.
- */
-export type Initial<S> = S | (() => S) | Promise<S>;
 
 /**
  * Represents an Atom in the portal system.
@@ -174,3 +159,6 @@ export type Atomic<S, A = undefined> = {
   setItem(value: Action<S, A>): void;
   getItem<T = S>(): T;
 };
+
+export * from "./cookieOptions";
+export * from "./implementation";
