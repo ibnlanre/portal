@@ -31,7 +31,7 @@ class Portal<S, A = undefined> {
    *
    * @param {any} key The key associated with the portal entry.
    * @param {CookieEntry?} [initialState] The initial state contained the cookie value and options.
-   * 
+   *
    * @returns {[string | undefined, CookieOptions]} An array containing the cookie value and options.
    * - The first element of the array is the cookie value (string) if available, otherwise `undefined`.
    * - The second element is an object representing the cookie options (e.g., `expires`, `path`, `domain`, `secure`, etc.).
@@ -54,10 +54,10 @@ class Portal<S, A = undefined> {
 
     const value = getCookieValue(key);
     if (value !== null) {
-      return splitCookieValue({
-        value,
-        ...initialState,
-      });
+      // If the value is an empty string `""`, then it would be replaced
+      // by the inputted value, if any. Else, it replaces the given value.
+      const options = value === "" ? initialState : { ...initialState, value };
+      return splitCookieValue({ ...options });
     }
     return splitCookieValue({ ...initialState });
   };

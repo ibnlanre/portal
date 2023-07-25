@@ -95,11 +95,11 @@ export class BehaviorSubject<S> implements Subject<S> {
       try {
         // Delay updating value until the DOM is mounted
         setTimeout(() => {
-          isAction<S, A>(value, dispatch)
-            ? this.next(dispatch?.(this.state, value as A))
-            : isSetStateFunction<S>(value)
-            ? this.next(value(this.state))
-            : this.next(value);
+        isAction<S, A>(value, dispatch)
+          ? this.next(dispatch?.(this.state, value as A))
+          : isSetStateFunction<S>(value)
+          ? this.next(value(this.state))
+          : this.next(value);
         }, 0);
       } catch (error) {
         console.error("Error setting the specified value", error);
@@ -116,9 +116,12 @@ export class BehaviorSubject<S> implements Subject<S> {
    * @returns {{ unsubscribe: Function }} An object with a function to unsubscribe the callback.
    */
   subscribe = (observer: Function, initiate: boolean = true): Subscription => {
-    // Add the callback as a member in the subscribers list
-    this.subscribers.add(observer);
-    if (initiate) observer(this.state);
+    // Confirm the callback isn't in the subscribers list.
+    if (!this.subscribers.has(observer)) {
+      // Add the callback as a member in the subscribers list.
+      this.subscribers.add(observer);
+      if (initiate) observer(this.state);
+    }
     return {
       unsubscribe: () => {
         this.subscribers.delete(observer);

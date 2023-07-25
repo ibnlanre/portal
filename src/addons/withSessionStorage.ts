@@ -41,10 +41,12 @@ export function usePortalWithSessionStorage<S, A>(
   });
 
   useEffect(() => {
-    try {
-      sessionStorage.setItem(stringKey, JSON.stringify(state));
-    } catch (error) {
-      console.error("Error storing state in sessionStorage:", error);
+    if (typeof state !== "undefined") {
+      try {
+        sessionStorage.setItem(stringKey, JSON.stringify(state));
+      } catch (error) {
+        console.error("Error storing state in sessionStorage:", error);
+      }
     }
   }, [stringKey, state]);
 

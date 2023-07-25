@@ -41,10 +41,12 @@ export function usePortalWithLocalStorage<S, A = undefined>(
   });
 
   useEffect(() => {
-    try {
-      localStorage.setItem(stringKey, JSON.stringify(state));
-    } catch (error) {
-      console.error("Error storing state in localStorage:", error);
+    if (typeof state !== "undefined") {
+      try {
+        localStorage.setItem(stringKey, JSON.stringify(state));
+      } catch (error) {
+        console.error("Error storing state in localStorage:", error);
+      }
     }
   }, [stringKey, state]);
 

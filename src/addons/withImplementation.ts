@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-import { getComputedState } from "utilities";
+import { getComputedState, objectToStringKey } from "utilities";
 import { portal } from "subject";
 
 import type { Implementation, PortalEntry, PortalState } from "definition";
@@ -44,31 +44,10 @@ export function usePortalImplementation<S, A>({
    */
   useEffect(() => {
     /**
-     * Check if the `initialState` is a Promise, and if so, resolve it and set the state.
-     * Else, change the value of the observable to the `initialState` provided.
-     */
-    initialState instanceof Promise
-      ? initialState.then(subject.observable.next)
-      : subject.observable.next(getComputedState(initialState) as S);
-
-    /**
      * Subscribe to state changes using the BehaviorSubject and update the component's state.
      * @type {Subscription}
      */
     const subscriber = subject.observable.subscribe(setState);
-
-    /**
-     * Set the reducer function for state updates if provided.
-     */
-    if (reducer) subject.reducer = reducer;
-
-    /**
-     * Set the options for cookie state.
-     */
-    if (cookieOptions) subject.cookieOptions = {
-      ...subject.cookieOptions,
-      ...cookieOptions
-    };
 
     /**
      * Unsubscribe from state changes when the component is unmounted.
@@ -76,6 +55,28 @@ export function usePortalImplementation<S, A>({
      */
     return subscriber.unsubscribe;
   }, [subject]);
+
+  useEffect(() => {
+    if (typeof initialState !== "undefined") {
+      /**
+       * Set the reducer function for state updates if provided.
+       */
+      if (reducer) subject.reducer = reducer;
+
+      /**
+       * Set the options for cookie state.
+       */
+      if (cookieOptions) subject.cookieOptions = cookieOptions;
+
+      /**
+       * Check if the `initialState` is a Promise, and if so, resolve it and set the state.
+       * Else, change the value of the observable to the `initialState` provided.
+       */
+      initialState instanceof Promise
+        ? initialState.then(subject.observable.next)
+        : subject.observable.next(getComputedState(initialState));
+    }
+  }, [objectToStringKey([initialState, cookieOptions])]);
 
   /**
    * Create the setter function to update the state using the reducer if available.
