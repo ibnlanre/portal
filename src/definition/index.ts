@@ -1,5 +1,5 @@
-import type { Reducer, SetStateAction, Dispatch } from "react";
-import type { CookieOptions } from "./cookieOptions";
+import type { Reducer, SetStateAction, Dispatch, ReactNode } from "react";
+import type { CookieEntry, CookieOptions } from "./cookieOptions";
 import type { BehaviorSubject } from "subject";
 
 type Key<K, P extends string[] = []> = { use: () => [...P, K] };
@@ -107,6 +107,42 @@ export type PortalEntries = {
    * @returns {void}
    */
   clear(): void;
+};
+
+/**
+ * Props for the PortalEntriesProvider component.
+ */
+export interface PortalEntriesProvider {
+  /**
+   * The child elements that will be wrapped by the PortalEntriesProvider.
+   */
+  children: ReactNode;
+}
+
+/**
+ * Function type for adding a key-value pair to the portal entries.
+ * @template S The type of the store value.
+ * @template A The type of the action for the reducer.
+ */
+export type PortalEntryAdder<S, A> = (
+  key: string,
+  value: PortalEntry<S, A>
+) => void;
+
+/**
+ * Context type for the portal entries.
+ * @template S The type of the store value.
+ * @template A The type of the action for the reducer.
+ */
+export type PortalEntriesContext<S, A> = {
+  entries: PortalMap<any, any>;
+  addItemToEntries: PortalEntryAdder<S, A>;
+  removeItemFromEntries: (key: any, storageTypes?: Array<StorageType>) => void;
+  clearEntries: () => void;
+  cook: (
+    key: string,
+    initialState?: CookieEntry
+  ) => [string | undefined, CookieOptions];
 };
 
 /**

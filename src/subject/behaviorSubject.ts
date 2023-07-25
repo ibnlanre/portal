@@ -93,14 +93,11 @@ export class BehaviorSubject<S> implements Subject<S> {
      */
     const setter = (value: Action<S, A>) => {
       try {
-        // Delay updating value until the DOM is mounted
-        setTimeout(() => {
         isAction<S, A>(value, dispatch)
           ? this.next(dispatch?.(this.state, value as A))
           : isSetStateFunction<S>(value)
           ? this.next(value(this.state))
           : this.next(value);
-        }, 0);
       } catch (error) {
         console.error("Error setting the specified value", error);
       }
