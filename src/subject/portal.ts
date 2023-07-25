@@ -1,9 +1,16 @@
 import { handleSSRError, objectToStringKey } from "utilities";
 import { cookieStorage } from "component";
 
-import type { PortalEntry, PortalMap, StorageType } from "definition";
+import type {
+  CookieEntry,
+  CookieOptions,
+  PortalEntry,
+  PortalMap,
+  StorageType,
+} from "definition";
 
 import { BehaviorSubject } from "./behaviorSubject";
+import { getCookieValue } from "cookies";
 
 class Portal<S, A = undefined> {
   private portalMap: PortalMap<any, any> = new Map();
@@ -18,6 +25,42 @@ class Portal<S, A = undefined> {
    * @returns {string}
    */
   stringKey = (key: any) => objectToStringKey(key);
+
+  /**
+   * Creates a function to split the cookie value and options from a given `cookieEntry`.
+   *
+   * @param {any} key The key associated with the portal entry.
+   * @param {CookieEntry?} [initialState] The initial state contained the cookie value and options.
+   * 
+   * @returns {[string | undefined, CookieOptions]} An array containing the cookie value and options.
+   * - The first element of the array is the cookie value (string) if available, otherwise `undefined`.
+   * - The second element is an object representing the cookie options (e.g., `expires`, `path`, `domain`, `secure`, etc.).
+   *   If no options are available, an empty object will be returned.
+   */
+  cook = (key: string, initialState?: CookieEntry) => {
+    /**
+     * Internal helper function to split the cookie value and options from a given `cookieEntry`.
+     *
+     * @param {CookieEntry} cookieEntry The cookie entry representing a portal entry.
+     * @returns {[string | undefined, CookieOptions]} An array containing the cookie value and options.
+     */
+    const splitCookieValue = (
+      cookieEntry: CookieEntry
+    ): [string | undefined, CookieOptions] => {
+      const { cookieOptions } = this.entries.get(key) || {};
+      const { value, ...options } = { ...cookieOptions, ...cookieEntry };
+      return [value, options];
+    };
+
+    const value = getCookieValue(key);
+    if (value !== null) {
+      return splitCookieValue({
+        value,
+        ...initialState,
+      });
+    }
+    return splitCookieValue({ ...initialState });
+  };
 
   /**
    * Retrieves the item with the specified key from the portal storage.

@@ -1,4 +1,5 @@
 import type { Reducer, SetStateAction, Dispatch } from "react";
+import type { CookieOptions } from "./cookieOptions";
 import type { BehaviorSubject } from "subject";
 
 type Key<K, P extends string[] = []> = { use: () => [...P, K] };
@@ -42,6 +43,7 @@ export type NestedObject<
 export type PortalEntry<S, A> = {
   observable: BehaviorSubject<S>;
   reducer?: Reducer<S, A>;
+  cookieOptions?: CookieOptions;
 };
 
 /**

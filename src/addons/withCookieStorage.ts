@@ -1,41 +1,36 @@
-import { useState, useEffect, type Reducer } from "react";
+import { useEffect, type Reducer } from "react";
 
+import { portal } from "subject";
 import { cookieStorage } from "component";
 import { objectToStringKey } from "utilities";
-import { getCookieValue } from "cookies";
 
-import type { CookieEntry, Dispatcher } from "definition";
+import type { CookieEntry, PortalState } from "definition";
 
 import { usePortalImplementation } from "./withImplementation";
 
-export function usePortalWithCookieStorage<S = CookieEntry, A = undefined>(
+export function usePortalWithCookieStorage<
+  S extends CookieEntry,
+  A = undefined
+>(
   key: any,
   initialState?: S,
-  reducer?: Reducer<S, A>
-): [string | undefined, Dispatcher<S, A>] {
+  reducer?: Reducer<string, A>
+): PortalState<string, A> {
   const stringKey = objectToStringKey(key);
-  let overrideApplicationState = false;
 
-  const [cookieState] = useState(() => {
-    const value = getCookieValue(stringKey);
-    if (value !== null) {
-      overrideApplicationState = true;
-      return { ...initialState, value } as S;
-    }
-    return initialState as S;
-  });
-
-  const [state, setState] = usePortalImplementation<S, A>({
+  const [value, cookieOptions] = portal.cook(stringKey, initialState);
+  const [state, setState] = usePortalImplementation<string, A>({
     key: stringKey,
-    initialState: cookieState,
-    override: overrideApplicationState,
+    initialState: value,
+    cookieOptions,
     reducer,
   });
 
-  const { value, ...options } = { ...state } as CookieEntry;
   useEffect(() => {
-    if (value) cookieStorage.setItem(stringKey, value, options);
-  }, [value]);
+    if (typeof state !== "undefined") {
+      cookieStorage.setItem(stringKey, state, cookieOptions);
+    }
+  }, [state, value, objectToStringKey(cookieOptions)]);
 
-  return [value, setState];
+  return [state, setState];
 }

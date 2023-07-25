@@ -24,6 +24,7 @@ export function usePortalImplementation<S, A>({
   initialState,
   reducer,
   override = false,
+  cookieOptions,
 }: Implementation<S, A>): PortalState<S, A> {
   /**
    * Retrieve the portal entry associated with the specified key or create a new one if not found.
@@ -62,10 +63,18 @@ export function usePortalImplementation<S, A>({
     if (reducer) subject.reducer = reducer;
 
     /**
+     * Set the options for cookie state.
+     */
+    if (cookieOptions) subject.cookieOptions = {
+      ...subject.cookieOptions,
+      ...cookieOptions
+    };
+
+    /**
      * Unsubscribe from state changes when the component is unmounted.
      * @returns {void}
      */
-    return () => subscriber.unsubscribe();
+    return subscriber.unsubscribe;
   }, [subject]);
 
   /**

@@ -1,4 +1,4 @@
-import type { Initial } from "definition";
+import type { CookieOptions, Initial } from "definition";
 import type { Reducer } from "react";
 
 /**
@@ -23,6 +23,11 @@ export type Implementation<S, A = undefined> = {
      * The reducer function to handle state updates.
      */
     reducer?: Reducer<S, A>;
+
+    /**
+     * The options to set a cookie state to, if any.
+     */
+    cookieOptions?: CookieOptions;
   
     /**
      * If true, override an existing portal entry with the same key.
