@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Atomic, PortalState } from "definition";
 
 export function usePortalWithAtomStorage<S, A = undefined>(
@@ -12,6 +12,8 @@ export function usePortalWithAtomStorage<S, A = undefined>(
     return subscriber.unsubscribe;
   }, []);
 
-  const setter = subject.observable.watch(subject.reducer);
+  const setter = useMemo(() => {
+    return subject.observable.watch(subject.reducer);
+  }, [subject]);
   return [state, setter];
 }

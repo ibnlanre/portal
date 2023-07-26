@@ -1,6 +1,6 @@
 # @ibnlanre/portal
 
-`@ibnlanre/portal` is a simple React state management library.
+Inspired by [React Holmes](https://github.com/devx-os/react-holmes), `@ibnlanre/portal` is a simple React state management library based on RxJS Behavior Subject. It provides a convenient way to manage component state at the global scope using React context.
 
 ## Installation
 
@@ -27,6 +27,12 @@ This library exports the following APIs to enhance state management and facilita
                 <code>Atom</code>
             </td>
             <td colspan="6">A <strong>class</strong> for creating isolated states outside a component.</td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <code>PortalProvider</code>
+            </td>
+            <td colspan="5">A provider <strong>component</strong> that wraps your application.</td>
         </tr>
         <tr>
             <td colspan="2">
@@ -115,13 +121,22 @@ This library exports the following APIs to enhance state management and facilita
     ```js
     import {
       usePortal,
+      PortalProvider,
       Atom,
       createBuilder,
       cookieStorage,
     } from "@ibnlanre/portal";
     ```
 
-2.  **Provide a marker for the state by passing a `key` to the `usePortal` hook.**
+2.  **Wrap your application with the `PortalProvider` component.**
+
+    - This should be used within the root `Component`:
+
+      ```jsx
+      <PortalProvider>{/* Your application components */}</PortalProvider>
+      ```
+
+3.  **Provide a marker for the state by passing a `key` to the `usePortal` hook.**
 
     - To create an application `state`:
 
@@ -158,16 +173,6 @@ This library exports the following APIs to enhance state management and facilita
       const handleDecrement = () => dispatch({ type: "decrement" });
       ```
 
-3.  **Update portal state outside of a component.**
-
-    ```js
-    // An action is passed because the state has a reducer.
-    usePortal.set("counter.reducer", { type: "reset" });
-
-    // Otherwise, pass the state that would become the next value.
-    usePortal.set("counter", 2);
-    ```
-
 4.  **Persist the state by utilizing browser storage mechanisms.**
 
     - To persist the state in `localStorage`:
@@ -195,26 +200,23 @@ This library exports the following APIs to enhance state management and facilita
     - To persist the state in `cookieStore`:
 
       ```js
-      // Assign placeholder cookie options:
-      const counterCookie = usePortal.cookie(); // use this API outside of a Component
-
-      // Instantiate cookie state within a React Component
-      const [cookieState, setCookieState] = usePortal.cookie(
-        "cookie.counter",
-        {
-          value: "5",
-          path: "/",
-          expires: 30 * 1000, // milliseconds
-          maxAge: 30, // seconds
-          secure: true,
-        }
-      );
+      // Create cookie state within a React Component
+      const [cookieState, setCookieState] = usePortal.cookie("cookie.counter", {
+        value: "5",
+        path: "/",
+        expires: 30 * 1000, // milliseconds
+        maxAge: 30, // seconds
+        secure: true,
+      });
       ```
 
     - To update the cookie options in `cookieStore`:
 
       ```js
-      // Update previously set cookie options.
+      // To set the cookie value within a Component.
+      setCookieState(6);
+
+      // This API doesn't trigger a re-render.
       cookieStorage.setItem("cookie.counter", { sameSite: "lax" });
       ```
 
@@ -228,33 +230,20 @@ This library exports the following APIs to enhance state management and facilita
       const [cookieState, setCookieState] = usePortal("cookie.counter");
       ```
 
-    - To update the state in `cookieStore`:
-
-      ```js
-      // To set the cookie value within a Component.
-      useEffect(() => {
-        setCookieState(6);
-      }, []);
-
-      // This API doesn't trigger a re-render.
-      cookieStorage.setItem("cookie.counter", "8");
-      ```
-
-6.  **To access a `Portal` outside of a component, create an `Atom`.**
+6.  **To manage state outside of a React Component, create an `Atom`.**
 
     - Create the `atom` with a key, value, and optional reducer:
 
       ```js
-      // Atoms should be created outside Components
+      // Atoms should be created outside React Components
       const counterAtom = new Atom(["counter", "atom"], 9);
       ```
 
-    - To access the value from the atom:
+    - To access the atom value within a component:
 
       ```js
-      // An atom state is isolated from the portal system
-      // and would not be available except by explicitly exporting
-      // and importing the atom from where it was declared.
+      // An atom state is isolated from the portal system and can be accessed
+      // by explicitly exporting and importing the atom from where it was declared.
       const [state, setState] = usePortal.atom(counterAtom);
       ```
 
@@ -286,6 +275,7 @@ This library exports the following APIs to enhance state management and facilita
     - Clear the entire `portal` system:
 
       ```js
+      // This will also remove values stored in the browser storage.
       clear();
       ```
 

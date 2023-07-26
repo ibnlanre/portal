@@ -100,7 +100,9 @@ export function usePortalImplementation<S, A>({
    * Create the setter function to update the state using the reducer if available.
    * @type {SetterFunction<S, A>}
    */
-  const setter = subject.observable.watch(subject.reducer);
+  const setter = useMemo(() => {
+    return subject.observable.watch(subject.reducer);
+  }, [subject]);
 
   /**
    * Return an array containing the current state and the setter function for state updates.

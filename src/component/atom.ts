@@ -67,15 +67,15 @@ export class Atom<S, A = undefined> implements Atomic<S, A> {
    */
   getItem = <T = S>() => {
     return this.subject.observable.value as unknown as T;
-  }
+  };
 
   /**
    * Sets the value of the Atom instance in the portal map.
    * @param {S} value The new value to set.
    */
   setItem = (value: Action<S, A>) => {
-    const entry = this.subject;
-    const setter = entry.observable.watch(entry.reducer);
+    const { observable, reducer } = this.subject;
+    const setter = observable.watch(reducer);
     setter(value);
-  }
+  };
 }

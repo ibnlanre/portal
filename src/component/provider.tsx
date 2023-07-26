@@ -1,6 +1,6 @@
 import { useState, type Provider } from "react";
 
-import { getCookieValue } from "cookies";
+import { getCookieValueByRegex } from "cookies";
 import { objectToStringKey } from "utilities";
 import { portalEntries } from "subject";
 
@@ -28,21 +28,21 @@ export function PortalProvider<S, A>({ children }: PortalEntriesProvider) {
    * Creates a function to split the cookie value and options from a given `cookieEntry`.
    *
    * @param {any} key The key associated with the portal entry.
-   * @param {CookieEntry?} [initialState] The initial state contained the cookie value and options.
+   * @param {CookieEntry?} [initialState] The initial state containing the cookie value and options.
    *
    * @returns {[string | undefined, CookieOptions]} An array containing the cookie value and options.
    * - The first element of the array is the cookie value (string) if available, otherwise `undefined`.
    * - The second element is an object representing the cookie options (e.g., `expires`, `path`, `domain`, `secure`, etc.).
    *   If no options are available, an empty object will be returned.
    */
-  function cook(key: string, initialState?: CookieEntry) {
+  function splitCookieEntry(key: string, initialState?: CookieEntry) {
     /**
      * Internal helper function to split the cookie value and options from a given `cookieEntry`.
      *
      * @param {CookieEntry} cookieEntry The cookie entry representing a portal entry.
      * @returns {[string | undefined, CookieOptions]} An array containing the cookie value and options.
      */
-    const splitCookieValue = (
+    const splitValueFromOptions = (
       cookieEntry: CookieEntry
     ): [string | undefined, CookieOptions] => {
       const { cookieOptions } = entries.get(key) || {};
@@ -50,11 +50,11 @@ export function PortalProvider<S, A>({ children }: PortalEntriesProvider) {
       return [value, options];
     };
 
-    const value = getCookieValue(key);
+    const value = getCookieValueByRegex(key);
     if (value !== null) {
-      return splitCookieValue({ ...initialState, value });
+      return splitValueFromOptions({ ...initialState, value });
     }
-    return splitCookieValue({ ...initialState });
+    return splitValueFromOptions({ ...initialState });
   }
 
   /**
@@ -178,10 +178,10 @@ export function PortalProvider<S, A>({ children }: PortalEntriesProvider) {
     <EntriesProvider
       value={{
         entries,
-        clearEntries,
         removeItemFromEntries,
         addItemToEntries,
-        cook,
+        splitCookieEntry,
+        clearEntries,
       }}
     >
       {children}

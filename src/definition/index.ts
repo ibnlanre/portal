@@ -139,7 +139,7 @@ export type PortalEntriesContext<S, A> = {
   addItemToEntries: PortalEntryAdder<S, A>;
   removeItemFromEntries: (key: any, storageTypes?: Array<StorageType>) => void;
   clearEntries: () => void;
-  cook: (
+  splitCookieEntry: (
     key: string,
     initialState?: CookieEntry
   ) => [string | undefined, CookieOptions];

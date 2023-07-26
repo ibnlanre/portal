@@ -30,21 +30,21 @@ class Portal<S, A = undefined> {
    * Creates a function to split the cookie value and options from a given `cookieEntry`.
    *
    * @param {any} key The key associated with the portal entry.
-   * @param {CookieEntry?} [initialState] The initial state contained the cookie value and options.
+   * @param {CookieEntry?} [initialState] The initial state containing the cookie value and options.
    *
    * @returns {[string | undefined, CookieOptions]} An array containing the cookie value and options.
    * - The first element of the array is the cookie value (string) if available, otherwise `undefined`.
    * - The second element is an object representing the cookie options (e.g., `expires`, `path`, `domain`, `secure`, etc.).
    *   If no options are available, an empty object will be returned.
    */
-  cook = (key: string, initialState?: CookieEntry) => {
+  splitCookieEntry = (key: string, initialState?: CookieEntry) => {
     /**
      * Internal helper function to split the cookie value and options from a given `cookieEntry`.
      *
      * @param {CookieEntry} cookieEntry The cookie entry representing a portal entry.
      * @returns {[string | undefined, CookieOptions]} An array containing the cookie value and options.
      */
-    const splitCookieValue = (
+    const splitValueFromOptions = (
       cookieEntry: CookieEntry
     ): [string | undefined, CookieOptions] => {
       const { cookieOptions } = this.entries.get(key) || {};
@@ -56,10 +56,10 @@ class Portal<S, A = undefined> {
     if (value !== null) {
       // If the value is an empty string `""`, then it would be replaced
       // by the inputted value, if any. Else, it replaces the given value.
-      const options = value === "" ? initialState : { ...initialState, value };
-      return splitCookieValue({ ...options });
+      const options = { ...initialState, value };
+      return splitValueFromOptions({ ...options });
     }
-    return splitCookieValue({ ...initialState });
+    return splitValueFromOptions({ ...initialState });
   };
 
   /**
@@ -122,7 +122,7 @@ class Portal<S, A = undefined> {
     try {
       if (this.portalMap.has(stringKey)) {
         const originalValue = this.portalMap.get(stringKey)!;
-        const setter = originalValue.observable.watch();
+        const setter = originalValue.observable.watch(originalValue.reducer);
         setter(value);
       } else {
         if (process.env.NODE_ENV === "development") {

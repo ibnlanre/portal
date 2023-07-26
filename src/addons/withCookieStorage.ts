@@ -16,15 +16,15 @@ export function usePortalWithCookieStorage<
   initialState: S,
   reducer?: Reducer<string, A>
 ): PortalState<string, A> {
-  const { cook } = usePortalEntries();
+  const { splitCookieEntry } = usePortalEntries();
   const stringKey = objectToStringKey(key);
 
   // Check whether the component is wrapped with the portal provider.
-  if (!cook) {
+  if (!splitCookieEntry) {
     throw new Error("usePortal must be used within a PortalProvider");
   }
 
-  const [value, cookieOptions] = cook(stringKey, initialState);
+  const [value, cookieOptions] = splitCookieEntry(stringKey, initialState);
   const [state, setState] = usePortalImplementation<string, A>({
     key: stringKey,
     initialState: value,
