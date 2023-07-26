@@ -16,7 +16,6 @@ import { Reducer } from "react";
 
 class Portal<S, A = undefined> {
   private portalMap: PortalMap<any, any> = new Map();
-  private waitlist: Map<string, Set<Initial<S>>> = new Map();
 
   get entries() {
     return this.portalMap;
@@ -87,10 +86,7 @@ class Portal<S, A = undefined> {
       reducer: undefined,
     };
 
-    if (!this.portalMap.has(key)) {
-      this.portalMap.set(key, subject);
-      this.waitlist.set(key, new Set());
-    }
+    if (!this.portalMap.has(key)) this.portalMap.set(key, subject);
     return subject;
   };
 

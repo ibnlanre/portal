@@ -30,12 +30,6 @@ This library exports the following APIs to enhance state management and facilita
         </tr>
         <tr>
             <td colspan="2">
-                <code>PortalProvider</code>
-            </td>
-            <td colspan="5">A provider <strong>component</strong> that wraps your application.</td>
-        </tr>
-        <tr>
-            <td colspan="2">
                 <code>usePortal</code>
             </td>
             <td colspan="5">A <strong>hook</strong> that allows you to create, access and update the state.</td>
@@ -121,22 +115,13 @@ This library exports the following APIs to enhance state management and facilita
     ```js
     import {
       usePortal,
-      PortalProvider,
       Atom,
       createBuilder,
       cookieStorage,
     } from "@ibnlanre/portal";
     ```
 
-2.  **Wrap your application with the `PortalProvider` component.**
-
-    - This should be used within the root `Component`:
-
-      ```jsx
-      <PortalProvider>{/* Your application components */}</PortalProvider>
-      ```
-
-3.  **Provide a marker for the state by passing a `key` to the `usePortal` hook.**
+2.  **Provide a marker for the state by passing a `key` to the `usePortal` hook.**
 
     - To create an application `state`:
 
@@ -173,7 +158,7 @@ This library exports the following APIs to enhance state management and facilita
       const handleDecrement = () => dispatch({ type: "decrement" });
       ```
 
-4.  **Persist the state by utilizing browser storage mechanisms.**
+3.  **Persist the state by utilizing browser storage mechanisms.**
 
     - To persist the state in `localStorage`:
 
@@ -195,7 +180,7 @@ This library exports the following APIs to enhance state management and facilita
       const [counter, setCounter] = usePortal({ counter: "session" });
       ```
 
-5.  **Cache state as a cookie in the browser storage.**
+4.  **Cache state as a cookie in the browser storage.**
 
     - To persist the state in `cookieStore`:
 
@@ -230,7 +215,7 @@ This library exports the following APIs to enhance state management and facilita
       const [cookieState, setCookieState] = usePortal("cookie.counter");
       ```
 
-6.  **To manage state outside of a React Component, create an `Atom`.**
+5.  **To manage state outside of a React Component, create an `Atom`.**
 
     - Create the `atom` with a key, value, and optional reducer:
 
@@ -247,7 +232,7 @@ This library exports the following APIs to enhance state management and facilita
       const [state, setState] = usePortal.atom(counterAtom);
       ```
 
-7.  **To `access` the internals of the `portal` system.**
+6.  **To `access` the internals of the `portal` system.**
 
     - Call `usePortal` without any arguments:
 
@@ -279,7 +264,7 @@ This library exports the following APIs to enhance state management and facilita
       clear();
       ```
 
-8.  **To create a `builder` pattern for property access.**
+7.  **To create a `builder` pattern for property access.**
 
     - Make of nested record of a `key` and `value` pair:
 
@@ -309,7 +294,7 @@ This library exports the following APIs to enhance state management and facilita
       builder.use().foo.bar; // 10
       ```
 
-9.  **Efficiently create `states` using the `builder` pattern.**
+8.  **Efficiently create `states` using the `builder` pattern.**
 
     ```js
     // Use the builder to generate required arguments.
