@@ -1,6 +1,6 @@
 import type { Dispatch, Reducer, SetStateAction } from "react";
 
-import { usePortalEntries } from "subject";
+import { portal } from "subject";
 import {
   usePortalImplementation,
   usePortalWithLocalStorage,
@@ -58,12 +58,11 @@ export function usePortal<S, A = undefined>(
   initialState?: Initial<S>,
   reducer?: Reducer<S, A>
 ): PortalResult<S, A> {
-  const { entries, removeItemFromEntries, clearEntries } = usePortalEntries();
   if (!key) {
     return {
-      entries,
-      remove: removeItemFromEntries,
-      clear: clearEntries,
+      entries: portal.entries,
+      remove: portal.removeItemFromEntries,
+      clear: portal.clearEntries,
     };
   }
   return usePortalImplementation({ key, initialState, reducer });

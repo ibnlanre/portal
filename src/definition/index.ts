@@ -44,6 +44,7 @@ export type PortalEntry<S, A> = {
   observable: BehaviorSubject<S>;
   reducer?: Reducer<S, A>;
   cookieOptions?: CookieOptions;
+  waitlist?: Set<Initial<S>>;
 };
 
 /**

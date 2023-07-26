@@ -1,6 +1,6 @@
 import { useEffect, type Reducer } from "react";
 
-import { usePortalEntries } from "subject";
+import { portal } from "subject";
 import { cookieStorage } from "component";
 import { objectToStringKey } from "utilities";
 
@@ -16,16 +16,14 @@ export function usePortalWithCookieStorage<
   initialState: S,
   reducer?: Reducer<string, A>
 ): PortalState<string, A> {
-  const { splitCookieEntry } = usePortalEntries();
   const stringKey = objectToStringKey(key);
 
-  // Check whether the component is wrapped with the portal provider.
-  if (!splitCookieEntry) {
-    throw new Error("usePortal must be used within a PortalProvider");
-  }
+  const [value, cookieOptions] = portal.splitCookieEntry(
+    stringKey,
+    initialState
+  );
 
-  const [value, cookieOptions] = splitCookieEntry(stringKey, initialState);
-  const [state, setState] = usePortalImplementation<string, A>({
+  const [state, setState] = usePortalImplementation({
     key: stringKey,
     initialState: value,
     cookieOptions,
@@ -36,7 +34,7 @@ export function usePortalWithCookieStorage<
     if (typeof state !== "undefined") {
       cookieStorage.setItem(stringKey, state, cookieOptions);
     }
-  }, [state, value, objectToStringKey(cookieOptions)]);
+  }, [state]);
 
   return [state, setState];
 }

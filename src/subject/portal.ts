@@ -1,9 +1,10 @@
-import { handleSSRError, objectToStringKey } from "utilities";
+import { getComputedState, handleSSRError, objectToStringKey } from "utilities";
 import { cookieStorage } from "component";
 
 import type {
   CookieEntry,
   CookieOptions,
+  Initial,
   PortalEntry,
   PortalMap,
   StorageType,
@@ -11,9 +12,11 @@ import type {
 
 import { BehaviorSubject } from "./behaviorSubject";
 import { getCookieValue } from "cookies";
+import { Reducer } from "react";
 
 class Portal<S, A = undefined> {
   private portalMap: PortalMap<any, any> = new Map();
+  private waitlist: Map<string, Set<Initial<S>>> = new Map();
 
   get entries() {
     return this.portalMap;
@@ -29,7 +32,7 @@ class Portal<S, A = undefined> {
   /**
    * Creates a function to split the cookie value and options from a given `cookieEntry`.
    *
-   * @param {any} key The key associated with the portal entry.
+   * @param {string} key The key associated with the portal entry.
    * @param {CookieEntry?} [initialState] The initial state containing the cookie value and options.
    *
    * @returns {[string | undefined, CookieOptions]} An array containing the cookie value and options.
@@ -68,20 +71,49 @@ class Portal<S, A = undefined> {
    * @template S The type of the state.
    * @template A The type of the actions.
    *
-   * @param {any} key The key of the item to be retrieved.
+   * @param {string} key The key of the item to be retrieved.
    * @param {boolean} [override=false] Whether to override an existing item with the same key.
    *
    * @returns {PortalEntry<S, A>} The portal entry with the specified key, or a new portal entry if not found.
    */
-  getItem = (key: any, override: boolean = false): PortalEntry<S, A> => {
-    const stringKey = this.stringKey(key);
+  getItem = (key: string, override: boolean = false): PortalEntry<S, A> => {
+    if (!override && this.portalMap.has(key)) {
+      return this.portalMap.get(key) as PortalEntry<S, A>;
+    }
+
     const subject = {
+      waitlist: new Set<Initial<S>>(),
       observable: new BehaviorSubject(undefined as S),
       reducer: undefined,
     };
-    if (!this.entries.has(stringKey)) this.addItem(key, subject);
-    else if (!override) return this.entries.get(stringKey)!;
+
+    if (!this.portalMap.has(key)) {
+      this.portalMap.set(key, subject);
+      this.waitlist.set(key, new Set());
+    }
     return subject;
+  };
+
+  await = (
+    subject: PortalEntry<S, A>,
+    reducer?: Reducer<S, A>,
+    cookieOptions?: CookieOptions
+  ) => {
+    function time(initialState: Initial<S>) {
+      if (reducer) subject.reducer = reducer;
+      if (cookieOptions) subject.cookieOptions = cookieOptions;
+      if (typeof initialState !== "undefined") {
+        if (initialState instanceof Promise) {
+          initialState.then(subject.observable.next);
+        } else {
+          const state = getComputedState(initialState);
+          subject.observable.next(state);
+        }
+      }
+    }
+    const waitlist = subject.waitlist;
+    waitlist?.forEach((value) => time(value));
+    if (waitlist?.size) waitlist?.clear();
   };
 
   /**

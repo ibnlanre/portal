@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 
-import { getComputedState, objectToStringKey } from "utilities";
-import { BehaviorSubject, usePortalEntries } from "subject";
+import { objectToStringKey } from "utilities";
+import { portal } from "subject";
 
-import type { Implementation, PortalEntry, PortalState } from "definition";
+import type { Implementation, PortalState } from "definition";
 
 /**
  * Internal function to handle state and subscriptions for the `usePortal` hook.
@@ -27,67 +27,30 @@ export function usePortalImplementation<S, A>({
   cookieOptions,
 }: Implementation<S, A>): PortalState<S, A> {
   const stringKey = objectToStringKey(key);
-  const { entries, addItemToEntries } = usePortalEntries<S, A>();
-
-  // Check whether the component is wrapped with the portal provider.
-  if (!entries) {
-    throw new Error("usePortal must be used within a PortalProvider");
-  }
 
   /**
    * Retrieve the portal entry associated with the specified key or create a new one if not found.
    * @type {PortalEntry<S, A>}
    */
-  const subject = useMemo<PortalEntry<S, A>>(() => {
-    if (!override && entries.has(stringKey)) {
-      return entries.get(stringKey) as PortalEntry<S, A>;
-    }
-
-    const state =
-      initialState instanceof Promise
-        ? undefined
-        : getComputedState(initialState);
-
-    return {
-      observable: new BehaviorSubject(state as S),
-      reducer,
-    };
-  }, [entries]);
+  const subject = portal.getItem(stringKey, override);
 
   /**
    * Store the current value of the state.
    * @type {S}
    */
   const [state, setState] = useState(subject.observable.value);
+  subject.waitlist?.add(initialState);
 
   /**
    * Subscribe to state changes and update the component's state accordingly.
    */
   useEffect(() => {
-    if (!entries.has(stringKey)) addItemToEntries(stringKey, subject);
-
     /**
      * Subscribe to state changes using the BehaviorSubject and update the component's state.
      * @type {Subscription}
      */
     const subscriber = subject.observable.subscribe(setState);
-
-    // Set the reducer function for state updates if provided.
-    if (reducer) subject.reducer = reducer;
-
-    // Set the options for cookie state.
-    if (cookieOptions) subject.cookieOptions = cookieOptions;
-
-    // Check if the `initialState` is a Promise, and if so, resolve it and set the state.
-    // Else, change the value of the observable to the `initialState` provided.
-    if (typeof initialState !== "undefined") {
-      if (initialState instanceof Promise) {
-        initialState.then(subject.observable.next);
-      } else {
-        const state = getComputedState(initialState);
-        subject.observable.next(state);
-      }
-    }
+    portal.await(subject, reducer, cookieOptions);
 
     /**
      * Unsubscribe from state changes when the component is unmounted.
