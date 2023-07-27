@@ -1,6 +1,6 @@
 # @ibnlanre/portal
 
-Inspired by [React Holmes](https://github.com/devx-os/react-holmes), `@ibnlanre/portal` is a simple React state management library based on RxJS Behavior Subject. It provides a convenient way to manage component state at the global scope using React context.
+Inspired by [React Holmes](https://github.com/devx-os/react-holmes) and [Tanstack Query](https://tanstack.com/query), `@ibnlanre/portal` is a simple **application** state management library for managing component state on a global level.
 
 ## Installation
 
@@ -53,31 +53,7 @@ This library exports the following APIs to enhance state management and facilita
             <td colspan="2">
                 <code>.cookie</code>
             </td>
-            <td colspan="4">A <strong>function</strong> that creates a cookie options state.</td>
-        </tr>
-        <tr>
-            <td></td>
-            <td></td>
-            <td colspan="2">
-                <code>.cache</code>
-            </td>
-            <td colspan="3">A <strong>hook</strong> to store state in Browser Cookie store.</td>
-        </tr>
-        <tr>
-            <td></td>
-            <td></td>
-            <td colspan="2">
-                <code>.options</code>
-            </td>
-            <td colspan="3">A <strong>function</strong> to update the cookie options.</td>
-        </tr>
-        <tr>
-            <td></td>
-            <td></td>
-            <td colspan="2">
-                <code>.set</code>
-            </td>
-            <td colspan="3">A <strong>function</strong> to set a cookie value.</td>
+            <td colspan="4">A <strong>hook</strong> to store state in Browser Cookie store.</td>
         </tr>
         <tr>
             <td></td>
@@ -85,13 +61,6 @@ This library exports the following APIs to enhance state management and facilita
                 <code>.atom</code>
             </td>
             <td colspan="5">A <strong>hook</strong> to access the state of an Atom.</td>
-        </tr>
-        <tr>
-            <td></td>
-            <td colspan="2">
-                <code>.set</code>
-            </td>
-            <td colspan="5">A <strong>function</strong> to set the state of a portal.</td>
         </tr>
         <tr>
             <td colspan="2">
