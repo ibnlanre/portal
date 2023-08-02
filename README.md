@@ -263,6 +263,13 @@ This library exports the following APIs to enhance state management and facilita
       builder.use().foo.bar; // 10
       ```
 
+    - Add a prefix to the keys:
+
+      ```js
+      const builderWithPrefix = createBuilder(store, ["tap"] as const);
+      builderWithPrefix.foo.bar.use() // ["tap", "foo", "bar"]
+      ```
+
 8.  **Efficiently create `states` using the `builder` pattern.**
 
     ```js

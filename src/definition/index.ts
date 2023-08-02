@@ -2,12 +2,12 @@ import type { Reducer, SetStateAction, Dispatch } from "react";
 import type { CookieOptions } from "./cookieOptions";
 import type { BehaviorSubject } from "subject";
 
-type Key<K, P extends string[] = []> = { use: () => [...P, K] };
+type Key<K, P extends readonly string[] = []> = { use: () => [...P, K] };
 type TupleOf<T> = T extends any[] ? T : [T];
 
 export type KeyBuilder<
   T extends Record<string, any>,
-  P extends string[] = []
+  P extends readonly string[] = []
 > = {
   [K in keyof T]: T[K] extends (...args: infer R) => any
     ? {
@@ -20,7 +20,7 @@ export type KeyBuilder<
     : Key<K, P>;
 };
 
-export type Builder<T extends Record<string, any>, P extends string[] = []> = {
+export type Builder<T extends Record<string, any>, P extends readonly string[] = []> = {
   use: () => T;
 } & KeyBuilder<T, P>;
 

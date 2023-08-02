@@ -15,7 +15,7 @@ import type { Builder, KeyBuilder } from "definition";
  */
 export function createBuilder<
   T extends Record<string, any>,
-  P extends string[] = []
+  P extends readonly string[] = []
 >(obj: T, prefix?: P): Builder<T, P> {
   const keys = Object.keys(obj) as Array<keyof T>;
 
