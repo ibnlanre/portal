@@ -32,7 +32,7 @@ export function usePortalImplementation<S, A>({
    * Retrieve the portal entry associated with the specified key or create a new one if not found.
    * @type {PortalEntry<S, A>}
    */
-  const subject = portal.getItem(stringKey, override);
+  const subject = portal.getItem(stringKey, initialState, override);
 
   /**
    * Store the current value of the state.

@@ -75,14 +75,23 @@ class Portal<S, A = undefined> {
    *
    * @returns {PortalEntry<S, A>} The portal entry with the specified key, or a new portal entry if not found.
    */
-  getItem = (key: string, override: boolean = false): PortalEntry<S, A> => {
+  getItem = (
+    key: string,
+    initialState: Initial<S>,
+    override: boolean = false
+  ): PortalEntry<S, A> => {
     if (!override && this.portalMap.has(key)) {
       return this.portalMap.get(key) as PortalEntry<S, A>;
     }
 
+    const observable =
+      initialState instanceof Promise
+        ? undefined
+        : getComputedState(initialState);
+
     const subject = {
       waitlist: new Set<Initial<S>>(),
-      observable: new BehaviorSubject(undefined as S),
+      observable: new BehaviorSubject(observable as S),
       reducer: undefined,
     };
 
