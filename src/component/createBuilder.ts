@@ -28,6 +28,7 @@ export function createBuilder<
         ...acc,
         [key]: {
           use: (...args: Parameters<typeof value>) => [...newPath, ...args],
+          get: () => [...newPath],
         },
       };
     }

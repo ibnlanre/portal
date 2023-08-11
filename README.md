@@ -251,8 +251,14 @@ This library exports the following APIs to enhance state management and facilita
     - Access the `keys`:
 
       ```js
-      builder.foo.use(); // ["foo"]
+      // `use` expects that the required arguments are passed.
       builder.foo.baz.use(11); // ["foo", "baz", 11]
+
+      // `get` retrieves the keys without invoking the function.
+      builder.foo.baz.get(); // ["foo", "baz"]
+
+      // `get` does not exist if the value is not a function.
+      builder.foo.use(); // ["foo"]
       ```
 
     - Get nested `values`:

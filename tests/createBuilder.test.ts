@@ -15,6 +15,7 @@ describe("createBuilder", () => {
   };
 
   const use = expect.any(Function);
+  const get = expect.any(Function);
 
   it("should create a builder object with correct nested structure", () => {
     const builder = createBuilder(obj);
@@ -24,16 +25,17 @@ describe("createBuilder", () => {
       dex: { use },
       foo: {
         bar: {
-          baz: { use },
+          baz: { use, get },
           use,
         },
-        qux: { use },
+        qux: { use, get },
         use,
       },
       num: { use },
       str: { use },
     });
 
+    expect(builder.foo.bar.baz.get()).toEqual(["foo", "bar", "baz"]);
     expect(builder.foo.bar.baz.use(14)).toEqual(["foo", "bar", "baz", 14]);
     expect(builder.foo.qux.use()).toEqual(["foo", "qux"]);
     expect(builder.num.use()).toEqual(["num"]);
@@ -48,11 +50,11 @@ describe("createBuilder", () => {
       dex: { use },
       foo: {
         bar: {
-          baz: { use },
+          baz: { use, get },
           use,
         },
         use,
-        qux: { use },
+        qux: { use, get },
       },
       num: { use },
       str: { use },
