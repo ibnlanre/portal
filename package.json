@@ -1,6 +1,6 @@
 {
   "name": "@ibnlanre/portal",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "React state management library",
   "main": "cjs/index.js",
   "module": "esm/index.js",
@@ -27,9 +27,9 @@
     "esm-bundle": "tsup --config tsup.esm.ts",
     "cjs-bundle": "tsup --config tsup.cjs.ts",
     "lint": "tsc --pretty --noEmit --project tsconfig-test.json",
-    "package": "yarn build & yarn publish --access public",
     "test": "jest --config jest.config.ts",
-    "build": "yarn esm-bundle && yarn cjs-bundle"
+    "build": "yarn esm-bundle & yarn cjs-bundle",
+    "package": "yarn publish --access public"
   },
   "keywords": [
     "web",
