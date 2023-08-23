@@ -2,25 +2,13 @@
   "name": "@ibnlanre/portal",
   "version": "2.3.0",
   "description": "React state management library",
-  "main": "dist/index",
+  "main": "cjs/index.js",
+  "module": "esm/index.js",
+  "types": "cjs/index.d.ts",
   "files": [
-    "dist"
+    "esm",
+    "cjs"
   ],
-  "tsup": {
-    "entry": [
-      "src/index.ts"
-    ],
-    "sourcemap": true,
-    "banner": {
-      "js": "\"use client\";"
-    },
-    "format": [
-      "esm"
-    ],
-    "clean": true,
-    "dts": true,
-    "jsx": true
-  },
   "release-it": {
     "git": {
       "commitMessage": "chore(release): v${version}"
@@ -36,6 +24,8 @@
     "node": ">=14.0.0"
   },
   "scripts": {
+    "esm-bundle": "tsup --config tsup.esm.ts",
+    "cjs-bundle": "tsup --config tsup.cjs.ts",
     "lint": "tsc --pretty --noEmit --project tsconfig-test.json",
     "package": "yarn build & yarn publish --access public",
     "test": "jest --config jest.config.ts",
