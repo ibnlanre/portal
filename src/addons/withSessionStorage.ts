@@ -7,7 +7,7 @@ import type { Initial, PortalState } from "definition";
 
 export function usePortalWithSessionStorage<S, A>(
   key: any,
-  initialState: Initial<S>,
+  initialState?: Initial<S>,
   reducer?: Reducer<S, A>
 ): PortalState<S, A> {
   const stringKey = objectToStringKey(key);

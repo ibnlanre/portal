@@ -13,7 +13,7 @@ export function usePortalWithCookieStorage<
   A = undefined
 >(
   key: any,
-  initialState: S,
+  initialState?: S,
   reducer?: Reducer<string, A>
 ): PortalState<string, A> {
   const stringKey = objectToStringKey(key);
