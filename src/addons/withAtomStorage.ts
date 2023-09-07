@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Atomic, PortalState } from "definition";
+import type { Atom, PortalEntry, PortalState } from "definition";
 
 export function usePortalWithAtomStorage<S, A = undefined>(
-  store: Atomic<S, A>
+  store: Atom<S, A> & { value: PortalEntry<S, A> }
 ): PortalState<S, A> {
-  const { subject } = store.props;
+  const subject = store.value;
   const [state, setState] = useState(subject.observable.value);
 
   useEffect(() => {

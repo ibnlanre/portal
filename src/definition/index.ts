@@ -155,11 +155,7 @@ export type PortalImplementation<T> = <S extends T, A = undefined>(
  * @template S The type of the state.
  * @template A The type of the actions (if a reducer is provided).
  */
-export type Atomic<S, A = undefined> = {
-  props: {
-    subject: PortalEntry<S, A>;
-    key: string;
-  };
+export type Atom<S, A = undefined> = {
   setItem(value: Action<S, A>): void;
   getItem<T = S>(): T;
 };
