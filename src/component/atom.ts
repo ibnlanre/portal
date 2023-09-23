@@ -1,20 +1,14 @@
-// type Reducers = Record<string, (...args: ReadonlyArray<any>) => void>;
-
-import type { Subscription } from "definition";
-
-abstract class Subject<S> {
-  abstract next(value: S): void;
-  abstract subscribe(observer: (value: S) => void): Subscription;
-  abstract unsubscribe(): void;
-}
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 
 /**
  * Represents a subject that maintains a current value and emits it to subscribers.
  * @template S The type of the initial and emitted values.
  */
-export class BehaviorSubject<S> implements Subject<S> {
+export class BehaviorSubject<S> {
   private state: S;
+  private history: S[] = [];
   private subscribers: Set<Function>;
+  private currentIndex: number;
 
   /**
    * Creates a new instance of BehaviorSubject.
@@ -26,13 +20,95 @@ export class BehaviorSubject<S> implements Subject<S> {
      * @type {S}
      */
     this.state = initialValue;
-
     /**
      * The set of subscribers to the subject.
      * @type {Set<Function>}
      */
     this.subscribers = new Set();
+    this.currentIndex = 0;
+    this.history.push(initialValue);
   }
+
+  /**
+   * Returns the current value of the subject.
+   * @returns {S} The current value.
+   */
+  get value(): S {
+    return this.state;
+  }
+
+  get canUndo(): boolean {
+    return this.currentIndex > 0;
+  }
+
+  get canRedo(): boolean {
+    return this.currentIndex < this.history.length - 1;
+  }
+
+  /**
+   * Emits a new value to the subject and notifies subscribers.
+   * @param {S} value The new value to emit.
+   */
+  next = (value: S) => {
+    if (!Object.is(this.state, value)) {
+      this.state = value;
+      // history is kept to allow time-travel until an update
+      this.history.splice(this.currentIndex + 1);
+      this.history.push(value);
+      this.currentIndex = this.history.length - 1;
+      this.notifySubscribers();
+    }
+  };
+
+  previous = () => {
+    const currentIndex = this.currentIndex - 1;
+    if (!currentIndex) return this.state;
+    if (currentIndex > 0) {
+      return this.history[currentIndex];
+    }
+    return undefined
+  };
+
+  undo = () => {
+    if (this.canUndo) {
+      this.currentIndex--;
+      this.state = this.history[this.currentIndex] as S;
+      this.notifySubscribers();
+    }
+  };
+
+  redo = () => {
+    if (this.canRedo) {
+      this.currentIndex++;
+      this.state = this.history[this.currentIndex] as S;
+      this.notifySubscribers();
+    }
+  };
+
+  /**
+   * Subscribes to the subject and receives emitted values.
+   * @param {Function} observer The callback function to be called with emitted values.
+   * @returns {{ unsubscribe: Function }} An object with a function to unsubscribe the callback.
+   */
+  subscribe = (observer: (value: S) => any) => {
+    if (!this.subscribers.has(observer)) {
+      this.subscribers.add(observer);
+      observer(this.state);
+    }
+
+    return {
+      unsubscribe: () => {
+        this.subscribers.delete(observer);
+      },
+    };
+  };
+
+  /**
+   * Unsubscribes all subscribers from the subject.
+   */
+  unsubscribe = (): void => {
+    this.subscribers.clear();
+  };
 
   /**
    * Notifies all subscribers with the current value.
@@ -47,95 +123,16 @@ export class BehaviorSubject<S> implements Subject<S> {
       }
     });
   };
-
-  /**
-   * Returns the current value of the subject.
-   * @returns {S} The current value.
-   */
-  get value(): S {
-    return this.state;
-  }
-
-  /**
-   * Emits a new value to the subject and notifies subscribers.
-   * @param {S} value The new value to emit.
-   */
-  next = (value: S) => {
-    if (!Object.is(this.state, value)) {
-      this.state = value;
-      this.notifySubscribers();
-    }
-  };
-
-  /**
-   * Subscribes to the subject and receives emitted values.
-   * @param {Function} observer The callback function to be called with emitted values.
-   * @param {boolean} [initiate=true] Whether to initiate the callback immediately with the current state. Defaults to `true`.
-   * @returns {{ unsubscribe: Function }} An object with a function to unsubscribe the callback.
-   */
-  subscribe = (observer: Function, initiate: boolean = true): Subscription => {
-    // Confirm the callback isn't in the subscribers list.
-    if (!this.subscribers.has(observer)) {
-      // Add the callback as a member in the subscribers list.
-      this.subscribers.add(observer);
-      if (initiate) observer(this.state);
-    }
-    return {
-      unsubscribe: () => {
-        this.subscribers.delete(observer);
-      },
-    };
-  };
-
-  /**
-   * Unsubscribes all subscribers from the subject.
-   */
-  unsubscribe = (): void => {
-    this.subscribers.clear();
-  };
 }
 
-type PossibleReturnType<Value extends ((...args: any[]) => any) | undefined> =
-  Value extends (...args: any[]) => infer R ? R : undefined;
-
-type Events<State> = {
-  set: (value: State) => void;
-  get: () => State;
-};
-
-type AtomConfig<
-  State,
-  Variables extends OptionType<string, any> | undefined,
-  Operators extends OptionType<string> | undefined,
-  Actions,
-  Selectors
-> = {
-  state: () => State;
-  actions?: Actions;
-  selectors?: Selectors;
+type AtomConfig<State, Variables> = {
+  value: () => State;
+  events?: {
+    set?: (value: State) => State;
+    get?: (value?: State) => State;
+  };
   variables?: Variables;
-  operators?: Operators;
-  events?: Events<State>;
 };
-
-type OptionType<Option extends string, Return = any> = {
-  [Key in Option]: (...args: Array<any>) => Return;
-};
-
-const x = atom({
-  state: () => 6,
-  operators: {
-    getStoredValue: () => {
-      console.log(x);
-      const storedValue = localStorage.getItem("trade");
-      return JSON.parse(storedValue ?? "''");
-    },
-    saveValueToStorage: (value: number) => {
-      const stringifiedValue = JSON.stringify(value);
-      localStorage.setItem("trade", stringifiedValue);
-    },
-  },
-});
 
 /**
  * Represents an Atom in the portal system.
@@ -143,13 +140,17 @@ const x = atom({
  *
  * @template S The type of the state.
  */
-export type Atom<State, Variables, Operators> = {
-  state: {
-    set: (value: State) => void;
-    get: () => State;
+export type Atom<State, Variables> = {
+  set: (value: State) => void;
+  get: () => State;
+  subscribe: (observer: (value: State) => any) => {
+    unsubscribe: () => void;
   };
-  variables?: Variables;
-  operators?: Operators;
+  unsubscribe: () => void;
+  previous: () => State | undefined;
+  redo: () => void;
+  undo: () => void;
+  state: Variables;
 };
 
 /**
@@ -162,87 +163,63 @@ export type Atom<State, Variables, Operators> = {
  */
 export function atom<
   State,
-  Variables extends OptionType<string, any> | undefined,
-  Operators extends OptionType<string, any> | undefined,
-  Actions = undefined,
-  Selectors = undefined
->({
-  variables,
-  operators,
-  ...options
-}: AtomConfig<State, Variables, Operators, Actions, Selectors>): Atom<
-  State,
-  Variables,
-  Operators
-> {
-  const { state, actions, selectors, events } = options;
-  const observable = new BehaviorSubject(state());
-
-  const props = {
-    get state() {
-      return {
-        /**
-         * Sets the value of the Atom instance in the portal map.
-         * @param {S} value The new value to set.
-         */
-        set: (value: State) => {
-          observable.next(value);
-          events?.set(value);
-        },
-
-        /**
-         * Retrieves the current value of the observable stored in the subject.
-         *
-         * @template T The type of the value stored in the observable.
-         * @returns {T} The current value of the observable.
-         */
-        get: () => {
-          events?.get();
-          return observable.value;
-        },
-      };
+  Variables extends {
+    [key: string]: any;
+  }
+>(config: AtomConfig<State, Variables>): Atom<State, Variables> {
+  const {
+    value,
+    events = {
+      set: (value: State) => value,
+      get: (value: State) => value,
     },
+    variables,
+  } = config;
+  const observable = new BehaviorSubject(value());
 
-    get variables() {
-      return variables;
-    },
-
-    get operators() {
-      return operators;
-    },
-  };
-
-  const value = {
-    state: props.state,
-    selectors,
-    actions,
+  /**
+   * Sets the value of the Atom instance in the portal map.
+   * @param {S} value The new value to set.
+   */
+  const set = (value: State) => {
+    if (events && events?.set) {
+      observable.next(events.set(value));
+    } else observable.next(value);
   };
 
   /**
-   * Retrieves the subject associated with the Atom instance.
-   * @returns {Object} An object containing the subject.
+   * Retrieves the current value of the observable stored in the subject.
+   *
+   * @template T The type of the value stored in the observable.
+   * @returns {T} The current value of the observable.
    */
-  Object.defineProperty(atom, "value", {
-    writable: false,
-    configurable: false,
-    enumerable: false,
-    value,
-  });
+  const get = () => {
+    if (events && events?.get) {
+      return events.get(observable.value);
+    } else return observable.value;
+  };
+
+  const subscribe = observable.subscribe;
+  const unsubscribe = observable.unsubscribe;
+  const previous = observable.previous;
+  const redo = observable.redo;
+  const undo = observable.undo;
+
+  const props = {
+    set,
+    get,
+    subscribe,
+    unsubscribe,
+    previous,
+    redo,
+    undo,
+    get state() {
+      return variables as Variables;
+    },
+  };
 
   return props;
 }
-
-type AtomValue<State, Selectors, Actions> = {
-  state: {
-    set: (value: State) => void;
-    get: () => State;
-  };
-  selectors: Selectors | undefined;
-  actions: Actions | undefined;
-};
-
-// import { useEffect, useMemo, useState } from "react";
-// import type { Atom, PortalEntry, PortalState } from "definition";
 
 /**
  * Custom hook to access and manage an isolated state within an Atom storage.
@@ -252,19 +229,16 @@ type AtomValue<State, Selectors, Actions> = {
  * @param {Atom<S, A>} store The Atom storage from which to access the state.
  * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
  */
-export function useAtom<S, A = undefined>(
-  store: Atom<S> & { value: PortalEntry<S, A> }
-): PortalState<S, A> {
-  const subject = store.value;
-  const [state, setState] = useState(subject.observable.value);
+export function useAtom<State, Variables>(
+  store: Atom<State, Variables>
+): [State, Dispatch<SetStateAction<State>>] {
+  const { get, subscribe } = store;
+  const [state, setState] = useState(get());
 
   useEffect(() => {
-    const subscriber = subject.observable.subscribe(setState);
+    const subscriber = subscribe(setState);
     return subscriber.unsubscribe;
   }, []);
 
-  const setter = useMemo(() => {
-    return subject.observable.watch(subject.reducer);
-  }, [subject]);
-  return [state, setter];
+  return [state, setState];
 }
