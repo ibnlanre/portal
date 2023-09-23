@@ -5,7 +5,6 @@ import {
   usePortalImplementation,
   usePortalWithLocalStorage,
   usePortalWithSessionStorage,
-  usePortalWithAtomStorage,
   usePortalWithCookieStorage,
 } from "addons";
 
@@ -68,15 +67,6 @@ export function usePortal<S, A = undefined>(
   return usePortalImplementation({ key, initialState, reducer });
 }
 
-/**
- * Custom hook to access and manage an isolated state within an Atom storage.
- * @template S The type of the state.
- * @template A The type of the actions.
- *
- * @param {Atom<S, A>} store The Atom storage from which to access the state.
- * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
- */
-usePortal.atom = usePortalWithAtomStorage;
 
 /**
  * Custom hook to access and manage state in the portal system with localStorage support.
