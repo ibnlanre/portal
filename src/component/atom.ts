@@ -133,15 +133,15 @@ export class BehaviorSubject<S> {
   };
 }
 
-type Actions<Data, State, Variables> = {
+type Actions<State, Data, Variables> = {
   get?: (value: State, variables: Variables) => Data;
-  use?: <Type = Data>(props: Atom<Type, State, Variables>) => void;
+  use?: <Value = Data>(props: Atom<State, Value, Variables>) => void;
   set?: (value: State, variables: Variables) => State;
 };
 
-type AtomConfig<Data, State, Variables> = {
+type AtomConfig<State, Data, Variables> = {
   state: (variables: Variables) => State;
-  actions?: Actions<Data, State, Variables>;
+  actions?: Actions<State, Data, Variables>;
   variables?: Variables;
 };
 
@@ -151,7 +151,7 @@ type AtomConfig<Data, State, Variables> = {
  *
  * @template S The type of the state.
  */
-export type Atom<Data, State, Variables> = {
+export type Atom<State, Data, Variables> = {
   value: State;
   previous: () => State | undefined;
   update: (value: State) => void;
@@ -178,12 +178,12 @@ export type Atom<Data, State, Variables> = {
  * @returns {Atom<S, A>} An instance of the Atom class.
  */
 export function atom<
-  Data,
   State,
+  Data = State,
   Variables extends {
     [key: string]: any;
   } = {}
->(config: AtomConfig<Data, State, Variables>) {
+>(config: AtomConfig<State, Data, Variables>) {
   const { state, actions, variables = {} as Variables } = config;
   const { set, get, use } = { ...actions };
 
@@ -219,31 +219,4 @@ export function atom<
 
   if (use) use<Data>(props);
   return props;
-}
-
-/**
- * Custom hook to access and manage an isolated state within an Atom storage.
- * @template S The type of the state.
- * @template A The type of the actions.
- *
- * @param {Atom<S, A>} store The Atom storage from which to access the state.
- * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
- */
-export function useAtom<Data, State, Variables>(
-  store: Atom<Data, State, Variables>
-) {
-  const { get, value, set, update, subscribe } = store;
-  const [state, setState] = useState(value);
-
-  useEffect(() => {
-    const subscriber = subscribe(setState, false);
-    return subscriber.unsubscribe;
-  }, []);
-
-  const atom = get(state);
-  const setAtom = (value: State) => {
-    update(set(value));
-  };
-
-  return [atom, setAtom] as const;
 }

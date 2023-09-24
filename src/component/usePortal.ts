@@ -67,7 +67,6 @@ export function usePortal<S, A = undefined>(
   return usePortalImplementation({ key, initialState, reducer });
 }
 
-
 /**
  * Custom hook to access and manage state in the portal system with localStorage support.
  * @template S The type of the state.

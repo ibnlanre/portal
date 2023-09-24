@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import type { Atom, PortalEntry, PortalState } from "definition";
+import { useEffect, useState } from "react";
+import { Atom } from "./atom";
 
 /**
  * Custom hook to access and manage an isolated state within an Atom storage.
@@ -9,19 +9,21 @@ import type { Atom, PortalEntry, PortalState } from "definition";
  * @param {Atom<S, A>} store The Atom storage from which to access the state.
  * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
  */
-export function useAtom<S, A = undefined>(
-  store: Atom<S, A> & { value: PortalEntry<S, A> }
-): PortalState<S, A> {
-  const subject = store.value;
-  const [state, setState] = useState(subject.observable.value);
+export function useAtom<State, Data, Variables>(
+  store: Atom<State, Data, Variables>
+) {
+  const { get, value, set, update, subscribe } = store;
+  const [state, setState] = useState(value);
 
   useEffect(() => {
-    const subscriber = subject.observable.subscribe(setState);
+    const subscriber = subscribe(setState, false);
     return subscriber.unsubscribe;
   }, []);
 
-  const setter = useMemo(() => {
-    return subject.observable.watch(subject.reducer);
-  }, [subject]);
-  return [state, setter];
+  const atom = get(state);
+  const setAtom = (value: State) => {
+    update(set(value));
+  };
+
+  return [atom, setAtom] as const;
 }
