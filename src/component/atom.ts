@@ -1,11 +1,19 @@
-import {
-  Dispatch,
-  Reducer,
-  SetStateAction,
-  useEffect,
-  useReducer,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
+
+import { SetStateAction } from "react";
+
+/**
+ * Type guard to check if a value is a SetStateAction function.
+ *
+ * @template S The type of the state.
+ * @param {SetStateAction<S>} value The value to be checked.
+ * @returns {boolean} `true` if the value is a SetStateAction function, otherwise `false`.
+ */
+export function isSetStateFunction<State, Variables>(
+  value: State | ((variables: Variables) => State)
+): value is (variables: Variables) => State {
+  return typeof value === "function";
+}
 
 /**
  * Represents a subject that maintains a current value and emits it to subscribers.
@@ -65,6 +73,7 @@ export class BehaviorSubject<S> {
       this.currentIndex = this.history.length - 1;
       this.notifySubscribers();
     }
+    return value;
   };
 
   previous = () => {
@@ -133,19 +142,24 @@ export class BehaviorSubject<S> {
   };
 }
 
-type Actions<State, CleanUp extends () => void | void, Data, Variables> = {
-  get?: (value: State, variables: Variables) => Data;
-  set?: (value: State, variables: Variables) => State;
+type Actions<State, Run, Data, Variables> = {
+  get?: (
+    { prev, next }: { prev: State; next: State },
+    variables: Variables
+  ) => Data;
+  set?: (
+    { prev, next }: { prev: State; next: State },
+    variables: Variables
+  ) => State;
   run?: <Value = Data>(
     props: Atom<State, Value, Variables>,
-    ...args: any[]
-  ) => CleanUp;
-  use?: <Value = Data>(props: Atomic<State, CleanUp, Value, Variables>) => void;
+    ...args: Run[]
+  ) => void;
 };
 
-type AtomConfig<State, CleanUp extends () => void, Data, Variables> = {
-  state: (variables: Variables) => State;
-  actions?: Actions<State, CleanUp, Data, Variables>;
+type AtomConfig<State, Run, Data, Variables> = {
+  state: State | ((variables: Variables) => State);
+  actions?: Actions<State, Run, Data, Variables>;
   variables?: Variables;
 };
 
@@ -173,15 +187,6 @@ export type Atom<State, Data, Variables> = {
   variables: Variables;
 };
 
-interface Atomic<State, CleanUp extends () => void | void, Run, Data, Variables>
-  extends Atom<State, Data, Variables> {
-  use: <Value = Data>(
-    props: Atomic<State, CleanUp, Run, Value, Variables>
-  ) => void;
-  rerun: (...values: Run[]) => void;
-  cleanup: CleanUp;
-}
-
 /**
  * @template S The type of the state.
  * @template A The type of the actions.
@@ -192,16 +197,18 @@ interface Atomic<State, CleanUp extends () => void | void, Run, Data, Variables>
  */
 export function atom<
   State,
-  CleanUp extends () => void | void,
+  Run,
   Data = State,
   Variables extends {
     [key: string]: any;
   } = {}
->(config: AtomConfig<State, CleanUp, Data, Variables>) {
+>(config: AtomConfig<State, Run, Data, Variables>) {
   const { state, actions, variables = {} as Variables } = config;
-  const { set, get, run, use } = { ...actions };
+  const { set, get, run } = { ...actions };
 
-  const observable = new BehaviorSubject(state(variables));
+  const observable = new BehaviorSubject(
+    isSetStateFunction<State, Variables>(state) ? state(variables) : state
+  );
   const { subscribe, unsubscribe, previous, redo, undo } = observable;
 
   const props = {
@@ -211,7 +218,9 @@ export function atom<
      */
     update: observable.next,
     set: (value: State) => {
-      return set ? set(value, variables) : (value as unknown as State);
+      return set
+        ? set({ prev: observable.value, next: value }, variables)
+        : (value as unknown as State);
     },
     /**
      * Retrieves the current value of the observable stored in the subject.
@@ -221,7 +230,9 @@ export function atom<
      */
     value: observable.value,
     get: (value: State) => {
-      return get ? get(value, variables) : (value as unknown as Data);
+      return get
+        ? get({ prev: observable.value, next: value }, variables)
+        : (value as unknown as Data);
     },
     subscribe,
     unsubscribe,
@@ -231,49 +242,13 @@ export function atom<
     undo,
   };
 
+  run?.(props);
   const atomic = {
     ...props,
-    cleanup: run?.(props),
-    rerun: (...values: any[]) => {
-      atomic.cleanup?.();
-      if (run) {
-        atomic.cleanup = run?.(props, ...values);
-      }
+    rerun: (...values: Run[]) => {
+      run?.(props, ...values);
     },
   };
 
   return atomic;
-}
-
-/**
- * Custom hook to access and manage an isolated state within an Atom storage.
- * @template S The type of the state.
- * @template A The type of the actions.
- *
- * @param {Atom<S, A>} store The Atom storage from which to access the state.
- * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
- */
-export function useAtom<
-  State,
-  CleanUp extends () => void | void,
-  Data,
-  Variables
->(store: Atomic<State, CleanUp, Data, Variables>) {
-  const { get, value, set, update, subscribe, use } = store;
-  const [state, setState] = useState(value);
-
-  useEffect(() => {
-    const subscriber = subscribe(setState, false);
-
-    return () => {
-      subscriber.unsubscribe;
-    };
-  }, []);
-
-  const atom = get(state);
-  const setAtom = (value: State) => {
-    update(set(value));
-  };
-
-  return [atom, setAtom] as const;
 }
