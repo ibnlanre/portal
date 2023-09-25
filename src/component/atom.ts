@@ -133,15 +133,19 @@ export class BehaviorSubject<S> {
   };
 }
 
-type Actions<State, Data, Variables> = {
+type Actions<State, CleanUp extends () => void | void, Data, Variables> = {
   get?: (value: State, variables: Variables) => Data;
-  use?: <Value = Data>(props: Atom<State, Value, Variables>) => void;
   set?: (value: State, variables: Variables) => State;
+  run?: <Value = Data>(
+    props: Atom<State, Value, Variables>,
+    ...args: any[]
+  ) => CleanUp;
+  use?: <Value = Data>(props: Atomic<State, CleanUp, Value, Variables>) => void;
 };
 
-type AtomConfig<State, Data, Variables> = {
+type AtomConfig<State, CleanUp extends () => void, Data, Variables> = {
   state: (variables: Variables) => State;
-  actions?: Actions<State, Data, Variables>;
+  actions?: Actions<State, CleanUp, Data, Variables>;
   variables?: Variables;
 };
 
@@ -169,6 +173,15 @@ export type Atom<State, Data, Variables> = {
   variables: Variables;
 };
 
+interface Atomic<State, CleanUp extends () => void | void, Run, Data, Variables>
+  extends Atom<State, Data, Variables> {
+  use: <Value = Data>(
+    props: Atomic<State, CleanUp, Run, Value, Variables>
+  ) => void;
+  rerun: (...values: Run[]) => void;
+  cleanup: CleanUp;
+}
+
 /**
  * @template S The type of the state.
  * @template A The type of the actions.
@@ -179,13 +192,14 @@ export type Atom<State, Data, Variables> = {
  */
 export function atom<
   State,
+  CleanUp extends () => void | void,
   Data = State,
   Variables extends {
     [key: string]: any;
   } = {}
->(config: AtomConfig<State, Data, Variables>) {
+>(config: AtomConfig<State, CleanUp, Data, Variables>) {
   const { state, actions, variables = {} as Variables } = config;
-  const { set, get, use } = { ...actions };
+  const { set, get, run, use } = { ...actions };
 
   const observable = new BehaviorSubject(state(variables));
   const { subscribe, unsubscribe, previous, redo, undo } = observable;
@@ -217,6 +231,49 @@ export function atom<
     undo,
   };
 
-  if (use) use<Data>(props);
-  return props;
+  const atomic = {
+    ...props,
+    cleanup: run?.(props),
+    rerun: (...values: any[]) => {
+      atomic.cleanup?.();
+      if (run) {
+        atomic.cleanup = run?.(props, ...values);
+      }
+    },
+  };
+
+  return atomic;
+}
+
+/**
+ * Custom hook to access and manage an isolated state within an Atom storage.
+ * @template S The type of the state.
+ * @template A The type of the actions.
+ *
+ * @param {Atom<S, A>} store The Atom storage from which to access the state.
+ * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
+ */
+export function useAtom<
+  State,
+  CleanUp extends () => void | void,
+  Data,
+  Variables
+>(store: Atomic<State, CleanUp, Data, Variables>) {
+  const { get, value, set, update, subscribe, use } = store;
+  const [state, setState] = useState(value);
+
+  useEffect(() => {
+    const subscriber = subscribe(setState, false);
+
+    return () => {
+      subscriber.unsubscribe;
+    };
+  }, []);
+
+  const atom = get(state);
+  const setAtom = (value: State) => {
+    update(set(value));
+  };
+
+  return [atom, setAtom] as const;
 }
