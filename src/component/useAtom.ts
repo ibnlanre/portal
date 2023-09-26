@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
-import { Atom } from "./atom";
-interface Atomic<State, Run, Data, Variables>
-  extends Atom<State, Data, Variables> {
+import { Fields } from "./atom";
+
+export interface Atom<State, Run, Residue, Data, Context>
+  extends Fields<State, Data, Context> {
   rerun: (...values: Run[]) => void;
+  residue: Residue;
 }
 
 /**
@@ -13,22 +15,20 @@ interface Atomic<State, Run, Data, Variables>
  * @param {Atom<S, A>} store The Atom storage from which to access the state.
  * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
  */
-export function useAtom<State, Run, Data, Variables>(
-  store: Atomic<State, Run, Data, Variables>
+export function useAtom<State, Run, Residue, Data, Context>(
+  store: Atom<State, Run, Residue, Data, Context>
 ) {
-  const { get, value, set, update, subscribe } = store;
-  const [state, setState] = useState(value);
+  const { get, set, next, subscribe } = store;
+  const [state, setState] = useState(store.value);
 
   useEffect(() => {
-    const subscriber = subscribe(setState, false);
-    return () => {
-      subscriber.unsubscribe;
-    };
+    const subscriber = subscribe(setState);
+    return subscriber.unsubscribe;
   }, []);
 
   const atom = get(state);
   const setAtom = (value: State) => {
-    update(set(value));
+    next(set(value));
   };
 
   return [atom, setAtom] as const;

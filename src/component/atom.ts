@@ -1,7 +1,3 @@
-import { useEffect, useState } from "react";
-
-import { SetStateAction } from "react";
-
 /**
  * Type guard to check if a value is a SetStateAction function.
  *
@@ -9,9 +5,9 @@ import { SetStateAction } from "react";
  * @param {SetStateAction<S>} value The value to be checked.
  * @returns {boolean} `true` if the value is a SetStateAction function, otherwise `false`.
  */
-export function isSetStateFunction<State, Variables>(
-  value: State | ((variables: Variables) => State)
-): value is (variables: Variables) => State {
+export function isSetStateFunction<State, Context>(
+  value: State | ((context: Context) => State)
+): value is (context: Context) => State {
   return typeof value === "function";
 }
 
@@ -104,13 +100,12 @@ export class BehaviorSubject<S> {
   /**
    * Subscribes to the subject and receives emitted values.
    * @param {Function} observer The callback function to be called with emitted values.
-   * @param {boolean} [initiate=true] Whether to initiate the callback immediately with the current state. Defaults to `true`.
    * @returns {{ unsubscribe: Function }} An object with a function to unsubscribe the callback.
    */
-  subscribe = (observer: (value: S) => any, initiate: boolean = true) => {
+  subscribe = (observer: (value: S) => any) => {
     if (!this.subscribers.has(observer)) {
       this.subscribers.add(observer);
-      if (initiate) observer(this.state);
+      observer(this.state);
     }
 
     return {
@@ -142,25 +137,24 @@ export class BehaviorSubject<S> {
   };
 }
 
-type Actions<State, Run, Data, Variables> = {
-  get?: (
-    { prev, next }: { prev: State; next: State },
-    variables: Variables
-  ) => Data;
-  set?: (
-    { prev, next }: { prev: State; next: State },
-    variables: Variables
-  ) => State;
+interface Values<State> {
+  then: State;
+  now: State;
+}
+
+type Actions<State, Run, Residue, Data, Context> = {
+  get?: (values: Values<State>, context: Context) => Data;
+  set?: (values: Values<State>, context: Context) => State;
   run?: <Value = Data>(
-    props: Atom<State, Value, Variables>,
+    props: Fields<State, Value, Context>,
     ...args: Run[]
-  ) => void;
+  ) => Residue;
 };
 
-type AtomConfig<State, Run, Data, Variables> = {
-  state: State | ((variables: Variables) => State);
-  actions?: Actions<State, Run, Data, Variables>;
-  variables?: Variables;
+type AtomConfig<State, Run, Residue, Data, Context> = {
+  state: State | ((context: Context) => State);
+  actions?: Actions<State, Run, Residue, Data, Context>;
+  context?: Context;
 };
 
 /**
@@ -169,22 +163,18 @@ type AtomConfig<State, Run, Data, Variables> = {
  *
  * @template S The type of the state.
  */
-export type Atom<State, Data, Variables> = {
+export type Fields<State, Data, Context> = {
   value: State;
-  previous: () => State | undefined;
-  update: (value: State) => void;
   set: (value: State) => State;
   get: (value: State) => Data;
-  subscribe: (
-    observer: (value: State) => any,
-    initiate?: boolean
-  ) => {
+  previous: () => State | undefined;
+  next: (value: State) => void;
+  subscribe: (observer: (value: State) => any) => {
     unsubscribe: () => void;
   };
-  unsubscribe: () => void;
   redo: () => void;
   undo: () => void;
-  variables: Variables;
+  ctx: Context;
 };
 
 /**
@@ -198,28 +188,30 @@ export type Atom<State, Data, Variables> = {
 export function atom<
   State,
   Run,
+  Residue,
   Data = State,
-  Variables extends {
+  Context extends {
     [key: string]: any;
   } = {}
->(config: AtomConfig<State, Run, Data, Variables>) {
-  const { state, actions, variables = {} as Variables } = config;
+>(config: AtomConfig<State, Run, Residue, Data, Context>) {
+  const { state, actions, context = {} as Context } = config;
   const { set, get, run } = { ...actions };
 
   const observable = new BehaviorSubject(
-    isSetStateFunction<State, Variables>(state) ? state(variables) : state
+    isSetStateFunction<State, Context>(state) ? state(context) : state
   );
-  const { subscribe, unsubscribe, previous, redo, undo } = observable;
+  const { subscribe, previous, redo, undo, next } = observable;
 
-  const props = {
+  const fields = {
     /**
      * Sets the value of the Atom instance in the portal map.
      * @param {S} value The new value to set.
      */
-    update: observable.next,
+    next,
+    previous,
     set: (value: State) => {
       return set
-        ? set({ prev: observable.value, next: value }, variables)
+        ? set({ then: observable.value, now: value }, context)
         : (value as unknown as State);
     },
     /**
@@ -228,27 +220,29 @@ export function atom<
      * @template Type The type of the value stored in the observable.
      * @returns {Type} The current value of the observable.
      */
-    value: observable.value,
+    get value() {
+      return observable.value;
+    },
     get: (value: State) => {
       return get
-        ? get({ prev: observable.value, next: value }, variables)
+        ? get({ then: observable.value, now: value }, context)
         : (value as unknown as Data);
     },
+    get ctx() {
+      return context;
+    },
     subscribe,
-    unsubscribe,
-    variables,
-    previous,
     redo,
     undo,
   };
 
-  run?.(props);
-  const atomic = {
-    ...props,
-    rerun: (...values: Run[]) => {
-      run?.(props, ...values);
+  const props = {
+    ...fields,
+    residue: run?.(fields),
+    rerun: (...args: Run[]) => {
+      props.residue = run?.(fields, ...args);
     },
   };
 
-  return atomic;
+  return props;
 }
