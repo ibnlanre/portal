@@ -201,6 +201,55 @@ This library exports the following APIs to enhance state management and facilita
       const [state, setState] = useAtom(counterAtom);
       ```
 
+    - An advanced example would be:
+
+      ```js
+      export const userAtom = atom({
+        state: {} as UserData,
+        actions: {
+          set: ({ now }, { getUrl, socket, trade: { set, next } }) => {
+            const ws = new WebSocket(getUrl(now.user));
+            ws.onmessage = ((value) => {
+              next(set(JSON.parse(value.data)))
+            });
+            socket.next(socket.set(ws));
+            return decrypt(now);
+          },
+        },
+        context: {
+          messages: atom({
+            state: {} as Messages,
+            actions: {
+              get: ({ now }) => now?.messages?.at(0)?.last_24_hr_data,
+              set: ({ now }) => decrypt(now),
+            },
+          }),
+          socket: atom({
+            state: {} as WebSocket,
+            actions: {
+              set: ({ then, now }) => {
+                if (then?.readyState === WebSocket.OPEN) then?.close();
+                return now;
+              },
+            },
+          }),
+          getUrl: (user: string) => {
+            return createUrl<{
+              user: string;
+              view: string;
+            }>({
+              baseUrl: process.env.NEXT_PUBLIC_WS_URL,
+              url: builders.use().socket.users,
+              params: {
+                view: "mobile",
+                user
+              },
+            });
+          },
+        },
+      });
+      ```
+
 6. **To `access` the internals of the `portal` system.**
 
     - Call `usePortal` without any arguments:
