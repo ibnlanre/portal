@@ -1,5 +1,6 @@
 import { Atom } from "definition";
-import { useState, useEffect } from "react";
+import { useState, useEffect, SetStateAction } from "react";
+import { isSetStateFunction } from "utilities";
 
 /**
  * Custom hook to access and manage an isolated state within an Atom storage.
@@ -21,9 +22,10 @@ export function useAtom<State, Run, Residue, Data, Context>(
   }, []);
 
   const atom = get(state);
-  const setAtom = (value: State) => {
-    next(set(value));
+  const setAtom = (value: State | SetStateAction<State>) => {
+    const isFunction = isSetStateFunction(value);
+    next(set(isFunction ? value(store.value) : value));
   };
-
+  
   return [atom, setAtom] as const;
 }
