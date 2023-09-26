@@ -2,7 +2,9 @@ import type { Reducer, SetStateAction, Dispatch } from "react";
 import type { CookieOptions } from "./cookieOptions";
 import type { BehaviorSubject } from "subject";
 
-type Key<K, P extends readonly string[] = []> = { use: () => [...P, K] };
+type Key<K, P extends readonly string[] = []> = {
+  use: <Y extends any[]>(...args: Y) => [...P, K, ...Y];
+};
 
 export type KeyBuilder<
   T extends Record<string, any>,
@@ -196,7 +198,6 @@ export interface Atom<State, Run, Residue, Data, Context>
   rerun: (...values: Run[]) => void;
   residue: Residue;
 }
-
 
 export * from "./cookieOptions";
 export * from "./implementation";
