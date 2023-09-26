@@ -42,7 +42,7 @@ describe("createBuilder", () => {
     expect(builder.str.use()).toEqual(["str"]);
   });
 
-  const builder = createBuilder(obj, ["parent"]);
+  const builder = createBuilder(obj, "parent");
 
   it("should still have the same structure as its first argument", () => {
     expect(builder).toEqual({

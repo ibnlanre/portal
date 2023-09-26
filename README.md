@@ -79,7 +79,7 @@ This library exports the following APIs to enhance state management and facilita
 
 ## Usage
 
-1.  **Import the necessary components and hooks.**
+1. **Import the necessary components and hooks.**
 
     ```js
     import {
@@ -90,7 +90,7 @@ This library exports the following APIs to enhance state management and facilita
     } from "@ibnlanre/portal";
     ```
 
-2.  **Provide a marker for the state by passing a `key` to the `usePortal` hook.**
+2. **Provide a marker for the state by passing a `key` to the `usePortal` hook.**
 
     - To create an application `state`:
 
@@ -127,7 +127,7 @@ This library exports the following APIs to enhance state management and facilita
       const handleDecrement = () => dispatch({ type: "decrement" });
       ```
 
-3.  **Persist the state by utilizing browser storage mechanisms.**
+3. **Persist the state by utilizing browser storage mechanisms.**
 
     - To persist the state in `localStorage`:
 
@@ -149,7 +149,7 @@ This library exports the following APIs to enhance state management and facilita
       const [counter, setCounter] = usePortal({ counter: "session" });
       ```
 
-4.  **Cache state as a cookie in the browser storage.**
+4. **Cache state as a cookie in the browser storage.**
 
     - To persist the state in `cookieStore`:
 
@@ -184,13 +184,13 @@ This library exports the following APIs to enhance state management and facilita
       const [cookieState, setCookieState] = usePortal("cookie.counter");
       ```
 
-5.  **To manage state outside of a React Component, create an `Atom`.**
+5. **To manage state outside of a React Component, create an `atom`.**
 
     - Create the `atom` with a key, value, and optional reducer:
 
       ```js
       // Atoms should be created outside React Components
-      const counterAtom = new Atom(["counter", "atom"], 9);
+      const counterAtom = atom({ state: 9 });
       ```
 
     - To access the atom value within a component:
@@ -198,10 +198,59 @@ This library exports the following APIs to enhance state management and facilita
       ```js
       // An atom state is isolated from the portal system and can be accessed
       // by explicitly exporting and importing the atom from where it was declared.
-      const [state, setState] = usePortal.atom(counterAtom);
+      const [state, setState] = useAtom(counterAtom);
       ```
 
-6.  **To `access` the internals of the `portal` system.**
+    - An advanced example would be:
+
+      ```js
+      export const userAtom = atom({
+        state: {} as UserData,
+        actions: {
+          set: ({ now }, { getUrl, socket, trade: { set, next } }) => {
+            const ws = new WebSocket(getUrl(now.user));
+            ws.onmessage = ((value) => {
+              next(set(JSON.parse(value.data)))
+            });
+            socket.next(socket.set(ws));
+            return decrypt(now);
+          },
+        },
+        context: {
+          messages: atom({
+            state: {} as Messages,
+            actions: {
+              get: ({ now }) => now?.messages?.at(0)?.last_24_hr_data,
+              set: ({ now }) => decrypt(now),
+            },
+          }),
+          socket: atom({
+            state: {} as WebSocket,
+            actions: {
+              set: ({ then, now }) => {
+                if (then?.readyState === WebSocket.OPEN) then?.close();
+                return now;
+              },
+            },
+          }),
+          getUrl: (user: string) => {
+            return createUrl<{
+              user: string;
+              view: string;
+            }>({
+              baseUrl: process.env.NEXT_PUBLIC_WS_URL,
+              url: builders.use().socket.users,
+              params: {
+                view: "mobile",
+                user
+              },
+            });
+          },
+        },
+      });
+      ```
+
+6. **To `access` the internals of the `portal` system.**
 
     - Call `usePortal` without any arguments:
 
@@ -233,7 +282,7 @@ This library exports the following APIs to enhance state management and facilita
       clear();
       ```
 
-7.  **To create a `builder` pattern for property access.**
+7. **To create a `builder` pattern for property access.**
 
     - Make of nested record of a `key` and `value` pair:
 
@@ -276,7 +325,7 @@ This library exports the following APIs to enhance state management and facilita
       builderWithPrefix.foo.bar.use() // ["tap", "foo", "bar"]
       ```
 
-8.  **Efficiently create `states` using the `builder` pattern.**
+8. **Efficiently create `states` using the `builder` pattern.**
 
     ```js
     // Use the builder to generate required arguments.

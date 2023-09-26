@@ -117,7 +117,9 @@ class Portal<S, A = undefined> {
       }
     }
     const waitlist = subject.waitlist;
-    waitlist?.forEach((value) => time(value));
+    waitlist?.forEach((value, id) => {
+      if (id === 0) time(value);
+    });
     if (waitlist?.size) waitlist?.clear();
   };
 

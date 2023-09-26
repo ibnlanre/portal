@@ -10,7 +10,7 @@ export type KeyBuilder<
 > = {
   [K in keyof T]: T[K] extends (...args: infer R) => any
     ? {
-        get: () => [...P, Extract<K, string>];
+        get: <Y extends any[]>(...args: Y) => [...P, Extract<K, string>, ...Y];
         use: (...args: Parameters<T[K]>) => [...P, Extract<K, string>, ...R];
       }
     : T[K] extends Record<string, any>
@@ -76,6 +76,9 @@ export type Action<S, A> = A | SetStateAction<S>;
  * Represents the type of a subscription to a `Subject`.
  */
 export type Subscription = {
+  /**
+   * Unsubscribes the callback from receiving further updates.
+   */
   unsubscribe: () => void;
 };
 
@@ -152,17 +155,48 @@ export type PortalImplementation<T> = <S extends T, A = undefined>(
  * Represents an Atom in the portal system.
  * An Atom is a special type of portal entry that allows you to manage and update state.
  *
- * @template S The type of the state.
- * @template A The type of the actions (if a reducer is provided).
+ * @template State The type of the state.
  */
-export type Atomic<S, A = undefined> = {
-  props: {
-    subject: PortalEntry<S, A>;
-    key: string;
+export type Fields<State, Data, Context> = {
+  value: State;
+  set: (value: State) => State;
+  get: (value: State) => Data;
+  previous: () => State | undefined;
+  next: (value: State) => void;
+  subscribe: (observer: (value: State) => any) => {
+    unsubscribe: () => void;
   };
-  setItem(value: Action<S, A>): void;
-  getItem<T = S>(): T;
+  redo: () => void;
+  undo: () => void;
+  ctx: Context;
 };
+
+interface Values<State> {
+  then: State;
+  now: State;
+}
+
+export type Actions<State, Run, Residue, Data, Context> = {
+  get?: (values: Values<State>, context: Context) => Data;
+  set?: (values: Values<State>, context: Context) => State;
+  run?: <Value = Data>(
+    props: Fields<State, Value, Context>,
+    ...args: Run[]
+  ) => Residue;
+};
+
+export type AtomConfig<State, Run, Residue, Data, Context> = {
+  state: State | ((context: Context) => State);
+  actions?: Actions<State, Run, Residue, Data, Context>;
+  context?: Context;
+};
+
+export interface Atom<State, Run, Residue, Data, Context>
+  extends Fields<State, Data, Context> {
+  rerun: (...values: Run[]) => void;
+  residue: Residue;
+}
+
 
 export * from "./cookieOptions";
 export * from "./implementation";
