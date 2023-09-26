@@ -37,7 +37,10 @@ export function createBuilder<
       return {
         ...acc,
         [key]: Object.assign(
-          { use: () => newPath },
+          {
+            use: () => newPath,
+            get: (...args: any[]) => [...newPath, ...args],
+          },
           createBuilder(value, ...newPath)
         ),
       };
@@ -45,7 +48,10 @@ export function createBuilder<
 
     return {
       ...acc,
-      [key]: { use: () => newPath },
+      [key]: {
+        use: () => newPath,
+        get: (...args: any[]) => [...newPath, ...args],
+      },
     };
   }, {} as KeyBuilder<T>);
 

@@ -3,7 +3,8 @@ import type { CookieOptions } from "./cookieOptions";
 import type { BehaviorSubject } from "subject";
 
 type Key<K, P extends readonly string[] = []> = {
-  use: <Y extends any[]>(...args: Y) => [...P, K, ...Y];
+  get: <Y extends any[]>(...args: Y) => [...P, K, ...Y];
+  use: () => [...P, K];
 };
 
 export type KeyBuilder<
@@ -198,6 +199,7 @@ export interface Atom<State, Run, Residue, Data, Context>
   rerun: (...values: Run[]) => void;
   residue: Residue;
 }
+
 
 export * from "./cookieOptions";
 export * from "./implementation";

@@ -24,9 +24,15 @@ This library exports the following APIs to enhance state management and facilita
     <tbody>
         <tr>
             <td colspan="">
-                <code>Atom</code>
+                <code>atom</code>
             </td>
             <td colspan="6">A <strong>class</strong> for creating isolated states outside a component.</td>
+        </tr>
+        <tr>
+            <td colspan="">
+                <code>useAtom</code>
+            </td>
+            <td colspan="6">A <strong>hook</strong> to access the state of an Atom.</td>
         </tr>
         <tr>
             <td colspan="2">
@@ -56,13 +62,6 @@ This library exports the following APIs to enhance state management and facilita
             <td colspan="4">A <strong>hook</strong> to store state in Browser Cookie store.</td>
         </tr>
         <tr>
-            <td></td>
-            <td colspan="2">
-                <code>.atom</code>
-            </td>
-            <td colspan="5">A <strong>hook</strong> to access the state of an Atom.</td>
-        </tr>
-        <tr>
             <td colspan="2">
                 <code>createBuilder</code>
             </td>
@@ -83,8 +82,9 @@ This library exports the following APIs to enhance state management and facilita
 
     ```js
     import {
+      atom,
+      useAtom,
       usePortal,
-      Atom,
       createBuilder,
       cookieStorage,
     } from "@ibnlanre/portal";
@@ -321,8 +321,8 @@ This library exports the following APIs to enhance state management and facilita
     - Add a prefix to the keys:
 
       ```js
-      const builderWithPrefix = createBuilder(store, ["tap"] as const);
-      builderWithPrefix.foo.bar.use() // ["tap", "foo", "bar"]
+      const builderWithPrefix = createBuilder(store, "tap", "root");
+      builderWithPrefix.foo.bar.use() // ["tap", "root", "foo", "bar"]
       ```
 
 8. **Efficiently create `states` using the `builder` pattern.**
