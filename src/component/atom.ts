@@ -1,189 +1,14 @@
-/**
- * Type guard to check if a value is a SetStateAction function.
- *
- * @template S The type of the state.
- * @param {SetStateAction<S>} value The value to be checked.
- * @returns {boolean} `true` if the value is a SetStateAction function, otherwise `false`.
- */
-export function isSetStateFunction<State, Context>(
-  value: State | ((context: Context) => State)
-): value is (context: Context) => State {
-  return typeof value === "function";
-}
+import { AtomConfig } from "definition";
+import { AtomSubject } from "subject";
+import { isAtomStateFunction } from "utilities";
 
 /**
- * Represents a subject that maintains a current value and emits it to subscribers.
- * @template S The type of the initial and emitted values.
- */
-export class BehaviorSubject<S> {
-  private state: S;
-  private history: S[] = [];
-  private subscribers: Set<Function>;
-  private currentIndex: number;
-
-  /**
-   * Creates a new instance of BehaviorSubject.
-   * @param {S} initialValue The initial value of the subject.
-   */
-  constructor(initialValue: S) {
-    /**
-     * The current value of the subject.
-     * @type {S}
-     */
-    this.state = initialValue;
-    /**
-     * The set of subscribers to the subject.
-     * @type {Set<Function>}
-     */
-    this.subscribers = new Set();
-    this.currentIndex = 0;
-    this.history.push(initialValue);
-  }
-
-  /**
-   * Returns the current value of the subject.
-   * @returns {S} The current value.
-   */
-  get value(): S {
-    return this.state;
-  }
-
-  get canUndo(): boolean {
-    return this.currentIndex > 0;
-  }
-
-  get canRedo(): boolean {
-    return this.currentIndex < this.history.length - 1;
-  }
-
-  /**
-   * Emits a new value to the subject and notifies subscribers.
-   * @param {S} value The new value to emit.
-   */
-  next = (value: S) => {
-    if (!Object.is(this.state, value)) {
-      this.state = value;
-      // history is kept to allow time-travel until an update
-      this.history.splice(this.currentIndex + 1);
-      this.history.push(value);
-      this.currentIndex = this.history.length - 1;
-      this.notifySubscribers();
-    }
-    return value;
-  };
-
-  previous = () => {
-    const currentIndex = this.currentIndex - 1;
-    if (!currentIndex) return this.state;
-    if (currentIndex > 0) {
-      return this.history[currentIndex];
-    }
-    return undefined;
-  };
-
-  undo = () => {
-    if (this.canUndo) {
-      this.currentIndex--;
-      this.state = this.history[this.currentIndex] as S;
-      this.notifySubscribers();
-    }
-  };
-
-  redo = () => {
-    if (this.canRedo) {
-      this.currentIndex++;
-      this.state = this.history[this.currentIndex] as S;
-      this.notifySubscribers();
-    }
-  };
-
-  /**
-   * Subscribes to the subject and receives emitted values.
-   * @param {Function} observer The callback function to be called with emitted values.
-   * @returns {{ unsubscribe: Function }} An object with a function to unsubscribe the callback.
-   */
-  subscribe = (observer: (value: S) => any) => {
-    if (!this.subscribers.has(observer)) {
-      this.subscribers.add(observer);
-      observer(this.state);
-    }
-
-    return {
-      unsubscribe: () => {
-        this.subscribers.delete(observer);
-      },
-    };
-  };
-
-  /**
-   * Unsubscribes all subscribers from the subject.
-   */
-  unsubscribe = (): void => {
-    this.subscribers.clear();
-  };
-
-  /**
-   * Notifies all subscribers with the current value.
-   * @protected
-   */
-  protected notifySubscribers = () => {
-    this.subscribers.forEach((callback) => {
-      try {
-        callback(this.state);
-      } catch (err) {
-        console.error("Error occurred in subscriber callback:", err);
-      }
-    });
-  };
-}
-
-interface Values<State> {
-  then: State;
-  now: State;
-}
-
-type Actions<State, Run, Residue, Data, Context> = {
-  get?: (values: Values<State>, context: Context) => Data;
-  set?: (values: Values<State>, context: Context) => State;
-  run?: <Value = Data>(
-    props: Fields<State, Value, Context>,
-    ...args: Run[]
-  ) => Residue;
-};
-
-type AtomConfig<State, Run, Residue, Data, Context> = {
-  state: State | ((context: Context) => State);
-  actions?: Actions<State, Run, Residue, Data, Context>;
-  context?: Context;
-};
-
-/**
- * Represents an Atom in the portal system.
- * An Atom is a special type of portal entry that allows you to manage and update state.
- *
- * @template S The type of the state.
- */
-export type Fields<State, Data, Context> = {
-  value: State;
-  set: (value: State) => State;
-  get: (value: State) => Data;
-  previous: () => State | undefined;
-  next: (value: State) => void;
-  subscribe: (observer: (value: State) => any) => {
-    unsubscribe: () => void;
-  };
-  redo: () => void;
-  undo: () => void;
-  ctx: Context;
-};
-
-/**
- * @template S The type of the state.
+ * @template State The type of the state.
  * @template A The type of the actions.
  *
- * @param {S} initialState The initial state value.
+ * @param {State} initialState The initial state value.
  *
- * @returns {Atom<S, A>} An instance of the Atom class.
+ * @returns {Atom<State, A>} An instance of the Atom class.
  */
 export function atom<
   State,
@@ -197,48 +22,89 @@ export function atom<
   const { state, actions, context = {} as Context } = config;
   const { set, get, run } = { ...actions };
 
-  const observable = new BehaviorSubject(
-    isSetStateFunction<State, Context>(state) ? state(context) : state
+  const observable = new AtomSubject(
+    isAtomStateFunction<State, Context>(state) ? state(context) : state
   );
   const { subscribe, previous, redo, undo, next } = observable;
 
+  /**
+   * Represents the core fields and properties of an Atom instance.
+   *
+   * @property {State} value - The current value of the Atom instance.
+   * @property {Context} ctx - The context associated with the Atom instance.
+   * @property {Function} next - A function to update the value of the Atom instance.
+   * @property {Function} previous - A function to access the previous value of the Atom.
+   * @property {Function} set - A function to set the value of the Atom instance with optional transformations.
+   * @property {Function} get - A function to get the value of the Atom instance with optional transformations.
+   * @property {Function} subscribe - A function to subscribe to changes in the Atom's value.
+   * @property {Function} redo - A function to redo a previous state change.
+   * @property {Function} undo - A function to undo a previous state change.
+   */
   const fields = {
     /**
-     * Sets the value of the Atom instance in the portal map.
-     * @param {S} value The new value to set.
-     */
-    next,
-    previous,
-    set: (value: State) => {
-      return set
-        ? set({ then: observable.value, now: value }, context)
-        : (value as unknown as State);
-    },
-    /**
-     * Retrieves the current value of the observable stored in the subject.
-     *
-     * @template Type The type of the value stored in the observable.
-     * @returns {Type} The current value of the observable.
+     * Gets the current value of the Atom instance.
+     * @returns {State} The current value.
      */
     get value() {
       return observable.value;
     },
+    /**
+     * Gets the context associated with the Atom instance.
+     * @returns {Context} The context.
+     */
+    get ctx() {
+      return context;
+    },
+    next,
+    previous,
+    set: (value: State) => {
+      // The set function allows optional transformations and returns the new state.
+      return set
+        ? set({ then: observable.value, now: value }, context)
+        : (value as unknown as State);
+    },
     get: (value: State) => {
+      // The get function allows optional transformations and returns the transformed value.
       return get
         ? get({ then: observable.value, now: value }, context)
         : (value as unknown as Data);
     },
-    get ctx() {
-      return context;
-    },
+    /**
+     * Subscribes to changes in the Atom's value.
+     *
+     * @param {Function} observer - The callback function to be called with the new value.
+     * @returns {Object} An object with an `unsubscribe` function to stop the subscription.
+     */
     subscribe,
+    /**
+     * Redoes a previous state change.
+     */
     redo,
+    /**
+     * Undoes a previous state change.
+     */
     undo,
   };
 
+  /**
+   * Represents the properties and functions associated with an Atom instance.
+   *
+   * @property {Residue | undefined} residue - A value resulting from the last execution of the 'run' function.
+   * @property {Function} rerun - A function to re-execute the 'run' function with optional arguments and update 'residue'.
+   */
   const props = {
     ...fields,
+    /**
+     * A value resulting from the last execution of the 'run' function, if provided.
+     * Undefined if 'run' was not provided or returned undefined.
+     * @type {Residue | undefined}
+     */
     residue: run?.(fields),
+    /**
+     * Re-execute the 'run' function with optional arguments and update 'residue'.
+     *
+     * @param {...Run[]} args - Optional arguments to pass to the 'run' function.
+     */
     rerun: (...args: Run[]) => {
       props.residue = run?.(fields, ...args);
     },

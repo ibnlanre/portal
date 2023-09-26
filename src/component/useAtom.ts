@@ -1,11 +1,5 @@
+import { Atom } from "definition";
 import { useState, useEffect } from "react";
-import { Fields } from "./atom";
-
-export interface Atom<State, Run, Residue, Data, Context>
-  extends Fields<State, Data, Context> {
-  rerun: (...values: Run[]) => void;
-  residue: Residue;
-}
 
 /**
  * Custom hook to access and manage an isolated state within an Atom storage.
