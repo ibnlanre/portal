@@ -16,7 +16,7 @@ import type { Builder, KeyBuilder } from "definition";
 export function createBuilder<
   T extends Record<string, any>,
   P extends readonly string[] = []
->(obj: T, prefix?: P): Builder<T, P> {
+>(obj: T, ...prefix: P): Builder<T, P> {
   const keys = Object.keys(obj) as Array<keyof T>;
 
   const builder = keys.reduce((acc, key) => {
@@ -28,7 +28,7 @@ export function createBuilder<
         ...acc,
         [key]: {
           use: (...args: Parameters<typeof value>) => [...newPath, ...args],
-          get: () => [...newPath],
+          get: (...args: any[]) => [...newPath, ...args],
         },
       };
     }
@@ -38,7 +38,7 @@ export function createBuilder<
         ...acc,
         [key]: Object.assign(
           { use: () => newPath },
-          createBuilder(value, newPath)
+          createBuilder(value, ...newPath)
         ),
       };
     }

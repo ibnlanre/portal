@@ -10,7 +10,9 @@ export type KeyBuilder<
 > = {
   [K in keyof T]: T[K] extends (...args: infer R) => any
     ? {
-        get: () => [...P, Extract<K, string>];
+        get: <Y extends readonly string[] = []>(
+          ...args: Y
+        ) => [...P, Extract<K, string>, ...Y];
         use: (...args: Parameters<T[K]>) => [...P, Extract<K, string>, ...R];
       }
     : T[K] extends Record<string, any>
