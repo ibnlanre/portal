@@ -174,32 +174,35 @@ export type Fields<State, Data, Context> = {
   ctx: Context;
 };
 
+type Prettify<T> = {
+  [K in keyof T]: T[K];
+} & {};
+
 interface Values<State> {
   then: State;
   now: State;
 }
 
-export type Actions<State, Run, Residue, Data, Context> = {
+export type Actions<State, Use, Used, Data, Context> = {
   get?: (values: Values<State>, context: Context) => Data;
   set?: (values: Values<State>, context: Context) => State;
-  run?: <Value = Data>(
-    props: Fields<State, Value, Context>,
-    ...args: Run[]
-  ) => Residue;
+  use?: <Value = Data>(
+    props: Prettify<Fields<State, Value, Context> & { used: Used | undefined }>,
+    ...args: Use[]
+  ) => Used;
 };
 
-export type AtomConfig<State, Run, Residue, Data, Context> = {
+export type AtomConfig<State, Use, Used, Data, Context> = {
   state: State | ((context: Context) => State);
-  actions?: Actions<State, Run, Residue, Data, Context>;
+  actions?: Actions<State, Use, Used, Data, Context>;
   context?: Context;
 };
 
-export interface Atom<State, Run, Residue, Data, Context>
+export interface Atom<State, Use, Used, Data, Context>
   extends Fields<State, Data, Context> {
-  rerun: (...values: Run[]) => void;
-  residue: Residue;
+  rerun: (...values: Use[]) => void;
+  residue: Used;
 }
-
 
 export * from "./cookieOptions";
 export * from "./implementation";

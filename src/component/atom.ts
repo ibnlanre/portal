@@ -12,15 +12,15 @@ import { isAtomStateFunction } from "utilities";
  */
 export function atom<
   State,
-  Run,
+  Use,
   Used,
   Data = State,
   Context extends {
     [key: string]: any;
   } = {}
->(config: AtomConfig<State, Run, Used, Data, Context>) {
+>(config: AtomConfig<State, Use, Used, Data, Context>) {
   const { state, actions, context = {} as Context } = config;
-  const { set, get, run } = { ...actions };
+  const { set, get, use } = { ...actions };
 
   const observable = new AtomSubject(
     isAtomStateFunction<State, Context>(state) ? state(context) : state
@@ -114,14 +114,14 @@ export function atom<
   /**
    * Represents the properties and functions associated with an Atom instance.
    *
-   * @property {Used | undefined} used - A value resulting from the last execution of the `run` function.
-   * @property {Function} use - A function to execute the `run` function with optional arguments and update `used`.
+   * @property {Used | undefined} used - A value resulting from the last execution of the `use` function.
+   * @property {Function} use - A function to execute the `use` function with optional arguments and update `used`.
    */
   const props = {
     ...fields,
     /**
-     * A value resulting from the last execution of the `run` function, if provided.
-     * Undefined if `run` was not provided or returned undefined.
+     * A value resulting from the last execution of the `use` function, if provided.
+     * Undefined if `use` was not provided or returned undefined.
      * @type {Used | undefined}
      */
     get used(): Used | undefined {
@@ -138,13 +138,14 @@ export function atom<
     },
 
     /**
-     * Execute the `run` function with optional arguments and update `used`.
+     * Execute the `use` function with optional arguments and update `used`.
      *
-     * @param {...Run[]} args Optional arguments to pass to the `run` function.
+     * @param {...Use[]} args Optional arguments to pass to the `use` function.
      * @returns {Props}
      */
-    use: (...args: Run[]) => {
-      props.used = run?.(fields, ...args);
+    use: (...args: Use[]) => {
+      const value = { ...fields, used: props.used }
+      props.used = use?.(value, ...args);
       return props;
     },
   };

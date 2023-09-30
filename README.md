@@ -26,13 +26,13 @@ This library exports the following APIs to enhance state management and facilita
             <td colspan="">
                 <code>atom</code>
             </td>
-            <td colspan="6">A <strong>class</strong> for creating isolated states outside a component.</td>
+            <td colspan="6">A <strong>utility</strong> for creating isolated states outside a component.</td>
         </tr>
         <tr>
             <td colspan="">
                 <code>useAtom</code>
             </td>
-            <td colspan="6">A <strong>hook</strong> to access the state of an Atom.</td>
+            <td colspan="6">A <strong>hook</strong> to access and manage the state of an Atom.</td>
         </tr>
         <tr>
             <td colspan="2">
@@ -199,6 +199,7 @@ This library exports the following APIs to enhance state management and facilita
       // An atom state is isolated from the portal system and can be accessed
       // by explicitly exporting and importing the atom from where it was declared.
       const [state, setState] = useAtom(counterAtom);
+      const [messages, setMessages] = useAtom(messagesAtom.use())
       ```
 
     - An advanced example would be:

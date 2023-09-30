@@ -6,18 +6,18 @@ import { isSetStateFunction } from "utilities";
  * A hook for managing and subscribing to the state of an atom.
  *
  * @template State The type of the atom's state.
- * @template Run The type of the atom's `run` function.
+ * @template Use The type of the atom's `run` function.
  * @template Used The return type of the atom's `run` function.
  * @template Data The type of data derived from the atom's state.
  * @template Context The type of context used by the atom.
  *
- * @param {Atom<State, Run, Used, Data, Context>} store The atom to use.
+ * @param {Atom<State, Use, Used, Data, Context>} store The atom to use.
  * @param {((ctx: Context) => void)} singleton An optional singleton function to call before initializing the state of the atom.
  *
  * @returns {[Data, (value: State | SetStateAction<State>) => void]} An array containing the atom's data and a function to set its state.
  */
-export function useAtom<State, Run, Used, Data, Context>(
-  store: Atom<State, Run, Used, Data, Context>,
+export function useAtom<State, Use, Used, Data, Context>(
+  store: Atom<State, Use, Used, Data, Context>,
   singleton?: (ctx: Context) => void
 ) {
   const { get, set, next, subscribe } = store;
