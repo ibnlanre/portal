@@ -200,8 +200,8 @@ export type AtomConfig<State, Use, Used, Data, Context> = {
 
 export interface Atom<State, Use, Used, Data, Context>
   extends Fields<State, Data, Context> {
-  rerun: (...values: Use[]) => void;
-  residue: Used;
+  use: (...values: Use[]) => void;
+  used: Used | undefined;
 }
 
 export * from "./cookieOptions";
