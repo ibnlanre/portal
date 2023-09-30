@@ -204,10 +204,18 @@ This library exports the following APIs to enhance state management and facilita
     - An advanced example would be:
 
       ```js
+      const messagesAtom = atom({
+        state: {} as Messages,
+        actions: {
+          get: ({ now }) => now?.messages?.at(0)?.last_24_hr_data,
+          set: ({ now }) => decrypt(now),
+        },
+      });
+
       export const userAtom = atom({
         state: {} as UserData,
         actions: {
-          set: ({ now }, { getUrl, socket, trade: { set, next } }) => {
+          set: ({ now }, { getUrl, socket, messagesAtom: { set, next } }) => {
             const ws = new WebSocket(getUrl(now.user));
             ws.onmessage = ((value) => {
               next(set(JSON.parse(value.data)))
@@ -217,13 +225,7 @@ This library exports the following APIs to enhance state management and facilita
           },
         },
         context: {
-          messages: atom({
-            state: {} as Messages,
-            actions: {
-              get: ({ now }) => now?.messages?.at(0)?.last_24_hr_data,
-              set: ({ now }) => decrypt(now),
-            },
-          }),
+          messagesAtom,
           socket: atom({
             state: {} as WebSocket,
             actions: {

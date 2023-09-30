@@ -13,12 +13,12 @@ import { isAtomStateFunction } from "utilities";
 export function atom<
   State,
   Run,
-  Residue,
+  Used,
   Data = State,
   Context extends {
     [key: string]: any;
   } = {}
->(config: AtomConfig<State, Run, Residue, Data, Context>) {
+>(config: AtomConfig<State, Run, Used, Data, Context>) {
   const { state, actions, context = {} as Context } = config;
   const { set, get, run } = { ...actions };
 
@@ -55,14 +55,39 @@ export function atom<
     get ctx() {
       return context;
     },
+    /**
+     * Updates the state with a new value and notifies subscribers.
+     *
+     * @param {State} value The new state value.
+     * @returns {State} The updated state value after the change.
+     */
     next,
+    /**
+     * Retrieves the previous state in the history, if available.
+     *
+     * @returns {State | undefined} The previous state in the history, or undefined if not available.
+     */
     previous,
+    /**
+     * Sets the state with a new value, optionally transforming it using the provided function.
+     * If a transformation function is provided, it receives the previous state and the new value.
+     *
+     * @param {State} value The new state value or a transformation function.
+     * @returns {State} The updated state value after the change.
+     */
     set: (value: State) => {
       // The set function allows optional transformations and returns the new state.
       return set
         ? set({ then: observable.value, now: value }, context)
         : (value as unknown as State);
     },
+    /**
+     * Retrieves the current state or optionally transforms it using the provided function.
+     * If a transformation function is provided, it receives the current state and the new value.
+     *
+     * @param {State} value The current state value or a transformation function.
+     * @returns {Data} The transformed value, which could be of a different data type.
+     */
     get: (value: State) => {
       // The get function allows optional transformations and returns the transformed value.
       return get
@@ -89,24 +114,38 @@ export function atom<
   /**
    * Represents the properties and functions associated with an Atom instance.
    *
-   * @property {Residue | undefined} residue - A value resulting from the last execution of the 'run' function.
-   * @property {Function} rerun - A function to re-execute the 'run' function with optional arguments and update 'residue'.
+   * @property {Used | undefined} used - A value resulting from the last execution of the `run` function.
+   * @property {Function} use - A function to execute the `run` function with optional arguments and update `used`.
    */
   const props = {
     ...fields,
     /**
-     * A value resulting from the last execution of the 'run' function, if provided.
-     * Undefined if 'run' was not provided or returned undefined.
-     * @type {Residue | undefined}
+     * A value resulting from the last execution of the `run` function, if provided.
+     * Undefined if `run` was not provided or returned undefined.
+     * @type {Used | undefined}
      */
-    residue: run?.(fields),
+    get used(): Used | undefined {
+      return undefined;
+    },
+
     /**
-     * Re-execute the 'run' function with optional arguments and update 'residue'.
+     * Sets the value of the `used` property.
      *
-     * @param {...Run[]} args - Optional arguments to pass to the 'run' function.
+     * @param {Used | undefined} value The new value of the `used` property.
      */
-    rerun: (...args: Run[]) => {
-      props.residue = run?.(fields, ...args);
+    set used(value: Used | undefined) {
+      this.used = value;
+    },
+
+    /**
+     * Execute the `run` function with optional arguments and update `used`.
+     *
+     * @param {...Run[]} args Optional arguments to pass to the `run` function.
+     * @returns {Props}
+     */
+    use: (...args: Run[]) => {
+      props.used = run?.(fields, ...args);
+      return props;
     },
   };
 
