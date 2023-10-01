@@ -16,7 +16,7 @@ import { isSetStateFunction } from "utilities";
  *
  * @returns {[Data, (value: State | SetStateAction<State>) => void]} An array containing the atom's data and a function to set its state.
  */
-export function useAtom<State, Use, Data, Context>(
+export function useAtom<State, Use extends ReadonlyArray<any>, Data, Context>(
   store: Atom<State, Use, Data, Context>,
   singleton?: (ctx: Context) => void
 ) {

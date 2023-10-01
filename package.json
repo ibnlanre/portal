@@ -1,6 +1,6 @@
 {
   "name": "@ibnlanre/portal",
-  "version": "3.2.2-beta",
+  "version": "3.3.0-beta",
   "description": "React state management library",
   "main": "cjs/index.js",
   "module": "esm/index.js",
