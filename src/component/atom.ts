@@ -20,7 +20,7 @@ export function atom<
   } = {}
 >(config: AtomConfig<State, Used, Use, Data, Context>) {
   const { state, actions, context = {} as Context } = config;
-  const { set, get, use } = { ...actions };
+  const { set, get } = { ...actions };
 
   const observable = new AtomSubject(
     isAtomStateFunction<State, Context>(state) ? state(context) : state
@@ -124,17 +124,15 @@ export function atom<
      * @returns {State} The updated state value after the change.
      */
     set: (value: State) => {
-      const props = {
+      const params = {
         then: observable.value,
         now: value,
         used: usage.used,
-        use: (...args: Use) => {
-          usage.used = use?.(fields, ...args);
-        },
+        use,
       };
 
       // The set function allows optional transformations and returns the new state.
-      if (set) return set(props, context);
+      if (set) return set(params, context);
       else return value as unknown as State;
     },
 
@@ -146,17 +144,15 @@ export function atom<
      * @returns {Data} The transformed value, which could be of a different data type.
      */
     get: (value: State) => {
-      const props = {
+      const params = {
         then: observable.value,
-        now: value,
         used: usage.used,
-        use: (...args: Use) => {
-          usage.used = use?.(fields, ...args);
-        },
+        now: value,
+        use,
       };
 
       // The get function allows optional transformations and returns the transformed value.
-      if (get) return get(props, context);
+      if (get) return get(params, context);
       else return value as unknown as Data;
     },
 
@@ -166,11 +162,13 @@ export function atom<
      * @param {...Use} args Optional arguments to pass to the `use` function.
      * @returns {Props}
      */
-    use: (...args: Use) => {
-      usage.used = use?.(fields, ...args);
-      return props;
-    },
+    use,
   };
+
+  function use(...args: Use) {
+    usage.used = actions?.use?.(props, ...args);
+    return props;
+  }
 
   return props;
 }

@@ -172,8 +172,8 @@ export type Fields<State, Context> = {
   ctx: Context;
 };
 
-interface Values<State, Used, Use extends ReadonlyArray<any>> {
-  use: (...args: Use) => void;
+interface Values<State, Used, Use extends ReadonlyArray<any>, Data, Context> {
+  use: (...args: Use) => Atom<State, Use, Data, Context>;
   used: Used | undefined;
   then: State;
   now: State;
@@ -186,9 +186,15 @@ export interface Actions<
   Data,
   Context
 > {
-  use?: (props: Fields<State, Context>, ...args: Use) => Used;
-  get?: (values: Values<State, Used, Use>, context: Context) => Data;
-  set?: (values: Values<State, Used, Use>, context: Context) => State;
+  use?: (props: Atom<State, Use, Data, Context>, ...args: Use) => Used;
+  get?: (
+    values: Values<State, Used, Use, Data, Context>,
+    context: Context
+  ) => Data;
+  set?: (
+    values: Values<State, Used, Use, Data, Context>,
+    context: Context
+  ) => State;
 }
 
 export type AtomConfig<
