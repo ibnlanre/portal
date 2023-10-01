@@ -8,7 +8,7 @@ import { isAtomStateFunction } from "utilities";
  *
  * @param {State} initialState The initial state value.
  *
- * @returns {Atom<State, A>} An instance of the Atom class.
+ * @returns {Atom<State, Use, Data, Context>} An instance of the Atom class.
  */
 export function atom<
   State,
@@ -26,6 +26,30 @@ export function atom<
     isAtomStateFunction<State, Context>(state) ? state(context) : state
   );
   const { subscribe, previous, redo, undo, next } = observable;
+
+  /**
+   * Represents the result from the last execution of the `use` function.
+   * @property {Used | undefined} used - A value resulting from the last execution of the `use` function.
+   */
+  const usage = {
+    /**
+     * A value resulting from the last execution of the `use` function, if provided.
+     * Undefined if `use` was not provided or returned undefined.
+     * @type {Used | undefined}
+     */
+    get used(): Used | undefined {
+      return undefined;
+    },
+
+    /**
+     * Sets the value of the `used` property.
+     *
+     * @param {Used | undefined} value The new value of the `used` property.
+     */
+    set used(value: Used | undefined) {
+      this.used = value;
+    },
+  };
 
   /**
    * Represents the core fields and properties of an Atom instance.
@@ -78,7 +102,10 @@ export function atom<
     set: (value: State) => {
       // The set function allows optional transformations and returns the new state.
       return set
-        ? set({ then: observable.value, now: value }, context)
+        ? set(
+            { then: observable.value, now: value, used: usage.used },
+            { ...context, used: usage.used }
+          )
         : (value as unknown as State);
     },
     /**
@@ -91,7 +118,7 @@ export function atom<
     get: (value: State) => {
       // The get function allows optional transformations and returns the transformed value.
       return get
-        ? get({ then: observable.value, now: value }, context)
+        ? get({ then: observable.value, now: value, used: usage.used }, context)
         : (value as unknown as Data);
     },
     /**
@@ -113,30 +140,10 @@ export function atom<
 
   /**
    * Represents the properties and functions associated with an Atom instance.
-   *
-   * @property {Used | undefined} used - A value resulting from the last execution of the `use` function.
    * @property {Function} use - A function to execute the `use` function with optional arguments and update `used`.
    */
   const props = {
     ...fields,
-    /**
-     * A value resulting from the last execution of the `use` function, if provided.
-     * Undefined if `use` was not provided or returned undefined.
-     * @type {Used | undefined}
-     */
-    get used(): Used | undefined {
-      return undefined;
-    },
-
-    /**
-     * Sets the value of the `used` property.
-     *
-     * @param {Used | undefined} value The new value of the `used` property.
-     */
-    set used(value: Used | undefined) {
-      this.used = value;
-    },
-
     /**
      * Execute the `use` function with optional arguments and update `used`.
      *
@@ -144,10 +151,9 @@ export function atom<
      * @returns {Props}
      */
     use: (...args: Use[]) => {
-      const value = { ...fields, used: props.used };
-      const result = use?.(value, ...args);
+      const result = use?.(fields, ...args);
       if (typeof result !== "undefined") {
-        props.used = result;
+        usage.used = result;
       }
       return props;
     },

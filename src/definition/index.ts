@@ -174,20 +174,17 @@ export type Fields<State, Data, Context> = {
   ctx: Context;
 };
 
-type Prettify<T> = {
-  [K in keyof T]: T[K];
-} & {};
-
-interface Values<State> {
+interface Values<State, Used> {
+  used: Used | undefined;
   then: State;
   now: State;
 }
 
 export type Actions<State, Use, Used, Data, Context> = {
-  get?: (values: Values<State>, context: Context) => Data;
-  set?: (values: Values<State>, context: Context) => State;
+  get?: (values: Values<State, Used>, context: Context) => Data;
+  set?: (values: Values<State, Used>, context: Context) => State;
   use?: <Value = Data>(
-    props: Prettify<Fields<State, Value, Context> & { used: Used | undefined }>,
+    props: Fields<State, Value, Context>,
     ...args: Use[]
   ) => Used;
 };
@@ -198,10 +195,9 @@ export type AtomConfig<State, Use, Used, Data, Context> = {
   context?: Context;
 };
 
-export interface Atom<State, Use, Used, Data, Context>
+export interface Atom<State, Use, Data, Context>
   extends Fields<State, Data, Context> {
   use: (...values: Use[]) => void;
-  used: Used | undefined;
 }
 
 export * from "./cookieOptions";
