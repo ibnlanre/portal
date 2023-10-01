@@ -12,13 +12,13 @@ import { isAtomStateFunction } from "utilities";
  */
 export function atom<
   State,
-  Use,
   Used,
+  Use extends ReadonlyArray<any>,
   Data = State,
   Context extends {
     [key: string]: any;
   } = {}
->(config: AtomConfig<State, Use, Used, Data, Context>) {
+>(config: AtomConfig<State, Used, Use, Data, Context>) {
   const { state, actions, context = {} as Context } = config;
   const { set, get, use } = { ...actions };
 
@@ -58,8 +58,6 @@ export function atom<
    * @property {Context} ctx - The context associated with the Atom instance.
    * @property {Function} next - A function to update the value of the Atom instance.
    * @property {Function} previous - A function to access the previous value of the Atom.
-   * @property {Function} set - A function to set the value of the Atom instance with optional transformations.
-   * @property {Function} get - A function to get the value of the Atom instance with optional transformations.
    * @property {Function} subscribe - A function to subscribe to changes in the Atom's value.
    * @property {Function} redo - A function to redo a previous state change.
    * @property {Function} undo - A function to undo a previous state change.
@@ -93,35 +91,6 @@ export function atom<
      */
     previous,
     /**
-     * Sets the state with a new value, optionally transforming it using the provided function.
-     * If a transformation function is provided, it receives the previous state and the new value.
-     *
-     * @param {State} value The new state value or a transformation function.
-     * @returns {State} The updated state value after the change.
-     */
-    set: (value: State) => {
-      // The set function allows optional transformations and returns the new state.
-      return set
-        ? set(
-            { then: observable.value, now: value, used: usage.used },
-            { ...context, used: usage.used }
-          )
-        : (value as unknown as State);
-    },
-    /**
-     * Retrieves the current state or optionally transforms it using the provided function.
-     * If a transformation function is provided, it receives the current state and the new value.
-     *
-     * @param {State} value The current state value or a transformation function.
-     * @returns {Data} The transformed value, which could be of a different data type.
-     */
-    get: (value: State) => {
-      // The get function allows optional transformations and returns the transformed value.
-      return get
-        ? get({ then: observable.value, now: value, used: usage.used }, context)
-        : (value as unknown as Data);
-    },
-    /**
      * Subscribes to changes in the Atom's value.
      *
      * @param {Function} observer - The callback function to be called with the new value.
@@ -140,21 +109,65 @@ export function atom<
 
   /**
    * Represents the properties and functions associated with an Atom instance.
+   * @property {Function} set - A function to set the value of the Atom instance with optional transformations.
+   * @property {Function} get - A function to get the value of the Atom instance with optional transformations.
    * @property {Function} use - A function to execute the `use` function with optional arguments and update `used`.
    */
   const props = {
     ...fields,
+
+    /**
+     * Sets the state with a new value, optionally transforming it using the provided function.
+     * If a transformation function is provided, it receives the previous state and the new value.
+     *
+     * @param {State} value The new state value or a transformation function.
+     * @returns {State} The updated state value after the change.
+     */
+    set: (value: State) => {
+      const props = {
+        then: observable.value,
+        now: value,
+        used: usage.used,
+        use: (...args: Use) => {
+          usage.used = use?.(fields, ...args);
+        },
+      };
+
+      // The set function allows optional transformations and returns the new state.
+      if (set) return set(props, context);
+      else return value as unknown as State;
+    },
+
+    /**
+     * Retrieves the current state or optionally transforms it using the provided function.
+     * If a transformation function is provided, it receives the current state and the new value.
+     *
+     * @param {State} value The current state value or a transformation function.
+     * @returns {Data} The transformed value, which could be of a different data type.
+     */
+    get: (value: State) => {
+      const props = {
+        then: observable.value,
+        now: value,
+        used: usage.used,
+        use: (...args: Use) => {
+          usage.used = use?.(fields, ...args);
+        },
+      };
+
+      // The get function allows optional transformations and returns the transformed value.
+      if (get) return get(props, context);
+      else return value as unknown as Data;
+    },
+
     /**
      * Execute the `use` function with optional arguments and update `used`.
      *
-     * @param {...Use[]} args Optional arguments to pass to the `use` function.
+     * @param {...Use} args Optional arguments to pass to the `use` function.
      * @returns {Props}
      */
-    use: (...args: Use[]) => {
-      const result = use?.(fields, ...args);
-      if (typeof result !== "undefined") {
-        usage.used = result;
-      }
+    use: (...args: Use) => {
+      usage.used = use?.(fields, ...args);
       return props;
     },
   };

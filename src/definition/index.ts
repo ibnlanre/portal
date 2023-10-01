@@ -160,10 +160,8 @@ export type PortalImplementation<T> = <S extends T, A = undefined>(
  *
  * @template State The type of the state.
  */
-export type Fields<State, Data, Context> = {
+export type Fields<State, Context> = {
   value: State;
-  set: (value: State) => State;
-  get: (value: State) => Data;
   previous: () => State | undefined;
   next: (value: State) => void;
   subscribe: (observer: (value: State) => any) => {
@@ -174,30 +172,42 @@ export type Fields<State, Data, Context> = {
   ctx: Context;
 };
 
-interface Values<State, Used> {
+interface Values<State, Used, Use extends ReadonlyArray<any>> {
+  use: (...args: Use) => void;
   used: Used | undefined;
   then: State;
   now: State;
 }
 
-export type Actions<State, Use, Used, Data, Context> = {
-  get?: (values: Values<State, Used>, context: Context) => Data;
-  set?: (values: Values<State, Used>, context: Context) => State;
-  use?: <Value = Data>(
-    props: Fields<State, Value, Context>,
-    ...args: Use[]
-  ) => Used;
-};
+export interface Actions<
+  State,
+  Used,
+  Use extends ReadonlyArray<any>,
+  Data,
+  Context
+> {
+  use?: (props: Fields<State, Context>, ...args: Use) => Used;
+  get?: (values: Values<State, Used, Use>, context: Context) => Data;
+  set?: (values: Values<State, Used, Use>, context: Context) => State;
+}
 
-export type AtomConfig<State, Use, Used, Data, Context> = {
+export type AtomConfig<
+  State,
+  Used,
+  Use extends ReadonlyArray<any>,
+  Data,
+  Context
+> = {
   state: State | ((context: Context) => State);
-  actions?: Actions<State, Use, Used, Data, Context>;
+  actions?: Actions<State, Used, Use, Data, Context>;
   context?: Context;
 };
 
-export interface Atom<State, Use, Data, Context>
-  extends Fields<State, Data, Context> {
-  use: (...values: Use[]) => void;
+export interface Atom<State, Use extends ReadonlyArray<any>, Data, Context>
+  extends Fields<State, Context> {
+  set: (value: State) => State;
+  get: (value: State) => Data;
+  use: (...args: Use) => void;
 }
 
 export * from "./cookieOptions";
