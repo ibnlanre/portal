@@ -11,13 +11,13 @@ import { isSetStateFunction } from "utilities";
  * @template Data The type of data derived from the atom's state.
  * @template Context The type of context used by the atom.
  *
- * @param {Atom<State, Use, Used, Data, Context>} store The atom to use.
+ * @param {Atom<State, Use, Data, Context>} store The atom to use.
  * @param {((ctx: Context) => void)} singleton An optional singleton function to call before initializing the state of the atom.
  *
  * @returns {[Data, (value: State | SetStateAction<State>) => void]} An array containing the atom's data and a function to set its state.
  */
-export function useAtom<State, Use, Used, Data, Context>(
-  store: Atom<State, Use, Used, Data, Context>,
+export function useAtom<State, Use, Data, Context>(
+  store: Atom<State, Use, Data, Context>,
   singleton?: (ctx: Context) => void
 ) {
   const { get, set, next, subscribe } = store;
