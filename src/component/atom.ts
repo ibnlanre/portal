@@ -144,8 +144,11 @@ export function atom<
      * @returns {Props}
      */
     use: (...args: Use[]) => {
-      const value = { ...fields, used: props.used }
-      props.used = use?.(value, ...args);
+      const value = { ...fields, used: props.used };
+      const result = use?.(value, ...args);
+      if (typeof result !== "undefined") {
+        props.used = result;
+      }
       return props;
     },
   };
