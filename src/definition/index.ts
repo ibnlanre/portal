@@ -160,10 +160,12 @@ export type PortalImplementation<T> = <S extends T, A = undefined>(
  *
  * @template State The type of the state.
  */
-export type Fields<State, Context> = {
+export type Fields<State, Data, Context> = {
   value: State;
-  previous: () => State | undefined;
+  set: (value: State) => State;
+  get: (value: State) => Data;
   next: (value: State) => void;
+  previous: () => State | undefined;
   subscribe: (observer: (value: State) => any) => {
     unsubscribe: () => void;
   };
@@ -172,8 +174,8 @@ export type Fields<State, Context> = {
   ctx: Context;
 };
 
-interface Values<State, Used, Use extends ReadonlyArray<any>, Data, Context> {
-  use: (...args: Use) => Atom<State, Use, Data, Context>;
+interface Values<State, Used, Use extends ReadonlyArray<any>> {
+  use: (...args: Use) => Used | undefined;
   used: Used | undefined;
   then: State;
   now: State;
@@ -186,18 +188,9 @@ export interface Actions<
   Data,
   Context
 > {
-  use?: <Value = Data>(
-    props: Atom<State, Use, Value, Context>,
-    ...args: Use
-  ) => Used;
-  get?: (
-    values: Values<State, Used, Use, Data, Context>,
-    context: Context
-  ) => Data;
-  set?: (
-    values: Values<State, Used, Use, Data, Context>,
-    context: Context
-  ) => State;
+  use?: (fields: Fields<State, Data, Context>, ...args: Use) => Used;
+  get?: (values: Values<State, Used, Use>, context: Context) => Data;
+  set?: (values: Values<State, Used, Use>, context: Context) => State;
 }
 
 export type AtomConfig<
@@ -213,10 +206,8 @@ export type AtomConfig<
 };
 
 export interface Atom<State, Use extends ReadonlyArray<any>, Data, Context>
-  extends Fields<State, Context> {
-  use: (...args: Use) => void;
-  set: (value: State) => State;
-  get: (value: State) => Data;
+  extends Fields<State, Data, Context> {
+  run: (...args: Use) => Atom<State, Use, Data, Context>;
 }
 
 export * from "./cookieOptions";

@@ -56,6 +56,8 @@ export function atom<
    *
    * @property {State} value - The current value of the Atom instance.
    * @property {Context} ctx - The context associated with the Atom instance.
+   * @property {Function} set - A function to set the value of the Atom instance with optional transformations.
+   * @property {Function} get - A function to get the value of the Atom instance with optional transformations.
    * @property {Function} next - A function to update the value of the Atom instance.
    * @property {Function} previous - A function to access the previous value of the Atom.
    * @property {Function} subscribe - A function to subscribe to changes in the Atom's value.
@@ -77,44 +79,6 @@ export function atom<
     get ctx() {
       return context;
     },
-    /**
-     * Updates the state with a new value and notifies subscribers.
-     *
-     * @param {State} value The new state value.
-     * @returns {State} The updated state value after the change.
-     */
-    next,
-    /**
-     * Retrieves the previous state in the history, if available.
-     *
-     * @returns {State | undefined} The previous state in the history, or undefined if not available.
-     */
-    previous,
-    /**
-     * Subscribes to changes in the Atom's value.
-     *
-     * @param {Function} observer - The callback function to be called with the new value.
-     * @returns {Object} An object with an `unsubscribe` function to stop the subscription.
-     */
-    subscribe,
-    /**
-     * Redoes a previous state change.
-     */
-    redo,
-    /**
-     * Undoes a previous state change.
-     */
-    undo,
-  };
-
-  /**
-   * Represents the properties and functions associated with an Atom instance.
-   * @property {Function} set - A function to set the value of the Atom instance with optional transformations.
-   * @property {Function} get - A function to get the value of the Atom instance with optional transformations.
-   * @property {Function} use - A function to execute the `use` function with optional arguments and update `used`.
-   */
-  const props = {
-    ...fields,
 
     /**
      * Sets the state with a new value, optionally transforming it using the provided function.
@@ -157,17 +121,57 @@ export function atom<
     },
 
     /**
-     * Execute the `use` function with optional arguments and update `used`.
+     * Updates the state with a new value and notifies subscribers.
      *
-     * @param {...Use} args Optional arguments to pass to the `use` function.
-     * @returns {Props}
+     * @param {State} value The new state value.
+     * @returns {State} The updated state value after the change.
      */
-    use,
+    next,
+    /**
+     * Retrieves the previous state in the history, if available.
+     *
+     * @returns {State | undefined} The previous state in the history, or undefined if not available.
+     */
+    previous,
+    /**
+     * Subscribes to changes in the Atom's value.
+     *
+     * @param {Function} observer - The callback function to be called with the new value.
+     * @returns {Object} An object with an `unsubscribe` function to stop the subscription.
+     */
+    subscribe,
+    /**
+     * Redoes a previous state change.
+     */
+    redo,
+    /**
+     * Undoes a previous state change.
+     */
+    undo,
   };
 
-  function use(...args: Use) {
-    usage.used = actions?.use?.(props, ...args);
-    return props;
+  /**
+   * Represents the properties and functions associated with an Atom instance.
+   * @property {Function} run - A function to execute the `use` function with optional arguments and update `used`.
+   */
+  const props = {
+    ...fields,
+
+    /**
+     * Execute the `use` function with optional arguments and update `used`.
+     *
+     * @param {...Use} args Optional arguments to pass to the `run` function.
+     * @returns {Props}
+     */
+    run: (...args: Use) => {
+      usage.used = actions?.use?.(props, ...args);
+      return props;
+    },
+  };
+
+  function use(...args: Use): Used | undefined {
+    const result = actions?.use?.(fields, ...args);
+    return (usage.used = result);
   }
 
   return props;
