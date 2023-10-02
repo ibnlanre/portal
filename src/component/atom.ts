@@ -34,13 +34,15 @@ export function atom<
    * @property {Used | undefined} used - A value resulting from the last execution of the `use` function.
    */
   const usage = {
+    variable: undefined as Used | undefined,
+
     /**
      * A value resulting from the last execution of the `use` function, if provided.
      * Undefined if `use` was not provided or returned undefined.
      * @type {Used | undefined}
      */
     get used(): Used | undefined {
-      return undefined;
+      return this.variable;
     },
 
     /**
@@ -49,7 +51,7 @@ export function atom<
      * @param {Used | undefined} value The new value of the `used` property.
      */
     set used(value: Used | undefined) {
-      this.used = value;
+      this.variable = value;
     },
   };
 
@@ -167,12 +169,12 @@ export function atom<
      */
     use: makeUse,
   };
-  
+
   function makeUse(...args: Use): Used | undefined {
     const result = use?.(fields, ...args);
     return (usage.used = result);
   }
-  
+
   if (run) makeUse(...run);
   return props;
 }
