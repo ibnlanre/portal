@@ -1,4 +1,4 @@
-import { AtomConfig } from "definition";
+import { Atom, AtomConfig } from "definition";
 import { AtomSubject } from "subject";
 import { isAtomStateFunction } from "utilities";
 
@@ -18,9 +18,11 @@ export function atom<
   Context extends {
     [key: string]: any;
   } = {}
->(config: AtomConfig<State, Used, Use, Data, Context>) {
+>(
+  config: AtomConfig<State, Used, Use, Data, Context>
+): Atom<State, Used, Use, Data, Context> {
   const { state, actions, context = {} as Context } = config;
-  const { set, get } = { ...actions };
+  const { set, get, run, use } = { ...actions };
 
   const observable = new AtomSubject(
     isAtomStateFunction<State, Context>(state) ? state(context) : state
@@ -92,7 +94,7 @@ export function atom<
         then: observable.value,
         now: value,
         used: usage.used,
-        use,
+        use: makeUse,
       };
 
       // The set function allows optional transformations and returns the new state.
@@ -110,9 +112,9 @@ export function atom<
     get: (value: State) => {
       const params = {
         then: observable.value,
-        used: usage.used,
         now: value,
-        use,
+        used: usage.used,
+        use: makeUse,
       };
 
       // The get function allows optional transformations and returns the transformed value.
@@ -160,19 +162,17 @@ export function atom<
     /**
      * Execute the `use` function with optional arguments and update `used`.
      *
-     * @param {...Use} args Optional arguments to pass to the `run` function.
+     * @param {...Use} args Optional arguments to pass to the `use` function.
      * @returns {Props}
      */
-    run: (...args: Use) => {
-      usage.used = actions?.use?.(props, ...args);
-      return props;
-    },
+    use: makeUse,
   };
-
-  function use(...args: Use): Used | undefined {
-    const result = actions?.use?.(fields, ...args);
+  
+  function makeUse(...args: Use): Used | undefined {
+    const result = use?.(fields, ...args);
     return (usage.used = result);
   }
-
+  
+  if (run) makeUse(...run);
   return props;
 }

@@ -188,9 +188,13 @@ export interface Actions<
   Data,
   Context
 > {
-  use?: (fields: Fields<State, Data, Context>, ...args: Use) => Used;
-  get?: (values: Values<State, Used, Use>, context: Context) => Data;
+  run?: Use;
   set?: (values: Values<State, Used, Use>, context: Context) => State;
+  get?: (values: Values<State, Used, Use>, context: Context) => Data;
+  use?: <Value = Data>(
+    fields: Fields<State, Value, Context>,
+    ...args: Use
+  ) => Used;
 }
 
 export type AtomConfig<
@@ -205,9 +209,14 @@ export type AtomConfig<
   context?: Context;
 };
 
-export interface Atom<State, Use extends ReadonlyArray<any>, Data, Context>
-  extends Fields<State, Data, Context> {
-  run: (...args: Use) => Atom<State, Use, Data, Context>;
+export interface Atom<
+  State,
+  Used,
+  Use extends ReadonlyArray<any>,
+  Data,
+  Context
+> extends Fields<State, Data, Context> {
+  use: (...args: Use) => Used | undefined;
 }
 
 export * from "./cookieOptions";
