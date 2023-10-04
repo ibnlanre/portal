@@ -188,7 +188,7 @@ export interface Actions<
   Data,
   Context
 > {
-  run?: Use;
+  run?: Use | false;
   set?: (values: Values<State, Used, Use>, context: Context) => State;
   get?: (values: Values<State, Used, Use>, context: Context) => Data;
   use?: <Value = Data>(

@@ -22,7 +22,7 @@ export function atom<
   config: AtomConfig<State, Used, Use, Data, Context>
 ): Atom<State, Used, Use, Data, Context> {
   const { state, actions, context = {} as Context } = config;
-  const { set, get, run, use } = { ...actions };
+  const { set, get, run = [] as unknown as Use, use } = { ...actions };
 
   const observable = new AtomSubject(
     isAtomStateFunction<State, Context>(state) ? state(context) : state
@@ -51,7 +51,7 @@ export function atom<
      * @param {Used | undefined} value The new value of the `used` property.
      */
     set used(value: Used | undefined) {
-      this.variable = value;
+      this.variable = value; 
     },
   };
 
@@ -175,6 +175,6 @@ export function atom<
     return (usage.used = result);
   }
 
-  if (run) makeUse(...run);
+  if (run && use) makeUse(...run);
   return props;
 }
