@@ -21,9 +21,10 @@ export function useAtom<
   Used,
   Use extends ReadonlyArray<any>,
   Data,
-  Context
+  Context,
+  Dependencies
 >(
-  store: Atom<State, Used, Use, Data, Context>,
+  store: Atom<State, Used, Use, Data, Context, Dependencies>,
   singleton?: (ctx: Context) => void
 ) {
   const { get, set, next, subscribe } = store;

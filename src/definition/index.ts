@@ -160,10 +160,10 @@ export type PortalImplementation<T> = <S extends T, A = undefined>(
  *
  * @template State The type of the state.
  */
-export type Fields<State, Data, Context> = {
+export type Fields<State, Data, Context, Dependencies> = {
   value: State;
+  get: (value?: State) => Data;
   set: (value: State) => State;
-  get: (value: State) => Data;
   next: (value: State) => void;
   previous: () => State | undefined;
   subscribe: (observer: (value: State) => any) => {
@@ -171,10 +171,16 @@ export type Fields<State, Data, Context> = {
   };
   redo: () => void;
   undo: () => void;
+  history: State[];
   ctx: Context;
+  deps: Dependencies;
 };
 
-interface Values<State, Used, Use extends ReadonlyArray<any>> {
+interface Values<
+  State,
+  Used extends (() => void) | void,
+  Use extends ReadonlyArray<any>
+> {
   use: (...args: Use) => Used | undefined;
   used: Used | undefined;
   then: State;
@@ -183,30 +189,34 @@ interface Values<State, Used, Use extends ReadonlyArray<any>> {
 
 export interface Actions<
   State,
-  Used,
+  Used extends (() => void) | void,
   Use extends ReadonlyArray<any>,
   Data,
-  Context
+  Context,
+  Dependencies
 > {
-  run?: Use | false;
+  run?: Use;
+  act?: boolean;
   set?: (values: Values<State, Used, Use>, context: Context) => State;
   get?: (values: Values<State, Used, Use>, context: Context) => Data;
   use?: <Value = Data>(
-    fields: Fields<State, Value, Context>,
+    fields: Fields<State, Value, Context, Dependencies>,
     ...args: Use
-  ) => Used;
+  ) => Used | undefined;
 }
 
 export type AtomConfig<
   State,
-  Used,
+  Used extends (() => void) | void,
   Use extends ReadonlyArray<any>,
   Data,
-  Context
+  Context,
+  Dependencies
 > = {
   state: State | ((context: Context) => State);
-  actions?: Actions<State, Used, Use, Data, Context>;
+  actions?: Actions<State, Used, Use, Data, Context, Dependencies>;
   context?: Context;
+  dependencies?: Dependencies;
 };
 
 export interface Atom<
@@ -214,9 +224,11 @@ export interface Atom<
   Used,
   Use extends ReadonlyArray<any>,
   Data,
-  Context
-> extends Fields<State, Data, Context> {
+  Context,
+  Dependencies
+> extends Fields<State, Data, Context, Dependencies> {
   use: (...args: Use) => Used | undefined;
+  used: Used | undefined;
 }
 
 export * from "./cookieOptions";
