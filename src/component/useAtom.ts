@@ -30,7 +30,7 @@ export function useAtom<
   const { get, set, next, subscribe } = store;
   const [state, setState] = useState(() => {
     if (singleton) singleton(store.ctx);
-    return store.value;
+    return store.value();
   });
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export function useAtom<
   const atom = get(state);
   const setAtom = (value: State | SetStateAction<State>) => {
     const isFunction = isSetStateFunction(value);
-    next(set(isFunction ? value(store.value) : value));
+    next(set(isFunction ? value(state) : value));
   };
 
   return [atom, setAtom] as const;

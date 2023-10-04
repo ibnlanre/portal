@@ -90,7 +90,7 @@ export function atom<
      * @function
      * @returns {State} The current value.
      */
-    get value() {
+    value: () => {
       return observable.value;
     },
     /**

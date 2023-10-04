@@ -161,7 +161,7 @@ export type PortalImplementation<T> = <S extends T, A = undefined>(
  * @template State The type of the state.
  */
 export type Fields<State, Data, Context, Dependencies> = {
-  value: State;
+  value: () => State;
   get: (value?: State) => Data;
   set: (value: State) => State;
   next: (value: State) => void;
