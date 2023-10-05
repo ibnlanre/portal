@@ -208,47 +208,34 @@ This library exports the following APIs to enhance state management and facilita
       const messagesAtom = atom({
         state: {} as Messages,
         actions: {
-          get: ({ now }) => now?.messages?.at(0)?.last_24_hr_data,
-          set: ({ now }) => decrypt(now),
+          get: ({ val }) => val?.messages?.at(0)?.last_24_hr_data,
+          set: ({ val }) => decrypt(val),
         },
       });
 
       export const userAtom = atom({
         state: {} as UserData,
         actions: {
-          set: ({ now }, { getUrl, socket, messagesAtom: { set, next } }) => {
-            const ws = new WebSocket(getUrl(now.user));
+          use: ({ next, set, ctx, deps }) => {
+            const users = deps.messagesAtom.value();
+            const url = ctx.getUrl(users);
+            const ws = new WebSocket(url);
+
             ws.onmessage = ((value) => {
               next(set(JSON.parse(value.data)))
             });
-            socket.next(socket.set(ws));
-            return decrypt(now);
+
+            return () => {
+              if (ws.readyState === WebSocket.OPEN) ws.close();
+            }
           },
+          set: ({ val }) => decrypt(val),
+        },
+        dependencies: {
+          messagesAtom
         },
         context: {
-          messagesAtom,
-          socket: atom({
-            state: {} as WebSocket,
-            actions: {
-              set: ({ then, now }) => {
-                if (then?.readyState === WebSocket.OPEN) then?.close();
-                return now;
-              },
-            },
-          }),
-          getUrl: (user: string) => {
-            return createUrl<{
-              user: string;
-              view: string;
-            }>({
-              baseUrl: process.env.NEXT_PUBLIC_WS_URL,
-              url: builders.use().socket.users,
-              params: {
-                view: "mobile",
-                user
-              },
-            });
-          },
+          getUrl: (user: string) => builders.use().socket.users(user);
         },
       });
       ```
