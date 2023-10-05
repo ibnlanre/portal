@@ -2,7 +2,7 @@ Arguments:
   /usr/local/bin/node /usr/local/bin/yarn publish --access public
 
 PATH: 
-  /var/folders/4k/vkkh8s8s2j1bcn38k3fpb0jh0000gn/T/yarn--1696222511005-0.06155026190642898:/Users/ibnlanre/Documents/Development.nosync/portal/node_modules/.bin:/Users/ibnlanre/.config/yarn/link/node_modules/.bin:/Users/ibnlanre/.yarn/bin:/usr/local/libexec/lib/node_modules/npm/bin/node-gyp-bin:/usr/local/lib/node_modules/npm/bin/node-gyp-bin:/usr/local/bin/node_modules/npm/bin/node-gyp-bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin
+  /var/folders/4k/vkkh8s8s2j1bcn38k3fpb0jh0000gn/T/yarn--1696495056526-0.36917086389185294:/Users/ibnlanre/Documents/Development.nosync/portal/node_modules/.bin:/Users/ibnlanre/.config/yarn/link/node_modules/.bin:/Users/ibnlanre/.yarn/bin:/usr/local/libexec/lib/node_modules/npm/bin/node-gyp-bin:/usr/local/lib/node_modules/npm/bin/node-gyp-bin:/usr/local/bin/node_modules/npm/bin/node-gyp-bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin
 
 Yarn version: 
   1.22.19
@@ -14,13 +14,21 @@ Platform:
   darwin arm64
 
 Trace: 
-  Error: getaddrinfo ENOTFOUND registry.yarnpkg.com
-      at GetAddrInfoReqWrap.onlookup [as oncomplete] (node:dns:108:26)
+  Error: https://registry.yarnpkg.com/-/user/org.couchdb.user:ibnlanre: ESOCKETTIMEDOUT
+      at ClientRequest.<anonymous> (/usr/local/lib/node_modules/yarn/lib/cli.js:141517:19)
+      at Object.onceWrapper (node:events:628:28)
+      at ClientRequest.emit (node:events:514:28)
+      at TLSSocket.emitRequestTimeout (node:_http_client:847:9)
+      at Object.onceWrapper (node:events:628:28)
+      at TLSSocket.emit (node:events:526:35)
+      at Socket._onTimeout (node:net:571:8)
+      at listOnTimeout (node:internal/timers:569:17)
+      at process.processTimers (node:internal/timers:512:7)
 
 npm manifest: 
   {
     "name": "@ibnlanre/portal",
-    "version": "3.5.0-beta",
+    "version": "3.9.1-beta",
     "description": "React state management library",
     "main": "cjs/index.js",
     "module": "esm/index.js",

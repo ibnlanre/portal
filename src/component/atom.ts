@@ -47,7 +47,7 @@ export function atom<
     context = {} as Context,
     dependencies = {} as Dependencies,
     status = {} as Status,
-    enabled,
+    enabled = true,
   } = config;
   const { set, get, use } = { ...actions };
 
