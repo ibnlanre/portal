@@ -295,16 +295,17 @@ export function atom<
     return (garbage.mop = result);
   }
 
-  if (dependencies) {
+  if (enabled) {
     const rerun = () => {
       garbage.mop?.();
       makeUse(...args);
     };
+    
     Object.values(dependencies).forEach((item) => {
       item?.subscribe(rerun, false);
     });
-  }
 
-  if (enabled) makeUse(...args);
+    makeUse(...args);
+  }
   return props;
 }
