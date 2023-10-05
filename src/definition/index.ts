@@ -154,13 +154,26 @@ export type PortalImplementation<T> = <S extends T, A = undefined>(
   reducer?: Reducer<S, A>
 ) => PortalState<S, A>;
 
+type Params<
+  State,
+  Mop extends (() => void) | void,
+  Use extends ReadonlyArray<any>,
+  Context
+> = {
+  log: State;
+  mop: Mop | undefined;
+  use: (...args: Use) => Mop | undefined;
+  ctx: Context;
+  val: State;
+};
+
 /**
  * Represents an Atom in the portal system.
  * An Atom is a special type of portal entry that allows you to manage and update state.
  *
  * @template State The type of the state.
  */
-export type Fields<State, Data, Context, Dependencies> = {
+export type Fields<State, Data, Context, Dependencies, Status> = {
   value: () => State;
   get: (value?: State) => Data;
   set: (value: State) => State;
@@ -174,62 +187,65 @@ export type Fields<State, Data, Context, Dependencies> = {
   history: State[];
   ctx: Context;
   deps: Dependencies;
+  setStatus: (
+    status: Partial<Status> | ((currentStatus: Status) => Status)
+  ) => void;
 };
-
-interface Values<
-  State,
-  Used extends (() => void) | void,
-  Use extends ReadonlyArray<any>
-> {
-  use: (...args: Use) => Used | undefined;
-  used: Used | undefined;
-  then: State;
-  now: State;
-}
 
 export interface Actions<
   State,
-  Used extends (() => void) | void,
+  Mop extends (() => void) | void,
   Use extends ReadonlyArray<any>,
   Data,
   Context,
-  Dependencies
+  Dependencies,
+  Status
 > {
-  run?: Use;
-  act?: boolean;
-  set?: (values: Values<State, Used, Use>, context: Context) => State;
-  get?: (values: Values<State, Used, Use>, context: Context) => Data;
+  set?: (params: Params<State, Mop, Use, Context>) => State;
+  get?: (params: Params<State, Mop, Use, Context>) => Data;
   use?: <Value = Data>(
-    fields: Fields<State, Value, Context, Dependencies>,
+    fields: Fields<State, Value, Context, Dependencies, Status>,
     ...args: Use
-  ) => Used | undefined;
+  ) => Mop | undefined;
 }
 
 export type AtomConfig<
   State,
-  Used extends (() => void) | void,
+  Mop extends (() => void) | void,
   Use extends ReadonlyArray<any>,
   Data,
   Context,
-  Dependencies
+  Dependencies,
+  Status
 > = {
   state: State | ((context: Context) => State);
-  actions?: Actions<State, Used, Use, Data, Context, Dependencies>;
+  enabled?: boolean;
+  actions?: Actions<State, Mop, Use, Data, Context, Dependencies, Status>;
   context?: Context;
   dependencies?: Dependencies;
+  status?: Status;
 };
 
 export interface Atom<
   State,
-  Used,
+  Mop,
   Use extends ReadonlyArray<any>,
   Data,
   Context,
-  Dependencies
-> extends Fields<State, Data, Context, Dependencies> {
-  use: (...args: Use) => Used | undefined;
-  used: Used | undefined;
+  Dependencies,
+  Status
+> extends Fields<State, Data, Context, Dependencies, Status> {
+  use: (...args: Use) => Mop | undefined;
+  mop: Mop | undefined;
+  status: Status;
 }
+
+type SetAtom<State, Status> = {
+  (value: State | SetStateAction<State>): void;
+  status: Status;
+};
+
+export type UseAtom<Data, State, Status> = [Data, SetAtom<State, Status>];
 
 export * from "./cookieOptions";
 export * from "./implementation";

@@ -1,4 +1,4 @@
-import { Atom } from "definition";
+import { Atom, UseAtom } from "definition";
 import { useState, useEffect, SetStateAction } from "react";
 import { isSetStateFunction } from "utilities";
 
@@ -7,7 +7,7 @@ import { isSetStateFunction } from "utilities";
  *
  * @template State The type of the atom's state.
  * @template Use The type of the atom's `run` function.
- * @template Used The return type of the atom's `run` function.
+ * @template Mop The return type of the atom's `run` function.
  * @template Data The type of data derived from the atom's state.
  * @template Context The type of context used by the atom.
  *
@@ -18,15 +18,16 @@ import { isSetStateFunction } from "utilities";
  */
 export function useAtom<
   State,
-  Used,
+  Mop,
   Use extends ReadonlyArray<any>,
   Data,
   Context,
-  Dependencies
+  Dependencies,
+  Status
 >(
-  store: Atom<State, Used, Use, Data, Context, Dependencies>,
+  store: Atom<State, Mop, Use, Data, Context, Dependencies, Status>,
   singleton?: (ctx: Context) => void
-) {
+): UseAtom<Data, State, Status> {
   const { get, set, next, subscribe } = store;
   const [state, setState] = useState(() => {
     if (singleton) singleton(store.ctx);
@@ -44,5 +45,6 @@ export function useAtom<
     next(set(isFunction ? value(state) : value));
   };
 
-  return [atom, setAtom] as const;
+  setAtom.status = store.status;
+  return [atom, setAtom];
 }

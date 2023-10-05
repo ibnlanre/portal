@@ -3,67 +3,84 @@ import { AtomSubject } from "subject";
 import { isAtomStateFunction } from "utilities";
 
 /**
- * @template State The type of the state.
- * @template A The type of the actions.
+ * Creates an Atom instance with specified configuration.
  *
- * @param {State} initialState The initial state value.
+ * @template State - The state type.
+ * @template Mop - The type of the "mop" value returned by the `use` function.
+ * @template Use - An array type containing the argument types of the `use` function.
+ * @template Data - The type of data returned by the `get` function.
+ * @template Context - The type of the context object.
+ * @template Dependencies - A record type containing dependencies on other atoms.
  *
- * @returns {Atom<State, Use, Data, Context>} An instance of the Atom class.
+ * @param {Object} config - Configuration object for the Atom.
+ * @param {State | (() => State)} config.state - Initial state or a function to generate the initial state.
+ * @param {Object} [config.actions] - actions object containing functions to interact with the Atom.
+ * @param {(params: ActionParams<State, Data, Context>) => State} [config.actions.set] - Function to set the Atom's state.
+ * @param {(params: ActionParams<State, Data, Context>) => Data} [config.actions.get] - Function to get data from the Atom's state.
+ * @param {(fields: Fields<State, Data, Context, Dependencies>, ...args: Use) => Mop | undefined} [config.actions.use] - Function to perform asynchronous actions.
+ * @param {boolean} [config.actions.act=true] - Whether to activate the `use` function immediately.
+ * @param {Array<Use>} [config.actions.run] - Arguments to pass to the `use` function when activated.
+ * @param {Context} [config.context] - Context object to be passed to actions.
+ * @param {Dependencies} [config.dependencies] - Record of dependencies on other atoms.
+ *
+ * @returns {Props<State, Data, Context, Dependencies, Mop>} An object containing Atom properties and functions.
  */
 export function atom<
   State,
-  Used extends (() => void) | void,
+  Mop extends (() => void) | void,
   Use extends ReadonlyArray<any>,
   Data = State,
   Context extends {
     [key: string]: any;
   } = {},
-  Dependencies extends Record<string, Atom<any, any, any, any, any, any>> = {}
->(
-  config: AtomConfig<State, Used, Use, Data, Context, Dependencies>
-): Atom<State, Used, Use, Data, Context, Dependencies> {
+  Dependencies extends Record<
+    string,
+    Atom<any, any, any, any, any, any, any>
+  > = {},
+  Status extends {
+    [key: string]: any;
+  } = {}
+>(config: AtomConfig<State, Mop, Use, Data, Context, Dependencies, Status>) {
   const {
     state,
     actions,
     context = {} as Context,
     dependencies = {} as Dependencies,
+    status = {} as Status,
+    enabled,
   } = config;
-  const {
-    set,
-    get,
-    use,
-    act = true,
-    run = [] as unknown as Use,
-  } = { ...actions };
+  const { set, get, use } = { ...actions };
 
   const observable = new AtomSubject(
     isAtomStateFunction<State, Context>(state) ? state(context) : state
   );
   const { subscribe, previous, redo, undo, next } = observable;
 
+  const stats = new AtomSubject(status);
+
   /**
    * Represents the result from the last execution of the `use` function.
-   * @property {Used | undefined} used - A value resulting from the last execution of the `use` function.
+   * @property {Mop | undefined} mop - A value resulting from the last execution of the `use` function.
    */
-  const usage = {
-    variable: undefined as Used | undefined,
+  const garbage = {
+    bin: undefined as Mop | undefined,
 
     /**
      * A value resulting from the last execution of the `use` function, if provided.
      * Undefined if `use` was not provided or returned undefined.
-     * @type {Used | undefined}
+     * @type {Mop | undefined}
      */
-    get used(): Used | undefined {
-      return this.variable;
+    get mop(): Mop | undefined {
+      return this.bin;
     },
 
     /**
-     * Sets the value of the `used` property.
+     * Sets the value of the `mop` property.
      *
-     * @param {Used | undefined} value The new value of the `used` property.
+     * @param {Mop | undefined} value The new value of the `mop` property.
      */
-    set used(value: Used | undefined) {
-      this.variable = value;
+    set mop(value: Mop | undefined) {
+      this.bin = value;
     },
   };
 
@@ -83,7 +100,7 @@ export function atom<
    * @property {Array<any>} deps - An array of dependencies.
    * @property {Array<State>} history - An array containing the history of state changes.
    */
-  const fields: Fields<State, Data, Context, Dependencies> = {
+  const fields: Fields<State, Data, Context, Dependencies, Status> = {
     /**
      * Gets the current value of the Atom instance.
      *
@@ -123,14 +140,15 @@ export function atom<
      */
     set: (value: State) => {
       const params = {
-        then: observable.value,
-        now: value,
-        used: usage.used,
+        log: observable.value,
+        val: value,
+        mop: garbage.mop,
         use: makeUse,
+        ctx: context
       };
 
       // The set function allows optional transformations and returns the new state.
-      if (set) return set(params, context);
+      if (set) return set(params);
       else return value as unknown as State;
     },
 
@@ -144,14 +162,15 @@ export function atom<
      */
     get: (value: State = observable.value) => {
       const params = {
-        then: observable.value,
-        now: value,
-        used: usage.used,
+        log: observable.value,
+        val: value,
+        mop: garbage.mop,
         use: makeUse,
+        ctx: context,
       };
 
       // The get function allows optional transformations and returns the transformed value.
-      if (get) return get(params, context);
+      if (get) return get(params);
       else return value as unknown as Data;
     },
 
@@ -204,6 +223,18 @@ export function atom<
     get history() {
       return observable.history;
     },
+
+    /**
+     * Sets the status of the Atom instance.
+     *
+     * @param {Partial<Status> | ((currentStatus: Status) => Status)} status The new status or a function to update the current status.
+     */
+    setStatus: (status) => {
+      const currentStatus = stats.value;
+      if (typeof status === "function") {
+        stats.next({ ...status(currentStatus) });
+      } else stats.next({ ...currentStatus, ...status });
+    },
   };
 
   /**
@@ -221,48 +252,57 @@ export function atom<
    * @property {Function} undo - A function to undo a previous state change.
    * @property {Array<any>} deps - An array of dependencies.
    * @property {Array<State>} history - An array containing the history of state changes.
-   * @property {Used | undefined} used - The value resulting from the last execution of the `use` function.
-   * @property {Function} use - A function to execute the `use` function with optional arguments and update `used`.
+   * @property {Mop | undefined} mop - The value resulting from the last execution of the `use` function.
+   * @property {Function} use - A function to execute the `use` function with optional arguments and update `mop`.
+   * @property {Status} status - The current status of the Atom instance.
    */
-
-  const props = {
+  const props: Atom<State, Mop, Use, Data, Context, Dependencies, Status> = {
     ...fields,
 
     /**
      * The value resulting from the last execution of the `use` function
      */
-    used: usage.used,
+    mop: garbage.mop,
 
     /**
-     * Execute the `use` function with optional arguments and update `used`.
+     * Execute the `use` function with optional arguments and update `mop`.
      *
      * @param {...Use} args Optional arguments to pass to the `use` function.
      * @returns {Props}
      */
     use: makeUse,
+
+    /**
+     * @function
+     * The current status of the Atom instance.
+     */
+    get status() {
+      return stats.value;
+    },
   };
 
+  const args = [] as unknown as Use;
+
   /**
-   * Execute the `use` function with optional arguments and update `used`.
+   * Execute the `use` function with optional arguments and update `mop`.
    *
    * @function
    * @param {...Use} args Optional arguments to pass to the `use` function.
-   * @returns {Used | undefined} The value resulting from the last execution of the `use` function.
+   * @returns {Mop | undefined} The value resulting from the last execution of the `use` function.
    */
-  function makeUse(...args: Use): Used | undefined {
+  function makeUse(...args: Use): Mop | undefined {
     if (!use) return;
     const result = use?.(fields, ...args);
-    return (usage.used = result);
+    return (garbage.mop = result);
   }
 
   Object.values(dependencies).forEach((item) => {
-    const atom = item as Atom<any, any, any, any, any, any>;
-    atom.subscribe(() => {
-      usage.used?.();
-      makeUse(...run);
+    item.subscribe(() => {
+      garbage.mop?.();
+      makeUse(...args);
     });
   });
 
-  if (act) makeUse(...run);
+  if (enabled) makeUse(...args);
   return props;
 }
