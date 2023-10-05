@@ -14,13 +14,12 @@ import { isAtomStateFunction } from "utilities";
  *
  * @param {Object} config - Configuration object for the Atom.
  * @param {State | (() => State)} config.state - Initial state or a function to generate the initial state.
- * @param {Object} [config.actions] - actions object containing functions to interact with the Atom.
- * @param {(params: ActionParams<State, Data, Context>) => State} [config.actions.set] - Function to set the Atom's state.
- * @param {(params: ActionParams<State, Data, Context>) => Data} [config.actions.get] - Function to get data from the Atom's state.
- * @param {(fields: Fields<State, Data, Context, Dependencies>, ...args: Use) => Mop | undefined} [config.actions.use] - Function to perform asynchronous actions.
- * @param {boolean} [config.actions.act=true] - Whether to activate the `use` function immediately.
- * @param {Array<Use>} [config.actions.run] - Arguments to pass to the `use` function when activated.
- * @param {Context} [config.context] - Context object to be passed to actions.
+ * @param {Object} [config.events] - events object containing functions to interact with the Atom.
+ * @param {(params: ActionParams<State, Data, Context>) => State} [config.events.set] - Function to set the Atom's state.
+ * @param {(params: ActionParams<State, Data, Context>) => Data} [config.events.get] - Function to get data from the Atom's state.
+ * @param {(fields: Fields<State, Data, Context, Dependencies>, ...args: Use) => Mop | undefined} [config.events.use] - Function to perform asynchronous events.
+ * @param {boolean} [config.enabled=true] - Whether to activate the `use` function immediately.
+ * @param {Context} [config.context] - Context object to be passed to events.
  * @param {Dependencies} [config.dependencies] - Record of dependencies on other atoms.
  *
  * @returns {Props<State, Data, Context, Dependencies, Mop>} An object containing Atom properties and functions.
@@ -43,13 +42,13 @@ export function atom<
 >(config: AtomConfig<State, Mop, Use, Data, Context, Dependencies, Status>) {
   const {
     state,
-    actions,
+    events,
     context = {} as Context,
     dependencies = {} as Dependencies,
     status = {} as Status,
     enabled = true,
   } = config;
-  const { set, get, use } = { ...actions };
+  const { set, get, use } = { ...events };
 
   const observable = new AtomSubject(
     isAtomStateFunction<State, Context>(state) ? state(context) : state
@@ -297,11 +296,12 @@ export function atom<
   }
 
   if (dependencies) {
+    const rerun = () => {
+      garbage.mop?.();
+      makeUse(...args);
+    };
     Object.values(dependencies).forEach((item) => {
-      item?.subscribe(() => {
-        garbage.mop?.();
-        makeUse(...args);
-      });
+      item?.subscribe(rerun, false);
     });
   }
 

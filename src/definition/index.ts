@@ -179,7 +179,10 @@ export type Fields<State, Data, Context, Dependencies, Status> = {
   set: (value: State) => State;
   next: (value: State) => void;
   previous: () => State | undefined;
-  subscribe: (observer: (value: State) => any) => {
+  subscribe: (
+    observer: (value: State) => any,
+    initiate?: boolean
+  ) => {
     unsubscribe: () => void;
   };
   redo: () => void;
@@ -192,7 +195,7 @@ export type Fields<State, Data, Context, Dependencies, Status> = {
   ) => void;
 };
 
-export interface Actions<
+export interface Events<
   State,
   Mop extends (() => void) | void,
   Use extends ReadonlyArray<any>,
@@ -220,7 +223,7 @@ export type AtomConfig<
 > = {
   state: State | ((context: Context) => State);
   enabled?: boolean;
-  actions?: Actions<State, Mop, Use, Data, Context, Dependencies, Status>;
+  events?: Events<State, Mop, Use, Data, Context, Dependencies, Status>;
   context?: Context;
   dependencies?: Dependencies;
   status?: Status;

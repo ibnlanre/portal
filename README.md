@@ -207,7 +207,7 @@ This library exports the following APIs to enhance state management and facilita
       ```js
       const messagesAtom = atom({
         state: {} as Messages,
-        actions: {
+        events: {
           get: ({ val }) => val?.messages?.at(0)?.last_24_hr_data,
           set: ({ val }) => decrypt(val),
         },
@@ -215,7 +215,7 @@ This library exports the following APIs to enhance state management and facilita
 
       export const userAtom = atom({
         state: {} as UserData,
-        actions: {
+        events: {
           use: ({ next, set, ctx, deps }) => {
             const users = deps.messagesAtom.value();
             const url = ctx.getUrl(users);

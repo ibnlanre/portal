@@ -141,14 +141,19 @@ export class AtomSubject<State> {
   /**
    * Subscribes to the subject and receives emitted values.
    * @param {Function} observer The callback function to be called with emitted values.
+   * @param {boolean} [initiate=true] Whether to initiate the callback immediately with the current state. Defaults to `true`.
+   * 
    * @returns {{ unsubscribe: Function }} An object with a function to unsubscribe the callback.
    */
-  subscribe = (observer: (value: State) => any): Subscription => {
+  subscribe = (
+    observer: (value: State) => any,
+    initiate: boolean = true
+  ): Subscription => {
     // Check if the observer is not already subscribed
     if (!this.subscribers.has(observer)) {
       // Add the observer to the subscribers and notify it with the current state
       this.subscribers.add(observer);
-      observer(this.state);
+      if (initiate) observer(this.state);
     }
 
     // Return an object with an unsubscribe function
