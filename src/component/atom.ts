@@ -144,7 +144,7 @@ export function atom<
         val: value,
         mop: garbage.mop,
         use: makeUse,
-        ctx: context
+        ctx: context,
       };
 
       // The set function allows optional transformations and returns the new state.
@@ -296,12 +296,14 @@ export function atom<
     return (garbage.mop = result);
   }
 
-  Object.values(dependencies).forEach((item) => {
-    item.subscribe(() => {
-      garbage.mop?.();
-      makeUse(...args);
+  if (dependencies) {
+    Object.values(dependencies).forEach((item) => {
+      item?.subscribe(() => {
+        garbage.mop?.();
+        makeUse(...args);
+      });
     });
-  });
+  }
 
   if (enabled) makeUse(...args);
   return props;
