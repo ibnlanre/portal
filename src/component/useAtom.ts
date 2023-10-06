@@ -1,5 +1,5 @@
 import { Atom, UseAtom } from "definition";
-import { useState, useEffect, SetStateAction } from "react";
+import { useState, useEffect, SetStateAction, useMemo, useRef } from "react";
 import { isSetStateFunction } from "utilities";
 
 /**
@@ -18,7 +18,7 @@ import { isSetStateFunction } from "utilities";
  */
 export function useAtom<
   State,
-  Mop,
+  Mop extends (() => void) | void,
   Use extends ReadonlyArray<any>,
   Data,
   Context,
@@ -26,13 +26,20 @@ export function useAtom<
   Status
 >(
   store: Atom<State, Mop, Use, Data, Context, Dependencies, Status>,
-  singleton?: (ctx: Context) => void
+  ...args: Use
 ): UseAtom<Data, State, Status> {
+  const isFirst = useRef(true);
+
+  const [state, setState] = useState(store.value());
   const { get, set, next, subscribe } = store;
-  const [state, setState] = useState(() => {
-    if (singleton) singleton(store.ctx);
-    return store.value();
-  });
+
+  useEffect(() => {
+    if (isFirst.current) {
+      isFirst.current = false;
+      return;
+    }
+    if (args.length) store.use(...args);
+  }, args);
 
   useEffect(() => {
     const subscriber = subscribe(setState);

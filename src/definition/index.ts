@@ -161,8 +161,6 @@ type Params<
   Context
 > = {
   log: State;
-  mop: Mop | undefined;
-  use: (...args: Use) => Mop | undefined;
   ctx: Context;
   val: State;
 };
@@ -231,7 +229,7 @@ export type AtomConfig<
 
 export interface Atom<
   State,
-  Mop,
+  Mop extends (() => void) | void,
   Use extends ReadonlyArray<any>,
   Data,
   Context,

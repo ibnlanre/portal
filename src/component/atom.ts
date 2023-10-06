@@ -43,8 +43,8 @@ export function atom<
   const {
     state,
     events,
-    context = {} as Context,
     dependencies = {} as Dependencies,
+    context = {} as Context,
     status = {} as Status,
     enabled = true,
   } = config;
@@ -140,10 +140,8 @@ export function atom<
     set: (value: State) => {
       const params = {
         log: observable.value,
-        val: value,
-        mop: garbage.mop,
-        use: makeUse,
         ctx: context,
+        val: value,
       };
 
       // The set function allows optional transformations and returns the new state.
@@ -162,10 +160,8 @@ export function atom<
     get: (value: State = observable.value) => {
       const params = {
         log: observable.value,
-        val: value,
-        mop: garbage.mop,
-        use: makeUse,
         ctx: context,
+        val: value,
       };
 
       // The get function allows optional transformations and returns the transformed value.
@@ -280,8 +276,6 @@ export function atom<
     },
   };
 
-  const args = [] as unknown as Use;
-
   /**
    * Execute the `use` function with optional arguments and update `mop`.
    *
@@ -290,22 +284,18 @@ export function atom<
    * @returns {Mop | undefined} The value resulting from the last execution of the `use` function.
    */
   function makeUse(...args: Use): Mop | undefined {
-    if (!use) return;
+    garbage.mop?.();
     const result = use?.(fields, ...args);
     return (garbage.mop = result);
   }
 
-  if (enabled) {
-    const rerun = () => {
-      garbage.mop?.();
-      makeUse(...args);
-    };
-    
-    Object.values(dependencies).forEach((item) => {
-      item?.subscribe(rerun, false);
-    });
+  const args = [] as unknown as Use;
+  
+  makeUse(...args);
+  const observer = () => makeUse(...args);
+  Object.values(dependencies).forEach((item) => {
+    item?.subscribe(observer);
+  });
 
-    makeUse(...args);
-  }
   return props;
 }
