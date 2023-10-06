@@ -1,6 +1,6 @@
 import { Atom, UseAtom } from "definition";
-import { useState, useEffect, SetStateAction, useMemo, useRef } from "react";
-import { isSetStateFunction } from "utilities";
+import { useState, useEffect, SetStateAction, useRef } from "react";
+import { isSetStateFunction, useShallowEffect } from "utilities";
 
 /**
  * A hook for managing and subscribing to the state of an atom.
@@ -22,10 +22,9 @@ export function useAtom<
   Use extends ReadonlyArray<any>,
   Data,
   Context,
-  Dependencies,
   Status
 >(
-  store: Atom<State, Mop, Use, Data, Context, Dependencies, Status>,
+  store: Atom<State, Mop, Use, Data, Context, Status>,
   ...args: Use
 ): UseAtom<Data, State, Status> {
   const isFirst = useRef(true);
@@ -33,12 +32,12 @@ export function useAtom<
   const [state, setState] = useState(store.value());
   const { get, set, next, subscribe } = store;
 
-  useEffect(() => {
+  useShallowEffect(() => {
     if (isFirst.current) {
       isFirst.current = false;
       return;
     }
-    if (args.length) store.use(...args);
+    store.use(...args);
   }, args);
 
   useEffect(() => {

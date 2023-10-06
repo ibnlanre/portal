@@ -154,15 +154,15 @@ export type PortalImplementation<T> = <S extends T, A = undefined>(
   reducer?: Reducer<S, A>
 ) => PortalState<S, A>;
 
-type Params<
+export type Params<
   State,
-  Mop extends (() => void) | void,
-  Use extends ReadonlyArray<any>,
-  Context
+  Context,
+  Status
 > = {
-  log: State;
+  emit: (status: Partial<Status> | ((currentStatus: Status) => Status)) => void;
+  previous: State;
   ctx: Context;
-  val: State;
+  value: State;
 };
 
 /**
@@ -171,7 +171,7 @@ type Params<
  *
  * @template State The type of the state.
  */
-export type Fields<State, Data, Context, Dependencies, Status> = {
+export type Fields<State, Data, Context, Status> = {
   value: () => State;
   get: (value?: State) => Data;
   set: (value: State) => State;
@@ -187,57 +187,49 @@ export type Fields<State, Data, Context, Dependencies, Status> = {
   undo: () => void;
   history: State[];
   ctx: Context;
-  deps: Dependencies;
-  setStatus: (
-    status: Partial<Status> | ((currentStatus: Status) => Status)
-  ) => void;
+  emit: (status: Partial<Status> | ((currentStatus: Status) => Status)) => void;
 };
 
 export interface Events<
   State,
-  Mop extends (() => void) | void,
+  Dump extends (() => void) | void,
   Use extends ReadonlyArray<any>,
   Data,
   Context,
-  Dependencies,
   Status
 > {
-  set?: (params: Params<State, Mop, Use, Context>) => State;
-  get?: (params: Params<State, Mop, Use, Context>) => Data;
+  set?: (params: Params<State, Context, Status>) => State;
+  get?: (params: Params<State, Context, Status>) => Data;
   use?: <Value = Data>(
-    fields: Fields<State, Value, Context, Dependencies, Status>,
+    fields: Fields<State, Value, Context, Status>,
     ...args: Use
-  ) => Mop | undefined;
+  ) => Dump | undefined;
 }
 
 export type AtomConfig<
   State,
-  Mop extends (() => void) | void,
+  Dump extends (() => void) | void,
   Use extends ReadonlyArray<any>,
   Data,
   Context,
-  Dependencies,
   Status
 > = {
   state: State | ((context: Context) => State);
-  enabled?: boolean;
-  events?: Events<State, Mop, Use, Data, Context, Dependencies, Status>;
+  events?: Events<State, Dump, Use, Data, Context, Status>;
   context?: Context;
-  dependencies?: Dependencies;
   status?: Status;
 };
 
 export interface Atom<
   State,
-  Mop extends (() => void) | void,
+  Dump extends (() => void) | void,
   Use extends ReadonlyArray<any>,
   Data,
   Context,
-  Dependencies,
   Status
-> extends Fields<State, Data, Context, Dependencies, Status> {
-  use: (...args: Use) => Mop | undefined;
-  mop: Mop | undefined;
+> extends Fields<State, Data, Context, Status> {
+  use: (...args: Use) => Dump | undefined;
+  dump: Dump | undefined;
   status: Status;
 }
 
