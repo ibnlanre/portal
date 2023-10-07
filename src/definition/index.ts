@@ -154,12 +154,7 @@ export type PortalImplementation<T> = <S extends T, A = undefined>(
   reducer?: Reducer<S, A>
 ) => PortalState<S, A>;
 
-export type Params<
-  State,
-  Context,
-  Status
-> = {
-  emit: (status: Partial<Status> | ((currentStatus: Status) => Status)) => void;
+export type Params<State, Context> = {
   previous: State;
   ctx: Context;
   value: State;
@@ -187,55 +182,49 @@ export type Fields<State, Data, Context, Status> = {
   undo: () => void;
   history: State[];
   ctx: Context;
+  stats: Status;
   emit: (status: Partial<Status> | ((currentStatus: Status) => Status)) => void;
+  dispose: () => void;
 };
 
 export interface Events<
   State,
-  Dump extends (() => void) | void,
   Use extends ReadonlyArray<any>,
   Data,
   Context,
   Status
 > {
-  set?: (params: Params<State, Context, Status>) => State;
-  get?: (params: Params<State, Context, Status>) => Data;
+  set?: (params: Params<State, Context>) => State;
+  get?: (params: Params<State, Context>) => Data;
   use?: <Value = Data>(
     fields: Fields<State, Value, Context, Status>,
     ...args: Use
-  ) => Dump | undefined;
+  ) => (() => void) | void;
 }
 
 export type AtomConfig<
   State,
-  Dump extends (() => void) | void,
   Use extends ReadonlyArray<any>,
   Data,
   Context,
   Status
 > = {
-  state: State | ((context: Context) => State);
-  events?: Events<State, Dump, Use, Data, Context, Status>;
+  state: State | ((ctx: Context) => State);
+  events?: Events<State, Use, Data, Context, Status>;
   context?: Context;
   status?: Status;
 };
 
-export interface Atom<
-  State,
-  Dump extends (() => void) | void,
-  Use extends ReadonlyArray<any>,
-  Data,
-  Context,
-  Status
-> extends Fields<State, Data, Context, Status> {
-  use: (...args: Use) => Dump | undefined;
-  dump: Dump | undefined;
-  status: Status;
+export interface Atom<State, Use extends ReadonlyArray<any>, Data, Context, Status>
+  extends Fields<State, Data, Context, Status> {
+  waitlist: Set<Atom<State, Use, Data, Context, Status>>;
+  use(...args: Use): (() => void) | void;
+  await(args: Use): () => void;
 }
 
 type SetAtom<State, Status> = {
   (value: State | SetStateAction<State>): void;
-  status: Status;
+  stats: Status;
 };
 
 export type UseAtom<Data, State, Status> = [Data, SetAtom<State, Status>];

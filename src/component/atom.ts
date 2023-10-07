@@ -6,11 +6,9 @@ import { isAtomStateFunction } from "utilities";
  * Creates an Atom instance with specified configuration.
  *
  * @template State - The state type.
- * @template Dump - The type of the "dump" value returned by the `use` function.
  * @template Use - An array type containing the argument types of the `use` function.
  * @template Data - The type of data returned by the `get` function.
  * @template Context - The type of the context object.
- * @template Dependencies - A record type containing dependencies on other atoms.
  *
  * @param {Object} config - Configuration object for the Atom.
  * @param {State | (() => State)} config.state - Initial state or a function to generate the initial state.
@@ -22,11 +20,10 @@ import { isAtomStateFunction } from "utilities";
  * @param {Context} [config.context] - Context object to be passed to events.
  * @param {Dependencies} [config.dependencies] - Record of dependencies on other atoms.
  *
- * @returns {Props<State, Data, Context, Dependencies, Dump>} An object containing Atom properties and functions.
+ * @returns {Props<State, Use, Data, Context>} An object containing Atom properties and functions.
  */
 export function atom<
   State,
-  Dump extends (() => void) | void,
   Use extends ReadonlyArray<any>,
   Data = State,
   Context extends {
@@ -35,7 +32,7 @@ export function atom<
   Status extends {
     [key: string]: any;
   } = {}
->(config: AtomConfig<State, Dump, Use, Data, Context, Status>) {
+>(config: AtomConfig<State, Use, Data, Context, Status>) {
   const {
     state,
     events,
@@ -44,12 +41,22 @@ export function atom<
   } = config;
   const { set, get, use } = { ...events };
 
+  const garbarge = new Set<() => void>();
+  const waitlist = new Set<Atom<State, Use, Data, Context, Status>>();
+
+  // STATE
   const observable = new AtomSubject(
     isAtomStateFunction<State, Context>(state) ? state(context) : state
   );
   const { subscribe, previous, redo, undo, next } = observable;
 
+  // STATUS
   const stats = new AtomSubject(status);
+
+  /**
+   * Emits a status change by updating the status associated with the Atom.
+   * @param {Partial<Status> | ((currentStatus: Status) => Status)} status The new status or a function to transform the existing status.
+   */
   const emit = (
     status: Partial<Status> | ((currentStatus: Status) => Status)
   ) => {
@@ -60,46 +67,21 @@ export function atom<
   };
 
   /**
-   * Represents the result from the last execution of the `use` function.
-   * @property {Dump | undefined} dump - A value resulting from the last execution of the `use` function.
-   */
-  const garbage = {
-    bin: undefined as Dump | undefined,
-
-    /**
-     * A value resulting from the last execution of the `use` function, if provided.
-     * Undefined if `use` was not provided or returned undefined.
-     * @type {Dump | undefined}
-     */
-    get dump(): Dump | undefined {
-      return this.bin;
-    },
-
-    /**
-     * Sets the value of the `dump` property.
-     *
-     * @param {Dump | undefined} value The new value of the `dump` property.
-     */
-    set dump(value: Dump | undefined) {
-      this.bin = value;
-    },
-  };
-
-  /**
    * Represents the core fields and properties of an Atom instance.
    *
    * @typedef {Object} Fields
-   * @property {State} value - The current value of the Atom instance.
-   * @property {Context} ctx - The context associated with the Atom instance.
-   * @property {Function} set - A function to set the value of the Atom instance with optional transformations.
-   * @property {Function} get - A function to get the value of the Atom instance with optional transformations.
-   * @property {Function} next - A function to update the value of the Atom instance.
-   * @property {Function} previous - A function to access the previous value of the Atom.
-   * @property {Function} subscribe - A function to subscribe to changes in the Atom's value.
-   * @property {Function} redo - A function to redo a previous state change.
-   * @property {Function} undo - A function to undo a previous state change.
-   * @property {Array<any>} deps - An array of dependencies.
-   * @property {Array<State>} history - An array containing the history of state changes.
+   * @property {State} value The current value of the Atom instance.
+   * @property {Context} ctx The context associated with the Atom instance.
+   * @property {Function} set A function to set the value of the Atom instance with optional transformations.
+   * @property {Function} get A function to get the value of the Atom instance with optional transformations.
+   * @property {Function} next A function to update the value of the Atom instance.
+   * @property {Function} previous A function to access the previous value of the Atom.
+   * @property {Function} subscribe A function to subscribe to changes in the Atom's value.
+   * @property {Function} redo A function to redo a previous state change.
+   * @property {Function} undo A function to undo a previous state change.
+   * @property {Array<State>} history An array containing the history of state changes.
+   * @property {Function} emit Sets the context of the Atom instance.
+   * @property {Function} dispose Disposes of the Atom instance and associated resources.
    */
   const fields: Fields<State, Data, Context, Status> = {
     /**
@@ -111,6 +93,7 @@ export function atom<
     value: () => {
       return observable.value;
     },
+
     /**
      * Gets the context associated with the Atom instance.
      *
@@ -122,16 +105,24 @@ export function atom<
     },
 
     /**
+     * Gets the `status` associated with the Atom instance.
+     *
+     * @function
+     * @returns {Context} The `status`.
+     */
+    get stats() {
+      return stats.value;
+    },
+
+    /**
      * Sets the state with a new value, optionally transforming it using the provided function.
-     * If a transformation function is provided, it receives the previous state and the new value.
      *
      * @function
      * @param {State} value The new state value or a transformation function.
      * @returns {State} The updated state value after the change.
      */
     set: (value: State) => {
-      const params: Params<State, Context, Status> = {
-        emit,
+      const params: Params<State, Context> = {
         previous: observable.value,
         ctx: context,
         value,
@@ -144,15 +135,13 @@ export function atom<
 
     /**
      * Retrieves the current state or optionally transforms it using the provided function.
-     * If a transformation function is provided, it receives the current state and the new value.
      *
      * @function
      * @param {State} value The current state value or a transformation function.
      * @returns {Data} The transformed value, which could be of a different data type.
      */
     get: (value: State = observable.value) => {
-      const params: Params<State, Context, Status> = {
-        emit,
+      const params: Params<State, Context> = {
         previous: observable.value,
         ctx: context,
         value,
@@ -216,67 +205,65 @@ export function atom<
     /**
      * Sets the status of the Atom instance.
      *
-     * @param {Partial<Status> | ((currentStatus: Status) => Status)} status The new status or a function to update the current status.
+     * @param {Partial<Status> | ((currentStatus: Status) => Status)} ctx The new status or a function to update the current status.
      */
     emit,
+
+    /**
+     * Disposes of the set of functions resulting from the last execution of the `use` function.
+     */
+    dispose: () => {
+      garbarge.forEach((value) => value());
+    },
   };
 
   /**
    * Represents the properties and functions associated with an Atom instance.
    *
    * @typedef {Object} Props
-   * @property {Function} value - A function to get the current value of the Atom instance.
-   * @property {Function} ctx - A function to get the context associated with the Atom instance.
-   * @property {Function} set - A function to set the state with a new value.
-   * @property {Function} get - A function to retrieve the current state or transform it.
-   * @property {Function} next - A function to update the state with a new value and notify subscribers.
-   * @property {Function} previous - A function to retrieve the previous state in the history, if available.
-   * @property {Function} subscribe - A function to subscribe to changes in the Atom's value.
-   * @property {Function} redo - A function to redo a previous state change.
-   * @property {Function} undo - A function to undo a previous state change.
-   * @property {Array<any>} deps - An array of dependencies.
-   * @property {Array<State>} history - An array containing the history of state changes.
-   * @property {Dump | undefined} dump - The value resulting from the last execution of the `use` function.
-   * @property {Function} use - A function to execute the `use` function with optional arguments and update `dump`.
-   * @property {Status} status - The current status of the Atom instance.
+   * @property {Function} use - A function to execute the `use` function with optional arguments and update `garbarge`.
+   * @property {Set<() => void>} waitlist - A set containing functions to execute when awaiting state changes.
+   * @property {Function} await - A function to await state changes and execute associated functions.
    */
-  const props: Atom<State, Dump, Use, Data, Context, Status> = {
+  const props: Atom<State, Use, Data, Context, Status> = {
     ...fields,
 
     /**
-     * The value resulting from the last execution of the `use` function
-     */
-    dump: garbage.dump,
-
-    /**
-     * Execute the `use` function with optional arguments and update `dump`.
+     * Execute the `use` function with optional arguments and update `garbarge`.
      *
+     * @function
      * @param {...Use} args Optional arguments to pass to the `use` function.
-     * @returns {Props}
+     * @returns {void}
      */
-    use: makeUse,
+    use: (...args: Use) => {
+      const result = use?.(fields, ...args);
+      if (typeof result === "function") garbarge.add(result);
+    },
 
     /**
-     * @function
-     * The current status of the Atom instance.
+     * A set containing functions to execute when awaiting state changes.
+     * @type {Set<() => void>}
      */
-    get status() {
-      return stats.value;
+    waitlist,
+
+    /**
+     * A function to await state changes and execute associated functions.
+     *
+     * @function
+     * @param {Use} args Optional arguments to pass to the awaited state change function.
+     * @returns {Function} A function to cancel awaiting state changes.
+     */
+    await: (args: Use): (() => void) => {
+      fields.dispose();
+
+      const store = Array.from(waitlist)?.pop();
+      const result = store?.use(...args);
+      if (typeof result === "function") garbarge.add(result);
+      if (waitlist.size) waitlist.clear();
+
+      return fields.dispose;
     },
   };
-
-  /**
-   * Execute the `use` function with optional arguments and update `dump`.
-   *
-   * @function
-   * @param {...Use} args Optional arguments to pass to the `use` function.
-   * @returns {Dump | undefined} The value resulting from the last execution of the `use` function.
-   */
-  function makeUse(...args: Use): Dump | undefined {
-    garbage.dump?.();
-    const result = use?.(fields, ...args);
-    return (garbage.dump = result);
-  }
 
   return props;
 }

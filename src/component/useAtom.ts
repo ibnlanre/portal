@@ -7,7 +7,7 @@ import { isSetStateFunction, useShallowEffect } from "utilities";
  *
  * @template State The type of the atom's state.
  * @template Use The type of the atom's `run` function.
- * @template Mop The return type of the atom's `run` function.
+ * @template Dump The return type of the atom's `run` function.
  * @template Data The type of data derived from the atom's state.
  * @template Context The type of context used by the atom.
  *
@@ -18,17 +18,17 @@ import { isSetStateFunction, useShallowEffect } from "utilities";
  */
 export function useAtom<
   State,
-  Mop extends (() => void) | void,
   Use extends ReadonlyArray<any>,
   Data,
   Context,
   Status
 >(
-  store: Atom<State, Mop, Use, Data, Context, Status>,
+  store: Atom<State, Use, Data, Context, Status>,
   ...args: Use
 ): UseAtom<Data, State, Status> {
   const isFirst = useRef(true);
 
+  store.waitlist.add(store);
   const [state, setState] = useState(store.value());
   const { get, set, next, subscribe } = store;
 
@@ -37,7 +37,8 @@ export function useAtom<
       isFirst.current = false;
       return;
     }
-    store.use(...args);
+
+    return store.await(args);
   }, args);
 
   useEffect(() => {
@@ -51,6 +52,6 @@ export function useAtom<
     next(set(isFunction ? value(state) : value));
   };
 
-  setAtom.status = store.status;
+  setAtom.stats = store.stats;
   return [atom, setAtom];
 }
