@@ -6,7 +6,7 @@ import { isAtomStateFunction } from "utilities";
  * Creates an Atom instance with specified configuration.
  *
  * @template State - The state type.
- * @template Use - An array type containing the argument types of the `use` function.
+ * @template Variables - An array type containing the argument types of the `use` function.
  * @template Data - The type of data returned by the `get` function.
  * @template Context - The type of the context object.
  *
@@ -15,16 +15,16 @@ import { isAtomStateFunction } from "utilities";
  * @param {Object} [config.events] - events object containing functions to interact with the Atom.
  * @param {(params: ActionParams<State, Data, Context>) => State} [config.events.set] - Function to set the Atom's state.
  * @param {(params: ActionParams<State, Data, Context>) => Data} [config.events.get] - Function to get data from the Atom's state.
- * @param {(fields: Fields<State, Data, Context, Dependencies>, ...args: Use) => Dump | undefined} [config.events.use] - Function to perform asynchronous events.
+ * @param {(fields: Fields<State, Data, Context, Dependencies>, ...vars: Variables) => Dump | undefined} [config.events.use] - Function to perform asynchronous events.
  * @param {boolean} [config.enabled=true] - Whether to activate the `use` function immediately.
  * @param {Context} [config.context] - Context object to be passed to events.
  * @param {Dependencies} [config.dependencies] - Record of dependencies on other atoms.
  *
- * @returns {Props<State, Use, Data, Context>} An object containing Atom properties and functions.
+ * @returns {Props<State, Variables, Data, Context>} An object containing Atom properties and functions.
  */
 export function atom<
   State,
-  Use extends ReadonlyArray<any>,
+  Variables extends ReadonlyArray<any>,
   Data = State,
   Context extends {
     [key: string]: any;
@@ -32,7 +32,7 @@ export function atom<
   Status extends {
     [key: string]: any;
   } = {}
->(config: AtomConfig<State, Use, Data, Context, Status>) {
+>(config: AtomConfig<State, Variables, Data, Context, Status>) {
   const {
     state,
     events,
@@ -42,7 +42,7 @@ export function atom<
   const { set, get, use } = { ...events };
 
   const garbarge = new Set<() => void>();
-  const waitlist = new Set<Atom<State, Use, Data, Context, Status>>();
+  const waitlist = new Set<Atom<State, Variables, Data, Context, Status>>();
 
   // STATE
   const observable = new AtomSubject(
@@ -83,7 +83,7 @@ export function atom<
    * @property {Function} emit Sets the context of the Atom instance.
    * @property {Function} dispose Disposes of the Atom instance and associated resources.
    */
-  const fields: Fields<State, Data, Context, Status> = {
+  const fields: Fields<State, Variables, Data, Context, Status> = {
     /**
      * Gets the current value of the Atom instance.
      *
@@ -121,8 +121,9 @@ export function atom<
      * @param {State} value The new state value or a transformation function.
      * @returns {State} The updated state value after the change.
      */
-    set: (value: State) => {
-      const params: Params<State, Context> = {
+    set: (value: State, ...vars: Variables) => {
+      const params: Params<State, Context, Variables> = {
+        vars,
         previous: observable.value,
         ctx: context,
         value,
@@ -140,8 +141,9 @@ export function atom<
      * @param {State} value The current state value or a transformation function.
      * @returns {Data} The transformed value, which could be of a different data type.
      */
-    get: (value: State = observable.value) => {
-      const params: Params<State, Context> = {
+    get: (value: State = observable.value, ...vars: Variables) => {
+      const params: Params<State, Context, Variables> = {
+        vars,
         previous: observable.value,
         ctx: context,
         value,
@@ -225,18 +227,18 @@ export function atom<
    * @property {Set<() => void>} waitlist - A set containing functions to execute when awaiting state changes.
    * @property {Function} await - A function to await state changes and execute associated functions.
    */
-  const props: Atom<State, Use, Data, Context, Status> = {
+  const props: Atom<State, Variables, Data, Context, Status> = {
     ...fields,
 
     /**
      * Execute the `use` function with optional arguments and update `garbarge`.
      *
      * @function
-     * @param {...Use} args Optional arguments to pass to the `use` function.
+     * @param {...Variables} vars Optional arguments to pass to the `use` function.
      * @returns {void}
      */
-    use: (...args: Use) => {
-      const result = use?.(fields, ...args);
+    use: (...vars: Variables) => {
+      const result = use?.(fields, ...vars);
       if (typeof result === "function") garbarge.add(result);
     },
 
@@ -250,14 +252,14 @@ export function atom<
      * A function to await state changes and execute associated functions.
      *
      * @function
-     * @param {Use} args Optional arguments to pass to the awaited state change function.
+     * @param {Variables} vars Optional arguments to pass to the awaited state change function.
      * @returns {Function} A function to cancel awaiting state changes.
      */
-    await: (args: Use): (() => void) => {
+    await: (vars: Variables): (() => void) => {
       fields.dispose();
 
       const store = Array.from(waitlist)?.pop();
-      const result = store?.use(...args);
+      const result = store?.use(...vars);
       if (typeof result === "function") garbarge.add(result);
       if (waitlist.size) waitlist.clear();
 

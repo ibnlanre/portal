@@ -154,7 +154,8 @@ export type PortalImplementation<T> = <S extends T, A = undefined>(
   reducer?: Reducer<S, A>
 ) => PortalState<S, A>;
 
-export type Params<State, Context> = {
+export type Params<State, Context, Variables> = {
+  vars: Variables;
   previous: State;
   ctx: Context;
   value: State;
@@ -166,10 +167,16 @@ export type Params<State, Context> = {
  *
  * @template State The type of the state.
  */
-export type Fields<State, Data, Context, Status> = {
+export type Fields<
+  State,
+  Variables extends ReadonlyArray<any>,
+  Data,
+  Context,
+  Status
+> = {
   value: () => State;
-  get: (value?: State) => Data;
-  set: (value: State) => State;
+  get: (value?: State, ...vars: Variables) => Data;
+  set: (value: State, ...vars: Variables) => State;
   next: (value: State) => void;
   previous: () => State | undefined;
   subscribe: (
@@ -189,37 +196,42 @@ export type Fields<State, Data, Context, Status> = {
 
 export interface Events<
   State,
-  Use extends ReadonlyArray<any>,
+  Variables extends ReadonlyArray<any>,
   Data,
   Context,
   Status
 > {
-  set?: (params: Params<State, Context>) => State;
-  get?: (params: Params<State, Context>) => Data;
+  set?: (params: Params<State, Context, Variables>) => State;
+  get?: (params: Params<State, Context, Variables>) => Data;
   use?: <Value = Data>(
-    fields: Fields<State, Value, Context, Status>,
-    ...args: Use
+    fields: Fields<State, Variables, Value, Context, Status>,
+    ...vars: Variables
   ) => (() => void) | void;
 }
 
 export type AtomConfig<
   State,
-  Use extends ReadonlyArray<any>,
+  Variables extends ReadonlyArray<any>,
   Data,
   Context,
   Status
 > = {
   state: State | ((ctx: Context) => State);
-  events?: Events<State, Use, Data, Context, Status>;
+  events?: Events<State, Variables, Data, Context, Status>;
   context?: Context;
   status?: Status;
 };
 
-export interface Atom<State, Use extends ReadonlyArray<any>, Data, Context, Status>
-  extends Fields<State, Data, Context, Status> {
-  waitlist: Set<Atom<State, Use, Data, Context, Status>>;
-  use(...args: Use): (() => void) | void;
-  await(args: Use): () => void;
+export interface Atom<
+  State,
+  Variables extends ReadonlyArray<any>,
+  Data,
+  Context,
+  Status
+> extends Fields<State, Variables, Data, Context, Status> {
+  waitlist: Set<Atom<State, Variables, Data, Context, Status>>;
+  use(...vars: Variables): (() => void) | void;
+  await(vars: Variables): () => void;
 }
 
 type SetAtom<State, Status> = {
