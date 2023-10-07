@@ -1,5 +1,5 @@
 import { Atom, UseAtom } from "definition";
-import { useState, useEffect, SetStateAction, useRef } from "react";
+import { useState, useEffect, SetStateAction } from "react";
 import { isSetStateFunction, useShallowEffect } from "utilities";
 
 /**
@@ -26,18 +26,11 @@ export function useAtom<
   store: Atom<State, Use, Data, Context, Status>,
   ...args: Use
 ): UseAtom<Data, State, Status> {
-  const isFirst = useRef(true);
-
   store.waitlist.add(store);
   const [state, setState] = useState(store.value());
   const { get, set, next, subscribe } = store;
 
   useShallowEffect(() => {
-    if (isFirst.current) {
-      isFirst.current = false;
-      return;
-    }
-
     return store.await(args);
   }, args);
 

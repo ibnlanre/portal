@@ -198,8 +198,7 @@ This library exports the following APIs to enhance state management and facilita
       ```js
       // An atom state is isolated from the portal system and can be accessed
       // by explicitly exporting and importing the atom from where it was declared.
-      const [state, setState] = useAtom(counterAtom);
-      const [messages, setMessages] = useAtom(messagesAtom.use())
+      const [counter, setCounter] = useAtom(counterAtom);
       ```
 
     - An advanced example would be:
@@ -213,14 +212,13 @@ This library exports the following APIs to enhance state management and facilita
         },
       });
 
+      // Don't manually add the type as a Generic.
       export const userAtom = atom({
         state: {} as UserData,
         events: {
-          use: ({ next, set, ctx, deps }) => {
-            const users = deps.messagesAtom.value();
-            const url = ctx.getUrl(users);
-            const ws = new WebSocket(url);
-
+          set: ({ val }) => decrypt(val),
+          use: ({ next, set, ctx: { getUrl } }, user) => {
+            const ws = new WebSocket(getUrl(user));
             ws.onmessage = ((value) => {
               next(set(JSON.parse(value.data)))
             });
@@ -229,15 +227,14 @@ This library exports the following APIs to enhance state management and facilita
               if (ws.readyState === WebSocket.OPEN) ws.close();
             }
           },
-          set: ({ val }) => decrypt(val),
-        },
-        dependencies: {
-          messagesAtom
         },
         context: {
           getUrl: (user: string) => builders.use().socket.users(user);
         },
       });
+
+      const [messages, setMessages] = useAtom(messagesAtom);
+      const [users, setUsers] = useAtom(userAtom, messages.user);
       ```
 
 6. **To `access` the internals of the `portal` system.**
