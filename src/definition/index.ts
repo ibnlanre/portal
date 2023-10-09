@@ -154,34 +154,50 @@ export type PortalImplementation<T> = <S extends T, A = undefined>(
   reducer?: Reducer<S, A>
 ) => PortalState<S, A>;
 
-export type Params<State, Context, Variables> = {
-  vars: Variables;
-  previous: State;
-  ctx: Context;
-  value: State;
-};
+/**
+ * A function type to update properties.
+ *
+ * @template Properties The type of properties to update.
+ */
+type Emit<Properties> = (
+  props: Partial<Properties> | ((curr: Properties) => Properties)
+) => void;
+
+/**
+ * Represents a garbage collector for managing functions.
+ */
+export interface Garbage<T = void | (() => void) | undefined> {
+  /**
+   * Update the garbage collector with a new function.
+   *
+   * @param {T} fn The function to update the garbage collector with.
+   */
+  update(fn?: T): void;
+
+  /**
+   * Unmount the garbage collector with a function.
+   *
+   * @param {T} fn The function to unmount from the garbage collector.
+   */
+  unmount(fn?: T): void;
+}
 
 /**
  * Represents an Atom in the portal system.
  * An Atom is a special type of portal entry that allows you to manage and update state.
  *
  * @template State The type of the state.
+ * @template Context The type of the context associated with the Atom.
+ * @template Properties The type of properties associated with the Atom.
  */
-export type Fields<
-  State,
-  Variables extends ReadonlyArray<any>,
-  Data,
-  Context,
-  Status
-> = {
-  value: () => State;
-  get: (value?: State, ...vars: Variables) => Data;
-  set: (value: State, ...vars: Variables) => State;
+export type Fields<State, Context, Properties> = {
+  value: State;
+  set: (value: State) => State;
   next: (value: State) => void;
   previous: () => State | undefined;
   subscribe: (
     observer: (value: State) => any,
-    initiate?: boolean
+    initialize?: boolean
   ) => {
     unsubscribe: () => void;
   };
@@ -189,57 +205,139 @@ export type Fields<
   undo: () => void;
   history: State[];
   ctx: Context;
-  stats: Status;
-  emit: (status: Partial<Status> | ((currentStatus: Status) => Status)) => void;
-  dispose: () => void;
+  props: Properties;
+  emit: Emit<Properties>;
+  /**
+   * Dispose the Atom or its properties.
+   *
+   * @param {"update" | "unmount"} bin The type of disposal ("update" or "unmount").
+   */
+  dispose(bin: "update" | "unmount"): void;
+  on: Garbage;
 };
 
+/**
+ * Represents parameters for various Atom operations.
+ *
+ * @template State The type of the state.
+ * @template Context The type of the context associated with the Atom.
+ * @template Properties The type of properties associated with the Atom.
+ */
+export type Params<State, Context, Properties> = {
+  props: Properties;
+  previous: State;
+  ctx: Context;
+  value: State;
+};
+
+/**
+ * Represents events associated with an Atom.
+ *
+ * @template State The type of the state.
+ * @template Use An array of argument types for the `use` event.
+ * @template Data The type of data returned by the `get` event.
+ * @template Context The type of the context associated with the Atom.
+ * @template Properties The type of properties associated with the Atom.
+ */
 export interface Events<
   State,
-  Variables extends ReadonlyArray<any>,
+  Use extends ReadonlyArray<any>,
   Data,
   Context,
-  Status
+  Properties
 > {
-  set?: (params: Params<State, Context, Variables>) => State;
-  get?: (params: Params<State, Context, Variables>) => Data;
-  use?: <Value = Data>(
-    fields: Fields<State, Variables, Value, Context, Status>,
-    ...vars: Variables
+  set?: (params: Params<State, Context, Properties>) => State;
+  get?: (params: Params<State, Context, Properties>) => Data;
+  use?: (
+    fields: Fields<State, Context, Properties>,
+    ...args: Use
   ) => (() => void) | void;
 }
 
+/**
+ * Configuration options for creating an Atom.
+ *
+ * @template State The type of the state.
+ * @template Use An array of argument types for the `use` event.
+ * @template Data The type of data returned by the `get` event.
+ * @template Context The type of the context associated with the Atom.
+ * @template Properties The type of properties associated with the Atom.
+ */
 export type AtomConfig<
   State,
-  Variables extends ReadonlyArray<any>,
+  Use extends ReadonlyArray<any>,
   Data,
   Context,
-  Status
+  Properties
 > = {
   state: State | ((ctx: Context) => State);
-  events?: Events<State, Variables, Data, Context, Status>;
+  events?: Events<State, Use, Data, Context, Properties>;
   context?: Context;
-  status?: Status;
+  properties?: Properties;
 };
 
+/**
+ * Represents an Atom in the portal system.
+ * An Atom is a special type of portal entry that allows you to manage and update state.
+ *
+ * @template State The type of the state.
+ * @template Use An array of argument types for the `use` event.
+ * @template Data The type of data returned by the `get` event.
+ * @template Context The type of the context associated with the Atom.
+ * @template Properties The type of properties associated with the Atom.
+ */
 export interface Atom<
   State,
-  Variables extends ReadonlyArray<any>,
+  Use extends ReadonlyArray<any>,
   Data,
   Context,
-  Status
-> extends Fields<State, Variables, Data, Context, Status> {
-  waitlist: Set<Atom<State, Variables, Data, Context, Status>>;
-  use(...vars: Variables): (() => void) | void;
-  await(vars: Variables): () => void;
+  Properties
+> extends Fields<State, Context, Properties> {
+  waitlist: Set<Atom<State, Use, Data, Context, Properties>>;
+  /**
+   * Get the data associated with the Atom.
+   *
+   * @param {State} value The value to get data for.
+   * @returns {Data} The data associated with the Atom.
+   */
+  get(value?: State): Data;
+  /**
+   * Execute the `use` event with optional arguments.
+   *
+   * @param {...Use} args Optional arguments to pass to the `use` event.
+   */
+  use(...args: Use): void;
+  /**
+   * Await a specific state by executing the `use` event.
+   *
+   * @param {Use} args The arguments to pass to the `use` event.
+   * @returns {() => void} A function to unmount the awaiting state.
+   */
+  await(args: Use): () => void;
 }
 
-type SetAtom<State, Status> = {
+/**
+ * Represents a function to set state with properties.
+ *
+ * @template State The type of the state.
+ * @template Properties The type of properties associated with the Atom.
+ */
+type SetAtom<State, Properties> = {
   (value: State | SetStateAction<State>): void;
-  stats: Status;
+  props: Properties;
 };
 
-export type UseAtom<Data, State, Status> = [Data, SetAtom<State, Status>];
+/**
+ * Represents the result of using an Atom.
+ *
+ * @template Data The type of data associated with the Atom.
+ * @template State The type of the state.
+ * @template Properties The type of properties associated with the Atom.
+ */
+export type UseAtom<Data, State, Properties> = [
+  Data,
+  SetAtom<State, Properties>
+];
 
 export * from "./cookieOptions";
 export * from "./implementation";
