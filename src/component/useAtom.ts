@@ -1,5 +1,5 @@
 import { Atom, UseAtom } from "definition";
-import { useState, useEffect, SetStateAction } from "react";
+import { useState, useEffect, SetStateAction, useMemo } from "react";
 import { isSetStateFunction, useShallowEffect } from "utilities";
 
 /**
@@ -48,6 +48,6 @@ export function useAtom<
     next(payload);
   };
 
-  setAtom.props = store.props;
+  setAtom.props = useMemo(() => store.props, [store.props]);
   return [atom, setAtom];
 }
