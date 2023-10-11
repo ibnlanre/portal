@@ -240,8 +240,8 @@ export type Params<State, Context, Properties> = {
  * @template Properties The type of properties associated with the Atom.
  */
 export interface Events<
-  State,
   Use extends ReadonlyArray<any>,
+  State,
   Data,
   Context,
   Properties
@@ -264,14 +264,14 @@ export interface Events<
  * @template Properties The type of properties associated with the Atom.
  */
 export type AtomConfig<
-  State,
   Use extends ReadonlyArray<any>,
+  State,
   Data,
   Context,
   Properties
 > = {
   state: State | ((ctx: Context) => State);
-  events?: Events<State, Use, Data, Context, Properties>;
+  events?: Events<Use, State, Data, Context, Properties>;
   context?: Context;
   properties?: Properties;
 };
@@ -287,13 +287,13 @@ export type AtomConfig<
  * @template Properties The type of properties associated with the Atom.
  */
 export interface Atom<
-  State,
   Use extends ReadonlyArray<any>,
+  State,
   Data,
   Context,
   Properties
 > extends Fields<State, Context, Properties> {
-  waitlist: Set<Atom<State, Use, Data, Context, Properties>>;
+  waitlist: Set<Atom<Use, State, Data, Context, Properties>>;
   /**
    * Get the data associated with the Atom.
    *

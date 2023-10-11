@@ -24,8 +24,8 @@ import { isAtomStateFunction } from "utilities";
  * @returns {Atom<State, Use, Data, Context, Properties>} An object containing Atom properties and functions.
  */
 export function atom<
-  State,
   Use extends ReadonlyArray<any>,
+  State,
   Data = State,
   Context extends {
     [key: string]: any;
@@ -33,8 +33,8 @@ export function atom<
   Properties extends {
     [key: string]: any;
   } = {}
->(config: AtomConfig<State, Use, Data, Context, Properties>) {
-  type Atomic = Atom<State, Use, Data, Context, Properties>;
+>(config: AtomConfig<Use, State, Data, Context, Properties>) {
+  type Atomic = Atom<Use, State, Data, Context, Properties>;
 
   const {
     state,
@@ -158,8 +158,10 @@ export function atom<
       };
 
       // The set function allows optional transformations and returns the new state.
-      if (set) return set(params);
-      else return value as unknown as State;
+      if (set) {
+        const value = set(params);
+        return value;
+      } else return value as unknown as State;
     },
 
     /**
@@ -263,7 +265,8 @@ export function atom<
      * @returns {void}
      */
     use: (...args: Use) => {
-      on.unmount(use?.(fields, ...args));
+      const value = use?.(fields, ...args);
+      on.unmount(value);
     },
 
     /**
@@ -282,8 +285,10 @@ export function atom<
       };
 
       // The get function allows optional transformations and returns the transformed value.
-      if (get) return get(params);
-      else return value as unknown as Data;
+      if (get) {
+        const value = get(params);
+        return value;
+      } else return value as unknown as Data;
     },
 
     /**
