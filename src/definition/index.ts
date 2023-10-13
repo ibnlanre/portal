@@ -241,7 +241,7 @@ export type Fields<State, Context, Properties> = {
    * Subscribes to changes in the Atom's value.
    *
    * @function
-   * @param {Function} observer - The callback function to be called with the new value.
+   * @param {Function} observer The callback function to be called with the new value.
    * @returns {Object} An object with an `unsubscribe` function to stop the subscription.
    */
   subscribe: (
@@ -417,8 +417,20 @@ type SetAtom<State, Properties> = {
   (value: State | SetStateAction<State>): void;
   set(value: State | SetStateAction<State>): void;
   props: Properties;
+  emit: Emit<Properties>;
 };
 
+/**
+ * Represents configuration options for the `useAtom` hook.
+ *
+ * @template Select The type of selected data associated with the Atom.
+ * @template Data The type of data derived from the atom's state.
+ * @template Use The type of the atom's `use` function.
+ *
+ * @property {boolean} [enabled] A boolean indicating whether the hook is enabled.
+ * @property {(data: Data) => Select} [select] A function to select data from the atom's data.
+ * @property {Use} args An array of arguments to pass to the atom's `use` function.
+ */
 export type Options<Select, Data, Use extends ReadonlyArray<any>> = {
   enabled?: boolean;
   select?: (data: Data) => Select;
@@ -428,11 +440,11 @@ export type Options<Select, Data, Use extends ReadonlyArray<any>> = {
 /**
  * Represents the result of using an Atom.
  *
- * @template Data The type of data associated with the Atom.
+ * @template Select The type of selected data associated with the Atom.
  * @template State The type of the state.
  * @template Properties The type of properties associated with the Atom.
  */
-export type UseAtom<Select, Data, State, Properties> = [
+export type UseAtom<Select, State, Properties> = [
   Select,
   SetAtom<State, Properties>
 ];
