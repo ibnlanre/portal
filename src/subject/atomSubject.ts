@@ -142,7 +142,7 @@ export class AtomSubject<State> {
    * Subscribes to the subject and receives emitted values.
    * @param {Function} observer The callback function to be called with emitted values.
    * @param {boolean} [initiate=true] Whether to initiate the callback immediately with the current state. Defaults to `true`.
-   * 
+   *
    * @returns {{ unsubscribe: Function }} An object with a function to unsubscribe the callback.
    */
   subscribe = (

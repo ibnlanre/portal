@@ -168,16 +168,18 @@ type Emit<Properties> = (
  */
 export interface Garbage<T = void | (() => void) | undefined> {
   /**
-   * Update the garbage collector with a new function.
+   * Adds a cleanup function to be executed when the Atom is updated.
    *
-   * @param {T} fn The function to update the garbage collector with.
+   * @function
+   * @param {() => void} fn The cleanup function to add.
    */
   update(fn?: T): void;
 
   /**
-   * Unmount the garbage collector with a function.
+   * Adds a cleanup function to be executed when the Atom is unmounted.
    *
-   * @param {T} fn The function to unmount from the garbage collector.
+   * @function
+   * @param {() => void} fn The cleanup function to add.
    */
   unmount(fn?: T): void;
 }
@@ -191,29 +193,106 @@ export interface Garbage<T = void | (() => void) | undefined> {
  * @template Properties The type of properties associated with the Atom.
  */
 export type Fields<State, Context, Properties> = {
+  /**
+   * Gets the current value of the Atom instance.
+   *
+   * @function
+   * @returns {State} The current value.
+   */
   value: State;
+  /**
+   * Gets the context associated with the Atom instance.
+   *
+   * @function
+   * @returns {Context} The context.
+   */
+  ctx: Context;
+  /**
+   * Gets the `properties` associated with the Atom instance.
+   *
+   * @function
+   * @returns {Context} The `properties`.
+   */
+  props: Properties;
+  /**
+   * Sets the state with a new value, optionally transforming it using the provided function.
+   *
+   * @function
+   * @param {State} value The new state value or a transformation function.
+   * @returns {State} The updated state value after the change.
+   */
   set: (value: State) => State;
+  /**
+   * Updates the state with a new value and notifies subscribers.
+   *
+   * @function
+   * @param {State} value The new state value.
+   * @returns {State} The updated state value after the change.
+   */
   next: (value: State) => void;
+  /**
+   * Retrieves the previous state in the history, if available.
+   *
+   * @function
+   * @returns {State | undefined} The previous state in the history, or undefined if not available.
+   */
   previous: () => State | undefined;
+  /**
+   * Subscribes to changes in the Atom's value.
+   *
+   * @function
+   * @param {Function} observer - The callback function to be called with the new value.
+   * @returns {Object} An object with an `unsubscribe` function to stop the subscription.
+   */
   subscribe: (
-    observer: (value: State) => any,
+    observers: {
+      state?: (value: State) => any;
+      props?: (value: Properties) => any;
+    },
     initialize?: boolean
   ) => {
     unsubscribe: () => void;
   };
+  /**
+   * Redoes a previous state change.
+   *
+   * @function
+   */
   redo: () => void;
+  /**
+   * Undoes a previous state change.
+   *
+   * @function
+   */
   undo: () => void;
+  /**
+   * Gets the history of state changes.
+   *
+   * @function
+   * @returns {Array<State>} An array containing the history of state changes.
+   */
   history: State[];
-  ctx: Context;
-  props: Properties;
+  /**
+   * Sets the properties associated with the Atom.
+   *
+   * @param {Partial<Properties> | ((curr: Properties) => Properties)} props The new properties or a function to transform the existing properties.
+   * @returns {Properties} The updated properties.
+   */
   emit: Emit<Properties>;
   /**
-   * Dispose the Atom or its properties.
+   * Provides control over functions to execute on specific Atom events.
+   *
+   * @typedef {Object} Garbage
+   * @property {Function} update A function to add a cleanup function to be executed when the Atom is updated.
+   * @property {Function} unmount A function to add a cleanup function to be executed when the Atom is unmounted.
+   */
+  on: Garbage;
+  /**
+   * Disposes of the set of functions resulting from the last execution of the `use` function.
    *
    * @param {"update" | "unmount"} bin The type of disposal ("update" or "unmount").
    */
   dispose(bin: "update" | "unmount"): void;
-  on: Garbage;
 };
 
 /**
@@ -240,11 +319,11 @@ export type Params<State, Context, Properties> = {
  * @template Properties The type of properties associated with the Atom.
  */
 export interface Events<
-  Use extends ReadonlyArray<any>,
   State,
   Data,
   Context,
-  Properties
+  Properties,
+  Use extends ReadonlyArray<any>
 > {
   set?: (params: Params<State, Context, Properties>) => State;
   get?: (params: Params<State, Context, Properties>) => Data;
@@ -264,14 +343,18 @@ export interface Events<
  * @template Properties The type of properties associated with the Atom.
  */
 export type AtomConfig<
-  Use extends ReadonlyArray<any>,
   State,
-  Data,
-  Context,
-  Properties
+  Data = unknown,
+  Context extends {
+    [key: string]: any;
+  } = {},
+  Properties extends {
+    [key: string]: any;
+  } = {},
+  Use extends ReadonlyArray<any> = []
 > = {
   state: State | ((ctx: Context) => State);
-  events?: Events<Use, State, Data, Context, Properties>;
+  events?: Events<State, Data, Context, Properties, Use>;
   context?: Context;
   properties?: Properties;
 };
@@ -287,31 +370,39 @@ export type AtomConfig<
  * @template Properties The type of properties associated with the Atom.
  */
 export interface Atom<
-  Use extends ReadonlyArray<any>,
   State,
   Data,
   Context,
-  Properties
+  Properties,
+  Use extends ReadonlyArray<any>
 > extends Fields<State, Context, Properties> {
-  waitlist: Set<Atom<Use, State, Data, Context, Properties>>;
-  /**
-   * Get the data associated with the Atom.
-   *
-   * @param {State} value The value to get data for.
-   * @returns {Data} The data associated with the Atom.
-   */
-  get(value?: State): Data;
   /**
    * Execute the `use` event with optional arguments.
    *
+   * @function
    * @param {...Use} args Optional arguments to pass to the `use` event.
+   * @returns {void}
    */
   use(...args: Use): void;
   /**
-   * Await a specific state by executing the `use` event.
+   * Retrieves the current state or optionally transforms it using the provided function.
    *
-   * @param {Use} args The arguments to pass to the `use` event.
-   * @returns {() => void} A function to unmount the awaiting state.
+   * @function
+   * @param {State} value The current state value or a transformation function.
+   * @returns {Data} The transformed value, which could be of a different data type.
+   */
+  get(value?: State): Data;
+  /**
+   * A set containing functions to execute when awaiting state changes.
+   * @type {Set<() => void>}
+   */
+  waitlist: Set<Atom<State, Data, Context, Properties, Use>>;
+  /**
+   * A function to execute the awaited atom in the `waitlist`.
+   *
+   * @function
+   * @param {Use} args Optional arguments to pass to the `use` event.
+   * @returns {() => void} A function to cleanup the atom `use` event upon unmount.
    */
   await(args: Use): () => void;
 }
@@ -324,7 +415,14 @@ export interface Atom<
  */
 type SetAtom<State, Properties> = {
   (value: State | SetStateAction<State>): void;
+  set(value: State | SetStateAction<State>): void;
   props: Properties;
+};
+
+export type Options<Select, Data, Use extends ReadonlyArray<any>> = {
+  enabled?: boolean;
+  select?: (data: Data) => Select;
+  args: Use;
 };
 
 /**
@@ -334,8 +432,8 @@ type SetAtom<State, Properties> = {
  * @template State The type of the state.
  * @template Properties The type of properties associated with the Atom.
  */
-export type UseAtom<Data, State, Properties> = [
-  Data,
+export type UseAtom<Select, Data, State, Properties> = [
+  Select,
   SetAtom<State, Properties>
 ];
 

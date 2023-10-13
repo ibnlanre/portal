@@ -5,5 +5,6 @@ export * from "./isAction";
 export * from "./isAtomStateFunction";
 export * from "./isFunction";
 export * from "./isSetStateFunction";
+export * from "./isDefined";
 export * from "./objectToStringKey";
 export * from "./useShallowEffect";
