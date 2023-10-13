@@ -32,7 +32,7 @@ export function useAtom<
     store,
     select = (transform: Data) => transform as unknown as Select,
     use = [] as unknown as Use,
-    enabled,
+    enabled = true,
   } = options;
   const { get, set, next, subscribe, emit } = store;
 
