@@ -198,7 +198,7 @@ This library exports the following APIs to enhance state management and facilita
       ```js
       // An atom state is isolated from the portal system and can be accessed
       // by explicitly exporting and importing the atom from where it was declared.
-      const [counter, setCounter] = useAtom(counterAtom);
+      const [counter, setCounter] = useAtom({ store: counterAtom });
       ```
 
     - An advanced example would be:
@@ -233,8 +233,8 @@ This library exports the following APIs to enhance state management and facilita
         },
       });
 
-      const [messages, setMessages] = useAtom(messagesAtom);
-      const [users, setUsers] = useAtom(userAtom, { args: [messages.user] });
+      const [messages, setMessages] = useAtom({ store: messagesAtom });
+      const [users, setUsers] = useAtom({ store: userAtom, use: [messages.user] });
       ```
 
 6. **To `access` the internals of the `portal` system.**

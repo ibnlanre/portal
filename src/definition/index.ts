@@ -431,10 +431,18 @@ type SetAtom<State, Properties> = {
  * @property {(data: Data) => Select} [select] A function to select data from the atom's data.
  * @property {Use} args An array of arguments to pass to the atom's `use` function.
  */
-export type Options<Select, Data, Use extends ReadonlyArray<any>> = {
-  enabled?: boolean;
+export type Options<
+  State,
+  Data,
+  Context,
+  Select,
+  Properties,
+  Use extends ReadonlyArray<any>
+> = {
+  store: Atom<State, Data, Context, Properties, Use>;
   select?: (data: Data) => Select;
-  args: Use;
+  enabled?: boolean;
+  use?: Use;
 };
 
 /**

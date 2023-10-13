@@ -1,6 +1,7 @@
 import { Atom, Options, UseAtom } from "definition";
 import { useState, useEffect, SetStateAction } from "react";
 import { isSetStateFunction, useShallowEffect } from "utilities";
+import { atom } from "./atom";
 
 /**
  * A hook for managing and subscribing to the state of an atom.
@@ -25,9 +26,14 @@ export function useAtom<
   Use extends ReadonlyArray<any>,
   Select = Data
 >(
-  store: Atom<State, Data, Context, Properties, Use>,
-  options: Options<Select, Data, Use>
+  options: Options<State, Data, Context, Select, Properties, Use>
 ): UseAtom<Select, State, Properties> {
+  const {
+    store,
+    select = (transform: Data) => transform as unknown as Select,
+    use = [] as unknown as Use,
+    enabled,
+  } = options;
   const { get, set, next, subscribe, emit } = store;
 
   // Add this store to the waitlist for future updates.
@@ -36,18 +42,12 @@ export function useAtom<
   const [state, setState] = useState(store.value);
   const [props, setProps] = useState(store.props);
 
-  const {
-    enabled,
-    select = (transform) => transform as unknown as Select,
-    args,
-  } = options;
-
   // Effect to await changes and execute the `use` function.
   useShallowEffect(() => {
     if (!enabled) return;
-    const result = store.await(args);
+    const result = store.await(use);
     return result;
-  }, [enabled, ...args]);
+  }, [enabled, ...use]);
 
   // Effect to subscribe to state changes.
   useEffect(() => {
