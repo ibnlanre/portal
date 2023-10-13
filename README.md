@@ -234,7 +234,7 @@ This library exports the following APIs to enhance state management and facilita
       });
 
       const [messages, setMessages] = useAtom(messagesAtom);
-      const [users, setUsers] = useAtom(userAtom, messages.user);
+      const [users, setUsers] = useAtom(userAtom, { args: [messages.user] });
       ```
 
 6. **To `access` the internals of the `portal` system.**
