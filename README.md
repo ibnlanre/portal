@@ -207,8 +207,8 @@ This library exports the following APIs to enhance state management and facilita
       const messagesAtom = atom({
         state: {} as Messages,
         events: {
-          get: ({ val }) => val?.messages?.at(0)?.last_24_hr_data,
-          set: ({ val }) => decrypt(val),
+          get: ({ value }) => value?.messages?.at(0)?.last_24_hr_data,
+          set: ({ value }) => decrypt(value),
         },
       });
 
@@ -216,8 +216,8 @@ This library exports the following APIs to enhance state management and facilita
       export const userAtom = atom({
         state: {} as UserData,
         events: {
-          set: ({ val }) => decrypt(val),
-          use: ({ next, set, ctx: { getUrl } }, user) => {
+          set: ({ value }) => decrypt(value),
+          use: ({ next, set, ctx: { getUrl } }, user: string) => {
             const ws = new WebSocket(getUrl(user));
             ws.onmessage = ((value) => {
               next(set(JSON.parse(value.data)))
@@ -234,7 +234,7 @@ This library exports the following APIs to enhance state management and facilita
       });
 
       const [messages, setMessages] = useAtom({ store: messagesAtom });
-      const [users, setUsers] = useAtom({ store: userAtom, use: [messages.user] });
+      const [users, setUsers] = useAtom({ store: userAtom, deps: [messages.user] });
       ```
 
 6. **To `access` the internals of the `portal` system.**
