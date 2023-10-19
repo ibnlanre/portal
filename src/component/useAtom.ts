@@ -1,7 +1,6 @@
 import { Atom, Options, UseAtom } from "definition";
 import { useState, useEffect, SetStateAction } from "react";
 import { isSetStateFunction, useShallowEffect } from "utilities";
-import { atom } from "./atom";
 
 /**
  * A hook for managing and subscribing to the state of an atom.
@@ -10,11 +9,11 @@ import { atom } from "./atom";
  * @template Data - The type of data derived from the atom's state.
  * @template Context - The type of context used by the atom.
  * @template Properties - The type of properties associated with the Atom.
- * @template Use - The type of the atom's `use` function.
+ * @template Dependencies - The type of the atom's `use` function.
  * @template Select - The type of data to be selected from the atom's data.
  *
- * @param {Atom<State, Data, Context, Properties, Use>} store - The atom to use.
- * @param {Options<Select, Data, Use>} options - Configuration options.
+ * @param {Atom<State, Data, Context, Properties, Dependencies>} store - The atom to use.
+ * @param {Options<Select, Data, Dependencies>} options - Configuration options.
  *
  * @returns {[Data, (value: State | SetStateAction<State>) => void]} - An array containing the atom's data and a function to set its state.
  */
@@ -23,15 +22,25 @@ export function useAtom<
   Data,
   Context,
   Properties,
-  Use extends ReadonlyArray<any>,
+  Dependencies extends ReadonlyArray<any>,
+  Seeds extends ReadonlyArray<any>,
   Select = Data
 >(
-  options: Options<State, Data, Context, Select, Properties, Use>
+  options: Options<
+    State,
+    Data,
+    Context,
+    Select,
+    Properties,
+    Dependencies,
+    Seeds
+  >
 ): UseAtom<Select, State, Properties> {
   const {
     store,
     select = (transform: Data) => transform as unknown as Select,
-    use = [] as unknown as Use,
+    seeds = [] as unknown as Seeds,
+    deps = [] as unknown as Dependencies,
     enabled = true,
   } = options;
   const { get, set, next, subscribe, emit } = store;
@@ -45,9 +54,9 @@ export function useAtom<
   // Effect to await changes and execute the `use` function.
   useShallowEffect(() => {
     if (!enabled) return;
-    const result = store.await(use);
+    const result = store.await(deps);
     return result;
-  }, [enabled, ...use]);
+  }, [enabled, ...deps]);
 
   // Effect to subscribe to state changes.
   useEffect(() => {
@@ -58,7 +67,7 @@ export function useAtom<
     return subscriber.unsubscribe;
   }, []);
 
-  const transform = get(state);
+  const transform = get(state, ...seeds);
   const atom = select(transform);
 
   // Function to set the atom's state.

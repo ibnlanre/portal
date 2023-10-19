@@ -3,32 +3,34 @@ import {
   Atom,
   AtomConfig,
   Fields,
-  Garbage,
-  Params,
+  Collector,
+  Setter,
+  Getter,
   Subscription,
 } from "definition";
-import { isAtomStateFunction } from "utilities";
+import { isAtomStateFunction, isFunction } from "utilities";
 
 /**
  * Creates an Atom instance for managing and updating state.
  *
  * @template State The type of the state.
- * @template Use An array of argument types for the `use` event.
  * @template Data The type of data returned by the `get` event.
  * @template Context The type of the context associated with the Atom.
  * @template Properties The type of properties associated with the Atom.
+ * @template Dependencies An array of argument types for the `use` event.
+ * @template Seeds An array of argument types for the `get` event.
  *
- * @param {Object} config - Configuration object for the Atom.
- * @param {State | ((context: Context) => State)} config.state - Initial state or a function to generate the initial state.
- * @param {Context} [config.context] - Context object to be passed to events.
- * @param {Properties} [config.properties] - Record of mutable properties on the atom instance.
+ * @param {Object} config Configuration object for the Atom.
+ * @param {State | ((context: Context) => State)} config.state Initial state or a function to generate the initial state.
+ * @param {Context} [config.context] Context object to be passed to events.
+ * @param {Properties} [config.properties] Record of mutable properties on the atom instance.
  *
- * @param {Object} [config.events] - events object containing functions to interact with the Atom.
- * @param {(params: ActionParams<State, Data, Context>) => State} [config.events.set] - Function to set the Atom's state.
- * @param {(params: ActionParams<State, Data, Context>) => Data} [config.events.get] - Function to get data from the Atom's state.
- * @param {(fields: Fields<State, Context, Properties>, ...args: Use) => Dump | undefined} [config.events.use] - Function to perform asynchronous events.
+ * @param {Object} [config.events] events object containing functions to interact with the Atom.
+ * @param {(params: Setter<State, Context, Properties>) => State} [config.events.set] Function to set the Atom's state.
+ * @param {(params: Getter<State, Context, Properties>) => Data} [config.events.get] Function to get data from the Atom's state.
+ * @param {(fields: Fields<State, Context, Properties>, ...dependencies: Dependencies) => Collector} [config.events.use] Function to perform asynchronous events.
  *
- * @returns {Atom<State, Data, Context, Properties,Use>} An object containing Atom properties and functions.
+ * @returns {Atom<State, Data, Context, Properties,Dependencies, Seeds>} An object containing Atom properties and functions.
  */
 export function atom<
   State,
@@ -39,10 +41,11 @@ export function atom<
   Properties extends {
     [key: string]: any;
   } = {},
-  Use extends ReadonlyArray<any> = []
+  Dependencies extends ReadonlyArray<any> = [],
+  Seeds extends ReadonlyArray<any> = []
 >(
-  config: AtomConfig<State, Data, Context, Properties, Use>
-): Atom<State, Data, Context, Properties, Use> {
+  config: AtomConfig<State, Data, Context, Properties, Dependencies, Seeds>
+): Atom<State, Data, Context, Properties, Dependencies, Seeds> {
   const {
     state,
     context = {} as Context,
@@ -52,26 +55,28 @@ export function atom<
   const { set, get, use } = { ...events };
 
   const variant = new AtomSubject(properties);
-  const waitlist = new Set<Atom<State, Data, Context, Properties, Use>>();
+  const waitlist = new Set<
+    Atom<State, Data, Context, Properties, Dependencies, Seeds>
+  >();
 
   const stateful = isAtomStateFunction(state) ? state(context) : state;
   const observable = new AtomSubject(stateful);
   const { previous, redo, undo, next } = observable;
 
-  const garbage = {
-    update: new Set<() => void>(),
+  const collector = {
+    rerun: new Set<() => void>(),
     unmount: new Set<() => void>(),
   };
 
-  const on: Garbage = {
-    update: (fn?: () => void) => {
+  const on: Collector = {
+    rerun: (fn?: () => void) => {
       if (typeof fn === "function") {
-        garbage.update.add(fn);
+        collector.rerun.add(fn);
       }
     },
     unmount: (fn?: () => void) => {
       if (typeof fn === "function") {
-        garbage.unmount.add(fn);
+        collector.unmount.add(fn);
       }
     },
   };
@@ -113,11 +118,11 @@ export function atom<
       return variant.value;
     },
     set: (value: State) => {
-      const params: Params<State, Context, Properties> = {
+      const params: Setter<State, Context, Properties> = {
+        value,
         props: variant.value,
         previous: observable.value,
         ctx: context,
-        value,
       };
 
       // The set function allows optional transformations and returns the new state.
@@ -153,14 +158,14 @@ export function atom<
     emit,
     on,
     dispose: (bin) => {
-      const purge = (fn: () => void) => {
+      const purge = (garbage: () => void) => {
         try {
-          fn();
+          garbage();
         } catch (err) {
           console.error("Error occured during cleanup", err);
         }
       };
-      garbage[bin].forEach(purge);
+      collector[bin].forEach(purge);
     },
   };
 
@@ -168,38 +173,45 @@ export function atom<
    * Represents the properties and functions associated with an Atom instance.
    *
    * @typedef {Object} Props
-   * @property {Function} use - A function to execute the `use` function with optional arguments and update `garbage`.
+   * @property {Function} use - A function to execute the `use` function with optional arguments and update `collector`.
    * @property {Function} get A function to get the value of the Atom instance with optional transformations.
    * @property {Set<() => void>} waitlist - A set containing functions to execute when awaiting state changes.
    * @property {Function} await - A function to await state changes and execute associated functions.
    */
-  const atomic: Atom<State, Data, Context, Properties, Use> = {
+  const atomic: Atom<State, Data, Context, Properties, Dependencies, Seeds> = {
     ...fields,
-    use: (...args: Use) => {
-      const value = use?.(fields, ...args);
-      on.unmount(value);
+    use: (...dependencies: Dependencies) => {
+      const value = use?.(fields, ...dependencies);
+      if (isFunction(value)) on.unmount(value);
+      else {
+        on.rerun(value?.rerun);
+        on.unmount(value?.unmount);
+      }
     },
-    get: (value: State = observable.value) => {
-      const params = {
+    get: (
+      value: State = observable.value,
+      ...seeds: Seeds
+    ) => {
+      const params: Getter<State, Context, Properties> = {
+        value,
         props: variant.value,
         previous: observable.value,
         ctx: context,
-        value,
       };
 
       // The get function allows optional transformations and returns the transformed value.
       if (get) {
-        const value = get(params);
+        const value = get(params, ...seeds);
         return value;
       } else return value as unknown as Data;
     },
     waitlist,
-    await: (args: Use) => {
+    await: (dependencies: Dependencies) => {
       const store = Array.from(waitlist).pop();
       if (store) {
-        fields.dispose("update");
         waitlist.clear();
-        store.use(...args);
+        fields.dispose("rerun");
+        store.use(...dependencies);
       }
       return () => fields.dispose("unmount");
     },

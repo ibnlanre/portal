@@ -24,10 +24,10 @@
     "node": ">=14.0.0"
   },
   "scripts": {
-    "esm-bundle": "tsup --config tsup.esm.ts",
-    "cjs-bundle": "tsup --config tsup.cjs.ts",
     "lint": "tsc --pretty --noEmit --project tsconfig-test.json",
     "test": "jest --config jest.config.ts",
+    "esm-bundle": "tsup --config tsup.esm.ts",
+    "cjs-bundle": "tsup --config tsup.cjs.ts",
     "build": "yarn esm-bundle & yarn cjs-bundle",
     "package": "yarn publish --access public"
   },
