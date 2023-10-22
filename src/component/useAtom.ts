@@ -1,6 +1,6 @@
 import { Atom, Options, UseAtom } from "definition";
 import { useState, useEffect, SetStateAction } from "react";
-import { isSetStateFunction, useShallowEffect } from "utilities";
+import { isSetStateFunction, useDebouncedShallowEffect } from "utilities";
 
 /**
  * A hook for managing and subscribing to the state of an atom.
@@ -52,7 +52,7 @@ export function useAtom<
   const [props, setProps] = useState(store.props);
 
   // Effect to await changes and execute the `use` function.
-  useShallowEffect(() => {
+  useDebouncedShallowEffect(() => {
     if (!enabled) return;
     const result = store.await(deps);
     return result;

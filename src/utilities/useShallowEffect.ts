@@ -1,46 +1,57 @@
-import { useEffect, useRef } from "react";
-import { shallowEqual } from "./shallowEqual";
+import { useEffect, useRef, DependencyList, EffectCallback } from "react";
+
+function shallowEqual(a: any, b: any): boolean {
+  if (a === b) return true;
+
+  if (typeof a !== "object" || typeof b !== "object") return false;
+
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
+
+  if (keysA.length !== keysB.length) return false;
+
+  for (const key of keysA) {
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
 
 function shallowCompare(
-  prevValue?: React.DependencyList | null,
-  currValue?: React.DependencyList
-) {
-  if (!prevValue || !currValue) {
-    return false;
-  }
+  prevValue?: DependencyList | null,
+  currValue?: DependencyList
+): boolean {
+  if (!prevValue || !currValue) return false;
+  if (prevValue === currValue) return true;
+  if (prevValue.length !== currValue.length) return false;
 
-  if (prevValue === currValue) {
-    return true;
-  }
-
-  if (prevValue.length !== currValue.length) {
-    return false;
-  }
-
-  for (let i = 0; i < prevValue.length; i += 1) {
-    if (!shallowEqual(prevValue[i], currValue[i])) {
-      return false;
-    }
+  for (let i = 0; i < prevValue.length; i++) {
+    if (!shallowEqual(prevValue[i], currValue[i])) return false;
   }
 
   return true;
 }
 
-function useShallowCompare(dependencies?: React.DependencyList) {
-  const ref = useRef<React.DependencyList | null | undefined>([]);
-  const updateRef = useRef<number>(0);
+function useShallowCompare(dependencies?: DependencyList): [number] {
+  const ref = useRef<DependencyList | undefined>([]);
+  const updateRef = useRef(0);
 
   if (!shallowCompare(ref.current, dependencies)) {
     ref.current = dependencies;
-    updateRef.current += 1;
+    updateRef.current++;
   }
 
   return [updateRef.current];
 }
 
-export function useShallowEffect(
-  cb: () => void,
-  dependencies?: React.DependencyList
+export function useDebouncedShallowEffect(
+  effect: EffectCallback,
+  dependencies: DependencyList = [],
+  delay: number = 1000
 ): void {
-  useEffect(cb, useShallowCompare(dependencies));
+  useEffect(() => {
+    const handler = setTimeout(effect, delay);
+    return () => {
+      clearTimeout(handler);
+    };
+  }, useShallowCompare(dependencies));
 }
