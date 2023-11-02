@@ -1,4 +1,4 @@
-import { Atom, Options, UseAtom } from "definition";
+import { Options, UseAtom } from "definition";
 import { useState, useEffect, SetStateAction } from "react";
 import { isSetStateFunction, useDebouncedShallowEffect } from "utilities";
 
@@ -7,79 +7,79 @@ import { isSetStateFunction, useDebouncedShallowEffect } from "utilities";
  *
  * @template State - The type of the atom's state.
  * @template Data - The type of data derived from the atom's state.
- * @template Context - The type of context used by the atom.
- * @template Properties - The type of properties associated with the Atom.
- * @template Dependencies - The type of the atom's `use` function.
+ * @template Properties - The type of properties used by the atom.
+ * @template Context - The type of context associated with the Atom.
+ * @template UseArgs - The type of the atom's `use` function.
  * @template Select - The type of data to be selected from the atom's data.
  *
- * @param {Atom<State, Data, Context, Properties, Dependencies>} store - The atom to use.
- * @param {Options<Select, Data, Dependencies>} options - Configuration options.
+ * @param {Atom<State, Data, Properties, Context, UseArgs>} store - The atom to use.
+ * @param {Options<Select, Data, UseArgs>} options - Configuration options.
  *
  * @returns {[Data, (value: State | SetStateAction<State>) => void]} - An array containing the atom's data and a function to set its state.
  */
 export function useAtom<
   State,
   Data,
-  Context,
   Properties,
-  Dependencies extends ReadonlyArray<any>,
-  Seeds extends ReadonlyArray<any>,
+  Context,
+  UseArgs extends ReadonlyArray<any>,
+  GetArgs extends ReadonlyArray<any>,
   Select = Data
 >(
-  options: Options<
-    State,
-    Data,
-    Context,
-    Select,
-    Properties,
-    Dependencies,
-    Seeds
-  >
-): UseAtom<Select, State, Properties> {
+  options: Options<State, Data, Properties, Select, Context, UseArgs, GetArgs>
+): UseAtom<Select, State, Context> {
   const {
     store,
     select = (transform: Data) => transform as unknown as Select,
-    seeds = [] as unknown as Seeds,
-    deps = [] as unknown as Dependencies,
+    getArgs = [] as unknown as GetArgs,
+    useArgs = [] as unknown as UseArgs,
     enabled = true,
   } = options;
-  const { get, set, next, subscribe, emit } = store;
+  const { get, set, next, subscribe, provide, emit } = store;
 
   // Add this store to the waitlist for future updates.
   store.waitlist.add(store);
 
   const [state, setState] = useState(store.value);
-  const [props, setProps] = useState(store.props);
+  const [ctx, setProps] = useState(store.ctx);
 
   // Effect to await changes and execute the `use` function.
   useDebouncedShallowEffect(() => {
     if (!enabled) return;
-    const result = store.await(deps);
-    return result;
-  }, [enabled, ...deps]);
+    return store.await(useArgs);
+  }, [enabled, ...useArgs]);
 
-  // Effect to subscribe to state changes.
   useEffect(() => {
-    const subscriber = subscribe({
-      state: setState,
-      props: setProps,
-    });
-    return subscriber.unsubscribe;
+    // Effect to subscribe to context changes.
+    const provider = provide(setProps);
+
+    // Effect to subscribe to state changes.
+    const subscriber = subscribe(setState);
+
+    return () => {
+      subscriber.unsubscribe();
+      provider.unsubscribe();
+    };
   }, []);
 
-  const transform = get(state, ...seeds);
+  const transform = get(state, ...getArgs);
   const atom = select(transform);
 
-  // Function to set the atom's state.
-  const setAtom = (value: State | SetStateAction<State>) => {
+  const update = (value: State | SetStateAction<State>) => {
     const isFunction = isSetStateFunction(value);
     const data = isFunction ? value(state as State) : value;
     const payload = set(data);
     next(payload);
   };
+  
+  // Function to set the atom's state.
+  const setAtom = (value: State | SetStateAction<State>) => {
+    update(value);
+  }
 
-  setAtom.set = set;
-  setAtom.props = props;
+  setAtom.update = update;
+  setAtom.state = state;
+  setAtom.ctx = ctx;
   setAtom.emit = emit;
 
   return [atom, setAtom];

@@ -1,12 +1,12 @@
 /**
- * Type guard that checks if a value is a function taking a context parameter and returning a State.
+ * Type guard that checks if a value is a function taking a properties parameter and returning a State.
  *
- * @param {State | ((context: Context) => State)} value The value to check.
- * @returns {value is (context: Context) => State} True if the value is a valid set state function, false otherwise.
+ * @param {State | ((properties: Properties) => State)} value The value to check.
+ * @returns {value is (properties: Properties) => State} True if the value is a valid set state function, false otherwise.
  */
-export function isAtomStateFunction<State, Context>(
-  value: State | ((context: Context) => State)
-): value is (context: Context) => State {
+export function isAtomStateFunction<State, Properties>(
+  value: State | ((properties: Properties) => State)
+): value is (properties: Properties) => State {
   // Check if the value is a function by examining its type
   return typeof value === "function";
 }

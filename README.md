@@ -217,7 +217,7 @@ This library exports the following APIs to enhance state management and facilita
         state: {} as UserData,
         events: {
           set: ({ value }) => decrypt(value),
-          use: ({ next, set, ctx: { getUrl } }, user: string) => {
+          use: ({ next, set, props: { getUrl } }, user: string) => {
             const ws = new WebSocket(getUrl(user));
             ws.onmessage = ((value) => {
               next(set(JSON.parse(value.data)))
@@ -228,13 +228,15 @@ This library exports the following APIs to enhance state management and facilita
             }
           },
         },
-        context: {
-          getUrl: (user: string) => builders.use().socket.users(user);
+        properties: {
+          getUrl: (user: string) => {
+            return builders.use().socket.users(user);
+          }
         },
       });
 
       const [messages, setMessages] = useAtom({ store: messagesAtom });
-      const [users, setUsers] = useAtom({ store: userAtom, deps: [messages.user] });
+      const [users, setUsers] = useAtom({ store: userAtom, useArgs: [messages.user] });
       ```
 
 6. **To `access` the internals of the `portal` system.**

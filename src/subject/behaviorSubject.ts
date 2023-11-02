@@ -109,15 +109,20 @@ export class BehaviorSubject<S> implements Subject<S> {
   /**
    * Subscribes to the subject and receives emitted values.
    * @param {Function} observer The callback function to be called with emitted values.
-   * @param {boolean} [initiate=true] Whether to initiate the callback immediately with the current state. Defaults to `true`.
+   * @param {boolean} [immediate=true] Whether to run the callback immediately with the current state. Defaults to `true`.
+   *
+   * @description
+   * When immediate is true, the callback will execute immediately with the current state.
+   * When immediate is false or not provided, the callback will only execute after a change has occurred.
+   *
    * @returns {{ unsubscribe: Function }} An object with a function to unsubscribe the callback.
    */
-  subscribe = (observer: Function, initiate: boolean = true): Subscription => {
+  subscribe = (observer: Function, immediate: boolean = true): Subscription => {
     // Confirm the callback isn't in the subscribers list.
     if (!this.subscribers.has(observer)) {
       // Add the callback as a member in the subscribers list.
       this.subscribers.add(observer);
-      if (initiate) observer(this.state);
+      if (immediate) observer(this.state);
     }
     return {
       unsubscribe: () => {

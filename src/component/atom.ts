@@ -6,7 +6,6 @@ import {
   Collector,
   Setter,
   Getter,
-  Subscription,
 } from "definition";
 import { isAtomStateFunction, isFunction } from "utilities";
 
@@ -15,53 +14,53 @@ import { isAtomStateFunction, isFunction } from "utilities";
  *
  * @template State The type of the state.
  * @template Data The type of data returned by the `get` event.
- * @template Context The type of the context associated with the Atom.
- * @template Properties The type of properties associated with the Atom.
- * @template Dependencies An array of argument types for the `use` event.
- * @template Seeds An array of argument types for the `get` event.
+ * @template Properties The type of the properties associated with the Atom.
+ * @template Context The type of context associated with the Atom.
+ * @template UseArgs An array of argument types for the `use` event.
+ * @template GetArgs An array of argument types for the `get` event.
  *
  * @param {Object} config Configuration object for the Atom.
- * @param {State | ((context: Context) => State)} config.state Initial state or a function to generate the initial state.
- * @param {Context} [config.context] Context object to be passed to events.
- * @param {Properties} [config.properties] Record of mutable properties on the atom instance.
+ * @param {State | ((properties: Properties) => State)} config.state Initial state or a function to generate the initial state.
+ * @param {Properties} [config.properties] Properties object to be passed to events.
+ * @param {Context} [config.context] Record of mutable context on the atom instance.
  *
  * @param {Object} [config.events] events object containing functions to interact with the Atom.
- * @param {(params: Setter<State, Context, Properties>) => State} [config.events.set] Function to set the Atom's state.
- * @param {(params: Getter<State, Context, Properties>) => Data} [config.events.get] Function to get data from the Atom's state.
- * @param {(fields: Fields<State, Context, Properties>, ...dependencies: Dependencies) => Collector} [config.events.use] Function to perform asynchronous events.
+ * @param {(params: Setter<State, Properties, Context>) => State} [config.events.set] Function to set the Atom's state.
+ * @param {(params: Getter<State, Properties, Context>) => Data} [config.events.get] Function to get data from the Atom's state.
+ * @param {(fields: Fields<State, Properties, Context>, ...useArgs: UseArgs) => Collector} [config.events.use] Function to perform asynchronous events.
  *
- * @returns {Atom<State, Data, Context, Properties,Dependencies, Seeds>} An object containing Atom properties and functions.
+ * @returns {Atom<State, Data, Properties, Context, UseArgs, GetArgs>} An object containing Atom context and functions.
  */
 export function atom<
   State,
   Data = State,
-  Context extends {
-    [key: string]: any;
-  } = {},
   Properties extends {
     [key: string]: any;
   } = {},
-  Dependencies extends ReadonlyArray<any> = [],
-  Seeds extends ReadonlyArray<any> = []
+  Context extends {
+    [key: string]: any;
+  } = {},
+  UseArgs extends ReadonlyArray<any> = [],
+  GetArgs extends ReadonlyArray<any> = []
 >(
-  config: AtomConfig<State, Data, Context, Properties, Dependencies, Seeds>
-): Atom<State, Data, Context, Properties, Dependencies, Seeds> {
+  config: AtomConfig<State, Data, Properties, Context, UseArgs, GetArgs>
+): Atom<State, Data, Properties, Context, UseArgs, GetArgs> {
   const {
     state,
-    context = {} as Context,
     properties = {} as Properties,
+    context = {} as Context,
     events,
   } = config;
   const { set, get, use } = { ...events };
 
-  const variant = new AtomSubject(properties);
-  const waitlist = new Set<
-    Atom<State, Data, Context, Properties, Dependencies, Seeds>
-  >();
-
-  const stateful = isAtomStateFunction(state) ? state(context) : state;
+  const stateful = isAtomStateFunction(state) ? state(properties) : state;
   const observable = new AtomSubject(stateful);
   const { previous, redo, undo, next } = observable;
+
+  const contextual = new AtomSubject(context);
+  const waitlist = new Set<
+    Atom<State, Data, Properties, Context, UseArgs, GetArgs>
+  >();
 
   const collector = {
     rerun: new Set<() => void>(),
@@ -81,22 +80,20 @@ export function atom<
     },
   };
 
-  const emit = (
-    props: Partial<Properties> | ((curr: Properties) => Properties)
-  ) => {
-    const curr = variant.value;
-    if (typeof props === "function") variant.next({ ...props(curr) });
-    else variant.next({ ...curr, ...props });
-    return variant.value;
+  const emit = (ctx: Partial<Context> | ((curr: Context) => Context)) => {
+    const curr = contextual.value;
+    if (typeof ctx === "function") contextual.next({ ...ctx(curr) });
+    else contextual.next({ ...curr, ...ctx });
+    return contextual.value;
   };
 
   /**
-   * Represents the core fields and properties of an Atom instance.
+   * Represents the core fields and context of an Atom instance.
    *
    * @typedef {Object} Fields
    * @property {State} value The current value of the Atom instance.
-   * @property {Context} ctx The context associated with the Atom instance.
    * @property {Properties} props The properties associated with the Atom instance.
+   * @property {Context} ctx The context associated with the Atom instance.
    * @property {Function} set A function to set the value of the Atom instance with optional transformations.
    * @property {Function} next A function to update the value of the Atom instance.
    * @property {Function} previous A function to access the previous value of the Atom.
@@ -107,22 +104,22 @@ export function atom<
    * @property {Function} emit Sets the context of the Atom instance.
    * @property {Function} dispose Disposes of the Atom instance and associated resources.
    */
-  const fields: Fields<State, Context, Properties> = {
+  const fields: Fields<State, Properties, Context> = {
     get value() {
       return observable.value;
     },
-    get ctx() {
-      return context;
-    },
     get props() {
-      return variant.value;
+      return properties;
+    },
+    get ctx() {
+      return contextual.value;
     },
     set: (value: State) => {
-      const params: Setter<State, Context, Properties> = {
+      const params: Setter<State, Properties, Context> = {
         value,
-        props: variant.value,
+        ctx: contextual.value,
         previous: observable.value,
-        ctx: context,
+        props: properties,
       };
 
       // The set function allows optional transformations and returns the new state.
@@ -133,23 +130,8 @@ export function atom<
     },
     next,
     previous,
-    subscribe: (observers, initialize) => {
-      let state: Subscription, props: Subscription;
-
-      if (observers.state) {
-        state = observable.subscribe(observers.state, initialize);
-      }
-      if (observers.props) {
-        props = variant.subscribe(observers.props, initialize);
-      }
-
-      return {
-        unsubscribe: () => {
-          state?.unsubscribe();
-          props?.unsubscribe();
-        },
-      };
-    },
+    subscribe: observable.subscribe,
+    provide: contextual.subscribe,
     redo,
     undo,
     get history() {
@@ -170,48 +152,45 @@ export function atom<
   };
 
   /**
-   * Represents the properties and functions associated with an Atom instance.
+   * Represents the context and functions associated with an Atom instance.
    *
-   * @typedef {Object} Props
+   * @typedef {Object} Atomic
    * @property {Function} use - A function to execute the `use` function with optional arguments and update `collector`.
    * @property {Function} get A function to get the value of the Atom instance with optional transformations.
    * @property {Set<() => void>} waitlist - A set containing functions to execute when awaiting state changes.
    * @property {Function} await - A function to await state changes and execute associated functions.
    */
-  const atomic: Atom<State, Data, Context, Properties, Dependencies, Seeds> = {
+  const atomic: Atom<State, Data, Properties, Context, UseArgs, GetArgs> = {
     ...fields,
-    use: (...dependencies: Dependencies) => {
-      const value = use?.(fields, ...dependencies);
+    use: (...useArgs: UseArgs) => {
+      const value = use?.(fields, ...useArgs);
       if (isFunction(value)) on.unmount(value);
       else {
         on.rerun(value?.rerun);
         on.unmount(value?.unmount);
       }
     },
-    get: (
-      value: State = observable.value,
-      ...seeds: Seeds
-    ) => {
-      const params: Getter<State, Context, Properties> = {
+    get: (value: State = observable.value, ...getArgs: GetArgs) => {
+      const params: Getter<State, Properties, Context> = {
         value,
-        props: variant.value,
+        ctx: contextual.value,
         previous: observable.value,
-        ctx: context,
+        props: properties,
       };
 
       // The get function allows optional transformations and returns the transformed value.
       if (get) {
-        const value = get(params, ...seeds);
+        const value = get(params, ...getArgs);
         return value;
       } else return value as unknown as Data;
     },
     waitlist,
-    await: (dependencies: Dependencies) => {
+    await: (useArgs: UseArgs) => {
       const store = Array.from(waitlist).pop();
       if (store) {
         waitlist.clear();
         fields.dispose("rerun");
-        store.use(...dependencies);
+        store.use(...useArgs);
       }
       return () => fields.dispose("unmount");
     },
