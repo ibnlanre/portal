@@ -39,6 +39,30 @@ export type NestedObject<
     : never
   : T;
 
+export type Paths<T> = T extends object
+  ? {
+      [K in keyof T]: K extends string | number
+        ? K extends "use" | "get"
+          ? never
+          : `${K}` | `${K}.${Paths<T[K]>}`
+        : never;
+    }[keyof T]
+  : "";
+
+export type ParseAsNumber<Key extends string | number> =
+  Key extends `${infer Value extends number}` ? Value : Key;
+
+export type GetValueByPath<
+  T,
+  Path extends string | number
+> = ParseAsNumber<Path> extends keyof T
+  ? T[ParseAsNumber<Path>]
+  : Path extends `${infer Key}.${infer Rest}`
+  ? ParseAsNumber<Key> extends keyof T
+    ? GetValueByPath<T[ParseAsNumber<Key>], Rest>
+    : never
+  : never;
+
 /**
  * Represents a record of the store value and reducer in the portal entries.
  * @template S The type of the store value.

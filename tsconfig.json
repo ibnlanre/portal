@@ -5,6 +5,7 @@
       "DOM.Iterable",
       "ES2020"
     ],
+    "target": "es2015",
     "module": "ES2022",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
