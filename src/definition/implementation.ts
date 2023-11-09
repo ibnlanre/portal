@@ -1,5 +1,4 @@
-import type { CookieOptions, Initial } from "definition";
-import type { Reducer } from "react";
+import type { CookieOptions } from "@/definition";
 
 /**
  * Represents the configuration options for the implementation of a custom hook
@@ -8,21 +7,16 @@ import type { Reducer } from "react";
  * @template S The type of the state.
  * @template A The type of the actions.
  */
-export type Implementation<S, A = undefined> = {
+export type Implementation<State, Path> = {
     /**
      * Unique key identifier for the portal.
      */
-    key: any;
+    path: Path;
   
     /**
      * The initial state value.
      */
-    initialState?: Initial<S>;
-  
-    /**
-     * The reducer function to handle state updates.
-     */
-    reducer?: Reducer<S, A>;
+    initialState?: State;
 
     /**
      * The options to set a cookie state to, if any.

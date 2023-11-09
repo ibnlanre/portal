@@ -1,70 +1,38 @@
-import type { Dispatch, Reducer, SetStateAction } from "react";
-
-import { portal } from "subject";
 import {
   usePortalImplementation,
   usePortalWithLocalStorage,
   usePortalWithSessionStorage,
   usePortalWithCookieStorage,
-} from "addons";
+} from "@/addons";
 
-import type { Initial, PortalEntries, PortalResult } from "definition";
-
-/**
- * Custom hook to access portal entries and perform deletes.
- *
- * @returns {Object} The portal entries and operators.
- */
-export function usePortal(): PortalEntries;
+import type { Builder, GetValueByPath, Paths, PortalState } from "@/definition";
+import { getValue } from "@/utilities";
 
 /**
  * Custom hook to access and manage state in the portal system.
- * @template S The type of the state.
  *
- * @param {any} key Unique key identifier for the portal.
- * @param {S} [initialState] The initial state value.
+ * @template Store The type of the store.
+ * @template Path The type of the path.
+ * @template State The type of the state.
  *
- * @returns {[S, Dispatch<SetStateAction<S>>]} A tuple containing the state and a function for updating the state.
+ * @param {Builder<Store, any>} builder The builder object for the store.
+ * @param {Path} path Unique key identifier for the portal.
+ *
+ * @returns {[State, Dispatch<SetStateAction<State>>]} A tuple containing the state and a function for updating the state.
  */
-export function usePortal<S>(
-  key: any,
-  initialState?: Initial<S>
-): [S, Dispatch<SetStateAction<S>>];
+export function usePortal<
+  Store extends Record<string, any>,
+  Path extends Paths<Builder<Store, any>>,
+  State extends GetValueByPath<Store, Path>
+>(builder: Builder<Store, any>, path: Path): PortalState<State>;
 
-/**
- * Custom hook to access and manage state in the portal system.
- * @template S The type of the state.
- * @template A The type of the actions.
- *
- * @param {any} key Unique key identifier for the portal.
- * @param {S} initialState The initial state value.
- * @param {Reducer<S, A>} [reducer] The reducer function to handle state updates.
- *
- * @returns {PortalResult<S, A>} A tuple containing the state and a function for updating the state.
- */
-export function usePortal<S, A>(
-  key: any,
-  initialState: Initial<S>,
-  reducer?: Reducer<S, A>
-): PortalResult<S, A>;
-
-/**
- * @template S The type of the state.
- * @template A The type of the actions.
- */
-export function usePortal<S, A = undefined>(
-  key?: any,
-  initialState?: Initial<S>,
-  reducer?: Reducer<S, A>
-): PortalResult<S, A> {
-  if (!key) {
-    return {
-      entries: portal.entries,
-      remove: portal.removeItemFromEntries,
-      clear: portal.clearEntries,
-    };
-  }
-  return usePortalImplementation({ key, initialState, reducer });
+export function usePortal<
+  Store extends Record<string, any>,
+  Path extends Paths<Builder<Store, any>>,
+  State extends GetValueByPath<Store, Path>
+>(builder: Builder<Store, any>, path: Path): PortalState<State> {
+  const initialState = getValue(builder.use(), path);
+  return usePortalImplementation<State, Path>(path, initialState);
 }
 
 /**
@@ -74,9 +42,8 @@ export function usePortal<S, A = undefined>(
  *
  * @param {any} key The key to identify the state in the portal system and localStorage.
  * @param {S} [initialState] The initial state value.
- * @param {Reducer<S, A>} [reducer] The reducer function to handle state updates.
  *
- * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
+ * @returns {PortalState<S>} A tuple containing the current state and a function to update the state.
  */
 usePortal.local = usePortalWithLocalStorage;
 
@@ -87,21 +54,20 @@ usePortal.local = usePortalWithLocalStorage;
  *
  * @param {any} key The key to identify the state in the portal system and sessionStorage.
  * @param {S} [initialState] The initial state value.
- * @param {Reducer<S, A>} [reducer] The reducer function to handle state updates.
  *
- * @returns {PortalState<S, A>} A tuple containing the current state and a function to update the state.
+ * @returns {PortalState<S>} A tuple containing the current state and a function to update the state.
  */
 usePortal.session = usePortalWithSessionStorage;
 
 /**
- * Custom hook to access and manage state in the `Cookie` store through the portal system.
- * @template S The type of the state.
- * @template A The type of the actions.
- *
- * @param {any} key The key to identify the state in the portal system.
- * @param {S} [initialState] The initial state value with the cookie options to be set.
- * @param {Reducer<S, A>} [reducer] The reducer function to handle state updates.
- *
- * @returns {[string | undefined, Dispatcher<S, A>]} A tuple containing the current state and a function to update the state.
+ * A custom hookto access and manage state in the `Cookie` store through the portal system.
+ * 
+ * @template Store The type of the store.
+ * @template Path The type of the path.
+ * 
+ * @param {Builder<Store, any>} builder The builder object.
+ * @param {Path} path The path to the value in the store.
+ * 
+ * @returns {PortalState<string>} A tuple containing the current state and a function to update the state.
  */
 usePortal.cookie = usePortalWithCookieStorage;

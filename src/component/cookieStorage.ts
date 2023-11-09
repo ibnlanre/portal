@@ -5,7 +5,7 @@ import {
   getCookieValue,
   removeCookieValue,
   setCookieValue,
-} from "cookies";
+} from "@/cookies";
 
 /**
  * An object representing a cookie storage with various methods to interact with cookies.

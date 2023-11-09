@@ -1,4 +1,4 @@
-import { Subscription } from "definition";
+import { Subscription } from "@/definition";
 
 /**
  * Represents a subject that maintains a current value and emits it to subscribers.
@@ -6,7 +6,7 @@ import { Subscription } from "definition";
  */
 export class AtomSubject<State> {
   private state: State;
-  private timeline: State[] = [];
+  private history: State[] = [];
   private subscribers: Set<Function>;
   private currentIndex: number;
 
@@ -26,7 +26,7 @@ export class AtomSubject<State> {
      */
     this.subscribers = new Set();
     this.currentIndex = 0;
-    this.timeline.push(initialValue);
+    this.history.push(initialValue);
   }
 
   /**
@@ -49,33 +49,33 @@ export class AtomSubject<State> {
    * @returns {boolean} `true` if a redo operation can be performed, `false` otherwise.
    */
   get canRedo(): boolean {
-    return this.currentIndex < this.timeline.length - 1;
+    return this.currentIndex < this.history.length - 1;
   }
 
-  get history() {
-    return this.timeline;
+  get timeline() {
+    return this.history;
   }
 
   /**
-   * Updates the state with a new value and keeps a timeline for time-travel.
+   * Updates the state with a new value and keeps a history for time-travel.
    *
    * @param {State} value The new state value to set.
    * @returns {State} The updated state value.
    */
-  next = (value: State): State => {
+  update = (value: State): State => {
     if (!Object.is(this.state, value)) {
       // Update the current state with the new value
       this.state = value;
 
-      // Keep a timeline of state values for time-travel
-      // Splice any future timeline beyond the current index
-      this.timeline.splice(this.currentIndex + 1);
+      // Keep a history of state values for time-travel
+      // Splice any future history beyond the current index
+      this.history.splice(this.currentIndex + 1);
 
-      // Push the new state value into the timeline
-      this.timeline.push(value);
+      // Push the new state value into the history
+      this.history.push(value);
 
       // Update the current index to point to the newly added state value
-      this.currentIndex = this.timeline.length - 1;
+      this.currentIndex = this.history.length - 1;
 
       // Notify subscribers about the state change
       this.notifySubscribers();
@@ -85,7 +85,22 @@ export class AtomSubject<State> {
   };
 
   /**
-   * Retrieves the previous state from the timeline for time-travel.
+   * Retrieves the next state from the history for time-travel.
+   * @returns {State | undefined} The next state, or undefined if there is no next state.
+   */
+  next = (): State | undefined => {
+    // Calculate the index of the next state
+    const currentIndex = this.currentIndex + 1;
+
+    // If currentIndex is greater than or equal to the history length, return undefined
+    if (currentIndex >= this.history.length) return undefined;
+
+    // Retrieve the next state from history
+    return this.history[currentIndex];
+  };
+
+  /**
+   * Retrieves the previous state from the history for time-travel.
    * @returns {State | undefined} The previous state, or undefined if there is no previous state.
    */
   previous = (): State | undefined => {
@@ -95,9 +110,9 @@ export class AtomSubject<State> {
     // If currentIndex is 0, return the current state
     if (!currentIndex) return this.state;
 
-    // If currentIndex is greater than 0, retrieve the previous state from timeline
+    // If currentIndex is greater than 0, retrieve the previous state from history
     if (currentIndex > 0) {
-      return this.timeline[currentIndex];
+      return this.history[currentIndex];
     }
 
     // If there is no previous state, return undefined
@@ -105,7 +120,7 @@ export class AtomSubject<State> {
   };
 
   /**
-   * Reverts to the previous state from the timeline for undoing an action.
+   * Reverts to the previous state from the history for undoing an action.
    */
   undo = () => {
     // Check if there is a previous state to undo to
@@ -113,8 +128,8 @@ export class AtomSubject<State> {
       // Decrement the currentIndex to move to the previous state
       this.currentIndex--;
 
-      // Set the current state to the previous state from timeline
-      this.state = this.timeline[this.currentIndex] as State;
+      // Set the current state to the previous state from history
+      this.state = this.history[this.currentIndex] as State;
 
       // Notify subscribers that the state has changed
       this.notifySubscribers();
@@ -122,16 +137,16 @@ export class AtomSubject<State> {
   };
 
   /**
-   * Moves forward in the timeline to redo an action.
+   * Moves forward in the history to redo an action.
    */
   redo = () => {
     // Check if there is a state to redo to
     if (this.canRedo) {
-      // Increment the currentIndex to move forward in timeline
+      // Increment the currentIndex to move forward in history
       this.currentIndex++;
 
-      // Set the current state to the next state from timeline
-      this.state = this.timeline[this.currentIndex] as State;
+      // Set the current state to the next state from history
+      this.state = this.history[this.currentIndex] as State;
 
       // Notify subscribers that the state has changed
       this.notifySubscribers();
@@ -142,7 +157,7 @@ export class AtomSubject<State> {
    * Subscribes to the subject and receives emitted values.
    * @param {Function} observer The callback function to be called with emitted values.
    * @param {boolean} [immediate=true] Whether to run the callback immediately with the current state. Defaults to `true`.
-   * 
+   *
    * @description
    * When immediate is true, the callback will execute immediately with the current state.
    * When immediate is false or not provided, the callback will only execute after a change has occurred.

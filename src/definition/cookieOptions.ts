@@ -54,5 +54,5 @@ export type CookieEntry = CookieOptions & {
   /**
    * The value of the cookie entry, which is of type `string`.
    */
-  value?: string;
+  value: string;
 };

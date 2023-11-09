@@ -90,64 +90,30 @@ This library exports the following APIs to enhance state management and facilita
     } from "@ibnlanre/portal";
     ```
 
-2. **Provide a marker for the state by passing a `key` to the `usePortal` hook.**
+2. **To create an application `state`, provide a marker for the state by passing a `builder` and `path` to the `usePortal` hook.**
 
-    - To create an application `state`:
+    ```js
+    // Create a builder first
+    const builder = createBuilder({
+      foo: "qux",
+    });
 
-      ```js
-      // The key can be any value
-      const [state, setState] = usePortal("counter", 0);
-      ```
-
-    - To include a `reducer` for quick state updates:
-
-      ```js
-      // Create the reducer function:
-      const reducer = (state, action) => {
-        switch (action.type) {
-          case "increment":
-            return { ...state, count: state.count + 1 };
-          case "reset":
-            return { ...state, count: 0 };
-          default:
-            return state;
-        }
-      };
-      ```
-
-    - Include the reducer as the third argument:
-
-      ```js
-      const [state, dispatch] = usePortal(
-        "counter.reducer",
-        { count: 1 },
-        reducer
-      );
-
-      const handleDecrement = () => dispatch({ type: "decrement" });
-      ```
+    // Access the value from the builder store
+    const [state, setState] = usePortal(builder, "foo");
+    ```
 
 3. **Persist the state by utilizing browser storage mechanisms.**
 
-    - To persist the state in `localStorage`:
+    ```js
+    // To persist the state in `localStorage`:
+    const [state, setState] = usePortal.local(builder, "foo");
 
-      ```js
-      // A array is used as the key, but could be anything
-      const [state, setState] = usePortal.local(["counter", "local"], 3);
+    // To persist the state in `sessionStorage`:
+    const [state, setState] = usePortal.session(builder, "foo");
 
-      // Accessing the identifier later, doesn't require the use of [.local]
-      const [counter, setCounter] = usePortal(["counter", "local"]);
-      ```
-
-    - To persist the state in `sessionStorage`:
-
-      ```js
-      // An object is used as the key, but could be anything
-      const [state, setState] = usePortal.session({ counter: "session" }, 4);
-
-      // Accessing the identifier later, doesn't require the use of [.session]
-      const [counter, setCounter] = usePortal({ counter: "session" });
-      ```
+    // Accessing the identifier later, doesn't require the use of [.local]
+    const [counter, setCounter] = usePortal(builder, "foo");
+    ```
 
 4. **Cache state as a cookie in the browser storage.**
 
@@ -216,11 +182,11 @@ This library exports the following APIs to enhance state management and facilita
       export const userAtom = atom({
         state: {} as UserData,
         events: {
-          set: ({ value }) => decrypt(value),
-          use: ({ next, set, props: { getUrl } }, user: string) => {
+          set: ({ current }) => decrypt(current),
+          use: ({ set, props: { getUrl } }, user: string) => {
             const ws = new WebSocket(getUrl(user));
             ws.onmessage = ((value) => {
-              next(set(JSON.parse(value.data)))
+              set(JSON.parse(value.data))
             });
 
             return () => {
@@ -239,39 +205,7 @@ This library exports the following APIs to enhance state management and facilita
       const [users, setUsers] = useAtom({ store: userAtom, useArgs: [messages.user] });
       ```
 
-6. **To `access` the internals of the `portal` system.**
-
-    - Call `usePortal` without any arguments:
-
-      ```js
-      const { entries, remove, clear } = usePortal();
-      ```
-
-    - Remove items from the portal system:
-
-      ```js
-      // Remove the item both in the application state,
-      // as well as, in the browser storage state.
-      remove("counter");
-
-      // Remove the item from both local and session storage only.
-      remove("counter", ["local", "session"]);
-
-      // Remove the item from cookie storage only.
-      remove("counter", ["cookie"]);
-
-      // Remove the item from application state only.
-      remove("counter", []);
-      ```
-
-    - Clear the entire `portal` system:
-
-      ```js
-      // This will also remove values stored in the browser storage.
-      clear();
-      ```
-
-7. **To create a `builder` pattern for property access.**
+6. **To create a `builder` pattern for property access.**
 
     - Make of nested record of a `key` and `value` pair:
 
@@ -313,16 +247,6 @@ This library exports the following APIs to enhance state management and facilita
       const builderWithPrefix = createBuilder(store, "tap", "root");
       builderWithPrefix.foo.bar.use() // ["tap", "root", "foo", "bar"]
       ```
-
-8. **Efficiently create `states` using the `builder` pattern.**
-
-    ```js
-    // Use the builder to generate required arguments.
-    const [barzaar, setBarzaar] = usePortal(
-      builder.foo.bar.use(), // ["foo", "bar"]
-      builder.use().foo.bar // 10
-    );
-    ```
 
 ## Author
 

@@ -1,20 +1,16 @@
-import { getComputedState, handleSSRError, objectToStringKey } from "utilities";
-import { cookieStorage } from "component";
+import { handleSSRError } from "@/utilities";
+import { cookieStorage } from "@/component";
 
 import type {
   CookieEntry,
   CookieOptions,
-  Initial,
-  PortalEntry,
   PortalMap,
   StorageType,
-} from "definition";
+} from "@/definition";
 
 import { BehaviorSubject } from "./behaviorSubject";
-import { getCookieValue } from "cookies";
-import { Reducer } from "react";
 
-class Portal<S, A = undefined> {
+class Portal {
   private portalMap: PortalMap<any, any> = new Map();
 
   get entries() {
@@ -22,16 +18,9 @@ class Portal<S, A = undefined> {
   }
 
   /**
-   * Generate the string representation of the key.
-   * @param {any} key The key to be used.
-   * @returns {string}
-   */
-  stringKey = (key: any) => objectToStringKey(key);
-
-  /**
    * Creates a function to split the cookie value and options from a given `cookieEntry`.
    *
-   * @param {string} key The key associated with the portal entry.
+   * @param {string} path The path associated with the portal entry.
    * @param {CookieEntry?} [initialState] The initial state containing the cookie value and options.
    *
    * @returns {[string | undefined, CookieOptions]} An array containing the cookie value and options.
@@ -39,107 +28,79 @@ class Portal<S, A = undefined> {
    * - The second element is an object representing the cookie options (e.g., `expires`, `path`, `domain`, `secure`, etc.).
    *   If no options are available, an empty object will be returned.
    */
-  splitCookieEntry = (key: string, initialState?: CookieEntry) => {
-    /**
-     * Internal helper function to split the cookie value and options from a given `cookieEntry`.
-     *
-     * @param {CookieEntry} cookieEntry The cookie entry representing a portal entry.
-     * @returns {[string | undefined, CookieOptions]} An array containing the cookie value and options.
-     */
-    const splitValueFromOptions = (
-      cookieEntry: CookieEntry
-    ): [string | undefined, CookieOptions] => {
-      const { cookieOptions } = this.entries.get(key) || {};
-      const { value, ...options } = { ...cookieOptions, ...cookieEntry };
-      return [value, options];
+  resolveCookieEntry = <Path extends string>(
+    path: Path,
+    initialState: string,
+    options?: CookieOptions
+  ) => {
+    const value = cookieStorage.getItem(path);
+    const observable = this.entries.get(path) as
+      | BehaviorSubject<CookieEntry>
+      | undefined;
+
+    const cookieOptions = {
+      value: initialState,
+      ...options,
     };
 
-    const value = getCookieValue(key);
-    if (value !== null) {
-      // If the value is an empty string `""`, then it would be replaced
-      // by the inputted value, if any. Else, it replaces the given value.
-      const options = { ...initialState, value };
-      return splitValueFromOptions({ ...options });
+    const resolvedCookieValue = {
+      ...cookieOptions,
+      ...observable?.value,
+    };
+
+    if (value) {
+      return {
+        ...resolvedCookieValue,
+        // If the value is an empty string `""`, then it would be replaced
+        // by the inputted value, if any. Else, it replaces the given value.
+        value,
+      };
     }
-    return splitValueFromOptions({ ...initialState });
+
+    return resolvedCookieValue;
   };
 
   /**
-   * Retrieves the item with the specified key from the portal storage.
+   * Retrieves the item with the specified path from the portal storage.
    *
    * @template S The type of the state.
    * @template A The type of the actions.
    *
-   * @param {string} key The key of the item to be retrieved.
-   * @param {boolean} [override=false] Whether to override an existing item with the same key.
+   * @param {string} path The path of the item to be retrieved.
+   * @param {boolean} [override=false] Whether to override an existing item with the same path.
    *
-   * @returns {PortalEntry<S, A>} The portal entry with the specified key, or a new portal entry if not found.
+   * @returns {PortalEntry<S, A>} The portal entry with the specified path, or a new portal entry if not found.
    */
-  getItem = (
-    key: string,
-    initialState: Initial<S>,
+  getItem = <State, Path extends string>(
+    path: Path,
+    initialState: State,
     override: boolean = false
-  ): PortalEntry<S, A> => {
-    if (!override && this.portalMap.has(key)) {
-      return this.portalMap.get(key) as PortalEntry<S, A>;
+  ): BehaviorSubject<State> => {
+    if (!override && this.portalMap.has(path)) {
+      return this.portalMap.get(path) as BehaviorSubject<State>;
     }
 
-    const observable =
-      initialState instanceof Promise
-        ? undefined
-        : getComputedState(initialState);
-
-    const subject = {
-      waitlist: new Set<Initial<S>>(),
-      observable: new BehaviorSubject(observable as S),
-      reducer: undefined,
-    };
-
-    if (!this.portalMap.has(key)) this.portalMap.set(key, subject);
+    const subject = new BehaviorSubject(initialState);
+    if (!this.portalMap.has(path)) this.portalMap.set(path, subject);
     return subject;
   };
 
-  await = (
-    subject: PortalEntry<S, A>,
-    reducer?: Reducer<S, A>,
-    cookieOptions?: CookieOptions
-  ) => {
-    function time(initialState: Initial<S>) {
-      if (reducer) subject.reducer = reducer;
-      if (cookieOptions) subject.cookieOptions = cookieOptions;
-      if (typeof initialState !== "undefined") {
-        if (initialState instanceof Promise) {
-          initialState.then(subject.observable.next);
-        } else {
-          const state = getComputedState(initialState);
-          subject.observable.next(state);
-        }
-      }
-    }
-    const waitlist = subject.waitlist;
-    waitlist?.forEach((value, id) => {
-      if (id === 0) time(value);
-    });
-    if (waitlist?.size) waitlist?.clear();
-  };
-
   /**
-   * Adds a new item to the internal map with the specified key and entry.
+   * Adds a new item to the internal map with the specified path and entry.
    *
    * @template S The type of the state.
    * @template A The type of the actions.
    *
-   * @param {any} key The key to add to the internal map.
-   * @param {PortalEntry<S, A>} entry The portal entry to be associated with the key.
+   * @param {any} path The path to add to the internal map.
+   * @param {PortalEntry<S, A>} entry The portal entry to be associated with the path.
    *
    * @returns {void}
    */
-  addItem = (key: any, entry: PortalEntry<S, A>): void => {
-    const stringKey = this.stringKey(key);
+  addItem = <State, Path>(path: Path, entry: BehaviorSubject<State>): void => {
     try {
-      this.portalMap.set(stringKey, entry);
+      this.portalMap.set(path, entry);
     } catch (error) {
-      handleSSRError(error, `Error occurred while adding ${stringKey}:`);
+      handleSSRError(error, `Error occurred while adding ${path}:`);
     }
   };
 
@@ -149,85 +110,78 @@ class Portal<S, A = undefined> {
    * @description
    * If the entry already exists, its value will be replaced with the new value.
    * If the entry does not exist, a `warning` would be displayed in the `console`.
-   * Furthermore, a new entry would be created with the specified key.
+   * Furthermore, a new entry would be created with the specified path.
    *
-   * @param {any} key The key of the portal entry.
+   * @param {any} path The path of the portal entry.
    * @param {any} value The value to be set for the portal entry.
    * @returns {void}
    */
-  setItem = (key: any, value: any): void => {
-    const stringKey = this.stringKey(key);
-
+  setItem = <State, Path>(path: Path, value: State): void => {
     try {
-      if (this.portalMap.has(stringKey)) {
-        const originalValue = this.portalMap.get(stringKey)!;
-        const setter = originalValue.observable.watch(originalValue.reducer);
+      if (this.portalMap.has(path)) {
+        const originalValue = this.portalMap.get(path)!;
+        const setter = originalValue.setter;
         setter(value);
       } else {
         if (process.env.NODE_ENV === "development") {
-          console.warn("The key:", key, "does not exist in portal entries");
+          console.warn("The path:", path, "does not exist in portal entries");
         }
 
-        this.portalMap.set(stringKey, {
-          observable: new BehaviorSubject(value),
-          reducer: undefined,
-        });
+        this.portalMap.set(path, new BehaviorSubject(value));
       }
     } catch (error) {
-      handleSSRError(error, `Error occured while setting ${stringKey}:`);
+      handleSSRError(error, `Error occured while setting ${path}:`);
     }
   };
 
   /**
-   * Checks if the specified key exists in the internal map.
+   * Checks if the specified path exists in the internal map.
    *
-   * @param {any} key The key to check for existence.
-   * @returns {boolean} `true` if the key exists in the internal map, otherwise `false`.
+   * @param {any} path The path to check for existence.
+   * @returns {boolean} `true` if the path exists in the internal map, otherwise `false`.
    */
-  hasItem = (key: any): boolean => {
-    const stringKey = this.stringKey(key);
-    return this.portalMap.has(stringKey);
+  hasItem = <Path>(path: Path): boolean => {
+    return this.portalMap.has(path);
   };
 
   /**
-   * Deletes the item with the specified key from the internal map.
+   * Deletes the item with the specified path from the internal map.
    *
-   * @param {any} key The key of the item to be deleted.
+   * @param {any} path The path of the item to be deleted.
    * @returns {void}
    */
-  deleteItem = (key: any) => {
-    const stringKey = this.stringKey(key);
-
+  deleteItem = <Path>(path: Path) => {
     // Unsubscribe the observable associated with the item
-    this.portalMap.get(stringKey)?.observable?.unsubscribe();
+    this.portalMap.get(path)?.unsubscribe();
 
     try {
       // Delete the item from the internal map
-      this.portalMap.delete(stringKey);
+      this.portalMap.delete(path);
     } catch (error) {
-      handleSSRError(error, `Error occurred while deleting ${stringKey}`);
+      handleSSRError(error, `Error occurred while deleting ${path}`);
     }
   };
 
   /**
-   * Removes the item with the specified key from the storage.
+   * Removes the item with the specified path from the storage.
    *
-   * @param {any} key The key of the item to be removed.
+   * @param {any} path The path of the item to be removed.
    * @param {StorageType} storageType The type of storage to remove the item from.
    * @returns {void}
    */
-  deletePersistedItem = (key: any, storageType: StorageType): void => {
-    const stringKey = this.stringKey(key);
-
+  deletePersistedItem = <Path extends string>(
+    path: Path,
+    storageType: StorageType
+  ): void => {
     switch (storageType) {
       case "local":
         try {
-          // Remove the key from localStorage
+          // Remove the path from localStorage
           if (typeof localStorage !== "undefined")
-            localStorage.removeItem(stringKey);
+            localStorage.removeItem(path);
         } catch (error) {
           console.error(
-            `Error occurred deleting ${stringKey} from localStorage`,
+            `Error occurred deleting ${path} from localStorage`,
             error
           );
         }
@@ -235,20 +189,20 @@ class Portal<S, A = undefined> {
 
       case "session":
         try {
-          // Remove the key from sessionStorage
+          // Remove the path from sessionStorage
           if (typeof sessionStorage !== "undefined")
-            sessionStorage.removeItem(stringKey);
+            sessionStorage.removeItem(path);
         } catch (error) {
           console.error(
-            `Error occurred deleting ${stringKey} from sessionStorage`,
+            `Error occurred deleting ${path} from sessionStorage`,
             error
           );
         }
         break;
 
       case "cookie":
-        // Remove the key from document.cookie
-        cookieStorage.removeItem(stringKey);
+        // Remove the path from document.cookie
+        cookieStorage.removeItem(path);
         break;
 
       default:
@@ -258,26 +212,26 @@ class Portal<S, A = undefined> {
   };
 
   /**
-   * Removes an item from the portal entries and browser storage based on the specified key and storage types.
+   * Removes an item from the portal entries and browser storage based on the specified path and storage types.
    *
-   * @param {any} key The key of the item to remove.
+   * @param {any} path The path of the item to remove.
    * @param {StorageType[]} [storageTypes] An optional array of storage types to remove the item from (e.g., "local", "session", "cookie").
    *
    * @returns {void}
    */
-  removeItemFromEntries = (
-    key: any,
+  removeItemFromEntries = <Path extends string>(
+    path: Path,
     storageTypes: Array<StorageType> = ["local", "session", "cookie"]
   ): void => {
     const removeFromStorageIterator = () => {
       for (const storageType of storageTypes) {
-        this.deletePersistedItem(key, storageType);
+        this.deletePersistedItem(path, storageType);
       }
     };
 
     try {
       // Remove from application state
-      this.deleteItem(key);
+      this.deleteItem(path);
 
       // Remove from specified storage types, if provided
       if (storageTypes) {
@@ -299,8 +253,8 @@ class Portal<S, A = undefined> {
    */
   clearEntries = (): void => {
     try {
-      this.portalMap.forEach((value) => {
-        this.removeItemFromEntries(value);
+      this.portalMap.forEach((value, path) => {
+        this.removeItemFromEntries(path);
       });
     } catch (error) {
       handleSSRError(error, `Error occured while clearing portal`);
@@ -310,6 +264,6 @@ class Portal<S, A = undefined> {
 
 /**
  * Represents a mapping of keys (stringified) to portal entries.
- * @type {PortalMap<any, any>}
+ * @type {PortalMap}
  */
-export const portal = new Portal<any, any>();
+export const portal = new Portal();

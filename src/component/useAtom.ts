@@ -1,6 +1,7 @@
-import { Options, UseAtom } from "definition";
 import { useState, useEffect, SetStateAction } from "react";
-import { isSetStateFunction, useDebouncedShallowEffect } from "utilities";
+
+import { Options, UseAtom } from "@/definition";
+import { isSetStateFunction, useDebouncedShallowEffect } from "@/utilities";
 
 /**
  * A hook for managing and subscribing to the state of an atom.
@@ -35,12 +36,12 @@ export function useAtom<
     useArgs = [] as unknown as UseArgs,
     enabled = true,
   } = options;
-  const { get, set, next, subscribe, provide, emit } = store;
+  const { get, set, subscribe, provide, emit } = store;
 
   // Add this store to the waitlist for future updates.
   store.waitlist.add(store);
 
-  const [state, setState] = useState(store.value);
+  const [state, setState] = useState(store.current);
   const [ctx, setProps] = useState(store.ctx);
 
   // Effect to await changes and execute the `use` function.
@@ -64,23 +65,18 @@ export function useAtom<
 
   const transform = get(state, ...getArgs);
   const atom = select(transform);
-
-  const update = (value: State | SetStateAction<State>) => {
-    const isFunction = isSetStateFunction(value);
-    const data = isFunction ? value(state as State) : value;
-    const payload = set(data);
-    next(payload);
-  };
   
   // Function to set the atom's state.
   const setAtom = (value: State | SetStateAction<State>) => {
-    update(value);
-  }
+    const isFunction = isSetStateFunction(value);
+    const data = isFunction ? value(state as State) : value;
+    set(data);
+  };
 
-  setAtom.update = update;
+  setAtom.update = setAtom;
   setAtom.state = state;
-  setAtom.ctx = ctx;
   setAtom.emit = emit;
+  setAtom.ctx = ctx;
 
   return [atom, setAtom];
 }

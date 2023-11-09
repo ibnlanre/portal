@@ -1,5 +1,5 @@
-import { describe, expect, it } from "@jest/globals";
-import { createBuilder } from "component";
+import { describe, expect, it } from "vitest";
+import { createBuilder } from "@/component";
 
 describe("createBuilder", () => {
   const obj = {
@@ -22,17 +22,19 @@ describe("createBuilder", () => {
 
     expect(builder).toEqual({
       use,
-      dex: { use },
+      dex: { use, get },
       foo: {
         bar: {
           baz: { use, get },
           use,
+          get,
         },
         qux: { use, get },
         use,
+        get,
       },
-      num: { use },
-      str: { use },
+      num: { use, get },
+      str: { use, get },
     });
 
     expect(builder.foo.bar.baz.get()).toEqual(["foo", "bar", "baz"]);
@@ -47,17 +49,19 @@ describe("createBuilder", () => {
   it("should still have the same structure as its first argument", () => {
     expect(builder).toEqual({
       use,
-      dex: { use },
+      dex: { use, get },
       foo: {
         bar: {
           baz: { use, get },
           use,
+          get
         },
-        use,
         qux: { use, get },
+        use,
+        get,
       },
-      num: { use },
-      str: { use },
+      num: { use, get },
+      str: { use, get },
     });
   });
 

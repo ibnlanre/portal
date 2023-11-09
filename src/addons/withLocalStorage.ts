@@ -1,16 +1,16 @@
-import { useState, useEffect, type Reducer } from "react";
+import { useState, useEffect } from "react";
 
-import { objectToStringKey } from "utilities";
+import { getValue } from "@/utilities";
 import { usePortalImplementation } from "./withImplementation";
 
-import type { Initial, PortalState } from "definition";
+import type { Builder, GetValueByPath, Paths, PortalState } from "@/definition";
 
-export function usePortalWithLocalStorage<S, A = undefined>(
-  key: any,
-  initialState?: Initial<S>,
-  reducer?: Reducer<S, A>
-): PortalState<S, A> {
-  const stringKey = objectToStringKey(key);
+export function usePortalWithLocalStorage<
+  Store extends Record<string, any>,
+  Path extends Paths<Builder<Store, any>>,
+  State extends GetValueByPath<Store, Path>
+>(builder: Builder<Store, any>, path: Path): PortalState<State> {
+  const initialState = getValue(builder.use(), path);
   let overrideApplicationState = false;
 
   const [store] = useState(() => {
@@ -24,7 +24,7 @@ export function usePortalWithLocalStorage<S, A = undefined>(
 
   const [storedState] = useState(() => {
     try {
-      const item = store?.getItem(stringKey);
+      const item = store?.getItem(path);
       if (item) overrideApplicationState = true;
       return item ? JSON.parse(item) : initialState;
     } catch (error) {
@@ -33,22 +33,21 @@ export function usePortalWithLocalStorage<S, A = undefined>(
     }
   });
 
-  const [state, setState] = usePortalImplementation<S, A>({
-    key: stringKey,
-    initialState: storedState,
-    override: overrideApplicationState,
-    reducer,
-  });
+  const [state, setState] = usePortalImplementation<State, Path>(
+    path,
+    storedState,
+    overrideApplicationState
+  );
 
   useEffect(() => {
     if (typeof state !== "undefined") {
       try {
-        localStorage.setItem(stringKey, JSON.stringify(state));
+        localStorage.setItem(path, JSON.stringify(state));
       } catch (error) {
         console.error("Error storing state in localStorage:", error);
       }
     }
-  }, [stringKey, state]);
+  }, [path, state]);
 
   return [state, setState];
 }

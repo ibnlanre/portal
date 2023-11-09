@@ -1,4 +1,4 @@
-import { AtomSubject } from "subject";
+import { AtomSubject } from "@/subject";
 import {
   Atom,
   AtomConfig,
@@ -6,8 +6,8 @@ import {
   Collector,
   Setter,
   Getter,
-} from "definition";
-import { isAtomStateFunction, isFunction } from "utilities";
+} from "@/definition";
+import { isAtomStateFunction, isFunction } from "@/utilities";
 
 /**
  * Creates an Atom instance for managing and updating state.
@@ -53,9 +53,9 @@ export function atom<
   } = config;
   const { set, get, use } = { ...events };
 
-  const stateful = isAtomStateFunction(state) ? state(properties) : state;
-  const observable = new AtomSubject(stateful);
-  const { previous, redo, undo, next } = observable;
+  const currentState = isAtomStateFunction(state) ? state(properties) : state;
+  const observable = new AtomSubject(currentState);
+  const { next, previous, redo, undo, update } = observable;
 
   const contextual = new AtomSubject(context);
   const waitlist = new Set<
@@ -82,8 +82,8 @@ export function atom<
 
   const emit = (ctx: Partial<Context> | ((curr: Context) => Context)) => {
     const curr = contextual.value;
-    if (typeof ctx === "function") contextual.next({ ...ctx(curr) });
-    else contextual.next({ ...curr, ...ctx });
+    if (typeof ctx === "function") contextual.update({ ...ctx(curr) });
+    else contextual.update({ ...curr, ...ctx });
     return contextual.value;
   };
 
@@ -100,14 +100,25 @@ export function atom<
    * @property {Function} subscribe A function to subscribe to changes in the Atom's value.
    * @property {Function} redo A function to redo a previous state change.
    * @property {Function} undo A function to undo a previous state change.
-   * @property {Array<State>} history An array containing the history of state changes.
+   * @property {Array<State>} timeline An array containing the timeline of state changes.
    * @property {Function} emit Sets the context of the Atom instance.
    * @property {Function} dispose Disposes of the Atom instance and associated resources.
    */
   const fields: Fields<State, Properties, Context> = {
-    get value() {
+    get timeline() {
+      return observable.timeline;
+    },
+    get current() {
       return observable.value;
     },
+    get previous() {
+      return previous();
+    },
+    get next() {
+      return next();
+    },
+    subscribe: observable.subscribe,
+    dispatch: update,
     get props() {
       return properties;
     },
@@ -118,25 +129,19 @@ export function atom<
       const params: Setter<State, Properties, Context> = {
         value,
         ctx: contextual.value,
-        previous: observable.value,
+        current: observable.value,
         props: properties,
+        emit,
       };
 
       // The set function allows optional transformations and returns the new state.
-      if (set) {
-        const value = set(params);
-        return value;
-      } else return value as unknown as State;
+      if (set) update(set(params));
+      else update(value);
     },
-    next,
-    previous,
-    subscribe: observable.subscribe,
+
     provide: contextual.subscribe,
     redo,
     undo,
-    get history() {
-      return observable.history;
-    },
     emit,
     on,
     dispose: (bin) => {
@@ -154,47 +159,47 @@ export function atom<
   /**
    * Represents the context and functions associated with an Atom instance.
    *
-   * @typedef {Object} Atomic
+   * @typedef {Object} AtomInstance
    * @property {Function} use - A function to execute the `use` function with optional arguments and update `collector`.
    * @property {Function} get A function to get the value of the Atom instance with optional transformations.
    * @property {Set<() => void>} waitlist - A set containing functions to execute when awaiting state changes.
    * @property {Function} await - A function to await state changes and execute associated functions.
    */
-  const atomic: Atom<State, Data, Properties, Context, UseArgs, GetArgs> = {
-    ...fields,
-    use: (...useArgs: UseArgs) => {
-      const value = use?.(fields, ...useArgs);
-      if (isFunction(value)) on.unmount(value);
-      else {
-        on.rerun(value?.rerun);
-        on.unmount(value?.unmount);
-      }
-    },
-    get: (value: State = observable.value, ...getArgs: GetArgs) => {
-      const params: Getter<State, Properties, Context> = {
-        value,
-        ctx: contextual.value,
-        previous: observable.value,
-        props: properties,
-      };
+  const atomInstance: Atom<State, Data, Properties, Context, UseArgs, GetArgs> =
+    {
+      ...fields,
+      use: (...useArgs: UseArgs) => {
+        const value = use?.(fields, ...useArgs);
+        if (isFunction(value)) on.unmount(value);
+        else {
+          on.rerun(value?.rerun);
+          on.unmount(value?.unmount);
+        }
+      },
+      get: (value: State = observable.value, ...getArgs: GetArgs) => {
+        const params: Getter<State, Properties, Context> = {
+          value,
+          ctx: contextual.value,
+          current: observable.value,
+          props: properties,
+          emit,
+        };
 
-      // The get function allows optional transformations and returns the transformed value.
-      if (get) {
-        const value = get(params, ...getArgs);
-        return value;
-      } else return value as unknown as Data;
-    },
-    waitlist,
-    await: (useArgs: UseArgs) => {
-      const store = Array.from(waitlist).pop();
-      if (store) {
-        waitlist.clear();
-        fields.dispose("rerun");
-        store.use(...useArgs);
-      }
-      return () => fields.dispose("unmount");
-    },
-  };
+        // The get function allows optional transformations and returns the transformed value.
+        if (get) return get(params, ...getArgs);
+        else return value as unknown as Data;
+      },
+      waitlist,
+      await: (useArgs: UseArgs) => {
+        const store = Array.from(waitlist).pop();
+        if (store) {
+          waitlist.clear();
+          fields.dispose("rerun");
+          store.use(...useArgs);
+        }
+        return () => fields.dispose("unmount");
+      },
+    };
 
-  return atomic;
+  return atomInstance;
 }
