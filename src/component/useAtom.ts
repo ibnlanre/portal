@@ -1,7 +1,7 @@
 import { useState, useEffect, SetStateAction } from "react";
 
 import { Options, UseAtom } from "@/definition";
-import { isSetStateFunction, useDebouncedShallowEffect } from "@/utilities";
+import { getComputedState, useDebouncedShallowEffect } from "@/utilities";
 
 /**
  * A hook for managing and subscribing to the state of an atom.
@@ -11,6 +11,7 @@ import { isSetStateFunction, useDebouncedShallowEffect } from "@/utilities";
  * @template Properties - The type of properties used by the atom.
  * @template Context - The type of context associated with the Atom.
  * @template UseArgs - The type of the atom's `use` function.
+ * @template GetArgs - The type of the atom's `get` function.
  * @template Select - The type of data to be selected from the atom's data.
  *
  * @param {Atom<State, Data, Properties, Context, UseArgs>} store - The atom to use.
@@ -36,7 +37,7 @@ export function useAtom<
     useArgs = [] as unknown as UseArgs,
     enabled = true,
   } = options;
-  const { get, set, subscribe, provide, emit } = store;
+  const { get, set, subscribe, provide, emit, delay } = store;
 
   // Add this store to the waitlist for future updates.
   store.waitlist.add(store);
@@ -45,10 +46,14 @@ export function useAtom<
   const [ctx, setProps] = useState(store.ctx);
 
   // Effect to await changes and execute the `use` function.
-  useDebouncedShallowEffect(() => {
-    if (!enabled) return;
-    return store.await(useArgs);
-  }, [enabled, ...useArgs]);
+  useDebouncedShallowEffect(
+    () => {
+      if (!enabled) return;
+      return store.await(useArgs);
+    },
+    [enabled, ...useArgs],
+    delay
+  );
 
   useEffect(() => {
     // Effect to subscribe to context changes.
@@ -65,12 +70,10 @@ export function useAtom<
 
   const transform = get(state, ...getArgs);
   const atom = select(transform);
-  
+
   // Function to set the atom's state.
   const setAtom = (value: State | SetStateAction<State>) => {
-    const isFunction = isSetStateFunction(value);
-    const data = isFunction ? value(state as State) : value;
-    set(data);
+    set(getComputedState(value, state));
   };
 
   setAtom.update = setAtom;

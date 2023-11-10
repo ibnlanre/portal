@@ -1,4 +1,3 @@
-import { AtomSubject } from "@/subject";
 import {
   Atom,
   AtomConfig,
@@ -7,6 +6,7 @@ import {
   Setter,
   Getter,
 } from "@/definition";
+import { AtomSubject } from "@/subject";
 import { isAtomStateFunction, isFunction } from "@/utilities";
 
 /**
@@ -49,6 +49,7 @@ export function atom<
     state,
     properties = {} as Properties,
     context = {} as Context,
+    delay = 650,
     events,
   } = config;
   const { set, get, use } = { ...events };
@@ -189,7 +190,6 @@ export function atom<
         if (get) return get(params, ...getArgs);
         else return value as unknown as Data;
       },
-      waitlist,
       await: (useArgs: UseArgs) => {
         const store = Array.from(waitlist).pop();
         if (store) {
@@ -199,6 +199,8 @@ export function atom<
         }
         return () => fields.dispose("unmount");
       },
+      waitlist,
+      delay,
     };
 
   return atomInstance;

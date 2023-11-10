@@ -1,39 +1,31 @@
 import { useState, useEffect } from "react";
 
-import { getValue } from "@/utilities";
 import { usePortalImplementation } from "./withImplementation";
+import type { PortalState } from "@/definition";
 
-import type { Builder, GetValueByPath, Paths, PortalState } from "@/definition";
-
-export function usePortalWithSessionStorage<
-  Store extends Record<string, any>,
-  Path extends Paths<Builder<Store, any>>,
-  State extends GetValueByPath<Store, Path>
->(builder: Builder<Store, any>, path: Path): PortalState<State> {
-  const initialState = getValue(builder.use(), path);
+export function usePortalWithSessionStorage<Path extends string, State>(
+  path: Path,
+  initialState: State
+): PortalState<State> {
   let overrideApplicationState = false;
-
-  const [store] = useState(() => {
-    try {
-      if (typeof sessionStorage !== "undefined") return sessionStorage;
-    } catch (error) {
-      console.error("Cannot find sessionStorage", error);
-    }
-    return undefined;
-  });
 
   const [storedState] = useState(() => {
     try {
-      const item = store?.getItem(path);
-      if (item) overrideApplicationState = true;
-      return item ? JSON.parse(item) : initialState;
+      if (typeof sessionStorage !== "undefined") {
+        const storedValue = sessionStorage.getItem(path);
+        if (storedValue) {
+          overrideApplicationState = true;
+          return JSON.parse(storedValue);
+        }
+        return initialState;
+      }
     } catch (error) {
       console.error("Error retrieving state from sessionStorage:", error);
       return initialState;
     }
   });
 
-  const [state, setState] = usePortalImplementation<State, Path>(
+  const [state, setState] = usePortalImplementation<Path, State>(
     path,
     storedState,
     overrideApplicationState

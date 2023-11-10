@@ -36,9 +36,9 @@ This library exports the following APIs to enhance state management and facilita
         </tr>
         <tr>
             <td colspan="2">
-                <code>usePortal</code>
+                <code>createPortal</code>
             </td>
-            <td colspan="5">A <strong>hook</strong> that allows you to create, access and update the state.</td>
+            <td colspan="5">Create a <strong>portal</strong> for accessing and updating states.</td>
         </tr>
         <tr>
             <td></td>
@@ -53,13 +53,6 @@ This library exports the following APIs to enhance state management and facilita
                 <code>.session</code>
             </td>
             <td colspan="4">A <strong>hook</strong> to persist state in Session Storage.</td>
-        </tr>
-        <tr>
-            <td></td>
-            <td colspan="2">
-                <code>.cookie</code>
-            </td>
-            <td colspan="4">A <strong>hook</strong> to store state in Browser Cookie store.</td>
         </tr>
         <tr>
             <td colspan="2">
@@ -84,7 +77,7 @@ This library exports the following APIs to enhance state management and facilita
     import {
       atom,
       useAtom,
-      usePortal,
+      createPortal,
       createBuilder,
       cookieStorage,
     } from "@ibnlanre/portal";
@@ -98,59 +91,27 @@ This library exports the following APIs to enhance state management and facilita
       foo: "qux",
     });
 
-    // Access the value from the builder store
-    const [state, setState] = usePortal(builder, "foo");
+    // Create a portal next for type safety
+    const usePortal = createPortal(builder);
+
+    // Manage and access the stored value
+    const [state, setState] = usePortal("foo");
     ```
 
 3. **Persist the state by utilizing browser storage mechanisms.**
 
     ```js
     // To persist the state in `localStorage`:
-    const [state, setState] = usePortal.local(builder, "foo");
+    const [state, setState] = usePortal.local("foo");
 
     // To persist the state in `sessionStorage`:
-    const [state, setState] = usePortal.session(builder, "foo");
+    const [state, setState] = usePortal.session("foo");
 
     // Accessing the identifier later, doesn't require the use of [.local]
-    const [counter, setCounter] = usePortal(builder, "foo");
+    const [counter, setCounter] = usePortal("foo");
     ```
 
-4. **Cache state as a cookie in the browser storage.**
-
-    - To persist the state in `cookieStore`:
-
-      ```js
-      // Create cookie state within a React Component
-      const [cookieState, setCookieState] = usePortal.cookie("cookie.counter", {
-        value: "5",
-        path: "/",
-        expires: 30 * 1000, // milliseconds
-        maxAge: 30, // seconds
-        secure: true,
-      });
-      ```
-
-    - To update the cookie options in `cookieStore`:
-
-      ```js
-      // To set the cookie value within a Component.
-      setCookieState(6);
-
-      // This API doesn't trigger a re-render.
-      cookieStorage.setItem("cookie.counter", { sameSite: "lax" });
-      ```
-
-    - Access previously created data in `cookieStore`:
-
-      ```js
-      // Retrieve cookie value outside of a Component.
-      const cookie = cookieStorage.getItem("cookie.counter"); // "5"
-
-      // Manage cookie state through the Portal system.
-      const [cookieState, setCookieState] = usePortal("cookie.counter");
-      ```
-
-5. **To manage state outside of a React Component, create an `atom`.**
+4. **To manage state outside of a React Component, create an `atom`.**
 
     - Create the `atom` with a key, value, and optional reducer:
 
@@ -205,7 +166,7 @@ This library exports the following APIs to enhance state management and facilita
       const [users, setUsers] = useAtom({ store: userAtom, useArgs: [messages.user] });
       ```
 
-6. **To create a `builder` pattern for property access.**
+5. **To create a `builder` pattern for property access.**
 
     - Make of nested record of a `key` and `value` pair:
 

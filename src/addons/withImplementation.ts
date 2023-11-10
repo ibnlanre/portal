@@ -11,7 +11,7 @@ import type { PortalState } from "@/definition";
  *
  * @returns {PortalState<State>} An array containing the state and the setter function for state updates.
  */
-export function usePortalImplementation<State, Path extends string>(
+export function usePortalImplementation<Path extends string, State>(
   path: Path,
   initialState: State,
   override: boolean = false

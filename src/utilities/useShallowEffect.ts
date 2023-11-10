@@ -1,5 +1,13 @@
 import { useEffect, useRef, DependencyList, EffectCallback } from "react";
 
+/**
+ * A function that compares two values shallowly.
+ *
+ * @param {any} a - The first value to compare.
+ * @param {any} b - The second value to compare.
+ *
+ * @returns {boolean} Whether the two values are equal shallowly.
+ */
 function shallowEqual(a: any, b: any): boolean {
   if (a === b) return true;
   if (typeof a !== "object" || typeof b !== "object") return false;
@@ -15,6 +23,14 @@ function shallowEqual(a: any, b: any): boolean {
   return true;
 }
 
+/**
+ * A function that compares two dependency lists shallowly.
+ *
+ * @param {DependencyList | null | undefined} prevValue - The previous dependency list.
+ * @param {DependencyList} currValue - The current dependency list.
+ *
+ * @returns {boolean} Whether the two dependency lists are equal shallowly.
+ */
 function shallowCompare(
   prevValue?: DependencyList | null,
   currValue?: DependencyList
@@ -30,6 +46,15 @@ function shallowCompare(
   return true;
 }
 
+/**
+ * A custom hook that returns an array with a single number that increments
+ * whenever the dependencies passed to it have changed shallowly.
+ *
+ * @param {DependencyList} dependencies - The dependencies to compare shallowly.
+ *
+ * @returns {[number]} An array with a single number that increments whenever
+ * the dependencies have changed shallowly.
+ */
 function useShallowCompare(dependencies?: DependencyList): [number] {
   const ref = useRef<DependencyList | undefined>([]);
   const updateRef = useRef(0);
@@ -70,10 +95,19 @@ const debounce = (effect: EffectCallback, delay: number) => {
   return later;
 };
 
+/**
+ * A custom hook that debounces an effect function and compares its dependencies shallowly.
+ *
+ * @param {EffectCallback} effect - The effect function to be debounced.
+ * @param {DependencyList} dependencies - The dependencies to compare shallowly.
+ * @param {number} delay - The delay in milliseconds to wait before invoking the effect.
+ *
+ * @returns {void}
+ */
 export function useDebouncedShallowEffect(
   effect: EffectCallback,
   dependencies: DependencyList = [],
-  delay: number = 650
+  delay: number
 ): void {
   useEffect(debounce(effect, delay), useShallowCompare(dependencies));
 }

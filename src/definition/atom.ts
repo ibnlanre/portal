@@ -256,6 +256,7 @@ export type AtomConfig<
   events?: Events<State, Data, Properties, Context, UseArgs, GetArgs>;
   properties?: Properties;
   context?: Context;
+  delay?: number;
 };
 
 /**
@@ -305,6 +306,10 @@ export interface Atom<
    * @returns {() => void} A function to cleanup the atom `use` event upon unmount.
    */
   await(useArgs: UseArgs): () => void;
+  /**
+   * The number of milliseconds to delay before updating the Atom's state.
+   */
+  delay: number;
 }
 
 /**

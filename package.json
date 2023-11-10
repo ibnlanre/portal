@@ -21,7 +21,7 @@
     }
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=14"
   },
   "scripts": {
     "lint": "tsc --pretty --noEmit --project tsconfig-test.json",
@@ -44,7 +44,8 @@
     "context",
     "store",
     "portal",
-    "redux"
+    "redux",
+    "use-portal"
   ],
   "repository": {
     "type": "git",

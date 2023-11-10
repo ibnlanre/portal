@@ -91,28 +91,5 @@ export type Subscription = {
  */
 export type PortalState<State> = [State, Dispatch<SetStateAction<State>>];
 
-/**
- * Represents the initial value for the portal store.
- * @template S The type of the store value.
- */
-export type Initial<S> = S | (() => S) | Promise<S>;
-
-/**
- * Represents the implementation of a portal.
- * @template S The type of the store value.
- * @template A The type of the action for the reducer.
- *
- * @param {any} key The key associated with the portal.
- * @param {Initial<S>} [initialState] The initial state of the portal.
- * @param {Reducer<S, A>} [reducer] The reducer function for the portal.
- *
- * @returns {PortalState<S, A>} A tuple containing the state and a function for updating the state.
- */
-export type PortalImplementation<T> = <S extends T>(
-  key: any,
-  initialState?: Initial<S>
-) => PortalState<S>;
-
 export * from "./cookieOptions";
-export * from "./implementation";
 export * from "./atom";
