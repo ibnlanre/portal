@@ -14,7 +14,7 @@ import { Builder, GetValueByPath, Paths } from "@/definition";
  */
 export function getValue<
   Store extends Record<string, any>,
-  Path extends Paths<Builder<Store, any>>,
+  Path extends Paths<Store>,
   Value extends GetValueByPath<Store, Path>
 >(object: Store, path: Path) {
   let value = object;

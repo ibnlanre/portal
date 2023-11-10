@@ -49,7 +49,7 @@ export function atom<
     state,
     properties = {} as Properties,
     context = {} as Context,
-    delay = 650,
+    delay = 0,
     events,
   } = config;
   const { set, get, use } = { ...events };
@@ -139,7 +139,6 @@ export function atom<
       if (set) update(set(params));
       else update(value);
     },
-
     provide: contextual.subscribe,
     redo,
     undo,

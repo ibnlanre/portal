@@ -36,7 +36,7 @@ This library exports the following APIs to enhance state management and facilita
         </tr>
         <tr>
             <td colspan="2">
-                <code>createPortal</code>
+                <code>makeUsePortal</code>
             </td>
             <td colspan="5">Create a <strong>portal</strong> for accessing and updating states.</td>
         </tr>
@@ -77,24 +77,30 @@ This library exports the following APIs to enhance state management and facilita
     import {
       atom,
       useAtom,
-      createPortal,
       createBuilder,
       cookieStorage,
+      makeUsePortal,
     } from "@ibnlanre/portal";
     ```
 
-2. **To create an application `state`, provide a marker for the state by passing a `builder` and `path` to the `usePortal` hook.**
+2. **To create an application `state`, provide a marker for the state by passing a `store` to the `makeUsePortal` function and a `path` to the `usePortal` hook.**
 
     ```js
-    // Create a builder first
-    const builder = createBuilder({
-      foo: "qux",
-    });
+    // Create a store for type safety
+    const store = {
+      foo: {} as {
+        bar: {
+          baz: "qux"
+        }
+      } & {
+        rim: "raf"
+      },
+    };
 
-    // Create a portal next for type safety
-    const usePortal = createPortal(builder);
+    // Create a portal using the store
+    const usePortal = makeUsePortal(store);
 
-    // Manage and access the stored value
+    // Manage and access the store value
     const [state, setState] = usePortal("foo");
     ```
 

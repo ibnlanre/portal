@@ -1,18 +1,16 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 
-import { createPortal, createBuilder } from "@/component";
+import { makeUsePortal } from "@/component";
 
-describe("createPortal", () => {
+describe("makeUsePortal", () => {
   it("should return a function", () => {
-    const store = createBuilder({ count: 0 });
-    const usePortal = createPortal(store);
+    const usePortal = makeUsePortal({ count: 0 });
     expect(typeof usePortal).toBe("function");
   });
 
   it("should return the correct value for a given path", () => {
-    const store = createBuilder({ count: 0 });
-    const usePortal = createPortal(store);
+    const usePortal = makeUsePortal({ count: 0 });
 
     const { result } = renderHook(() => usePortal("count"));
     const [count, setCount] = result.current;
@@ -26,8 +24,8 @@ describe("createPortal", () => {
   });
 
   it("should return the correct value for a nested path", () => {
-    const store = createBuilder({ user: { name: "John", age: 30 } });
-    const usePortal = createPortal(store);
+    const store = { user: { name: "John", age: 30 } };
+    const usePortal = makeUsePortal(store);
 
     const { result } = renderHook(() => usePortal("user.name"));
     const [name, setName] = result.current;

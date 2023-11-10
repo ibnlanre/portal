@@ -1,13 +1,13 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, afterEach, it, expect } from "vitest";
 
-import { createBuilder, createPortal } from "@/component";
+import { makeUsePortal } from "@/component";
 
 describe("usePortal.local", () => {
-  const builder = createBuilder({
+  const store = {
     foo: "baz",
-  });
-  const usePortal = createPortal(builder);
+  };
+  const usePortal = makeUsePortal(store);
 
   afterEach(() => {
     localStorage.clear();
