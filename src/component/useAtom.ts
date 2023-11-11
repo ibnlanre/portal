@@ -14,21 +14,24 @@ import { getComputedState, useDebouncedShallowEffect } from "@/utilities";
  * @template GetArgs - The type of the atom's `get` function.
  * @template Select - The type of data to be selected from the atom's data.
  *
- * @param {Atom<State, Data, Properties, Context, UseArgs>} store - The atom to use.
- * @param {Options<Select, Data, UseArgs>} options - Configuration options.
+ * @param {Options<Select, Data, Properties, Context, UseArgs, GetArgs, Select>} options - Configuration options.
  *
  * @returns {[Data, (value: State | SetStateAction<State>) => void]} - An array containing the atom's data and a function to set its state.
  */
 export function useAtom<
   State,
-  Data,
-  Properties,
-  Context,
-  UseArgs extends ReadonlyArray<any>,
-  GetArgs extends ReadonlyArray<any>,
+  Data = State,
+  Properties extends {
+    [key: string]: any;
+  } = {},
+  Context extends {
+    [key: string]: any;
+  } = {},
+  UseArgs extends ReadonlyArray<any> = [],
+  GetArgs extends ReadonlyArray<any> = [],
   Select = Data
 >(
-  options: Options<State, Data, Properties, Select, Context, UseArgs, GetArgs>
+  options: Options<State, Data, Properties, Context, UseArgs, GetArgs, Select>
 ): UseAtom<Select, State, Context> {
   const {
     store,

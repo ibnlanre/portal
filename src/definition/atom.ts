@@ -203,11 +203,15 @@ export type Getter<State, Properties, Context> = {
  */
 export interface Events<
   State,
-  Data,
-  Properties,
-  Context,
-  UseArgs extends ReadonlyArray<any>,
-  GetArgs extends ReadonlyArray<any>
+  Data = State,
+  Properties extends {
+    [key: string]: any;
+  } = {},
+  Context extends {
+    [key: string]: any;
+  } = {},
+  UseArgs extends ReadonlyArray<any> = [],
+  GetArgs extends ReadonlyArray<any> = []
 > {
   set?: (params: Setter<State, Properties, Context>) => State;
   get?: (
@@ -271,11 +275,15 @@ export type AtomConfig<
  */
 export interface Atom<
   State,
-  Data,
-  Properties,
-  Context,
-  UseArgs extends ReadonlyArray<any>,
-  GetArgs extends ReadonlyArray<any>
+  Data = State,
+  Properties extends {
+    [key: string]: any;
+  } = {},
+  Context extends {
+    [key: string]: any;
+  } = {},
+  UseArgs extends ReadonlyArray<any> = [],
+  GetArgs extends ReadonlyArray<any> = []
 > extends Fields<State, Properties, Context> {
   /**
    * Execute the `use` event with optional arguments.
@@ -339,12 +347,16 @@ type SetAtom<State, Context> = {
  */
 export type Options<
   State,
-  Data,
-  Properties,
-  Select,
-  Context,
-  UseArgs extends ReadonlyArray<any>,
-  GetArgs extends ReadonlyArray<any>
+  Data = State,
+  Properties extends {
+    [key: string]: any;
+  } = {},
+  Context extends {
+    [key: string]: any;
+  } = {},
+  UseArgs extends ReadonlyArray<any> = [],
+  GetArgs extends ReadonlyArray<any> = [],
+  Select = Data
 > = {
   store: Atom<State, Data, Properties, Context, UseArgs, GetArgs>;
   select?: (data: Data) => Select;
