@@ -103,7 +103,10 @@ export class BehaviorSubject<State> implements Subject<State> {
    *
    * @returns {{ unsubscribe: Function }} An object with a function to unsubscribe the callback.
    */
-  subscribe = (observer: Function, immediate: boolean = true): Subscription => {
+  subscribe = (
+    observer: (value: State) => any,
+    immediate: boolean = true
+  ): Subscription => {
     // Confirm the callback isn't in the subscribers list.
     if (!this.subscribers.has(observer)) {
       // Add the callback as a member in the subscribers list.

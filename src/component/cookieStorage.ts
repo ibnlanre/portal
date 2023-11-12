@@ -6,11 +6,12 @@ import {
   removeCookieValue,
   setCookieValue,
 } from "@/cookies";
+import { CookieStorage } from "@/definition";
 
 /**
  * An object representing a cookie storage with various methods to interact with cookies.
  */
-export const cookieStorage = {
+export const cookieStorage: CookieStorage = {
   /**
    * Retrieves the value of the cookie with the specified name from the document.cookie.
    *
@@ -48,7 +49,9 @@ export const cookieStorage = {
    * Get the length of cookieStorage (the number of individual cookies).
    * @returns {number} The number of cookies in cookieStorage.
    */
-  length: getCookieStorageLength,
+  get length() {
+    return getCookieStorageLength();
+  },
 
   /**
    * Get a cookie by index from cookieStorage.

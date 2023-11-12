@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
 
 import { portal } from "@/subject";
-import type { PortalState } from "@/definition";
+import type {
+  PortalState,
+  Subscription,
+  UsePortalImplementation,
+} from "@/definition";
 
 /**
  * Internal function to handle state and subscriptions for the `usePortal` hook.
@@ -11,16 +15,34 @@ import type { PortalState } from "@/definition";
  *
  * @returns {PortalState<State>} An array containing the state and the setter function for state updates.
  */
-export function usePortalImplementation<Path extends string, State>(
-  path: Path,
-  initialState: State,
-  override: boolean = false
-): PortalState<State> {
+export function usePortalImplementation<
+  Path extends string,
+  State,
+  Store extends Storage
+>({
+  path,
+  initialState,
+  options,
+}: UsePortalImplementation<Path, State, Store>): PortalState<State> {
+  let override = false;
+
+  const [storedState] = useState(() => {
+    try {
+      if (typeof options?.get !== "undefined") {
+        const storedValue = options.get(options.store, path);
+        if (storedValue) return (override = true), storedValue;
+      }
+    } catch (error) {
+      console.error("Error retrieving value from storage:", error);
+    }
+    return initialState;
+  });
+
   /**
    * Retrieve the portal entry associated with the specified key or create a new one if not found.
    * @type {BehaviorSubject<State>}
    */
-  const observable = portal.getItem(path, initialState, override);
+  const { observable, store } = portal.getItem(path, storedState, override);
 
   /**
    * Store the current value of the state.
@@ -37,12 +59,40 @@ export function usePortalImplementation<Path extends string, State>(
      * @type {Subscription}
      */
     const subscriber = observable.subscribe(setState);
+    let storage: Subscription | undefined;
+
+    /**
+     * The same path can be used for multiple stores.
+     */
+    if (typeof options?.store !== "undefined") {
+      store.add(options.store);
+    }
+
+    /**
+     * If the store is empty, subscribe to state changes and update the storage.
+     */
+    if (typeof options?.store !== "undefined" && !store.size) {
+      /**
+       * Add the store to the set of stores.
+       */
+
+      /**
+       * Subscribe to state changes using the BehaviorSubject and update the storage.
+       * @type {Subscription}
+       */
+      storage = observable.subscribe((value) => {
+        options.set(value, options.store, path);
+      });
+    }
 
     /**
      * Unsubscribe from state changes when the component is unmounted.
      * @returns {void}
      */
-    return subscriber.unsubscribe;
+    return () => {
+      subscriber.unsubscribe();
+      if (storage) storage.unsubscribe();
+    };
   }, [observable]);
 
   /**

@@ -241,27 +241,3 @@ export function atom<
 
   return atomInstance;
 }
-
-atom({
-  state: 0,
-  events: {
-    set: ({ value }) => value,
-    get: ({ value }) => value,
-    use: ({ ctx, props }) => {
-      return {
-        rerun: () => {
-          console.log("rerun");
-        },
-        unmount: () => {
-          console.log("unmount");
-        },
-      };
-    },
-  },
-  context: {
-    hello: "world",
-  },
-  properties: {
-    wow: "cool",
-  },
-});

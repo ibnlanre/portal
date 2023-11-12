@@ -345,7 +345,7 @@ type SetAtom<State, Context> = {
  * @property {(data: Data) => Select} [select] A function to select data from the atom's data.
  * @property {UseArgs} useArgs An array of arguments to pass to the atom's `use` function.
  */
-export type Options<
+export type AtomOptions<
   State,
   Data = State,
   Properties extends {

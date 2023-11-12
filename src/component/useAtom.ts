@@ -1,6 +1,6 @@
 import { useState, useEffect, SetStateAction } from "react";
 
-import { Options, UseAtom } from "@/definition";
+import { AtomOptions, UseAtom } from "@/definition";
 import { getComputedState, useDebouncedShallowEffect } from "@/utilities";
 
 /**
@@ -14,7 +14,7 @@ import { getComputedState, useDebouncedShallowEffect } from "@/utilities";
  * @template GetArgs - The type of the atom's `get` function.
  * @template Select - The type of data to be selected from the atom's data.
  *
- * @param {Options<Select, Data, Properties, Context, UseArgs, GetArgs, Select>} options - Configuration options.
+ * @param {AtomOptions<Select, Data, Properties, Context, UseArgs, GetArgs, Select>} options - Configuration options.
  *
  * @returns {[Data, (value: State | SetStateAction<State>) => void]} - An array containing the atom's data and a function to set its state.
  */
@@ -31,7 +31,15 @@ export function useAtom<
   GetArgs extends ReadonlyArray<any> = [],
   Select = Data
 >(
-  options: Options<State, Data, Properties, Context, UseArgs, GetArgs, Select>
+  options: AtomOptions<
+    State,
+    Data,
+    Properties,
+    Context,
+    UseArgs,
+    GetArgs,
+    Select
+  >
 ): UseAtom<Select, State, Context> {
   const {
     store,

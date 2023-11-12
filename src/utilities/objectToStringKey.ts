@@ -43,6 +43,17 @@ type ObjectToStringKey<T> = T extends any[]
   ? ObjectToString<T>
   : ToString<T>;
 
+type NestedObject<
+  T extends Record<string, any>,
+  P extends string[]
+> = P extends [infer First, ...infer Rest]
+  ? First extends string
+    ? Rest extends string[]
+      ? { [K in First]: NestedObject<T, Rest> }
+      : never
+    : never
+  : T;
+
 /**
  * Converts a reference type to a string representation that can be used as a key.
  *

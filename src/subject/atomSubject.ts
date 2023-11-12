@@ -1,4 +1,4 @@
-import { Subscription } from "@/definition";
+import type { Subscription } from "@/definition";
 
 /**
  * Represents a subject that maintains a current value and emits it to subscribers.

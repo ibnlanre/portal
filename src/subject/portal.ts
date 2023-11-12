@@ -5,6 +5,7 @@ import type {
   CookieEntry,
   CookieOptions,
   PortalMap,
+  PortalValue,
   StorageType,
 } from "@/definition";
 
@@ -63,6 +64,10 @@ class Portal {
   /**
    * Retrieves the item with the specified path from the portal storage.
    *
+   * @description
+   * If the item does not exist, a new item will be created with the specified path.
+   * If the item exists, its value will be updated with the specified value.
+   *
    * @template S The type of the state.
    * @template A The type of the actions.
    *
@@ -75,12 +80,16 @@ class Portal {
     path: Path,
     initialState: State,
     override: boolean = false
-  ): BehaviorSubject<State> => {
+  ): PortalValue<State> => {
     if (!override && this.portalMap.has(path)) {
-      return this.portalMap.get(path) as BehaviorSubject<State>;
+      return this.portalMap.get(path) as PortalValue<State>;
     }
 
-    const subject = new BehaviorSubject(initialState);
+    const subject = {
+      observable: new BehaviorSubject(initialState),
+      store: new Set<Storage>(),
+    };
+
     if (!this.portalMap.has(path)) this.portalMap.set(path, subject);
     return subject;
   };
@@ -96,7 +105,7 @@ class Portal {
    *
    * @returns {void}
    */
-  addItem = <State, Path>(path: Path, entry: BehaviorSubject<State>): void => {
+  addItem = <State, Path>(path: Path, entry: PortalValue<State>): void => {
     try {
       this.portalMap.set(path, entry);
     } catch (error) {
@@ -120,14 +129,13 @@ class Portal {
     try {
       if (this.portalMap.has(path)) {
         const originalValue = this.portalMap.get(path)!;
-        const setter = originalValue.setter;
-        setter(value);
+        originalValue.observable.setter(value)
       } else {
-        if (process.env.NODE_ENV === "development") {
-          console.warn("The path:", path, "does not exist in portal entries");
-        }
-
-        this.portalMap.set(path, new BehaviorSubject(value));
+        console.warn("The path:", path, "does not exist in portal entries");
+        this.portalMap.set(path, {
+          observable: new BehaviorSubject(value),
+          store: new Set<Storage>(),
+        });
       }
     } catch (error) {
       handleSSRError(error, `Error occured while setting ${path}:`);
@@ -152,7 +160,8 @@ class Portal {
    */
   deleteItem = <Path>(path: Path) => {
     // Unsubscribe the observable associated with the item
-    this.portalMap.get(path)?.unsubscribe();
+    const subject = this.portalMap.get(path);
+    if (subject) subject.observable.unsubscribe();
 
     try {
       // Delete the item from the internal map
