@@ -55,6 +55,13 @@ This library exports the following APIs to enhance state management and facilita
             <td colspan="4">A <strong>hook</strong> to persist state in Session Storage.</td>
         </tr>
         <tr>
+            <td></td>
+            <td colspan="2">
+                <code>.cookie</code>
+            </td>
+            <td colspan="4">A <strong>hook</strong> to persist state in `document.cookie`.</td>
+        </tr>
+        <tr>
             <td colspan="2">
                 <code>createBuilder</code>
             </td>
@@ -108,13 +115,15 @@ This library exports the following APIs to enhance state management and facilita
 
     ```js
     // To persist the state in `localStorage`:
-    const [state, setState] = usePortal.local("foo");
+    const [state, setState] = usePortal.local("foo.bar");
 
     // To persist the state in `sessionStorage`:
-    const [state, setState] = usePortal.session("foo");
+    const [state, setState] = usePortal.session("foo.bar.baz");
 
-    // Accessing the identifier later, doesn't require the use of [.local]
-    const [counter, setCounter] = usePortal("foo");
+    // To persist the state in `document.cookie`
+    const [state, setState] = usePortal.cookie("foo.rim", { 
+      path: "/"
+    });
     ```
 
 4. **To manage state outside of a React Component, create an `atom`.**
@@ -196,8 +205,8 @@ This library exports the following APIs to enhance state management and facilita
       // `get` retrieves the keys without invoking the function.
       builder.foo.baz.get(); // ["foo", "baz"]
 
-      // `get` does not exist if the value is not a function.
-      builder.foo.use(); // ["foo"]
+      // `get` also allows you to add more keys
+      builder.foo.baz.get("test"); // ["foo", "baz", "test"]
       ```
 
     - Get nested `values`:

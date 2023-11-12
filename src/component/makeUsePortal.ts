@@ -80,18 +80,6 @@ export function makeUsePortal<Ledger extends Record<string, any>>(
     });
   };
 
-  /**
-   * Custom hook to access and manage state in the portal system with cookie support.
-   *
-   * @template Path The type of the path.
-   * @template State The type of the state.
-   * @template Store The type of the store.
-   *
-   * @param {Path} path The path to the store value.
-   * @param {CookieOptions} cookieOptions The options for the cookie.
-   *
-   * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
-   */
   usePortal.cookie = function useCookie<
     Path extends Paths<Ledger>,
     State extends GetValueByPath<Ledger, Path>
