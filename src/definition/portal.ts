@@ -70,8 +70,8 @@ export type Paths<Base, Delimiter extends string = "."> = Base extends Record<
   ? {
       [Key in Keys]: Key extends string | number
         ? Extract<Value, Base[Key]> extends Record<string, any>
-          ? `${Key}${Delimiter}${Paths<Base[Key], Delimiter>}`
-          : `${Keys}` | `${Key}`
+          ? `${Key}` | `${Key}${Delimiter}${Paths<Base[Key], Delimiter>}`
+          : `${Keys}`
         : never;
     }[Keys]
   : never;
