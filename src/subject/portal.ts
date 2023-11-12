@@ -13,7 +13,11 @@ import { BehaviorSubject } from "./behaviorSubject";
 
 class Portal {
   private portalMap: PortalMap<any, any> = new Map();
-
+  
+  /**
+   * A map of portal entries.
+   * @type {PortalMap}
+   */
   get entries() {
     return this.portalMap;
   }
