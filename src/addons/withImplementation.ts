@@ -28,7 +28,7 @@ export function usePortalImplementation<
 
   const [storedState] = useState(() => {
     try {
-      if (typeof options?.get !== "undefined") {
+      if (typeof options?.store !== "undefined") {
         const storedValue = options.get(options.store, path);
         if (storedValue) return (override = true), storedValue;
       }
@@ -40,9 +40,9 @@ export function usePortalImplementation<
 
   /**
    * Retrieve the portal entry associated with the specified key or create a new one if not found.
-   * @type {BehaviorSubject<State>}
+   * @type {PortalValue<State>}
    */
-  const { observable, store } = portal.getItem(path, storedState, override);
+  const { observable, storage } = portal.getItem(path, storedState, override);
 
   /**
    * Store the current value of the state.
@@ -59,41 +59,36 @@ export function usePortalImplementation<
      * @type {Subscription}
      */
     const subscriber = observable.subscribe(setState);
-    let storage: Subscription | undefined;
-
-    /**
-     * The same path can be used for multiple stores.
-     */
-    if (typeof options?.store !== "undefined") {
-      store.add(options.store);
-    }
-
-    /**
-     * If the store is empty, subscribe to state changes and update the storage.
-     */
-    if (typeof options?.store !== "undefined" && !store.size) {
-      /**
-       * Add the store to the set of stores.
-       */
-
-      /**
-       * Subscribe to state changes using the BehaviorSubject and update the storage.
-       * @type {Subscription}
-       */
-      storage = observable.subscribe((value) => {
-        options.set(value, options.store, path);
-      });
-    }
 
     /**
      * Unsubscribe from state changes when the component is unmounted.
      * @returns {void}
      */
-    return () => {
-      subscriber.unsubscribe();
-      if (storage) storage.unsubscribe();
-    };
+    return subscriber.unsubscribe;
   }, [observable]);
+
+  /**
+   * Subscribe the specified storage to the current value of the state.
+   */
+  useEffect(() => {
+    if (typeof options?.store !== "undefined") {
+      let persistence: Subscription;
+
+      if (!storage.has(options.store)) {
+        storage.add(options.store);
+        persistence = observable.subscribe((value) => {
+          options?.set(value, options.store, path);
+        });
+      } else return;
+
+      return () => {
+        persistence.unsubscribe();
+        storage.delete(options?.store);
+      };
+    }
+
+    return () => void 0;
+  }, [storage.size]);
 
   /**
    * Return an array containing the current state and the setter function for state updates.

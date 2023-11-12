@@ -1,4 +1,4 @@
-import { SetStateAction } from "react";
+import type { SetStateAction } from "react";
 
 /**
  * A function type to update context.

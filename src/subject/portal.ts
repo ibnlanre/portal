@@ -68,13 +68,14 @@ class Portal {
    * If the item does not exist, a new item will be created with the specified path.
    * If the item exists, its value will be updated with the specified value.
    *
-   * @template S The type of the state.
-   * @template A The type of the actions.
+   * @template State The type of the state.
+   * @template Path The type of the path.
    *
    * @param {string} path The path of the item to be retrieved.
+   * @param {State} initialState The initial state of the item.
    * @param {boolean} [override=false] Whether to override an existing item with the same path.
    *
-   * @returns {PortalEntry<S, A>} The portal entry with the specified path, or a new portal entry if not found.
+   * @returns {PortalValue<State>} The portal entry with the specified path, or a new portal entry if not found.
    */
   getItem = <State, Path extends string>(
     path: Path,
@@ -87,7 +88,7 @@ class Portal {
 
     const subject = {
       observable: new BehaviorSubject(initialState),
-      store: new Set<Storage>(),
+      storage: new Set<Storage>(),
     };
 
     if (!this.portalMap.has(path)) this.portalMap.set(path, subject);
@@ -97,11 +98,11 @@ class Portal {
   /**
    * Adds a new item to the internal map with the specified path and entry.
    *
-   * @template S The type of the state.
-   * @template A The type of the actions.
+   * @template State The type of the state.
+   * @template Path The type of the path.
    *
    * @param {any} path The path to add to the internal map.
-   * @param {PortalEntry<S, A>} entry The portal entry to be associated with the path.
+   * @param {PortalValue<State>} entry The portal entry to be associated with the path.
    *
    * @returns {void}
    */
@@ -120,21 +121,25 @@ class Portal {
    * If the entry already exists, its value will be replaced with the new value.
    * If the entry does not exist, a `warning` would be displayed in the `console`.
    * Furthermore, a new entry would be created with the specified path.
+   * 
+   * @template State The type of the state.
+   * @template Path The type of the path.
    *
    * @param {any} path The path of the portal entry.
    * @param {any} value The value to be set for the portal entry.
+   * 
    * @returns {void}
    */
   setItem = <State, Path>(path: Path, value: State): void => {
     try {
       if (this.portalMap.has(path)) {
         const originalValue = this.portalMap.get(path)!;
-        originalValue.observable.setter(value)
+        originalValue.observable.setter(value);
       } else {
         console.warn("The path:", path, "does not exist in portal entries");
         this.portalMap.set(path, {
           observable: new BehaviorSubject(value),
-          store: new Set<Storage>(),
+          storage: new Set<Storage>(),
         });
       }
     } catch (error) {
@@ -144,6 +149,8 @@ class Portal {
 
   /**
    * Checks if the specified path exists in the internal map.
+   * 
+   * @template Path The type of the path.
    *
    * @param {any} path The path to check for existence.
    * @returns {boolean} `true` if the path exists in the internal map, otherwise `false`.
@@ -154,6 +161,8 @@ class Portal {
 
   /**
    * Deletes the item with the specified path from the internal map.
+   * 
+   * @template Path The type of the path.
    *
    * @param {any} path The path of the item to be deleted.
    * @returns {void}
@@ -173,9 +182,12 @@ class Portal {
 
   /**
    * Removes the item with the specified path from the storage.
+   * 
+   * @template Path The type of the path.
    *
    * @param {any} path The path of the item to be removed.
    * @param {StorageType} storageType The type of storage to remove the item from.
+   * 
    * @returns {void}
    */
   deletePersistedItem = <Path extends string>(
@@ -222,6 +234,8 @@ class Portal {
 
   /**
    * Removes an item from the portal entries and browser storage based on the specified path and storage types.
+   * 
+   * @template Path The type of the path.
    *
    * @param {any} path The path of the item to remove.
    * @param {StorageType[]} [storageTypes] An optional array of storage types to remove the item from (e.g., "local", "session", "cookie").

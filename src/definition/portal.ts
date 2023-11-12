@@ -20,7 +20,7 @@ export type PortalValue<State> = {
   /**
    * A set of a browser storage object.
    */
-  store: Set<Storage>;
+  storage: Set<Storage>;
 
   /**
    * The BehaviorSubject that contains the current value of the store.

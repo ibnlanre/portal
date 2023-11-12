@@ -1,4 +1,4 @@
-import {
+import type {
   CookieOptions,
   CookieStorage,
   GetValueByPath,
@@ -117,9 +117,3 @@ export function makeUsePortal<Ledger extends Record<string, any>>(
 
   return usePortal;
 }
-
-const store = { user: { name: "John", age: 30 } };
-const usePortal = makeUsePortal(store);
-usePortal.cookie("user.name", {
-  
-})

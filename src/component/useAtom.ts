@@ -1,7 +1,7 @@
 import { useState, useEffect, SetStateAction } from "react";
 
-import { AtomOptions, UseAtom } from "@/definition";
 import { getComputedState, useDebouncedShallowEffect } from "@/utilities";
+import type { AtomOptions, UseAtom } from "@/definition";
 
 /**
  * A hook for managing and subscribing to the state of an atom.

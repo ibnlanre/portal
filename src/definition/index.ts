@@ -1,8 +1,16 @@
+/**
+ * Represents a ledger key.
+ */
 type Key<K, P extends readonly string[] = []> = {
   get: <Y extends any[]>(...args: Y) => [...P, K, ...Y];
   use: () => [...P, K];
 };
 
+/**
+ * Represents a builder for a ledger key.
+ * @template T The type of the ledger.
+ * @template P The type of the path.
+ */
 export type KeyBuilder<
   T extends Record<string, any>,
   P extends readonly string[] = []
@@ -17,6 +25,11 @@ export type KeyBuilder<
     : Key<K, P>;
 };
 
+/**
+ * Represents a builder for a ledger.
+ * @template T The type of the ledger.
+ * @template P The type of the path.
+ */
 export type Builder<
   T extends Record<string, any>,
   P extends readonly string[] = []
