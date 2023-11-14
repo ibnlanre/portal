@@ -36,9 +36,15 @@ This library exports the following APIs to enhance state management and facilita
         </tr>
         <tr>
             <td colspan="2">
-                <code>makeUsePortal</code>
+                <code>usePortal</code>
             </td>
             <td colspan="5">Create a <strong>portal</strong> for accessing and updating states.</td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <code>makeUsePortal</code>
+            </td>
+            <td colspan="5">Create a <strong>typed portal</strong> for accessing and updating states.</td>
         </tr>
         <tr>
             <td></td>
@@ -87,10 +93,38 @@ This library exports the following APIs to enhance state management and facilita
       createBuilder,
       cookieStorage,
       makeUsePortal,
+      usePortal
     } from "@ibnlanre/portal";
     ```
 
-2. **To create an application `state`, provide a marker for the state by passing a `store` to the `makeUsePortal` function and a `path` to the `usePortal` hook.**
+2. **To create a `portal` for managing state**
+
+    A good practice is to define the `get` function before the `set` function, because of type inference.
+
+    ```typescript
+    // Although optional, to set the initial state
+    const [state, setState] = usePortal("key", {
+      get: () => ["initial", "state"]
+    })
+
+    // The state can also be retrieved from a browser store
+    const [token, setToken] = usePortal("token", {
+      // Get state from a persistent storage.
+      get: (path) => {
+        const value = cookieStorage.getItem(path);
+        if (value) return JSON.parse(value) as string
+        return "";
+      },
+
+      // The set callback is called when the state changes.
+      set: (value, path) => {
+        const state = JSON.stringify(value);
+        cookieStorage.setItem(path, state);
+      },
+    });
+    ```
+
+3. **To create a typed `portal`, provide a marker to the `makeUsePortal` function and then a `path` to the generated `usePortal` hook.**
 
     ```js
     // Create a store for type safety
@@ -105,28 +139,28 @@ This library exports the following APIs to enhance state management and facilita
     };
 
     // Create a portal using the store
-    const usePortal = makeUsePortal(store);
+    const useStorePortal = makeUsePortal(store);
 
     // Manage and access the store value
-    const [state, setState] = usePortal("foo");
+    const [state, setState] = useStorePortal("foo");
     ```
 
-3. **Persist the state by utilizing browser storage mechanisms.**
+4. **Persist the state by utilizing browser storage mechanisms.**
 
     ```js
     // To persist the state in `localStorage`:
-    const [state, setState] = usePortal.local("foo.bar");
+    const [state, setState] = useStorePortal.local("foo.bar");
 
     // To persist the state in `sessionStorage`:
-    const [state, setState] = usePortal.session("foo.bar.baz");
+    const [state, setState] = useStorePortal.session("foo.bar.baz");
 
     // To persist the state in `document.cookie`
-    const [state, setState] = usePortal.cookie("foo.rim", { 
+    const [state, setState] = useStorePortal.cookie("foo.rim", { 
       path: "/"
     });
     ```
 
-4. **To manage state outside of a React Component, create an `atom`.**
+5. **To manage state outside of a React Component, create an `atom`.**
 
     - Create the `atom` with a key, value, and optional reducer:
 
@@ -158,16 +192,14 @@ This library exports the following APIs to enhance state management and facilita
       export const userAtom = atom({
         state: {} as UserData,
         events: {
-          set: ({ current }) => decrypt(current),
-          use: ({ set, props: { getUrl } }, user: string) => {
+          set: ({ value }) => decrypt(value),
+          use: ({ on, set, props }, user: string) => {
+            const { getUrl } = props;
             const ws = new WebSocket(getUrl(user));
-            ws.onmessage = ((value) => {
-              set(JSON.parse(value.data))
-            });
-
-            return () => {
+            ws.onmessage = ((value) => set(JSON.parse(value.data)));
+            on.rerun(() => {
               if (ws.readyState === WebSocket.OPEN) ws.close();
-            }
+            })
           },
         },
         properties: {
@@ -181,7 +213,7 @@ This library exports the following APIs to enhance state management and facilita
       const [users, setUsers] = useAtom({ store: userAtom, useArgs: [messages.user] });
       ```
 
-5. **To create a `builder` pattern for property access.**
+6. **To create a `builder` pattern for property access.**
 
     - Make of nested record of a `key` and `value` pair:
 

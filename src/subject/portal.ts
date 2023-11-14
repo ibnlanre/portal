@@ -6,6 +6,7 @@ import type {
   CookieOptions,
   PortalMap,
   PortalValue,
+  SetStore,
   StorageType,
 } from "@/definition";
 
@@ -13,7 +14,7 @@ import { BehaviorSubject } from "./behaviorSubject";
 
 class Portal {
   private portalMap: PortalMap<any, any> = new Map();
-  
+
   /**
    * A map of portal entries.
    * @type {PortalMap}
@@ -79,20 +80,20 @@ class Portal {
    * @param {State} initialState The initial state of the item.
    * @param {boolean} [override=false] Whether to override an existing item with the same path.
    *
-   * @returns {PortalValue<State>} The portal entry with the specified path, or a new portal entry if not found.
+   * @returns {PortalValue<State, Path>} The portal entry with the specified path, or a new portal entry if not found.
    */
   getItem = <State, Path extends string>(
     path: Path,
     initialState: State,
     override: boolean = false
-  ): PortalValue<State> => {
+  ): PortalValue<Path, State> => {
     if (!override && this.portalMap.has(path)) {
-      return this.portalMap.get(path) as PortalValue<State>;
+      return this.portalMap.get(path) as PortalValue<Path, State>;
     }
 
     const subject = {
       observable: new BehaviorSubject(initialState),
-      storage: new Set<Storage>(),
+      storage: new Set<SetStore<Path, State>>(),
     };
 
     if (!this.portalMap.has(path)) this.portalMap.set(path, subject);
@@ -106,11 +107,14 @@ class Portal {
    * @template Path The type of the path.
    *
    * @param {any} path The path to add to the internal map.
-   * @param {PortalValue<State>} entry The portal entry to be associated with the path.
+   * @param {PortalValue<Path, State>} entry The portal entry to be associated with the path.
    *
    * @returns {void}
    */
-  addItem = <State, Path>(path: Path, entry: PortalValue<State>): void => {
+  addItem = <State, Path>(
+    path: Path,
+    entry: PortalValue<Path, State>
+  ): void => {
     try {
       this.portalMap.set(path, entry);
     } catch (error) {
@@ -125,13 +129,13 @@ class Portal {
    * If the entry already exists, its value will be replaced with the new value.
    * If the entry does not exist, a `warning` would be displayed in the `console`.
    * Furthermore, a new entry would be created with the specified path.
-   * 
+   *
    * @template State The type of the state.
    * @template Path The type of the path.
    *
    * @param {any} path The path of the portal entry.
    * @param {any} value The value to be set for the portal entry.
-   * 
+   *
    * @returns {void}
    */
   setItem = <State, Path>(path: Path, value: State): void => {
@@ -143,7 +147,7 @@ class Portal {
         console.warn("The path:", path, "does not exist in portal entries");
         this.portalMap.set(path, {
           observable: new BehaviorSubject(value),
-          storage: new Set<Storage>(),
+          storage: new Set<SetStore<Path, State>>(),
         });
       }
     } catch (error) {
@@ -153,7 +157,7 @@ class Portal {
 
   /**
    * Checks if the specified path exists in the internal map.
-   * 
+   *
    * @template Path The type of the path.
    *
    * @param {any} path The path to check for existence.
@@ -165,7 +169,7 @@ class Portal {
 
   /**
    * Deletes the item with the specified path from the internal map.
-   * 
+   *
    * @template Path The type of the path.
    *
    * @param {any} path The path of the item to be deleted.
@@ -186,12 +190,12 @@ class Portal {
 
   /**
    * Removes the item with the specified path from the storage.
-   * 
+   *
    * @template Path The type of the path.
    *
    * @param {any} path The path of the item to be removed.
    * @param {StorageType} storageType The type of storage to remove the item from.
-   * 
+   *
    * @returns {void}
    */
   deletePersistedItem = <Path extends string>(
@@ -238,7 +242,7 @@ class Portal {
 
   /**
    * Removes an item from the portal entries and browser storage based on the specified path and storage types.
-   * 
+   *
    * @template Path The type of the path.
    *
    * @param {any} path The path of the item to remove.

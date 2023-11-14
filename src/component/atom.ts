@@ -81,7 +81,7 @@ export function atom<
 
   const currentState = isAtomStateFunction(state) ? state(properties) : state;
   const observable = new AtomSubject(currentState);
-  const { next, previous, redo, undo, update } = observable;
+  const { forward, rewind, redo, undo, update } = observable;
 
   const contextual = new AtomSubject(context);
   const waitlist = new Set<
@@ -139,8 +139,8 @@ export function atom<
    * @property {Properties} props The properties associated with the Atom instance.
    * @property {Context} ctx The context associated with the Atom instance.
    * @property {Function} set A function to set the value of the Atom instance with optional transformations.
-   * @property {Function} next A function to update the value of the Atom instance.
-   * @property {Function} previous A function to access the previous value of the Atom.
+   * @property {Function} forward A function to update the value of the Atom instance.
+   * @property {Function} rewind A function to access the previous value of the Atom.
    * @property {Function} subscribe A function to subscribe to changes in the Atom's value.
    * @property {Function} redo A function to redo a previous state change.
    * @property {Function} undo A function to undo a previous state change.
@@ -152,14 +152,14 @@ export function atom<
     get timeline() {
       return observable.timeline;
     },
-    get current() {
+    get value() {
       return observable.value;
     },
-    get previous() {
-      return previous();
+    get rewind() {
+      return rewind();
     },
-    get next() {
-      return next();
+    get forward() {
+      return forward();
     },
     subscribe: observable.subscribe,
     dispatch: update,
@@ -172,8 +172,8 @@ export function atom<
     set: (value: State) => {
       const params: Setter<State, Properties, Context> = {
         value,
+        previous: observable.value,
         ctx: contextual.value,
-        current: observable.value,
         props: properties,
         emit,
       };
@@ -216,8 +216,8 @@ export function atom<
       get: (value: State = observable.value, ...getArgs: GetArgs) => {
         const params: Getter<State, Properties, Context> = {
           value,
+          previous: observable.value,
           ctx: contextual.value,
-          current: observable.value,
           props: properties,
           emit,
         };

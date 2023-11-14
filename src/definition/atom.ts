@@ -52,21 +52,21 @@ export type Fields<State, Properties, Context> = {
    * @function
    * @returns {State} The current value.
    */
-  current: State;
+  value: State;
   /**
    * Retrieves the previous state in the timeline, if available.
    *
    * @function
    * @returns {State | undefined} The previous state in the timeline, or undefined if not available.
    */
-  previous: State | undefined;
+  rewind: State | undefined;
   /**
    * Retrieves the next state in the timeline, if available.
    *
    * @function
    * @returns {State | undefined} The next state in the timeline, or undefined if not available.
    */
-  next: State | undefined;
+  forward: State | undefined;
   /**
    * Subscribes to changes in the Atom's value.
    *
@@ -171,8 +171,8 @@ type Garbage =
  */
 export type Setter<State, Properties, Context> = {
   value: State;
+  previous: State;
   ctx: Context;
-  current: State;
   props: Properties;
   emit: Emit<Context>;
 };
@@ -186,8 +186,8 @@ export type Setter<State, Properties, Context> = {
  */
 export type Getter<State, Properties, Context> = {
   value: State;
+  previous: State;
   ctx: Context;
-  current: State;
   props: Properties;
   emit: Emit<Context>;
 };
@@ -203,15 +203,11 @@ export type Getter<State, Properties, Context> = {
  */
 export interface Events<
   State,
-  Data = State,
-  Properties extends {
-    [key: string]: any;
-  } = {},
-  Context extends {
-    [key: string]: any;
-  } = {},
-  UseArgs extends ReadonlyArray<any> = [],
-  GetArgs extends ReadonlyArray<any> = []
+  Data,
+  Properties,
+  Context,
+  UseArgs extends ReadonlyArray<any>,
+  GetArgs extends ReadonlyArray<any>
 > {
   set?: (params: Setter<State, Properties, Context>) => State;
   get?: (
@@ -275,15 +271,11 @@ export type AtomConfig<
  */
 export interface Atom<
   State,
-  Data = State,
-  Properties extends {
-    [key: string]: any;
-  } = {},
-  Context extends {
-    [key: string]: any;
-  } = {},
-  UseArgs extends ReadonlyArray<any> = [],
-  GetArgs extends ReadonlyArray<any> = []
+  Data,
+  Properties,
+  Context,
+  UseArgs extends ReadonlyArray<any>,
+  GetArgs extends ReadonlyArray<any>
 > extends Fields<State, Properties, Context> {
   /**
    * Execute the `use` event with optional arguments.
@@ -347,16 +339,12 @@ type SetAtom<State, Context> = {
  */
 export type AtomOptions<
   State,
-  Data = State,
-  Properties extends {
-    [key: string]: any;
-  } = {},
-  Context extends {
-    [key: string]: any;
-  } = {},
-  UseArgs extends ReadonlyArray<any> = [],
-  GetArgs extends ReadonlyArray<any> = [],
-  Select = Data
+  Data,
+  Properties,
+  Context,
+  UseArgs extends ReadonlyArray<any>,
+  GetArgs extends ReadonlyArray<any>,
+  Select
 > = {
   store: Atom<State, Data, Properties, Context, UseArgs, GetArgs>;
   select?: (data: Data) => Select;

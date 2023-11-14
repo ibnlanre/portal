@@ -88,7 +88,7 @@ export class AtomSubject<State> {
    * Retrieves the next state from the history for time-travel.
    * @returns {State | undefined} The next state, or undefined if there is no next state.
    */
-  next = (): State | undefined => {
+  forward = (): State | undefined => {
     // Calculate the index of the next state
     const currentIndex = this.currentIndex + 1;
 
@@ -103,7 +103,7 @@ export class AtomSubject<State> {
    * Retrieves the previous state from the history for time-travel.
    * @returns {State | undefined} The previous state, or undefined if there is no previous state.
    */
-  previous = (): State | undefined => {
+  rewind = (): State | undefined => {
     // Calculate the index of the previous state
     const currentIndex = this.currentIndex - 1;
 

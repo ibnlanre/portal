@@ -15,27 +15,23 @@ import type {
  *
  * @returns {PortalState<State>} An array containing the state and the setter function for state updates.
  */
-export function usePortalImplementation<
-  Path extends string,
-  State,
-  Store extends Storage
->({
+export function usePortalImplementation<Path extends string, State>({
   path,
   initialState,
   options,
-}: UsePortalImplementation<Path, State, Store>): PortalState<State> {
+}: UsePortalImplementation<Path, State>): PortalState<State> {
   let override = false;
 
   const [storedState] = useState(() => {
     try {
-      if (typeof options?.store !== "undefined") {
-        const storedValue = options.get(options.store, path);
+      if (typeof options?.get !== "undefined") {
+        const storedValue = options?.get?.(path);
         if (storedValue) return (override = true), storedValue;
       }
     } catch (error) {
       console.error("Error retrieving value from storage:", error);
     }
-    return initialState;
+    return initialState as State;
   });
 
   /**
@@ -71,19 +67,21 @@ export function usePortalImplementation<
    * Subscribe the specified storage to the current value of the state.
    */
   useEffect(() => {
-    if (typeof options?.store !== "undefined") {
+    if (typeof options?.set !== "undefined") {
       let persistence: Subscription;
 
-      if (!storage.has(options.store)) {
-        storage.add(options.store);
+      if (!storage.has(options.set)) {
+        storage.add(options.set);
         persistence = observable.subscribe((value) => {
-          options?.set(value, options.store, path);
+          options?.set?.(value, path);
         });
       } else return;
 
       return () => {
         persistence.unsubscribe();
-        storage.delete(options?.store);
+        if (typeof options?.set !== "undefined") {
+          storage.delete(options.set);
+        }
       };
     }
 

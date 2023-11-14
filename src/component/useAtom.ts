@@ -14,21 +14,17 @@ import type { AtomOptions, UseAtom } from "@/definition";
  * @template GetArgs - The type of the atom's `get` function.
  * @template Select - The type of data to be selected from the atom's data.
  *
- * @param {AtomOptions<Select, Data, Properties, Context, UseArgs, GetArgs, Select>} options - Configuration options.
+ * @param {AtomOptions<State, Data, Properties, Context, UseArgs, GetArgs, Select>} options - Configuration options.
  *
  * @returns {[Data, (value: State | SetStateAction<State>) => void]} - An array containing the atom's data and a function to set its state.
  */
 export function useAtom<
   State,
-  Data = State,
-  Properties extends {
-    [key: string]: any;
-  } = {},
-  Context extends {
-    [key: string]: any;
-  } = {},
-  UseArgs extends ReadonlyArray<any> = [],
-  GetArgs extends ReadonlyArray<any> = [],
+  Data,
+  Properties,
+  Context,
+  UseArgs extends ReadonlyArray<any>,
+  GetArgs extends ReadonlyArray<any>,
   Select = Data
 >(
   options: AtomOptions<
@@ -53,7 +49,7 @@ export function useAtom<
   // Add this store to the waitlist for future updates.
   store.waitlist.add(store);
 
-  const [state, setState] = useState(store.current);
+  const [state, setState] = useState(store.value);
   const [ctx, setProps] = useState(store.ctx);
 
   // Effect to await changes and execute the `use` function.

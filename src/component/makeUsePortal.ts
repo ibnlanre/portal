@@ -1,8 +1,7 @@
 import type {
   CookieOptions,
-  CookieStorage,
   GetValueByPath,
-  Options,
+  PortalOptions,
   Paths,
   UsePortal,
 } from "@/definition";
@@ -21,11 +20,10 @@ export function makeUsePortal<Ledger extends Record<string, any>>(
 ): UsePortal<Ledger> {
   function usePortal<
     Path extends Paths<Ledger>,
-    State extends GetValueByPath<Ledger, Path>,
-    Store extends Storage
-  >(path: Path, options?: Options<Path, State, Store>) {
+    State extends GetValueByPath<Ledger, Path>
+  >(path: Path, options?: PortalOptions<Path, State>) {
     const initialState = getValue(ledger, path);
-    return usePortalImplementation<Path, State, Store>({
+    return usePortalImplementation<Path, State>({
       path,
       initialState,
       options,
@@ -34,22 +32,20 @@ export function makeUsePortal<Ledger extends Record<string, any>>(
 
   usePortal.local = function useLocal<
     Path extends Paths<Ledger>,
-    State extends GetValueByPath<Ledger, Path>,
-    Store extends Storage
+    State extends GetValueByPath<Ledger, Path>
   >(path: Path) {
     const options = {
-      store: localStorage as Store,
-      set: (value: State, store: Store, path: Path) => {
-        store.setItem(path, JSON.stringify(value));
+      set: (value: State, path: Path) => {
+        localStorage.setItem(path, JSON.stringify(value));
       },
-      get: (store: Store, path: Path) => {
-        const value = store.getItem(path);
+      get: (path: Path) => {
+        const value = localStorage.getItem(path);
         if (value) return JSON.parse(value);
       },
     };
 
     const initialState = getValue(ledger, path);
-    return usePortalImplementation<Path, State, Store>({
+    return usePortalImplementation<Path, State>({
       path,
       initialState,
       options,
@@ -58,22 +54,20 @@ export function makeUsePortal<Ledger extends Record<string, any>>(
 
   usePortal.session = function useSession<
     Path extends Paths<Ledger>,
-    State extends GetValueByPath<Ledger, Path>,
-    Store extends Storage
+    State extends GetValueByPath<Ledger, Path>
   >(path: Path) {
     const options = {
-      store: sessionStorage as Store,
-      set: (value: State, store: Store, path: Path) => {
-        store.setItem(path, JSON.stringify(value));
+      set: (value: State, path: Path) => {
+        sessionStorage.setItem(path, JSON.stringify(value));
       },
-      get: (store: Store, path: Path) => {
-        const value = store.getItem(path);
+      get: (path: Path) => {
+        const value = sessionStorage.getItem(path);
         if (value) return JSON.parse(value);
       },
     };
 
     const initialState = getValue(ledger, path);
-    return usePortalImplementation<Path, State, Store>({
+    return usePortalImplementation<Path, State>({
       path,
       initialState,
       options,
@@ -83,20 +77,19 @@ export function makeUsePortal<Ledger extends Record<string, any>>(
   usePortal.cookie = function useCookie<
     Path extends Paths<Ledger>,
     State extends GetValueByPath<Ledger, Path>
-  >(path: Path, cookieOptions: CookieOptions) {
+  >(path: Path, cookieOptions?: CookieOptions) {
     const options = {
-      store: cookieStorage,
-      set: (value: State, store: CookieStorage, path: Path) => {
-        store.setItem(path, JSON.stringify(value), cookieOptions);
+      set: (value: State, path: Path) => {
+        cookieStorage.setItem(path, JSON.stringify(value), cookieOptions);
       },
-      get: (store: CookieStorage, path: Path) => {
-        const value = store.getItem(path);
+      get: (path: Path) => {
+        const value = cookieStorage.getItem(path);
         if (value) return JSON.parse(value);
       },
     };
 
     const initialState = getValue(ledger, path);
-    return usePortalImplementation<Path, State, CookieStorage>({
+    return usePortalImplementation<Path, State>({
       path,
       initialState,
       options,

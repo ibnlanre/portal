@@ -2,25 +2,28 @@ import type { SetStateAction, Dispatch } from "react";
 import type { BehaviorSubject } from "@/subject";
 import { CookieOptions } from "./cookie";
 
-interface Getter<Path, State, Store> {
-  (store: Store, path: Path): State;
-}
+export type GetState<Path, State> = (path: Path) => State;
+export type SetStore<Path, State> = (value: State, path: Path) => void;
 
-interface Setter<Path, State, Store> {
-  (value: State, store: Store, path: Path): void;
-}
+export type PortalOptions<Path, State, Data = State> = {
+  /**
+   * Set the state to the specified path within the store.
+   */
+  set?: SetStore<Path, State>;
 
-export type Options<Path, State, Store extends Storage> = {
-  store: Store;
-  set: Setter<Path, State, Store>;
-  get: Getter<Path, State, Store>;
+  /**
+   * Get the state at the specified path from the store.
+   */
+  get?: GetState<Path, State>;
+
+  select?: (value: State) => Data;
 };
 
-export type PortalValue<State> = {
+export type PortalValue<Path, State> = {
   /**
    * A set of a browser storage object.
    */
-  storage: Set<Storage>;
+  storage: Set<SetStore<Path, State>>;
 
   /**
    * The BehaviorSubject that contains the current value of the store.
@@ -28,14 +31,10 @@ export type PortalValue<State> = {
   observable: BehaviorSubject<State>;
 };
 
-export interface UsePortalImplementation<
-  Path extends string,
-  State,
-  Store extends Storage
-> {
+export interface UsePortalImplementation<Path extends string, State> {
   path: Path;
-  initialState: State;
-  options?: Options<Path, State, Store>;
+  initialState?: State;
+  options?: PortalOptions<Path, State>;
 }
 
 /**
@@ -43,7 +42,7 @@ export interface UsePortalImplementation<
  * @template S The type of the store value.
  * @template A The type of the action for the reducer.
  */
-export type PortalMap<State, Path> = Map<Path, PortalValue<State>>;
+export type PortalMap<State, Path> = Map<Path, PortalValue<Path, State>>;
 
 /**
  * Represents the result of the usePortal hook.
@@ -105,13 +104,9 @@ export interface UsePortal<Ledger extends Record<string, any>> {
    * @param {Path} path The path to the store value.
    * @returns {[State, Dispatch<SetStateAction<State>>]} A tuple containing the state and a function for updating the state.
    */
-  <
-    Path extends Paths<Ledger>,
-    State extends GetValueByPath<Ledger, Path>,
-    Store extends Storage
-  >(
+  <Path extends Paths<Ledger>, State extends GetValueByPath<Ledger, Path>>(
     path: Path,
-    options?: Options<Path, State, Store>
+    options?: PortalOptions<Path, State>
   ): PortalState<State>;
   /**
    * Custom hook to access and manage state in the portal system with localStorage support.
