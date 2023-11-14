@@ -15,17 +15,22 @@ import type {
  *
  * @returns {PortalState<State>} An array containing the state and the setter function for state updates.
  */
-export function usePortalImplementation<Path extends string, State>({
+export function usePortalImplementation<Path extends string, State, Data>({
   path,
   initialState,
   options,
-}: UsePortalImplementation<Path, State>): PortalState<State> {
+}: UsePortalImplementation<Path, State, Data>): PortalState<State, Data> {
   let override = false;
+  const {
+    set,
+    get,
+    select = (value: State) => value as unknown as Data,
+  } = { ...options };
 
   const [storedState] = useState(() => {
     try {
-      if (typeof options?.get !== "undefined") {
-        const storedValue = options?.get?.(path);
+      if (typeof get !== "undefined") {
+        const storedValue = get?.(path);
         if (storedValue) return (override = true), storedValue;
       }
     } catch (error) {
@@ -67,30 +72,28 @@ export function usePortalImplementation<Path extends string, State>({
    * Subscribe the specified storage to the current value of the state.
    */
   useEffect(() => {
-    if (typeof options?.set !== "undefined") {
+    if (typeof set !== "undefined") {
       let persistence: Subscription;
 
-      if (!storage.has(options.set)) {
-        storage.add(options.set);
-        persistence = observable.subscribe((value) => {
-          options?.set?.(value, path);
-        });
+      if (!storage.has(set)) {
+        storage.add(set);
+        persistence = observable.subscribe((value) => set(value, path));
       } else return;
 
       return () => {
         persistence.unsubscribe();
-        if (typeof options?.set !== "undefined") {
-          storage.delete(options.set);
-        }
+        storage.delete(set);
       };
     }
 
     return () => void 0;
   }, [storage.size]);
 
+  const value = select(state);
+
   /**
    * Return an array containing the current state and the setter function for state updates.
    * @type {PortalState<S, A>}
    */
-  return [state, observable.setter];
+  return [value, observable.setter];
 }

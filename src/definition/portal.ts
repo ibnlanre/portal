@@ -1,9 +1,47 @@
 import type { SetStateAction, Dispatch } from "react";
+
 import type { BehaviorSubject } from "@/subject";
 import { CookieOptions } from "./cookie";
 
 export type GetState<Path, State> = (path: Path) => State;
 export type SetStore<Path, State> = (value: State, path: Path) => void;
+
+export type Config<Path, State, Data = State> = {
+  /**
+   * The key to use in the storage.
+   */
+  key?: string;
+  /**
+   * Set the value in the storage.
+   *
+   * @param value The value from the portal.
+   * @param path The path to the value in the store.
+   * @returns The value to be stored.
+   */
+  set?: (value: State, path: Path) => string;
+  /**
+   * Get the value from the storage.
+   *
+   * @param value The value from the store.
+   * @param path The path to the value in the store.
+   * @returns The initial value to portal.
+   */
+  get?: (value: string, path: Path) => State;
+  /**
+   * Select the data from the state.
+   *
+   * @param value The state value.
+   * @returns The selected data.
+   */
+  select?: (value: State) => Data;
+};
+
+export interface CookieConfig<Path, State> extends Config<Path, State> {
+  /**
+   * The options for the cookie.
+   */
+  cookieOptions?: CookieOptions;
+}
 
 export type PortalOptions<Path, State, Data = State> = {
   /**
@@ -16,6 +54,12 @@ export type PortalOptions<Path, State, Data = State> = {
    */
   get?: GetState<Path, State>;
 
+  /**
+   * Select the data from the state.
+   *
+   * @param value The state value.
+   * @returns The selected data.
+   */
   select?: (value: State) => Data;
 };
 
@@ -31,10 +75,14 @@ export type PortalValue<Path, State> = {
   observable: BehaviorSubject<State>;
 };
 
-export interface UsePortalImplementation<Path extends string, State> {
+export interface UsePortalImplementation<
+  Path extends string,
+  State,
+  Data = State
+> {
   path: Path;
   initialState?: State;
-  options?: PortalOptions<Path, State>;
+  options?: PortalOptions<Path, State, Data>;
 }
 
 /**
@@ -48,7 +96,10 @@ export type PortalMap<State, Path> = Map<Path, PortalValue<Path, State>>;
  * Represents the result of the usePortal hook.
  * @template State The type of the store value.
  */
-export type PortalState<State> = [State, Dispatch<SetStateAction<State>>];
+export type PortalState<State, Data = State> = [
+  Data,
+  Dispatch<SetStateAction<State>>
+];
 
 /**
  * Represents the path to a value in a store.
@@ -92,9 +143,9 @@ export type GetValueByPath<
 
 /**
  * Represents the result of the makeUsePortal function.
- * @template Ledger The type of the store.
+ * @template Registry The type of the store.
  */
-export interface UsePortal<Ledger extends Record<string, any>> {
+export interface UsePortal<Registry extends Record<string, any>> {
   /**
    * Custom hook to access and manage state in the portal system.
    *
@@ -104,7 +155,7 @@ export interface UsePortal<Ledger extends Record<string, any>> {
    * @param {Path} path The path to the store value.
    * @returns {[State, Dispatch<SetStateAction<State>>]} A tuple containing the state and a function for updating the state.
    */
-  <Path extends Paths<Ledger>, State extends GetValueByPath<Ledger, Path>>(
+  <Path extends Paths<Registry>, State extends GetValueByPath<Registry, Path>>(
     path: Path,
     options?: PortalOptions<Path, State>
   ): PortalState<State>;
@@ -117,8 +168,12 @@ export interface UsePortal<Ledger extends Record<string, any>> {
    * @param {Path} path The path to the store value.
    * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
    */
-  local<Path extends Paths<Ledger>, State extends GetValueByPath<Ledger, Path>>(
-    path: Path
+  local<
+    Path extends Paths<Registry>,
+    State extends GetValueByPath<Registry, Path>
+  >(
+    path: Path,
+    config?: Config<Path, State>
   ): PortalState<State>;
   /**
    * Custom hook to access and manage state in the portal system with sessionStorage support.
@@ -130,10 +185,11 @@ export interface UsePortal<Ledger extends Record<string, any>> {
    * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
    */
   session<
-    Path extends Paths<Ledger>,
-    State extends GetValueByPath<Ledger, Path>
+    Path extends Paths<Registry>,
+    State extends GetValueByPath<Registry, Path>
   >(
-    path: Path
+    path: Path,
+    config?: Config<Path, State>
   ): PortalState<State>;
 
   /**
@@ -149,10 +205,10 @@ export interface UsePortal<Ledger extends Record<string, any>> {
    * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
    */
   cookie<
-    Path extends Paths<Ledger>,
-    State extends GetValueByPath<Ledger, Path>
+    Path extends Paths<Registry>,
+    State extends GetValueByPath<Registry, Path>
   >(
     path: Path,
-    cookieOptions: CookieOptions
+    config?: CookieConfig<Path, State>
   ): PortalState<State>;
 }

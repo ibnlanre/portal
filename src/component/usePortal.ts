@@ -12,11 +12,11 @@ import { usePortalImplementation } from "@/addons";
  *
  * @returns {PortalState<State>}
  */
-export function usePortal<State, Path extends string = string>(
+export function usePortal<State, Path extends string = string, Data = State>(
   path: Path,
-  options?: PortalOptions<Path, State>
+  options?: PortalOptions<Path, State, Data>
 ) {
-  return usePortalImplementation({
+  return usePortalImplementation<Path, State, Data>({
     path,
     options,
   });

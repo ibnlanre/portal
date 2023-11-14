@@ -13,23 +13,23 @@ import { isAtomStateFunction, isFunction } from "@/utilities";
  * Atom:
  * ---
  * ---
- * 
- * @description 
+ *
+ * @description
  * Creates an Atom instance for managing and updating state.
  *
  * ---
  * Generics:
  * ---
  * ---
- * 
+ *
  * @template State - The type of the state.
  * @template Data - The type of data returned by the `get` event.
  * @template Properties - The type of the properties associated with the Atom.
  * @template Context - The type of context associated with the Atom.
  * @template UseArgs - An array of argument types for the `use` event.
  * @template GetArgs - An array of argument types for the `get` event.
- * 
- * --- 
+ *
+ * ---
  * Parameters:
  * ---
  * ---
@@ -41,9 +41,9 @@ import { isAtomStateFunction, isFunction } from "@/utilities";
  * @param {Context} [config.context] - Record of mutable context on the atom instance.
  * @param {number} [config.delay] - Delay in milliseconds to wait before executing the `use` function.
  * @param {Object} [config.events] - events object containing functions to interact with the Atom.
- * 
+ *
  * ---
- * 
+ *
  * @param {(params: Setter<State, Properties, Context>) => State} [config.events.set] - Function to set the Atom's state.
  * @param {(params: Getter<State, Properties, Context>) => Data} [config.events.get] - Function to get data from the Atom's state.
  * @param {(fields: Fields<State, Properties, Context>, ...useArgs: UseArgs) => Collector} [config.events.use] - Function to perform asynchronous events.
@@ -52,7 +52,7 @@ import { isAtomStateFunction, isFunction } from "@/utilities";
  * Returns:
  * ---
  * ---
- * 
+ *
  * @typedef {Object} Atom
  * @returns {Atom<State, Data, Properties, Context, UseArgs, GetArgs>} An object containing Atom context and functions.
  */
@@ -120,12 +120,12 @@ export function atom<
 
   /**
    * Executes a function and catches any errors.
-   * @param {() => void} garbage The function to execute.
+   * @param {() => void} cleanup The function to execute.
    * @returns {void}
    */
-  const purge = (garbage: () => void) => {
+  const dispose = (cleanup: () => void) => {
     try {
-      garbage();
+      cleanup();
     } catch (err) {
       console.error("Error occured during cleanup", err);
     }
@@ -146,7 +146,7 @@ export function atom<
    * @property {Function} undo A function to undo a previous state change.
    * @property {Array<State>} timeline An array containing the timeline of state changes.
    * @property {Function} emit Sets the context of the Atom instance.
-   * @property {Function} dispose Disposes of the Atom instance and associated resources.
+   * @property {Function} dispose Disposes of the functions in the collector.
    */
   const fields: Fields<State, Properties, Context> = {
     get timeline() {
@@ -188,7 +188,7 @@ export function atom<
     emit,
     on,
     dispose: (bin) => {
-      collector[bin].forEach(purge);
+      collector[bin].forEach(dispose);
       collector[bin].clear();
     },
   };

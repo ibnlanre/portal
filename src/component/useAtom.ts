@@ -39,7 +39,7 @@ export function useAtom<
 ): UseAtom<Select, State, Context> {
   const {
     store,
-    select = (transform: Data) => transform as unknown as Select,
+    select = (data: Data) => data as unknown as Select,
     getArgs = [] as unknown as GetArgs,
     useArgs = [] as unknown as UseArgs,
     enabled = true,

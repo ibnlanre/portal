@@ -1,5 +1,5 @@
 /**
- * Represents a ledger key.
+ * Represents a registry key.
  */
 type Key<K, P extends readonly string[] = []> = {
   get: <Y extends any[]>(...args: Y) => [...P, K, ...Y];
@@ -7,8 +7,8 @@ type Key<K, P extends readonly string[] = []> = {
 };
 
 /**
- * Represents a builder for a ledger key.
- * @template T The type of the ledger.
+ * Represents a builder for a registry key.
+ * @template T The type of the registry.
  * @template P The type of the path.
  */
 export type KeyBuilder<
@@ -26,8 +26,8 @@ export type KeyBuilder<
 };
 
 /**
- * Represents a builder for a ledger.
- * @template T The type of the ledger.
+ * Represents a builder for a registry.
+ * @template T The type of the registry.
  * @template P The type of the path.
  */
 export type Builder<
