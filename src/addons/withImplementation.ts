@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 import { portal } from "@/subject";
 import type {
@@ -6,7 +6,6 @@ import type {
   Subscription,
   UsePortalImplementation,
 } from "@/definition";
-import { isFunction } from "@/utilities";
 
 /**
  * Internal function to handle state and subscriptions for the `usePortal` hook.
@@ -26,34 +25,21 @@ export function usePortalImplementation<Path extends string, State, Data>({
     set,
     get,
     select = (value: State) => value as unknown as Data,
+    state = initialState as State,
     override = true,
   } = { ...options };
-
-  const isGetterFunction = isFunction(get);
 
   /**
    * Retrieve the stored state from the specified storage or use the initial state if not found.
    * @type {State}
    */
-  const [storedState, setStoredState] = useState(() => {
-    if (typeof get !== "undefined" && !isGetterFunction) {
-      overridePortalState = override;
-      return get as State;
-    }
-    return initialState as State;
-  });
+  const [resolvedState, setResolvedState] = useState(state);
 
   useEffect(() => {
-    try {
-      if (isGetterFunction) {
-        const storedValue = get(path);
-        if (typeof storedValue !== "undefined") {
-          overridePortalState = override;
-          setStoredState(storedValue);
-        }
-      }
-    } catch (error) {
-      console.error("Error retrieving value:", error);
+    const storedValue = get?.(path);
+    if (typeof storedValue !== "undefined") {
+      overridePortalState = override;
+      setResolvedState(storedValue);
     }
   }, []);
 
@@ -63,7 +49,7 @@ export function usePortalImplementation<Path extends string, State, Data>({
    */
   const { observable, storage } = portal.getItem(
     path,
-    storedState,
+    resolvedState,
     overridePortalState
   );
 
@@ -71,7 +57,7 @@ export function usePortalImplementation<Path extends string, State, Data>({
    * Store the current value of the state.
    * @type {State}
    */
-  const [state, setState] = useState(observable.value);
+  const [value, setValue] = useState(observable.value);
 
   /**
    * Subscribe to state changes and update the component's state accordingly.
@@ -81,7 +67,7 @@ export function usePortalImplementation<Path extends string, State, Data>({
      * Subscribe to state changes using the BehaviorSubject and update the component's state.
      * @type {Subscription}
      */
-    const subscriber = observable.subscribe(setState);
+    const subscriber = observable.subscribe(setValue);
 
     /**
      * Unsubscribe from state changes when the component is unmounted.
@@ -99,7 +85,8 @@ export function usePortalImplementation<Path extends string, State, Data>({
 
       if (!storage.has(set)) {
         storage.add(set);
-        persistence = observable.subscribe((value) => set(value, path));
+        const observer = (value: State) => set(value, path);
+        persistence = observable.subscribe(observer);
       } else return;
 
       return () => {
@@ -111,11 +98,11 @@ export function usePortalImplementation<Path extends string, State, Data>({
     return () => void 0;
   }, [storage.size]);
 
-  const value = select(state);
+  const data = select(value);
 
   /**
    * Return an array containing the current state and the setter function for state updates.
    * @type {PortalState<S, A>}
    */
-  return [value, observable.setter];
+  return [data, observable.setter];
 }

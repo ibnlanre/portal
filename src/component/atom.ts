@@ -141,7 +141,7 @@ export function atom<
       return forward();
     },
     subscribe: observable.subscribe,
-    dispatch: update,
+    update,
     get props() {
       return properties;
     },

@@ -3,7 +3,7 @@ import type { SetStateAction, Dispatch } from "react";
 import type { BehaviorSubject } from "@/subject";
 import { CookieOptions } from "./cookie";
 
-export type GetState<Path, State> = State | ((path: Path) => State);
+export type GetState<Path, State> = (path: Path) => State;
 export type SetStore<Path, State> = (value: State, path: Path) => void;
 
 export type Config<Path, State, Data = State> = {
@@ -14,7 +14,7 @@ export type Config<Path, State, Data = State> = {
   key?: string;
   /**
    * Set the value in the storage.
-   * 
+   *
    * @default (value: State, path: Path) => JSON.stringify(value)
    *
    * @param value The value from the portal.
@@ -24,7 +24,7 @@ export type Config<Path, State, Data = State> = {
   set?: (value: State, path: Path) => string;
   /**
    * Get the value from the storage.
-   * 
+   *
    * @default (value: string, path: Path) => JSON.parse(value)
    *
    * @param value The value from the store.
@@ -34,7 +34,7 @@ export type Config<Path, State, Data = State> = {
   get?: (value: string, path: Path) => State;
   /**
    * Select the required data from the state.
-   * 
+   *
    * @default (value: State) => Data
    *
    * @param value The state value.
@@ -58,16 +58,20 @@ export type PortalOptions<Path, State, Data = State> = {
   override?: boolean;
 
   /**
+   * The initial value of the portal.
+   */
+  state?: State;
+
+  /**
    * Callback to run after the state is updated.
    */
   set?: SetStore<Path, State>;
 
   /**
    * Method to get the initial value.
-   * 
-   * @description 
-   * - If the value is a function, it will be called within a useEffect hook.
-   * - Otherwise, it will be used as the initial value.
+   *
+   * @description
+   * - The value returned by this method will be used as the initial value.
    * - When the value is undefined, the initial value will be used.
    */
   get?: GetState<Path, State>;

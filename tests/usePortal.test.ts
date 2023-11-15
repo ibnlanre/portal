@@ -10,7 +10,7 @@ describe("usePortal", () => {
   it("should return the portal state", () => {
     const { result } = renderHook(() => {
       return usePortal(path, {
-        get: initialState,
+        state: initialState,
       });
     });
     const [state] = result.current;

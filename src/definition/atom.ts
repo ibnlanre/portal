@@ -86,7 +86,7 @@ export type Fields<State, Properties, Context> = {
    * @function
    * @param {State} value The new state value.
    */
-  dispatch: (value: State) => void;
+  update: (value: State) => void;
   /**
    * Sets the state with a new value, optionally transforming it using the provided function.
    *
