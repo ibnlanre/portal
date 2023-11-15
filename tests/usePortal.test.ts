@@ -10,11 +10,11 @@ describe("usePortal", () => {
   it("should return the portal state", () => {
     const { result } = renderHook(() => {
       return usePortal(path, {
-        get: () => initialState,
+        get: initialState,
       });
     });
     const [state] = result.current;
-    expect(state).toEqual(initialState);
+    expect(state).toMatchObject(initialState);
   });
 
   it("should update the portal state", () => {

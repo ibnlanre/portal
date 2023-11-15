@@ -10,49 +10,28 @@ import { AtomSubject } from "@/subject";
 import { isAtomStateFunction, isFunction } from "@/utilities";
 
 /**
- * Atom:
+ * @description Creates an Atom instance for managing and updating state.
  * ---
- * ---
- *
- * @description
- * Creates an Atom instance for managing and updating state.
- *
- * ---
- * Generics:
- * ---
- * ---
- *
  * @template State - The type of the state.
  * @template Data - The type of data returned by the `get` event.
  * @template Properties - The type of the properties associated with the Atom.
  * @template Context - The type of context associated with the Atom.
  * @template UseArgs - An array of argument types for the `use` event.
  * @template GetArgs - An array of argument types for the `get` event.
- *
  * ---
- * Parameters:
- * ---
- * ---
- *
  * @typedef {Object} AtomConfig
  * @param {AtomConfig} config - Configuration object for the Atom.
  * @param {State | ((properties: Properties) => State)} config.state - Initial state or a function to generate the initial state.
  * @param {Properties} [config.properties] - Properties object to be passed to events.
  * @param {Context} [config.context] - Record of mutable context on the atom instance.
  * @param {number} [config.delay] - Delay in milliseconds to wait before executing the `use` function.
- * @param {Object} [config.events] - events object containing functions to interact with the Atom.
- *
  * ---
- *
+ * @typedef {Object} AtomEvents
+ * @param {AtomEvents} [config.events] - events object containing functions to interact with the Atom.
  * @param {(params: Setter<State, Properties, Context>) => State} [config.events.set] - Function to set the Atom's state.
  * @param {(params: Getter<State, Properties, Context>) => Data} [config.events.get] - Function to get data from the Atom's state.
  * @param {(fields: Fields<State, Properties, Context>, ...useArgs: UseArgs) => Collector} [config.events.use] - Function to perform asynchronous events.
- *
  * ---
- * Returns:
- * ---
- * ---
- *
  * @typedef {Object} Atom
  * @returns {Atom<State, Data, Properties, Context, UseArgs, GetArgs>} An object containing Atom context and functions.
  */

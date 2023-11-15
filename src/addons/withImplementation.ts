@@ -6,6 +6,7 @@ import type {
   Subscription,
   UsePortalImplementation,
 } from "@/definition";
+import { isFunction } from "@/utilities";
 
 /**
  * Internal function to handle state and subscriptions for the `usePortal` hook.
@@ -20,30 +21,51 @@ export function usePortalImplementation<Path extends string, State, Data>({
   initialState,
   options,
 }: UsePortalImplementation<Path, State, Data>): PortalState<State, Data> {
-  let override = false;
+  let overridePortalState = false;
   const {
     set,
     get,
     select = (value: State) => value as unknown as Data,
+    override = true,
   } = { ...options };
 
-  const [storedState] = useState(() => {
-    try {
-      if (typeof get !== "undefined") {
-        const storedValue = get?.(path);
-        if (storedValue) return (override = true), storedValue;
-      }
-    } catch (error) {
-      console.error("Error retrieving value from storage:", error);
+  const isGetterFunction = isFunction(get);
+
+  /**
+   * Retrieve the stored state from the specified storage or use the initial state if not found.
+   * @type {State}
+   */
+  const [storedState, setStoredState] = useState(() => {
+    if (typeof get !== "undefined" && !isGetterFunction) {
+      overridePortalState = override;
+      return get as State;
     }
     return initialState as State;
   });
+
+  useEffect(() => {
+    try {
+      if (isGetterFunction) {
+        const storedValue = get(path);
+        if (typeof storedValue !== "undefined") {
+          overridePortalState = override;
+          setStoredState(storedValue);
+        }
+      }
+    } catch (error) {
+      console.error("Error retrieving value:", error);
+    }
+  }, []);
 
   /**
    * Retrieve the portal entry associated with the specified key or create a new one if not found.
    * @type {PortalValue<State>}
    */
-  const { observable, storage } = portal.getItem(path, storedState, override);
+  const { observable, storage } = portal.getItem(
+    path,
+    storedState,
+    overridePortalState
+  );
 
   /**
    * Store the current value of the state.

@@ -19,6 +19,7 @@ describe("makeUsePortal", () => {
     act(() => {
       setCount(1);
     });
+
     const [newCount] = result.current;
     expect(newCount).toBe(1);
   });
@@ -34,6 +35,7 @@ describe("makeUsePortal", () => {
     act(() => {
       setName("Jane");
     });
+    
     const [newName] = result.current;
     expect(newName).toBe("Jane");
   });

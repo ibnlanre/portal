@@ -201,7 +201,7 @@ export type Getter<State, Properties, Context> = {
  * @template Properties The type of the properties associated with the Atom.
  * @template Context The type of context associated with the Atom.
  */
-export interface Events<
+export interface AtomEvents<
   State,
   Data,
   Properties,
@@ -253,7 +253,7 @@ export type AtomConfig<
   GetArgs extends ReadonlyArray<any> = []
 > = {
   state: AtomState<State, Properties>;
-  events?: Events<State, Data, Properties, Context, UseArgs, GetArgs>;
+  events?: AtomEvents<State, Data, Properties, Context, UseArgs, GetArgs>;
   properties?: Properties;
   context?: Context;
   delay?: number;
