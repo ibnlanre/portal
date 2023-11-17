@@ -8,13 +8,13 @@ import { usePortalImplementation } from "@/addons";
  * @template Path The path to the portal's state
  *
  * @param path The path of the portal's state
- * @param {PortalOptions<Path, State>} [options] The options of the portal's state
+ * @param {PortalOptions<State>} [options] The options of the portal's state
  *
  * @returns {PortalState<State>}
  */
 export function usePortal<State, Path extends string = string, Data = State>(
   path: Path,
-  options?: PortalOptions<Path, State, Data>
+  options?: PortalOptions<State, Data>
 ) {
   return usePortalImplementation<Path, State, Data>({
     path,

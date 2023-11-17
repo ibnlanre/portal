@@ -24,49 +24,6 @@ class Portal {
   }
 
   /**
-   * Creates a function to split the cookie value and options from a given `cookieEntry`.
-   *
-   * @param {string} path The path associated with the portal entry.
-   * @param {CookieEntry?} [initialState] The initial state containing the cookie value and options.
-   *
-   * @returns {[string | undefined, CookieOptions]} An array containing the cookie value and options.
-   * - The first element of the array is the cookie value (string) if available, otherwise `undefined`.
-   * - The second element is an object representing the cookie options (e.g., `expires`, `path`, `domain`, `secure`, etc.).
-   *   If no options are available, an empty object will be returned.
-   */
-  resolveCookieEntry = <Path extends string>(
-    path: Path,
-    initialState: string,
-    options?: CookieOptions
-  ) => {
-    const value = cookieStorage.getItem(path);
-    const observable = this.entries.get(path) as
-      | BehaviorSubject<CookieEntry>
-      | undefined;
-
-    const cookieOptions = {
-      value: initialState,
-      ...options,
-    };
-
-    const resolvedCookieValue = {
-      ...cookieOptions,
-      ...observable?.value,
-    };
-
-    if (value) {
-      return {
-        ...resolvedCookieValue,
-        // If the value is an empty string `""`, then it would be replaced
-        // by the inputted value, if any. Else, it replaces the given value.
-        value,
-      };
-    }
-
-    return resolvedCookieValue;
-  };
-
-  /**
    * Retrieves the item with the specified path from the portal storage.
    *
    * @description
@@ -85,39 +42,17 @@ class Portal {
   getItem = <State, Path extends string>(
     path: Path,
     initialState: State
-  ): PortalValue<Path, State> => {
+  ): PortalValue<State> => {
     if (this.portalMap.has(path)) {
-      return this.portalMap.get(path) as PortalValue<Path, State>;
+      return this.portalMap.get(path) as PortalValue<State>;
     }
 
     const subject = {
       observable: new BehaviorSubject(initialState),
-      storage: new Set<SetStore<Path, State>>(),
+      storage: new Set<SetStore<State>>(),
     };
     this.portalMap.set(path, subject);
     return subject;
-  };
-
-  /**
-   * Adds a new item to the internal map with the specified path and entry.
-   *
-   * @template State The type of the state.
-   * @template Path The type of the path.
-   *
-   * @param {any} path The path to add to the internal map.
-   * @param {PortalValue<Path, State>} entry The portal entry to be associated with the path.
-   *
-   * @returns {void}
-   */
-  addItem = <State, Path>(
-    path: Path,
-    entry: PortalValue<Path, State>
-  ): void => {
-    try {
-      this.portalMap.set(path, entry);
-    } catch (error) {
-      handleSSRError(error, `Error occurred while adding ${path}:`);
-    }
   };
 
   /**
@@ -131,8 +66,8 @@ class Portal {
    * @template State The type of the state.
    * @template Path The type of the path.
    *
-   * @param {any} path The path of the portal entry.
-   * @param {any} value The value to be set for the portal entry.
+   * @param {Path} path The path of the portal entry.
+   * @param {State} value The value to be set for the portal entry.
    *
    * @returns {void}
    */
@@ -145,7 +80,7 @@ class Portal {
         console.warn("The path:", path, "does not exist in portal entries");
         this.portalMap.set(path, {
           observable: new BehaviorSubject(value),
-          storage: new Set<SetStore<Path, State>>(),
+          storage: new Set<SetStore<State>>(),
         });
       }
     } catch (error) {

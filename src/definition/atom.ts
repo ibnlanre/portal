@@ -329,13 +329,18 @@ type SetAtom<State, Context> = {
 /**
  * Represents configuration options for the `useAtom` hook.
  *
- * @template Select The type of selected data associated with the Atom.
+ * @template State The type of the atom's state.
  * @template Data The type of data derived from the atom's state.
+ * @template Properties The type of properties used by the atom.
+ * @template Context The type of context associated with the Atom.
  * @template UseArgs The type of the atom's `use` function.
- *
- * @property {boolean} [enabled] A boolean indicating whether the hook is enabled.
+ * @template GetArgs The type of the atom's `get` function.
+ * @template Select The type of selected data associated with the Atom.
+ * 
+ * @property {Atom<State, Data, Properties, Context, UseArgs, GetArgs>} store The atom to use.
  * @property {(data: Data) => Select} [select] A function to select data from the atom's data.
- * @property {UseArgs} useArgs An array of arguments to pass to the atom's `use` function.
+ * @property {UseArgs} [useArgs] An array of arguments to pass to the atom's `use` function.
+ * @property {GetArgs} [getArgs] An array of arguments to pass to the atom's `get` function.
  */
 export type AtomOptions<
   State,
@@ -348,7 +353,6 @@ export type AtomOptions<
 > = {
   store: Atom<State, Data, Properties, Context, UseArgs, GetArgs>;
   select?: (data: Data) => Select;
-  enabled?: boolean;
   useArgs?: UseArgs;
   getArgs?: GetArgs;
 };

@@ -42,7 +42,6 @@ export function useAtom<
     select = (data: Data) => data as unknown as Select,
     getArgs = [] as unknown as GetArgs,
     useArgs = [] as unknown as UseArgs,
-    enabled = true,
   } = options;
   const { get, set, subscribe, provide, emit, delay } = store;
 
@@ -53,15 +52,7 @@ export function useAtom<
   const [ctx, setProps] = useState(store.ctx);
 
   // Effect to await changes and execute the `use` function.
-  useDebouncedShallowEffect(
-    () => {
-      if (!enabled) return;
-      return store.await(useArgs);
-    },
-    [enabled, ...useArgs],
-    delay
-  );
-
+  useDebouncedShallowEffect(() => store.await(useArgs), useArgs, delay);
   useEffect(() => {
     // Effect to subscribe to context changes.
     const provider = provide(setProps);

@@ -3,10 +3,10 @@ import type { SetStateAction, Dispatch } from "react";
 import type { BehaviorSubject } from "@/subject";
 import { CookieOptions } from "./cookie";
 
-export type GetState<Path, State> = (path: Path) => State;
-export type SetStore<Path, State> = (value: State, path: Path) => void;
+export type GetState<State> = (state: State) => State;
+export type SetStore<State> = (value: State) => void;
 
-export type Config<Path, State, Data = State> = {
+export type Config<State, Data = State> = {
   /**
    * The key to use in the storage.
    * @default path
@@ -15,23 +15,21 @@ export type Config<Path, State, Data = State> = {
   /**
    * Set the value in the storage.
    *
-   * @default (value: State, path: Path) => JSON.stringify(value)
+   * @default (value: State) => JSON.stringify(value)
    *
    * @param value The value from the portal.
-   * @param path The path to the value in the store.
    * @returns The value to be stored.
    */
-  set?: (value: State, path: Path) => string;
+  set?: (value: State) => string;
   /**
    * Get the value from the storage.
    *
-   * @default (value: string, path: Path) => JSON.parse(value)
+   * @default (value: string) => JSON.parse(value)
    *
-   * @param value The value from the store.
-   * @param path The path to the value in the store.
-   * @returns The initial value to portal.
+   * @param value The value from the portal.
+   * @returns The value to set the portal to.
    */
-  get?: (value: string, path: Path) => State;
+  get?: (value: string) => State;
   /**
    * Select the required data from the state.
    *
@@ -43,31 +41,17 @@ export type Config<Path, State, Data = State> = {
   select?: (value: State) => Data;
 };
 
-export interface CookieConfig<Path, State> extends Config<Path, State> {
+export interface CookieConfig<State> extends Config<State> {
   /**
    * The options for the cookie.
    */
   cookieOptions?: CookieOptions;
 }
 
-export type PortalOptions<Path, State, Data = State> = {
-  /**
-   * Trigger for the `get` method. 
-   * 
-   * @description
-   * When the value changes, the `get` method reruns.
-   */
-  key?: string | number | boolean | symbol | bigint | undefined | null;
-
-  /**
-   * Override the portal value with the value from the `get` method.
-   * @default true
-   */
-  override?: boolean;
-
+export type PortalOptions<State, Data = State> = {
   /**
    * The initial value of the portal.
-   * 
+   *
    * @description
    * If the `path` is defined within the portal, the state will be ignored.
    */
@@ -75,12 +59,12 @@ export type PortalOptions<Path, State, Data = State> = {
 
   /**
    * Callback to run after the state is initialized or updated.
-   * 
+   *
    * @summary
    * - when the state is initialized or updated.
    * - if the state is updated by the `get` method.
    */
-  set?: SetStore<Path, State>;
+  set?: SetStore<State>;
 
   /**
    * Method to get the initial value.
@@ -90,7 +74,7 @@ export type PortalOptions<Path, State, Data = State> = {
    * - If `override` is false, the value returned will not override the initial value.
    * - This method is only called once, except when the `key` changes.
    */
-  get?: GetState<Path, State>;
+  get?: GetState<State>;
 
   /**
    * Select the data from the state.
@@ -102,11 +86,11 @@ export type PortalOptions<Path, State, Data = State> = {
   select?: (value: State) => Data;
 };
 
-export type PortalValue<Path, State> = {
+export type PortalValue<State> = {
   /**
    * A set of middlewares to run when the state is updated.
    */
-  storage: Set<SetStore<Path, State>>;
+  storage: Set<SetStore<State>>;
 
   /**
    * The BehaviorSubject that contains the current value of the store.
@@ -121,7 +105,7 @@ export interface UsePortalImplementation<
 > {
   path: Path;
   initialState?: State;
-  options?: PortalOptions<Path, State, Data>;
+  options?: PortalOptions<State, Data>;
 }
 
 /**
@@ -129,7 +113,7 @@ export interface UsePortalImplementation<
  * @template S The type of the store value.
  * @template A The type of the action for the reducer.
  */
-export type PortalMap<State, Path> = Map<Path, PortalValue<Path, State>>;
+export type PortalMap<State, Path> = Map<Path, PortalValue<State>>;
 
 /**
  * Represents the result of the usePortal hook.
@@ -196,7 +180,7 @@ export interface UsePortal<Registry extends Record<string, any>> {
    */
   <Path extends Paths<Registry>, State extends GetValueByPath<Registry, Path>>(
     path: Path,
-    options?: PortalOptions<Path, State>
+    options?: PortalOptions<State>
   ): PortalState<State>;
   /**
    * Custom hook to access and manage state in the portal system with localStorage support.
@@ -212,7 +196,7 @@ export interface UsePortal<Registry extends Record<string, any>> {
     State extends GetValueByPath<Registry, Path>
   >(
     path: Path,
-    config?: Config<Path, State>
+    config?: Config<State>
   ): PortalState<State>;
   /**
    * Custom hook to access and manage state in the portal system with sessionStorage support.
@@ -228,7 +212,7 @@ export interface UsePortal<Registry extends Record<string, any>> {
     State extends GetValueByPath<Registry, Path>
   >(
     path: Path,
-    config?: Config<Path, State>
+    config?: Config<State>
   ): PortalState<State>;
 
   /**
@@ -248,6 +232,6 @@ export interface UsePortal<Registry extends Record<string, any>> {
     State extends GetValueByPath<Registry, Path>
   >(
     path: Path,
-    config?: CookieConfig<Path, State>
+    config?: CookieConfig<State>
   ): PortalState<State>;
 }

@@ -23,7 +23,7 @@ export function makeUsePortal<Registry extends Record<string, any>>(
     Path extends Paths<Registry>,
     State extends GetValueByPath<Registry, Path>,
     Data = State
-  >(path: Path, options?: PortalOptions<Path, State>) {
+  >(path: Path, options?: PortalOptions<State>) {
     const initialState = getValue(registry, path);
     return usePortalImplementation<Path, State, Data>({
       path,
@@ -36,7 +36,7 @@ export function makeUsePortal<Registry extends Record<string, any>>(
     Path extends Paths<Registry>,
     State extends GetValueByPath<Registry, Path>,
     Data = State
-  >(path: Path, config?: Config<Path, State>) {
+  >(path: Path, config?: Config<State>) {
     const {
       key = path,
       set = (value: State) => JSON.stringify(value),
@@ -44,12 +44,12 @@ export function makeUsePortal<Registry extends Record<string, any>>(
     } = { ...config };
 
     const options = {
-      set: (value: State, path: Path) => {
-        localStorage.setItem(key, set(value, path));
+      set: (value: State) => {
+        localStorage.setItem(key, set(value));
       },
-      get: (path: Path) => {
+      get: () => {
         const value = localStorage.getItem(key);
-        if (value) return get(value, path) as State;
+        if (value) return get(value) as State;
         return undefined as State;
       },
     };
@@ -66,7 +66,7 @@ export function makeUsePortal<Registry extends Record<string, any>>(
     Path extends Paths<Registry>,
     State extends GetValueByPath<Registry, Path>,
     Data = State
-  >(path: Path, config?: Config<Path, State>) {
+  >(path: Path, config?: Config<State>) {
     const {
       key = path,
       set = (value: State) => JSON.stringify(value),
@@ -74,12 +74,12 @@ export function makeUsePortal<Registry extends Record<string, any>>(
     } = { ...config };
 
     const options = {
-      set: (value: State, path: Path) => {
-        sessionStorage.setItem(key, set(value, path));
+      set: (value: State) => {
+        sessionStorage.setItem(key, set(value));
       },
-      get: (path: Path) => {
+      get: () => {
         const value = sessionStorage.getItem(key);
-        if (value) return get(value, path) as State;
+        if (value) return get(value) as State;
         return undefined as State;
       },
     };
@@ -96,7 +96,7 @@ export function makeUsePortal<Registry extends Record<string, any>>(
     Path extends Paths<Registry>,
     State extends GetValueByPath<Registry, Path>,
     Data = State
-  >(path: Path, config?: CookieConfig<Path, State>) {
+  >(path: Path, config?: CookieConfig<State>) {
     const {
       key = path,
       set = (value: State) => JSON.stringify(value),
@@ -105,12 +105,12 @@ export function makeUsePortal<Registry extends Record<string, any>>(
     } = { ...config };
 
     const options = {
-      set: (value: State, path: Path) => {
-        cookieStorage.setItem(key, set(value, path), cookieOptions);
+      set: (value: State) => {
+        cookieStorage.setItem(key, set(value), cookieOptions);
       },
-      get: (path: Path) => {
+      get: () => {
         const value = cookieStorage.getItem(key);
-        if (value) return get(value, path) as State;
+        if (value) return get(value) as State;
         return undefined as State;
       },
     };

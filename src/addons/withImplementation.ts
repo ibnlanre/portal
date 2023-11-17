@@ -25,8 +25,6 @@ export function usePortalImplementation<Path extends string, State, Data>({
     get,
     select = (value: State) => value as unknown as Data,
     state = initialState as State,
-    override = true,
-    key,
   } = { ...options };
 
   /**
@@ -39,59 +37,48 @@ export function usePortalImplementation<Path extends string, State, Data>({
    * Retrieve the portal entry associated with the specified key or create a new one if not found.
    * @type {PortalValue<State>}
    */
-  const { observable, storage } = portal.getItem(path, resolvedState);
+  const { observable } = portal.getItem(path, resolvedState);
 
   /**
    * Subscribe to state changes and update the component's state accordingly.
    */
   useEffect(() => {
+    let persistence: Subscription | undefined;
+
     /**
-     * Subscribe to state changes using the BehaviorSubject and update the component's state.
+     * Subscribe the component's state to the current value of the portal.
      * @type {Subscription}
      */
     const subscriber = observable.subscribe(setResolvedState);
 
     /**
+     * Get the stored value from the `get` method and update the portal's state.
+     */
+    const storedValue = get?.(observable.value);
+    if (typeof storedValue !== "undefined") {
+      observable.setter(storedValue);
+    }
+
+    /**
+     * Subscribe the `set` method to the current value of the portal.
+     */
+    if (typeof set !== "undefined") {
+      persistence = observable.subscribe(set);
+    }
+
+    /**
      * Unsubscribe from state changes when the component is unmounted.
      * @returns {void}
      */
-    return subscriber.unsubscribe;
+    return () => {
+      subscriber.unsubscribe();
+      persistence?.unsubscribe();
+    };
   }, [observable]);
-
-  /**
-   * Subscribe the specified storage to the current value of the state.
-   */
-  useEffect(() => {
-    if (typeof set !== "undefined") {
-      let persistence: Subscription;
-
-      if (!storage.has(set)) {
-        storage.add(set);
-        const observer = (value: State) => set(value, path);
-        persistence = observable.subscribe(observer);
-      } else return;
-
-      return () => {
-        persistence.unsubscribe();
-        storage.delete(set);
-      };
-    }
-
-    return () => void 0;
-  }, [storage.size]);
-
-  useEffect(() => {
-    const storedValue = get?.(path);
-    if (typeof storedValue !== "undefined") {
-      if (override) observable.setter(storedValue);
-    }
-  }, [key]);
-
-  const data = select(resolvedState);
 
   /**
    * Return an array containing the current state and the setter function for state updates.
    * @type {PortalState<S, A>}
    */
-  return [data, observable.setter];
+  return [select(observable.value), observable.setter];
 }
