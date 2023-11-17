@@ -102,21 +102,21 @@ This library exports the following APIs to enhance state management and facilita
     A good practice is to define the `get` function before the `set` function, because of type inference.
 
     ```typescript
-    // Although optional, to set the initial state
+    // Although optional, to set an initial state:
     const [state, setState] = usePortal("key", {
-      get: () => ["initial", "state"]
+      state: "initial state"
     })
 
     // The state can also be retrieved from a browser store
     const [token, setToken] = usePortal("token", {
-      // Get state from a persistent storage.
+      // Get initial state from a persistent storage.
       get: (path) => {
         const value = cookieStorage.getItem(path);
         if (value) return JSON.parse(value) as string
         return "";
       },
 
-      // The set callback is called when the state changes.
+      // The set method is called when the state changes.
       set: (value, path) => {
         const state = JSON.stringify(value);
         cookieStorage.setItem(path, state);
@@ -205,7 +205,7 @@ This library exports the following APIs to enhance state management and facilita
         properties: {
           getUrl: (user: string) => {
             return builders.use().socket.users(user);
-          }
+          },
         },
       });
 

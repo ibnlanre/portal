@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 
 import { portal } from "@/subject";
 import type {
@@ -20,13 +20,13 @@ export function usePortalImplementation<Path extends string, State, Data>({
   initialState,
   options,
 }: UsePortalImplementation<Path, State, Data>): PortalState<State, Data> {
-  let overridePortalState = false;
   const {
     set,
     get,
     select = (value: State) => value as unknown as Data,
     state = initialState as State,
     override = true,
+    key,
   } = { ...options };
 
   /**
@@ -35,29 +35,11 @@ export function usePortalImplementation<Path extends string, State, Data>({
    */
   const [resolvedState, setResolvedState] = useState(state);
 
-  useEffect(() => {
-    const storedValue = get?.(path);
-    if (typeof storedValue !== "undefined") {
-      overridePortalState = override;
-      setResolvedState(storedValue);
-    }
-  }, []);
-
   /**
    * Retrieve the portal entry associated with the specified key or create a new one if not found.
    * @type {PortalValue<State>}
    */
-  const { observable, storage } = portal.getItem(
-    path,
-    resolvedState,
-    overridePortalState
-  );
-
-  /**
-   * Store the current value of the state.
-   * @type {State}
-   */
-  const [value, setValue] = useState(observable.value);
+  const { observable, storage } = portal.getItem(path, resolvedState);
 
   /**
    * Subscribe to state changes and update the component's state accordingly.
@@ -67,7 +49,7 @@ export function usePortalImplementation<Path extends string, State, Data>({
      * Subscribe to state changes using the BehaviorSubject and update the component's state.
      * @type {Subscription}
      */
-    const subscriber = observable.subscribe(setValue);
+    const subscriber = observable.subscribe(setResolvedState);
 
     /**
      * Unsubscribe from state changes when the component is unmounted.
@@ -98,7 +80,14 @@ export function usePortalImplementation<Path extends string, State, Data>({
     return () => void 0;
   }, [storage.size]);
 
-  const data = select(value);
+  useEffect(() => {
+    const storedValue = get?.(path);
+    if (typeof storedValue !== "undefined") {
+      if (override) observable.setter(storedValue);
+    }
+  }, [key]);
+
+  const data = select(resolvedState);
 
   /**
    * Return an array containing the current state and the setter function for state updates.

@@ -84,10 +84,9 @@ class Portal {
    */
   getItem = <State, Path extends string>(
     path: Path,
-    initialState: State,
-    override: boolean = false
+    initialState: State
   ): PortalValue<Path, State> => {
-    if (!override && this.portalMap.has(path)) {
+    if (this.portalMap.has(path)) {
       return this.portalMap.get(path) as PortalValue<Path, State>;
     }
 
@@ -95,8 +94,7 @@ class Portal {
       observable: new BehaviorSubject(initialState),
       storage: new Set<SetStore<Path, State>>(),
     };
-
-    if (!this.portalMap.has(path)) this.portalMap.set(path, subject);
+    this.portalMap.set(path, subject);
     return subject;
   };
 

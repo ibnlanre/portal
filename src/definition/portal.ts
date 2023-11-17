@@ -52,6 +52,14 @@ export interface CookieConfig<Path, State> extends Config<Path, State> {
 
 export type PortalOptions<Path, State, Data = State> = {
   /**
+   * Trigger for the `get` method. 
+   * 
+   * @description
+   * When the value changes, the `get` method reruns.
+   */
+  key?: string | number | boolean | symbol | bigint | undefined | null;
+
+  /**
    * Override the portal value with the value from the `get` method.
    * @default true
    */
@@ -59,11 +67,18 @@ export type PortalOptions<Path, State, Data = State> = {
 
   /**
    * The initial value of the portal.
+   * 
+   * @description
+   * If the `path` is defined within the portal, the state will be ignored.
    */
   state?: State;
 
   /**
-   * Callback to run after the state is updated.
+   * Callback to run after the state is initialized or updated.
+   * 
+   * @summary
+   * - when the state is initialized or updated.
+   * - if the state is updated by the `get` method.
    */
   set?: SetStore<Path, State>;
 
@@ -71,8 +86,9 @@ export type PortalOptions<Path, State, Data = State> = {
    * Method to get the initial value.
    *
    * @description
-   * - The value returned by this method will be used as the initial value.
-   * - When the value is undefined, the initial value will be used.
+   * - When the `get` method is undefined, the initial value will be used.
+   * - If `override` is false, the value returned will not override the initial value.
+   * - This method is only called once, except when the `key` changes.
    */
   get?: GetState<Path, State>;
 
