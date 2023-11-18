@@ -37,7 +37,19 @@ export interface Collector<T = void | (() => void) | undefined> {
  * @template State The type of the state.
  * @template Context The type of context associated with the Atom.
  */
-export type Fields<State, Context> = {
+export type Fields<
+  State,
+  Context,
+  GetArgs extends ReadonlyArray<any>,
+  Data = State
+> = {
+  /**
+   * Gets the current state of the Atom instance.
+   *
+   * @function
+   * @returns {State} The current state.
+   */
+  value: State;
   /**
    * Gets the timeline of state changes.
    *
@@ -45,13 +57,6 @@ export type Fields<State, Context> = {
    * @returns {Array<State>} An array containing the timeline of state changes.
    */
   timeline: State[];
-  /**
-   * Gets the current value of the Atom instance.
-   *
-   * @function
-   * @returns {State} The current value.
-   */
-  value: State;
   /**
    * Retrieves the previous state in the timeline, if available.
    *
@@ -87,32 +92,12 @@ export type Fields<State, Context> = {
    */
   update: (value: State) => void;
   /**
-   * Sets the state with a new value, optionally transforming it using the provided function.
-   *
-   * @function
-   * @param {State} value The new state value.
-   */
-  set: (value: State) => void;
-  /**
    * Sets the context associated with the Atom.
    *
    * @param {Partial<Context> | ((curr: Context) => Context)} ctx The new context or a function to transform the existing context.
    * @returns {Context} The updated context.
    */
   emit: Emit<Context>;
-  /**
-   * Subscribes to changes in the Atom's value.
-   *
-   * @function
-   * @param {Function} observer The callback function to be called with the new value.
-   * @returns {Object} An object with an `unsubscribe` function to stop the subscription.
-   */
-  provide: (
-    observer: (value: Context) => any,
-    initialize?: boolean
-  ) => {
-    unsubscribe: () => void;
-  };
   /**
    * Gets the `context` associated with the Atom instance.
    *
@@ -121,17 +106,20 @@ export type Fields<State, Context> = {
    */
   ctx: Context;
   /**
-   * Redoes a previous state change.
+   * Sets the state with a new value, optionally transforming it using the provided function.
    *
    * @function
+   * @param {State} value The new state value.
    */
-  redo: () => void;
+  set: (value: State) => void;
   /**
-   * Undoes a previous state change.
+   * Retrieves the current state or optionally transforms it using the provided function.
    *
    * @function
+   * @param {State} value The current state value or a transformation function.
+   * @returns {Data} The transformed value, which could be of a different data type.
    */
-  undo: () => void;
+  get(value?: State, ...getArgs: GetArgs): Data;
   /**
    * Provides control over functions to execute on specific Atom events.
    *
@@ -145,9 +133,31 @@ export type Fields<State, Context> = {
    *
    * @param {"rerun" | "unmount"} bin The type of disposal ("rerun" or "unmount").
    */
-  dispose(bin: "rerun" | "unmount"): void;
+  dispose: (bin: "rerun" | "unmount") => void;
+  /**
+   * Redoes a previous state change.
+   *
+   * @function
+   */
+  redo: () => void;
+  /**
+   * Undoes a previous state change.
+   *
+   * @function
+   */
+  undo: () => void;
 };
 
+/**
+ * Represents a garbage collector for managing functions.
+ * 
+ * @description
+ * The `rerun` function adds a cleanup function to be executed when the Atom is updated.
+ * The `unmount` function adds a cleanup function to be executed when the Atom is unmounted.
+ * 
+ * @typedef {Function} () => void
+ * The cleanup function to be executed on unmount.
+ */
 type Garbage =
   | { rerun?: () => void; unmount?: () => void }
   | (() => void)
@@ -197,7 +207,10 @@ export interface AtomEvents<
 > {
   set?: (params: Setter<State, Context>) => State;
   get?: (params: Getter<State, Context>, ...getArgs: GetArgs) => Data;
-  use?: (fields: Fields<State, Context>, ...useArgs: UseArgs) => Garbage;
+  use?: (
+    fields: Fields<State, Context, GetArgs, Data>,
+    ...useArgs: UseArgs
+  ) => Garbage;
 }
 
 /**
@@ -233,73 +246,6 @@ export type AtomConfig<
 };
 
 /**
- * Represents an Atom in the portal system.
- * An Atom is a special type of portal entry that allows you to manage and update state.
- *
- * @template State The type of the state.
- * @template UseArgs An array of argument types for the `use` event.
- * @template Data The type of data returned by the `get` event.
- * @template Context The type of context associated with the Atom.
- */
-export interface Atom<
-  State,
-  Data,
-  Context,
-  UseArgs extends ReadonlyArray<any>,
-  GetArgs extends ReadonlyArray<any>
-> extends Fields<State, Context> {
-  /**
-   * Execute the `use` event with optional arguments.
-   *
-   * @function
-   * @param {...UseArgs} useArgs Optional arguments to pass to the `use` event.
-   * @returns {void}
-   */
-  use(...useArgs: UseArgs): void;
-  /**
-   * Retrieves the current state or optionally transforms it using the provided function.
-   *
-   * @function
-   * @param {State} value The current state value or a transformation function.
-   * @returns {Data} The transformed value, which could be of a different data type.
-   */
-  get(value?: State, ...getArgs: GetArgs): Data;
-  /**
-   * A set containing functions to execute when awaiting state changes.
-   * @type {Set<() => void>}
-   */
-  waitlist: Set<Atom<State, Data, Context, UseArgs, GetArgs>>;
-  /**
-   * A function to execute the awaited atom in the `waitlist`.
-   *
-   * @function
-   * @param {UseArgs} useArgs Optional arguments to pass to the `use` event.
-   * @returns {() => void} A function to cleanup the atom `use` event upon unmount.
-   */
-  await(useArgs: UseArgs): () => void;
-  /**
-   * The number of milliseconds to delay before updating the Atom's state.
-   */
-  delay: number;
-}
-
-/**
- * Represents a function to set state with context.
- *
- * @template State The type of the state.
- * @template Context The type of context associated with the Atom.
- */
-type SetAtom<State, Context> = {
-  (value: State | SetStateAction<State>): void;
-  update(value: State | SetStateAction<State>): void;
-  ctx: Context;
-  emit: Emit<Context>;
-  state: State;
-};
-
-type Variables<Args extends ReadonlyArray<any>> = { [K in Args[number]]: K };
-
-/**
  * Represents configuration options for the `useAtom` hook.
  *
  * @template State The type of the atom's state.
@@ -316,23 +262,54 @@ type Variables<Args extends ReadonlyArray<any>> = { [K in Args[number]]: K };
  */
 export type AtomOptions<
   State,
-  Data,
-  Context,
   UseArgs extends ReadonlyArray<any>,
   GetArgs extends ReadonlyArray<any>,
-  Select
+  Data = State,
+  Select = Data
 > = {
-  store: Atom<State, Data, Context, UseArgs, GetArgs>;
   select?: (data: Data) => Select;
   useArgs?: UseArgs;
   getArgs?: GetArgs;
 };
 
 /**
- * Represents the result of using an Atom.
+ * Represents an Atom in the portal system.
+ * An Atom is a special type of portal entry that allows you to manage and update state.
  *
- * @template Select The type of selected data associated with the Atom.
+ * @template State The type of the state.
+ * @template UseArgs An array of argument types for the `use` event.
+ * @template Data The type of data returned by the `get` event.
+ * @template Context The type of context associated with the Atom.
+ */
+export interface Atom<
+  State,
+  Context,
+  UseArgs extends ReadonlyArray<any>,
+  GetArgs extends ReadonlyArray<any>,
+  Data = State
+> extends Fields<State, Context, GetArgs, Data> {
+  /**
+   * Represents the result of using an Atom.
+   *
+   * @template Select The type of selected data associated with the Atom.
+   * @template State The type of the state.
+   * @template Context The type of context associated with the Atom.
+   */
+  use<Select = Data>(
+    options?: AtomOptions<State, UseArgs, GetArgs, Data, Select>
+  ): [Select, SetAtom<State, Context>];
+}
+
+/**
+ * Represents a function to set state with context.
+ *
  * @template State The type of the state.
  * @template Context The type of context associated with the Atom.
  */
-export type UseAtom<Select, State, Context> = [Select, SetAtom<State, Context>];
+export type SetAtom<State, Context> = {
+  (value: State | SetStateAction<State>): void;
+  update(value: State | SetStateAction<State>): void;
+  ctx: Context;
+  emit: Emit<Context>;
+  state: State;
+};
