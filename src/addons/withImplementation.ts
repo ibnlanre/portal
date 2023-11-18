@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 
 import { portal } from "@/subject";
 import type {
+  GetValueByPath,
+  Paths,
   PortalState,
   Subscription,
   UsePortalImplementation,
@@ -15,11 +17,19 @@ import type {
  *
  * @returns {PortalState<State>} An array containing the state and the setter function for state updates.
  */
-export function usePortalImplementation<Path extends string, State, Data>({
+export function usePortalImplementation<
+  Store extends Record<string, any>,
+  Path extends Paths<Store>,
+  State extends GetValueByPath<Store, Path>,
+  Data
+>({
   path,
   initialState,
   options,
-}: UsePortalImplementation<Path, State, Data>): PortalState<State, Data> {
+}: UsePortalImplementation<Store, Path, State, Data>): PortalState<
+  State,
+  Data
+> {
   const {
     set,
     get,

@@ -6,49 +6,12 @@ import { CookieOptions } from "./cookie";
 export type GetState<State> = (state: State) => State;
 export type SetStore<State> = (value: State) => void;
 
-export type Config<State, Data = State> = {
+export type PortalOptions<Store, State, Data = State> = {
   /**
-   * The key to use in the storage.
-   * @default path
+   * The store to use for the portal.
    */
-  key?: string;
-  /**
-   * Set the value in the storage.
-   *
-   * @default (value: State) => JSON.stringify(value)
-   *
-   * @param value The value from the portal.
-   * @returns The value to be stored.
-   */
-  set?: (value: State) => string;
-  /**
-   * Get the value from the storage.
-   *
-   * @default (value: string) => JSON.parse(value)
-   *
-   * @param value The value from the portal.
-   * @returns The value to set the portal to.
-   */
-  get?: (value: string) => State;
-  /**
-   * Select the required data from the state.
-   *
-   * @default (value: State) => Data
-   *
-   * @param value The state value.
-   * @returns The selected data.
-   */
-  select?: (value: State) => Data;
-};
+  store?: Store;
 
-export interface CookieConfig<State> extends Config<State> {
-  /**
-   * The options for the cookie.
-   */
-  cookieOptions?: CookieOptions;
-}
-
-export type PortalOptions<State, Data = State> = {
   /**
    * The initial value of the portal.
    *
@@ -56,6 +19,16 @@ export type PortalOptions<State, Data = State> = {
    * If the `path` is defined within the portal, the state will be ignored.
    */
   state?: State;
+
+  /**
+   * Select the required data from the state.
+   *
+   * @default (value: State) => Data
+   * @param value The state value.
+   *
+   * @returns The selected data.
+   */
+  select?: (value: State) => Data;
 
   /**
    * Callback to run after the state is initialized or updated.
@@ -75,16 +48,43 @@ export type PortalOptions<State, Data = State> = {
    * - This method is only called once, except when the `key` changes.
    */
   get?: GetState<State>;
+};
+
+export interface Config<Store, State, Data = State>
+  extends Omit<PortalOptions<Store, State, Data>, "set" | "get"> {
+  /**
+   * The key to use in the storage.
+   * @default path
+   */
+  key?: string;
 
   /**
-   * Select the data from the state.
+   * Set the value in the storage.
    *
-   * @default (value: State) => Data
-   * @param value The state value.
-   * @returns The selected data.
+   * @default (value: State) => JSON.stringify(value)
+   *
+   * @param value The value from the portal.
+   * @returns The value to be stored.
    */
-  select?: (value: State) => Data;
-};
+  set?: (value: State) => string;
+
+  /**
+   * Get the value from the storage.
+   *
+   * @default (value: string) => JSON.parse(value)
+   *
+   * @param value The value from the portal.
+   * @returns The value to set the portal to.
+   */
+  get?: (value: string) => State;
+}
+
+export interface CookieConfig<Store, State> extends Config<Store, State> {
+  /**
+   * The options for the cookie.
+   */
+  cookieOptions?: CookieOptions;
+}
 
 export type PortalValue<State> = {
   /**
@@ -99,13 +99,14 @@ export type PortalValue<State> = {
 };
 
 export interface UsePortalImplementation<
-  Path extends string,
-  State,
+  Store extends Record<string, any>,
+  Path extends Paths<Store>,
+  State extends GetValueByPath<Store, Path>,
   Data = State
 > {
   path: Path;
   initialState?: State;
-  options?: PortalOptions<State, Data>;
+  options?: PortalOptions<Store, State, Data>;
 }
 
 /**
@@ -166,9 +167,14 @@ export type GetValueByPath<
 
 /**
  * Represents the result of the makeUsePortal function.
- * @template Registry The type of the store.
+ * @template Store The type of the store.
  */
-export interface UsePortal<Registry extends Record<string, any>> {
+export interface UsePortal<
+  Store extends Record<string, any>,
+  Path extends Paths<Store>,
+  State extends GetValueByPath<Store, Path>,
+  Data = State
+> {
   /**
    * Custom hook to access and manage state in the portal system.
    *
@@ -178,10 +184,7 @@ export interface UsePortal<Registry extends Record<string, any>> {
    * @param {Path} path The path to the store value.
    * @returns {[State, Dispatch<SetStateAction<State>>]} A tuple containing the state and a function for updating the state.
    */
-  <Path extends Paths<Registry>, State extends GetValueByPath<Registry, Path>>(
-    path: Path,
-    options?: PortalOptions<State>
-  ): PortalState<State>;
+  (path: Path, options?: PortalOptions<Store, State>): PortalState<State>;
   /**
    * Custom hook to access and manage state in the portal system with localStorage support.
    *
@@ -191,13 +194,7 @@ export interface UsePortal<Registry extends Record<string, any>> {
    * @param {Path} path The path to the store value.
    * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
    */
-  local<
-    Path extends Paths<Registry>,
-    State extends GetValueByPath<Registry, Path>
-  >(
-    path: Path,
-    config?: Config<State>
-  ): PortalState<State>;
+  local(path: Path, config?: Config<Store, State>): PortalState<State>;
   /**
    * Custom hook to access and manage state in the portal system with sessionStorage support.
    *
@@ -207,13 +204,7 @@ export interface UsePortal<Registry extends Record<string, any>> {
    * @param {Path} path The path to the store value.
    * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
    */
-  session<
-    Path extends Paths<Registry>,
-    State extends GetValueByPath<Registry, Path>
-  >(
-    path: Path,
-    config?: Config<State>
-  ): PortalState<State>;
+  session(path: Path, config?: Config<Store, State>): PortalState<State>;
 
   /**
    * Custom hook to access and manage state in the portal system with cookie support.
@@ -227,11 +218,5 @@ export interface UsePortal<Registry extends Record<string, any>> {
    *
    * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
    */
-  cookie<
-    Path extends Paths<Registry>,
-    State extends GetValueByPath<Registry, Path>
-  >(
-    path: Path,
-    config?: CookieConfig<State>
-  ): PortalState<State>;
+  cookie(path: Path, config?: CookieConfig<Store, State>): PortalState<State>;
 }
