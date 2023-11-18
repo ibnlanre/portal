@@ -35,10 +35,9 @@ export interface Collector<T = void | (() => void) | undefined> {
  * An Atom is a special type of portal entry that allows you to manage and update state.
  *
  * @template State The type of the state.
- * @template Properties The type of the properties associated with the Atom.
  * @template Context The type of context associated with the Atom.
  */
-export type Fields<State, Properties, Context> = {
+export type Fields<State, Context> = {
   /**
    * Gets the timeline of state changes.
    *
@@ -114,19 +113,11 @@ export type Fields<State, Properties, Context> = {
   ) => {
     unsubscribe: () => void;
   };
-
-  /**
-   * Gets the properties associated with the Atom instance.
-   *
-   * @function
-   * @returns {Properties} The properties.
-   */
-  props: Properties;
   /**
    * Gets the `context` associated with the Atom instance.
    *
    * @function
-   * @returns {Properties} The `context`.
+   * @returns {Context} The `context`.
    */
   ctx: Context;
   /**
@@ -166,14 +157,12 @@ type Garbage =
  * Represents parameters used by the `set` method.
  *
  * @template State The type of the state.
- * @template Properties The type of the properties associated with the Atom.
  * @template Context The type of context associated with the Atom.
  */
-export type Setter<State, Properties, Context> = {
+export type Setter<State, Context> = {
   value: State;
   previous: State;
   ctx: Context;
-  props: Properties;
   emit: Emit<Context>;
 };
 
@@ -181,14 +170,12 @@ export type Setter<State, Properties, Context> = {
  * Defines the parameters used by the `get` method.
  *
  * @template State The type of the state.
- * @template Properties The type of the properties associated with the Atom.
  * @template Context The type of context associated with the Atom.
  */
-export type Getter<State, Properties, Context> = {
+export type Getter<State, Context> = {
   value: State;
   previous: State;
   ctx: Context;
-  props: Properties;
   emit: Emit<Context>;
 };
 
@@ -196,46 +183,36 @@ export type Getter<State, Properties, Context> = {
  * Represents events associated with an Atom.
  *
  * @template State The type of the state.
- * @template UseArgs An array of argument types for the `use` event.
- * @template Data The type of data returned by the `get` event.
- * @template Properties The type of the properties associated with the Atom.
  * @template Context The type of context associated with the Atom.
+ * @template Data The type of data returned by the `get` event.
+ * @template UseArgs An array of argument types for the `use` event.
+ * @template GetArgs An array of argument types for the `get` event.
  */
 export interface AtomEvents<
   State,
   Data,
-  Properties,
   Context,
   UseArgs extends ReadonlyArray<any>,
   GetArgs extends ReadonlyArray<any>
 > {
-  set?: (params: Setter<State, Properties, Context>) => State;
-  get?: (
-    params: Getter<State, Properties, Context>,
-    ...getArgs: GetArgs
-  ) => Data;
-  use?: (
-    fields: Fields<State, Properties, Context>,
-    ...useArgs: UseArgs
-  ) => Garbage;
+  set?: (params: Setter<State, Context>) => State;
+  get?: (params: Getter<State, Context>, ...getArgs: GetArgs) => Data;
+  use?: (fields: Fields<State, Context>, ...useArgs: UseArgs) => Garbage;
 }
 
 /**
  * Represents the state of an Atom.
  *
  * @template State The type of the state.
- * @template Properties The type of the properties associated with the Atom.
+ * @template Context The type of context associated with the Atom.
  */
-export type AtomState<State, Properties> =
-  | State
-  | ((props: Properties) => State);
+export type AtomState<State, Context> = State | ((context: Context) => State);
 
 /**
  * Configuration options for creating an Atom.
  *
  * @template State The type of the state.
  * @template Data The type of data returned by the `get` event.
- * @template Properties The type of the properties associated with the Atom.
  * @template Context The type of context associated with the Atom.
  * @template UseArgs An array of argument types for the `use` event.
  * @template GetArgs An array of argument types for the `get` event.
@@ -243,18 +220,14 @@ export type AtomState<State, Properties> =
 export type AtomConfig<
   State,
   Data = unknown,
-  Properties extends {
-    [key: string]: any;
-  } = {},
   Context extends {
     [key: string]: any;
   } = {},
   UseArgs extends ReadonlyArray<any> = [],
   GetArgs extends ReadonlyArray<any> = []
 > = {
-  state: AtomState<State, Properties>;
-  events?: AtomEvents<State, Data, Properties, Context, UseArgs, GetArgs>;
-  properties?: Properties;
+  state: AtomState<State, Context>;
+  events?: AtomEvents<State, Data, Context, UseArgs, GetArgs>;
   context?: Context;
   delay?: number;
 };
@@ -266,17 +239,15 @@ export type AtomConfig<
  * @template State The type of the state.
  * @template UseArgs An array of argument types for the `use` event.
  * @template Data The type of data returned by the `get` event.
- * @template Properties The type of the properties associated with the Atom.
  * @template Context The type of context associated with the Atom.
  */
 export interface Atom<
   State,
   Data,
-  Properties,
   Context,
   UseArgs extends ReadonlyArray<any>,
   GetArgs extends ReadonlyArray<any>
-> extends Fields<State, Properties, Context> {
+> extends Fields<State, Context> {
   /**
    * Execute the `use` event with optional arguments.
    *
@@ -297,7 +268,7 @@ export interface Atom<
    * A set containing functions to execute when awaiting state changes.
    * @type {Set<() => void>}
    */
-  waitlist: Set<Atom<State, Data, Properties, Context, UseArgs, GetArgs>>;
+  waitlist: Set<Atom<State, Data, Context, UseArgs, GetArgs>>;
   /**
    * A function to execute the awaited atom in the `waitlist`.
    *
@@ -326,18 +297,19 @@ type SetAtom<State, Context> = {
   state: State;
 };
 
+type Variables<Args extends ReadonlyArray<any>> = { [K in Args[number]]: K };
+
 /**
  * Represents configuration options for the `useAtom` hook.
  *
  * @template State The type of the atom's state.
  * @template Data The type of data derived from the atom's state.
- * @template Properties The type of properties used by the atom.
  * @template Context The type of context associated with the Atom.
- * @template UseArgs The type of the atom's `use` function.
+ * @template UseArgs The type of the atom's` function.
  * @template GetArgs The type of the atom's `get` function.
  * @template Select The type of selected data associated with the Atom.
- * 
- * @property {Atom<State, Data, Properties, Context, UseArgs, GetArgs>} store The atom to use.
+ *
+ * @property {Atom<State, Data, Context, UseArgs, GetArgs>} store The atom to use.
  * @property {(data: Data) => Select} [select] A function to select data from the atom's data.
  * @property {UseArgs} [useArgs] An array of arguments to pass to the atom's `use` function.
  * @property {GetArgs} [getArgs] An array of arguments to pass to the atom's `get` function.
@@ -345,13 +317,12 @@ type SetAtom<State, Context> = {
 export type AtomOptions<
   State,
   Data,
-  Properties,
   Context,
   UseArgs extends ReadonlyArray<any>,
   GetArgs extends ReadonlyArray<any>,
   Select
 > = {
-  store: Atom<State, Data, Properties, Context, UseArgs, GetArgs>;
+  store: Atom<State, Data, Context, UseArgs, GetArgs>;
   select?: (data: Data) => Select;
   useArgs?: UseArgs;
   getArgs?: GetArgs;

@@ -8,34 +8,24 @@ import type { AtomOptions, UseAtom } from "@/definition";
  *
  * @template State - The type of the atom's state.
  * @template Data - The type of data derived from the atom's state.
- * @template Properties - The type of properties used by the atom.
  * @template Context - The type of context associated with the Atom.
  * @template UseArgs - The type of the atom's `use` function.
  * @template GetArgs - The type of the atom's `get` function.
  * @template Select - The type of data to be selected from the atom's data.
  *
- * @param {AtomOptions<State, Data, Properties, Context, UseArgs, GetArgs, Select>} options - Configuration options.
+ * @param {AtomOptions<State, Data, Context, UseArgs, GetArgs, Select>} options - Configuration options.
  *
  * @returns {[Data, (value: State | SetStateAction<State>) => void]} - An array containing the atom's data and a function to set its state.
  */
 export function useAtom<
   State,
   Data,
-  Properties,
   Context,
   UseArgs extends ReadonlyArray<any>,
   GetArgs extends ReadonlyArray<any>,
   Select = Data
 >(
-  options: AtomOptions<
-    State,
-    Data,
-    Properties,
-    Context,
-    UseArgs,
-    GetArgs,
-    Select
-  >
+  options: AtomOptions<State, Data, Context, UseArgs, GetArgs, Select>
 ): UseAtom<Select, State, Context> {
   const {
     store,

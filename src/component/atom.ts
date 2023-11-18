@@ -14,58 +14,45 @@ import { isAtomStateFunction, isFunction } from "@/utilities";
  * ---
  * @template State - The type of the state.
  * @template Data - The type of data returned by the `get` event.
- * @template Properties - The type of the properties associated with the Atom.
  * @template Context - The type of context associated with the Atom.
  * @template UseArgs - An array of argument types for the `use` event.
  * @template GetArgs - An array of argument types for the `get` event.
  * ---
  * @typedef {Object} AtomConfig
  * @param {AtomConfig} config - Configuration object for the Atom.
- * @param {State | ((properties: Properties) => State)} config.state - Initial state or a function to generate the initial state.
- * @param {Properties} [config.properties] - Properties object to be passed to events.
+ * @param {State | ((context: Context) => State)} config.state - Initial state or a function to generate the initial state.
  * @param {Context} [config.context] - Record of mutable context on the atom instance.
  * @param {number} [config.delay] - Delay in milliseconds to wait before executing the `use` function.
  * ---
  * @typedef {Object} AtomEvents
  * @param {AtomEvents} [config.events] - events object containing functions to interact with the Atom.
- * @param {(params: Setter<State, Properties, Context>) => State} [config.events.set] - Function to set the Atom's state.
- * @param {(params: Getter<State, Properties, Context>) => Data} [config.events.get] - Function to get data from the Atom's state.
- * @param {(fields: Fields<State, Properties, Context>, ...useArgs: UseArgs) => Collector} [config.events.use] - Function to perform asynchronous events.
+ * @param {(params: Setter<State, Context>) => State} [config.events.set] - Function to set the Atom's state.
+ * @param {(params: Getter<State, Context>) => Data} [config.events.get] - Function to get data from the Atom's state.
+ * @param {(fields: Fields<State, Context>, ...useArgs: UseArgs) => Collector} [config.events.use] - Function to perform asynchronous events.
  * ---
  * @typedef {Object} Atom
- * @returns {Atom<State, Data, Properties, Context, UseArgs, GetArgs>} An object containing Atom context and functions.
+ * @returns {Atom<State, Data, Context, UseArgs, GetArgs>} An object containing Atom context and functions.
  */
 export function atom<
   State,
   Data = State,
-  Properties extends {
-    [key: string]: any;
-  } = {},
   Context extends {
     [key: string]: any;
   } = {},
   UseArgs extends ReadonlyArray<any> = [],
   GetArgs extends ReadonlyArray<any> = []
 >(
-  config: AtomConfig<State, Data, Properties, Context, UseArgs, GetArgs>
-): Atom<State, Data, Properties, Context, UseArgs, GetArgs> {
-  const {
-    state,
-    properties = {} as Properties,
-    context = {} as Context,
-    delay = 0,
-    events,
-  } = config;
+  config: AtomConfig<State, Data, Context, UseArgs, GetArgs>
+): Atom<State, Data, Context, UseArgs, GetArgs> {
+  const { state, context = {} as Context, delay = 0, events } = config;
   const { set, get, use } = { ...events };
 
-  const currentState = isAtomStateFunction(state) ? state(properties) : state;
+  const currentState = isAtomStateFunction(state) ? state(context) : state;
   const observable = new AtomSubject(currentState);
   const { forward, rewind, redo, undo, update } = observable;
 
   const contextual = new AtomSubject(context);
-  const waitlist = new Set<
-    Atom<State, Data, Properties, Context, UseArgs, GetArgs>
-  >();
+  const waitlist = new Set<Atom<State, Data, Context, UseArgs, GetArgs>>();
 
   const collector = {
     rerun: new Set<() => void>(),
@@ -115,7 +102,6 @@ export function atom<
    *
    * @typedef {Object} Fields
    * @property {State} value The current value of the Atom instance.
-   * @property {Properties} props The properties associated with the Atom instance.
    * @property {Context} ctx The context associated with the Atom instance.
    * @property {Function} set A function to set the value of the Atom instance with optional transformations.
    * @property {Function} forward A function to update the value of the Atom instance.
@@ -127,7 +113,7 @@ export function atom<
    * @property {Function} emit Sets the context of the Atom instance.
    * @property {Function} dispose Disposes of the functions in the collector.
    */
-  const fields: Fields<State, Properties, Context> = {
+  const fields: Fields<State, Context> = {
     get timeline() {
       return observable.timeline;
     },
@@ -142,18 +128,14 @@ export function atom<
     },
     subscribe: observable.subscribe,
     update,
-    get props() {
-      return properties;
-    },
     get ctx() {
       return contextual.value;
     },
     set: (value: State) => {
-      const params: Setter<State, Properties, Context> = {
+      const params: Setter<State, Context> = {
         value,
         previous: observable.value,
         ctx: contextual.value,
-        props: properties,
         emit,
       };
 
@@ -181,7 +163,7 @@ export function atom<
    * @property {Set<() => void>} waitlist - A set containing functions to execute when awaiting state changes.
    * @property {Function} await - A function to await state changes and execute associated functions.
    */
-  const atomInstance: Atom<State, Data, Properties, Context, UseArgs, GetArgs> =
+  const atomInstance: Atom<State, Data, Context, UseArgs, GetArgs> =
     {
       ...fields,
       use: (...useArgs: UseArgs) => {
@@ -193,11 +175,10 @@ export function atom<
         }
       },
       get: (value: State = observable.value, ...getArgs: GetArgs) => {
-        const params: Getter<State, Properties, Context> = {
+        const params: Getter<State, Context> = {
           value,
           previous: observable.value,
           ctx: contextual.value,
-          props: properties,
           emit,
         };
 
