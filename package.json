@@ -24,7 +24,7 @@
     "node": ">=14"
   },
   "scripts": {
-    "lint": "tsc --pretty --noEmit --project tsconfig-test.json",
+    "lint": "tsc --pretty --noEmit --project tsconfig.json",
     "test": "jest --config jest.config.ts",
     "vitest": "vitest",
     "esm-bundle": "tsup --config tsup.esm.ts",

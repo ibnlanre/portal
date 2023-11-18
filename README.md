@@ -29,22 +29,10 @@ This library exports the following APIs to enhance state management and facilita
             <td colspan="6">A <strong>utility</strong> for creating isolated states outside a component.</td>
         </tr>
         <tr>
-            <td colspan="">
-                <code>useAtom</code>
-            </td>
-            <td colspan="6">A <strong>hook</strong> to access and manage the state of an Atom.</td>
-        </tr>
-        <tr>
             <td colspan="2">
                 <code>usePortal</code>
             </td>
             <td colspan="5">Create a <strong>portal</strong> for accessing and updating states.</td>
-        </tr>
-        <tr>
-            <td colspan="2">
-                <code>makeUsePortal</code>
-            </td>
-            <td colspan="5">Create a <strong>typed portal</strong> for accessing and updating states.</td>
         </tr>
         <tr>
             <td></td>
@@ -89,57 +77,59 @@ This library exports the following APIs to enhance state management and facilita
     ```js
     import {
       atom,
-      useAtom,
       createBuilder,
       cookieStorage,
-      makeUsePortal,
       usePortal
     } from "@ibnlanre/portal";
     ```
 
-2. **To create a `portal` for managing state**
+2. **To create a `portal` for managing state:**
 
     A good practice is to define the `get` function before the `set` function, because of type inference.
 
     ```typescript
-    // Although optional, to set an initial state:
-    const [state, setState] = usePortal("key", {
+    // Setting an initial state is optional.
+    const [state, setState] = usePortal("path", {
       state: "initial state"
     })
 
-    // The state can also be retrieved from a browser store
+    // The state can also be retrieved from a browser store.
     const [token, setToken] = usePortal("token", {
+      // Fallback initial state
+      state: "",
+
       // Get initial state from a persistent storage.
-      get: (path) => {
-        const value = cookieStorage.getItem(path);
+      get: (state) => {
+        const value = cookieStorage.getItem("token");
         if (value) return JSON.parse(value) as string
-        return "";
+        return state;
       },
 
       // The set method is called when the state changes.
-      set: (value, path) => {
+      // As well as, upon instantiation.
+      set: (value) => {
         const state = JSON.stringify(value);
-        cookieStorage.setItem(path, state);
+        cookieStorage.setItem("token", state);
       },
     });
     ```
 
-3. **To create a typed `portal`, provide a marker to the `makeUsePortal` function and then a `path` to the generated `usePortal` hook.**
+3. **Create a typed `portal` with a defined store using `usePortal.make``.**
 
     ```js
     // Create a store for type safety
     const store = {
-      foo: {} as {
+      foo: {
         bar: {
           baz: "qux"
-        }
-      } & {
+        },
         rim: "raf"
       },
     };
 
-    // Create a portal using the store
-    const useStorePortal = makeUsePortal(store);
+    // Create the portal outside the React Component,
+    // so that it can be exported and used elsewhere.
+    export const useStorePortal = usePortal.make(store);
 
     // Manage and access the store value
     const [state, setState] = useStorePortal("foo");
@@ -174,7 +164,7 @@ This library exports the following APIs to enhance state management and facilita
       ```js
       // An atom state is isolated from the portal system and can be accessed
       // by explicitly exporting and importing the atom from where it was declared.
-      const [counter, setCounter] = useAtom({ store: counterAtom });
+      const [counter, setCounter] = counterAtom.use();
       ```
 
     - An advanced example would be:
@@ -193,8 +183,8 @@ This library exports the following APIs to enhance state management and facilita
         state: {} as UserData,
         events: {
           set: ({ value }) => decrypt(value),
-          use: ({ on, set, props }, user: string) => {
-            const { getUrl } = props;
+          use: ({ on, set, ctx }, user: string) => {
+            const { getUrl } = ctx;
             const ws = new WebSocket(getUrl(user));
             ws.onmessage = ((value) => set(JSON.parse(value.data)));
             on.rerun(() => {
@@ -202,15 +192,15 @@ This library exports the following APIs to enhance state management and facilita
             })
           },
         },
-        properties: {
+        context: {
           getUrl: (user: string) => {
             return builders.use().socket.users(user);
           },
         },
       });
 
-      const [messages, setMessages] = useAtom({ store: messagesAtom });
-      const [users, setUsers] = useAtom({ store: userAtom, useArgs: [messages.user] });
+      const [messages, setMessages] = messagesAtom.use();
+      const [users, setUsers] = userAtom.use({ useArgs: [messages.user] });
       ```
 
 6. **To create a `builder` pattern for property access.**
