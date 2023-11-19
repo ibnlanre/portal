@@ -152,33 +152,44 @@ export function atom<
     return () => dispose("unmount");
   };
 
+  const setValueWithArgs = (value: State) => {
+    const params: Setter<State, Context> = {
+      value,
+      previous: observable.value,
+      ctx: signal.value,
+      emit,
+    };
+
+    // The set function allows optional transformations and returns the new state.
+    if (set) update(set(params));
+    else update(value);
+  };
+
   /**
    * Represents the core fields and context of an Atom instance.
    *
    * @typedef {Object} Fields
-   * 
+   *
    * @property {State} value The current state of the Atom instance.
    * @property {Array<State>} timeline An array containing the timeline of state changes.
-   * 
+   *
    * @property {Function} rewind A function to access the previous value of the Atom.
    * @property {Function} forward A function to update the value of the Atom instance.
-   * 
+   *
+   * @property {Function} set A function to set the value of the Atom instance with optional transformations.
    * @property {Function} subscribe A function to subscribe to changes in the Atom's value.
    * @property {Function} update A function to update the value of the Atom instance.
-   * 
+   *
    * @property {Function} emit Sets the context of the Atom instance.
    * @property {Context} ctx The context associated with the Atom instance.
-   * 
-   * @property {Function} set A function to set the value of the Atom instance with optional transformations.
-   * @property {Function} get A function to get the value of the Atom instance.
-   * 
+   *
    * @property {Function} on Provides control over functions to execute on specific Atom events.
    * @property {Function} dispose Disposes of the functions in the collector.
-   * 
+   *
    * @property {Function} redo A function to redo a previous state change.
    * @property {Function} undo A function to undo a previous state change.
    */
-  const fields: Fields<State, Context, GetArgs, Data> = {
+  const fields: Fields<State, Context> = {
     get value() {
       return observable.value;
     },
@@ -191,35 +202,12 @@ export function atom<
     get forward() {
       return forward();
     },
+    set: setValueWithArgs,
     subscribe: observable.subscribe,
     update,
     emit,
     get ctx() {
       return signal.value;
-    },
-    set: (value: State) => {
-      const params: Setter<State, Context> = {
-        value,
-        previous: observable.value,
-        ctx: signal.value,
-        emit,
-      };
-
-      // The set function allows optional transformations and returns the new state.
-      if (set) update(set(params));
-      else update(value);
-    },
-    get: (value: State = observable.value, ...getArgs: GetArgs) => {
-      const params: Getter<State, Context> = {
-        value,
-        previous: observable.value,
-        ctx: signal.value,
-        emit,
-      };
-
-      // The get function allows optional transformations and returns the transformed value.
-      if (get) return get(params, ...getArgs);
-      else return value as unknown as Data;
     },
     on,
     dispose,
@@ -243,24 +231,45 @@ export function atom<
     }
   };
 
+  const getValueWithArgs = (
+    value: State = observable.value,
+    ...getArgs: GetArgs
+  ) => {
+    const params: Getter<State, Context> = {
+      value,
+      previous: observable.value,
+      ctx: signal.value,
+      emit,
+    };
+
+    // The get function allows optional transformations and returns the transformed value.
+    if (get) return get(params, ...getArgs);
+    else return value as unknown as Data;
+  };
+
   const useAtom = <Select = Data>(
     options?: AtomOptions<State, UseArgs, GetArgs, Data, Select>
   ): [Select, SetAtom<State, Context>] => {
+    const { set, subscribe, emit } = fields;
     const {
       select = (data: Data) => data as unknown as Select,
       getArgs = [] as unknown as GetArgs,
       useArgs = [] as unknown as UseArgs,
+      enabled = true,
     } = { ...options };
-    const { get, set, subscribe, emit } = fields;
 
     // Add this store to the queue for future updates.
     queue.add(executeAtomUse);
 
     const [state, setState] = useState(fields.value);
     const [ctx, setProps] = useState(fields.ctx);
+    const effect = () => {
+      if (!enabled) return;
+      return executeQueue(useArgs);
+    };
 
     // Effect to await changes and execute the `use` function.
-    useDebouncedShallowEffect(() => executeQueue(useArgs), useArgs, delay);
+    useDebouncedShallowEffect(effect, [enabled, ...useArgs], delay);
 
     useEffect(() => {
       // Effect to subscribe to context changes.
@@ -275,30 +284,32 @@ export function atom<
       };
     }, []);
 
-    const transform = get(state, ...getArgs);
+    const transform = getValueWithArgs(state, ...getArgs);
     const atom = select(transform);
 
     // Function to set the atom's state.
-    const setAtom = (value: State | SetStateAction<State>) => {
+    const dispatch = (value: State | SetStateAction<State>) => {
       set(getComputedState(value, state));
     };
 
-    setAtom.update = setAtom;
-    setAtom.state = state;
-    setAtom.emit = emit;
-    setAtom.ctx = ctx;
+    dispatch.set = dispatch;
+    dispatch.state = state;
+    dispatch.emit = emit;
+    dispatch.ctx = ctx;
 
-    return [atom, setAtom];
+    return [atom, dispatch];
   };
 
   /**
    * Represents the context and functions associated with an Atom instance.
    *
    * @typedef {Object} AtomInstance
+   * @property {Function} get - A function to get the Atom's state.
    * @property {Function} use - A hook to use the Atom instance.
    */
   return {
     ...fields,
+    get: getValueWithArgs,
     use: useAtom,
   };
 }

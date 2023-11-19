@@ -37,12 +37,7 @@ export interface Collector<T = void | (() => void) | undefined> {
  * @template State The type of the state.
  * @template Context The type of context associated with the Atom.
  */
-export type Fields<
-  State,
-  Context,
-  GetArgs extends ReadonlyArray<any>,
-  Data = State
-> = {
+export type Fields<State, Context> = {
   /**
    * Gets the current state of the Atom instance.
    *
@@ -71,6 +66,13 @@ export type Fields<
    * @returns {State | undefined} The next state in the timeline, or undefined if not available.
    */
   forward: State | undefined;
+  /**
+   * Sets the state with a new value, optionally transforming it using the provided function.
+   *
+   * @function
+   * @param {State} value The new state value.
+   */
+  set: (value: State) => void;
   /**
    * Subscribes to changes in the Atom's value.
    *
@@ -106,21 +108,6 @@ export type Fields<
    */
   ctx: Context;
   /**
-   * Sets the state with a new value, optionally transforming it using the provided function.
-   *
-   * @function
-   * @param {State} value The new state value.
-   */
-  set: (value: State) => void;
-  /**
-   * Retrieves the current state or optionally transforms it using the provided function.
-   *
-   * @function
-   * @param {State} value The current state value or a transformation function.
-   * @returns {Data} The transformed value, which could be of a different data type.
-   */
-  get(value?: State, ...getArgs: GetArgs): Data;
-  /**
    * Provides control over functions to execute on specific Atom events.
    *
    * @typedef {Object} Collector
@@ -150,11 +137,11 @@ export type Fields<
 
 /**
  * Represents a garbage collector for managing functions.
- * 
+ *
  * @description
  * The `rerun` function adds a cleanup function to be executed when the Atom is updated.
  * The `unmount` function adds a cleanup function to be executed when the Atom is unmounted.
- * 
+ *
  * @typedef {Function} () => void
  * The cleanup function to be executed on unmount.
  */
@@ -207,10 +194,7 @@ export interface AtomEvents<
 > {
   set?: (params: Setter<State, Context>) => State;
   get?: (params: Getter<State, Context>, ...getArgs: GetArgs) => Data;
-  use?: (
-    fields: Fields<State, Context, GetArgs, Data>,
-    ...useArgs: UseArgs
-  ) => Garbage;
+  use?: (fields: Fields<State, Context>, ...useArgs: UseArgs) => Garbage;
 }
 
 /**
@@ -232,7 +216,7 @@ export type AtomState<State, Context> = State | ((context: Context) => State);
  */
 export type AtomConfig<
   State,
-  Data = unknown,
+  Data = State,
   Context extends {
     [key: string]: any;
   } = {},
@@ -246,7 +230,7 @@ export type AtomConfig<
 };
 
 /**
- * Represents configuration options for the `useAtom` hook.
+ * Represents configuration options for an Atom.
  *
  * @template State The type of the atom's state.
  * @template Data The type of data derived from the atom's state.
@@ -255,7 +239,7 @@ export type AtomConfig<
  * @template GetArgs The type of the atom's `get` function.
  * @template Select The type of selected data associated with the Atom.
  *
- * @property {Atom<State, Data, Context, UseArgs, GetArgs>} store The atom to use.
+ * @property {boolean} [enabled] A boolean indicating whether the `use` function should be executed.
  * @property {(data: Data) => Select} [select] A function to select data from the atom's data.
  * @property {UseArgs} [useArgs] An array of arguments to pass to the atom's `use` function.
  * @property {GetArgs} [getArgs] An array of arguments to pass to the atom's `get` function.
@@ -267,6 +251,7 @@ export type AtomOptions<
   Data = State,
   Select = Data
 > = {
+  enabled?: boolean;
   select?: (data: Data) => Select;
   useArgs?: UseArgs;
   getArgs?: GetArgs;
@@ -287,7 +272,15 @@ export interface Atom<
   UseArgs extends ReadonlyArray<any>,
   GetArgs extends ReadonlyArray<any>,
   Data = State
-> extends Fields<State, Context, GetArgs, Data> {
+> extends Fields<State, Context> {
+  /**
+   * Retrieves the current state or optionally transforms it using the provided function.
+   *
+   * @function
+   * @param {State} value The current state value or a transformation function.
+   * @returns {Data} The transformed value, which could be of a different data type.
+   */
+  get(value?: State, ...getArgs: GetArgs): Data;
   /**
    * Represents the result of using an Atom.
    *
@@ -308,8 +301,8 @@ export interface Atom<
  */
 export type SetAtom<State, Context> = {
   (value: State | SetStateAction<State>): void;
-  update(value: State | SetStateAction<State>): void;
-  ctx: Context;
-  emit: Emit<Context>;
+  set(value: State | SetStateAction<State>): void;
   state: State;
+  emit: Emit<Context>;
+  ctx: Context;
 };

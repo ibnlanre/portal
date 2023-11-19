@@ -169,12 +169,7 @@ export type GetValueByPath<
  * Represents the result of the makeUsePortal function.
  * @template Store The type of the store.
  */
-export interface UsePortal<
-  Store extends Record<string, any>,
-  Path extends Paths<Store>,
-  State extends GetValueByPath<Store, Path>,
-  Data = State
-> {
+export interface UsePortal<Store extends Record<string, any>> {
   /**
    * Custom hook to access and manage state in the portal system.
    *
@@ -184,7 +179,10 @@ export interface UsePortal<
    * @param {Path} path The path to the store value.
    * @returns {[State, Dispatch<SetStateAction<State>>]} A tuple containing the state and a function for updating the state.
    */
-  (path: Path, options?: PortalOptions<Store, State>): PortalState<State>;
+  <Path extends Paths<Store>, State extends GetValueByPath<Store, Path>>(
+    path: Path,
+    options?: PortalOptions<Store, State>
+  ): PortalState<State>;
   /**
    * Custom hook to access and manage state in the portal system with localStorage support.
    *
@@ -194,7 +192,10 @@ export interface UsePortal<
    * @param {Path} path The path to the store value.
    * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
    */
-  local(path: Path, config?: Config<Store, State>): PortalState<State>;
+  local<Path extends Paths<Store>, State extends GetValueByPath<Store, Path>>(
+    path: Path,
+    config?: Config<Store, State>
+  ): PortalState<State>;
   /**
    * Custom hook to access and manage state in the portal system with sessionStorage support.
    *
@@ -204,7 +205,10 @@ export interface UsePortal<
    * @param {Path} path The path to the store value.
    * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
    */
-  session(path: Path, config?: Config<Store, State>): PortalState<State>;
+  session<Path extends Paths<Store>, State extends GetValueByPath<Store, Path>>(
+    path: Path,
+    config?: Config<Store, State>
+  ): PortalState<State>;
 
   /**
    * Custom hook to access and manage state in the portal system with cookie support.
@@ -218,5 +222,8 @@ export interface UsePortal<
    *
    * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
    */
-  cookie(path: Path, config?: CookieConfig<Store, State>): PortalState<State>;
+  cookie<Path extends Paths<Store>, State extends GetValueByPath<Store, Path>>(
+    path: Path,
+    config?: CookieConfig<Store, State>
+  ): PortalState<State>;
 }

@@ -147,16 +147,13 @@ function useCookie<
  * @param {Store} store The object that represents the store.
  * @returns A function that takes a path and returns a hook for accessing the store value at that path.
  */
-function makePortal<
-  Store extends Record<string, any>,
-  Path extends Paths<Store>,
-  State extends GetValueByPath<Store, Path>,
-  Data = State
->(store: Store): UsePortal<Store, Path, State, Data> {
-  function usePortalWithStore(
-    path: Path,
-    options?: PortalOptions<Store, State>
-  ) {
+function makePortal<Store extends Record<string, any>>(
+  store: Store
+): UsePortal<Store> {
+  function usePortalWithStore<
+    Path extends Paths<Store>,
+    State extends GetValueByPath<Store, Path>
+  >(path: Path, options?: PortalOptions<Store, State>) {
     const updatedOptions = {
       ...options,
       store,
@@ -165,10 +162,10 @@ function makePortal<
     return usePortal(path, updatedOptions);
   }
 
-  usePortalWithStore.local = function useLocalWithStore(
-    path: Path,
-    config?: Config<Store, State>
-  ) {
+  usePortalWithStore.local = function useLocalWithStoree<
+    Path extends Paths<Store>,
+    State extends GetValueByPath<Store, Path>
+  >(path: Path, config?: Config<Store, State>) {
     const updatedConfig = {
       ...config,
       store,
@@ -177,10 +174,10 @@ function makePortal<
     return useLocal(path, updatedConfig);
   };
 
-  usePortalWithStore.session = function useSessionWithStore(
-    path: Path,
-    config?: Config<Store, State>
-  ) {
+  usePortalWithStore.session = function useSessionWithStoree<
+    Path extends Paths<Store>,
+    State extends GetValueByPath<Store, Path>
+  >(path: Path, config?: Config<Store, State>) {
     const updatedConfig = {
       ...config,
       store,
@@ -189,10 +186,10 @@ function makePortal<
     return useSession(path, updatedConfig);
   };
 
-  usePortalWithStore.cookie = function useCookieWithStore(
-    path: Path,
-    config?: CookieConfig<Store, State>
-  ) {
+  usePortalWithStore.cookie = function useCookieWithStoree<
+    Path extends Paths<Store>,
+    State extends GetValueByPath<Store, Path>
+  >(path: Path, config?: CookieConfig<Store, State>) {
     const updatedConfig = {
       ...config,
       store,
