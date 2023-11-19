@@ -5,8 +5,7 @@ import {
   AtomConfig,
   Fields,
   Collector,
-  Setter,
-  Getter,
+  Params,
   AtomOptions,
   SetAtom,
 } from "@/definition";
@@ -61,7 +60,7 @@ export function atom<
   const observable = new AtomSubject(initialState);
   const signal = new AtomSubject(context);
 
-  const { forward, rewind, redo, undo, update } = observable;
+  const { forward, rewind, redo, undo, update, timeline } = observable;
 
   /**
    * A set containing functions to execute when awaiting state changes.
@@ -146,14 +145,17 @@ export function atom<
    * @returns {() => void} A function to cleanup the atom `use` event upon unmount.
    */
   const executeQueue = (useArgs: UseArgs) => {
-    queue.forEach((fn) => fn(...useArgs));
-    queue.clear();
-    dispose("rerun");
+    const handleUse = Array.from(queue).pop();
+    if (handleUse) {
+      dispose("rerun");
+      handleUse(...useArgs);
+      queue.clear();
+    }
     return () => dispose("unmount");
   };
 
   const setValueWithArgs = (value: State) => {
-    const params: Setter<State, Context> = {
+    const params: Params<State, Context> = {
       value,
       previous: observable.value,
       ctx: signal.value,
@@ -171,10 +173,7 @@ export function atom<
    * @typedef {Object} Fields
    *
    * @property {State} value The current state of the Atom instance.
-   * @property {Array<State>} timeline An array containing the timeline of state changes.
-   *
-   * @property {Function} rewind A function to access the previous value of the Atom.
-   * @property {Function} forward A function to update the value of the Atom instance.
+   * @property {TimeTravel<State>} travel An object containing functions to travel through the Atom's timeline.
    *
    * @property {Function} set A function to set the value of the Atom instance with optional transformations.
    * @property {Function} subscribe A function to subscribe to changes in the Atom's value.
@@ -183,36 +182,29 @@ export function atom<
    * @property {Function} emit Sets the context of the Atom instance.
    * @property {Context} ctx The context associated with the Atom instance.
    *
-   * @property {Function} on Provides control over functions to execute on specific Atom events.
    * @property {Function} dispose Disposes of the functions in the collector.
-   *
-   * @property {Function} redo A function to redo a previous state change.
-   * @property {Function} undo A function to undo a previous state change.
+   * @property {Function} on Provides control over functions to execute on specific Atom events.
    */
   const fields: Fields<State, Context> = {
-    get value() {
-      return observable.value;
-    },
-    get timeline() {
-      return observable.timeline;
-    },
-    get rewind() {
-      return rewind();
-    },
-    get forward() {
-      return forward();
+    value: observable.value,
+    travel: {
+      timeline,
+      get forward() {
+        return forward();
+      },
+      get rewind() {
+        return rewind();
+      },
+      redo,
+      undo,
     },
     set: setValueWithArgs,
     subscribe: observable.subscribe,
     update,
     emit,
-    get ctx() {
-      return signal.value;
-    },
-    on,
+    ctx: signal.value,
     dispose,
-    redo,
-    undo,
+    on,
   };
 
   /**
@@ -235,7 +227,7 @@ export function atom<
     value: State = observable.value,
     ...getArgs: GetArgs
   ) => {
-    const params: Getter<State, Context> = {
+    const params: Params<State, Context> = {
       value,
       previous: observable.value,
       ctx: signal.value,

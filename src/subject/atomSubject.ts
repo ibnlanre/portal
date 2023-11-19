@@ -8,13 +8,14 @@ export class AtomSubject<State> {
   private state: State;
   private history: State[] = [];
   private subscribers: Set<Function>;
-  private currentIndex: number;
+  private currentIndex: number = 0;
+  private debug: boolean = false;
 
   /**
    * Creates a new instance of AtomSubject.
    * @param {State} initialValue The initial value of the subject.
    */
-  constructor(initialValue: State) {
+  constructor(initialValue: State, debug: boolean = false) {
     /**
      * The current value of the subject.
      * @type {State}
@@ -25,8 +26,20 @@ export class AtomSubject<State> {
      * @type {Set<Function>}
      */
     this.subscribers = new Set();
-    this.currentIndex = 0;
-    this.history.push(initialValue);
+
+    if (debug) {
+      /**
+       * Whether to log the state history for debugging.
+       * @type {boolean}
+       */
+      this.debug = debug;
+
+      /**
+       * The history of state values for time-travel.
+       * @type {State[]}
+       */
+      if (debug) this.history.push(initialValue);
+    }
   }
 
   /**
@@ -41,6 +54,7 @@ export class AtomSubject<State> {
    * @returns {boolean} `true` if an undo operation can be performed, `false` otherwise.
    */
   get canUndo(): boolean {
+    if (!this.debug) return false;
     return this.currentIndex > 0;
   }
 
@@ -49,6 +63,7 @@ export class AtomSubject<State> {
    * @returns {boolean} `true` if a redo operation can be performed, `false` otherwise.
    */
   get canRedo(): boolean {
+    if (!this.debug) return false;
     return this.currentIndex < this.history.length - 1;
   }
 
@@ -67,15 +82,17 @@ export class AtomSubject<State> {
       // Update the current state with the new value
       this.state = value;
 
-      // Keep a history of state values for time-travel
-      // Splice any future history beyond the current index
-      this.history.splice(this.currentIndex + 1);
+      if (this.debug) {
+        // Keep a history of state values for time-travel
+        // Splice any future history beyond the current index
+        this.history.splice(this.currentIndex + 1);
 
-      // Push the new state value into the history
-      this.history.push(value);
+        // Push the new state value into the history
+        this.history.push(value);
 
-      // Update the current index to point to the newly added state value
-      this.currentIndex = this.history.length - 1;
+        // Update the current index to point to the newly added state value
+        this.currentIndex = this.history.length - 1;
+      }
 
       // Notify subscribers about the state change
       this.notifySubscribers();
@@ -89,6 +106,8 @@ export class AtomSubject<State> {
    * @returns {State | undefined} The next state, or undefined if there is no next state.
    */
   forward = (): State | undefined => {
+    if (!this.debug) return undefined;
+
     // Calculate the index of the next state
     const currentIndex = this.currentIndex + 1;
 
@@ -104,6 +123,8 @@ export class AtomSubject<State> {
    * @returns {State | undefined} The previous state, or undefined if there is no previous state.
    */
   rewind = (): State | undefined => {
+    if (!this.debug) return undefined;
+
     // Calculate the index of the previous state
     const currentIndex = this.currentIndex - 1;
 
