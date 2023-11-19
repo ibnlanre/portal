@@ -52,12 +52,18 @@ export function atom<
 >(
   config: AtomConfig<State, Data, Context, UseArgs, GetArgs>
 ): Atom<State, Context, UseArgs, GetArgs, Data> {
-  const { state, context = {} as Context, delay = 0, events } = config;
+  const {
+    state,
+    context = {} as Context,
+    debug = false,
+    delay = 0,
+    events,
+  } = config;
   const { set, get, use } = { ...events };
 
   const initialState = isAtomStateFunction(state) ? state(context) : state;
 
-  const observable = new AtomSubject(initialState);
+  const observable = new AtomSubject(initialState, debug);
   const signal = new AtomSubject(context);
 
   const { forward, rewind, redo, undo, update, timeline } = observable;
