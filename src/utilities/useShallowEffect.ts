@@ -71,7 +71,7 @@ function useShallowCompare(dependencies?: DependencyList): [number] {
  * Debounce an effect function.
  *
  * @param {EffectCallback} effect - The effect function to be debounced.
- * @param {number} delay - The delay in milliseconds to wait before invoking the effect.
+ * @param {number} delay - The debounce delay in milliseconds before invoking the effect.
  *
  * @returns {() => () => void} A function to trigger the debounced effect.
  */
@@ -100,7 +100,7 @@ const debounce = (effect: EffectCallback, delay: number): (() => void) => {
  *
  * @param {EffectCallback} effect - The effect function to be debounced.
  * @param {DependencyList} dependencies - The dependencies to compare shallowly.
- * @param {number} delay - The delay in milliseconds to wait before invoking the effect.
+ * @param {number} delay - The debounce delay in milliseconds to wait before invoking the effect.
  *
  * @returns {void}
  */

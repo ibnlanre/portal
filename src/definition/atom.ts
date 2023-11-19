@@ -245,7 +245,7 @@ export type AtomState<State, Context> = State | ((context: Context) => State);
  * @property {boolean} [debug] A boolean indicating whether to log the state history for debugging.
  * @property {AtomEvents<State, Data, Context, UseArgs, GetArgs>} [events] An object containing functions to interact with the Atom.
  * @property {Context} [context] Record of mutable context on the atom instance.
- * @property {number} [delay] Delay in milliseconds to wait before executing the `use` function.
+ * @property {number} [delay] Debounce delay in milliseconds before executing the `use` function.
  *
  */
 export type AtomConfig<

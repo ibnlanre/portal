@@ -30,7 +30,7 @@ import {
  * @param {AtomConfig} config - Configuration object for the Atom.
  * @param {State | ((context: Context) => State)} config.state - Initial state or a function to generate the initial state.
  * @param {Context} [config.context] - Record of mutable context on the atom instance.
- * @param {number} [config.delay] - Delay in milliseconds to wait before executing the `use` function.
+ * @param {number} [config.delay] - Debounce delay in milliseconds before executing the `use` function.
  * ---
  * @typedef {Object} AtomEvents
  * @param {AtomEvents} [config.events] - events object containing functions to interact with the Atom.
