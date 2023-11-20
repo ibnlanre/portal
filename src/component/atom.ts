@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { SetStateAction } from "react";
+import type { DependencyList, SetStateAction } from "react";
 
 import {
   Atom,
@@ -71,9 +71,9 @@ export function atom<
 
   /**
    * A set containing functions to execute when awaiting state changes.
-   * @type {Set<() => void>}
+   * @type {WeeakMap<DependencyList, (...useArgs: UseArgs) => void>}
    */
-  const queue = new Set<(...useArgs: UseArgs) => void>();
+  const queue = new WeakMap<DependencyList, (...useArgs: UseArgs) => void>();
 
   const collector = {
     rerun: new Set<() => void>(),
@@ -152,8 +152,12 @@ export function atom<
    * @returns {() => void} A function to cleanup the atom `use` event upon unmount.
    */
   const executeQueue = (useArgs: UseArgs) => {
-    dispose("rerun");
-    queue.forEach((fn) => fn(...useArgs));
+    const handler = queue.get(useArgs);
+    if (handler) {
+      dispose("rerun");
+      handler(...useArgs);
+      queue.delete(useArgs);
+    }
   };
 
   const setValueWithArgs = (value: SetStateAction<State>) => {
@@ -260,7 +264,7 @@ export function atom<
     } = { ...options };
 
     // Add this store to the queue for future updates.
-    queue.add(useValueWithArgs);
+    queue.set(useArgs, useValueWithArgs);
 
     const [state, setState] = useState(fields.value);
     const [ctx, setProps] = useState(fields.ctx);
