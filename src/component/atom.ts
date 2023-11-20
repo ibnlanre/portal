@@ -152,12 +152,9 @@ export function atom<
    * @returns {() => void} A function to cleanup the atom `use` event upon unmount.
    */
   const executeQueue = (useArgs: UseArgs) => {
-    const handleUse = Array.from(queue).pop();
-    if (handleUse) {
-      dispose("rerun");
-      handleUse(...useArgs);
-      queue.clear();
-    }
+    dispose("rerun");
+    queue.forEach((fn) => fn(...useArgs));
+    queue.clear();
   };
 
   const setValueWithArgs = (value: SetStateAction<State>) => {
