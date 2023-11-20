@@ -9,6 +9,6 @@ import { SetStateAction } from "react";
  */
 export function isSetStateFunction<State>(
   value: SetStateAction<State>
-): value is (prev: State) => State {
+): value is (prevState: State) => State {
   return typeof value === "function";
 }

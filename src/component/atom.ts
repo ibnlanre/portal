@@ -1,4 +1,5 @@
-import { SetStateAction, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import type { SetStateAction } from "react";
 
 import {
   Atom,
@@ -66,7 +67,7 @@ export function atom<
   const observable = new AtomSubject(initialState, debug);
   const signal = new AtomSubject(context);
 
-  const { forward, rewind, redo, undo, update, timeline } = observable;
+  const { forward, rewind, redo, undo, update, subscribe } = observable;
 
   /**
    * A set containing functions to execute when awaiting state changes.
@@ -157,12 +158,12 @@ export function atom<
       handleUse(...useArgs);
       queue.clear();
     }
-    return () => dispose("unmount");
   };
 
-  const setValueWithArgs = (value: State) => {
+  const setValueWithArgs = (value: SetStateAction<State>) => {
+    const resolvedValue = getComputedState(value, observable.value);
     const params: Params<State, Context> = {
-      value,
+      value: resolvedValue,
       previous: observable.value,
       ctx: signal.value,
       emit,
@@ -170,7 +171,7 @@ export function atom<
 
     // The set function allows optional transformations and returns the new state.
     if (set) update(set(params));
-    else update(value);
+    else update(resolvedValue);
   };
 
   /**
@@ -179,7 +180,7 @@ export function atom<
    * @typedef {Object} Fields
    *
    * @property {State} value The current state of the Atom instance.
-   * @property {TimeTravel<State>} travel An object containing functions to travel through the Atom's timeline.
+   * @property {History<State>} history An object containing functions to travel through the Atom's timeline.
    *
    * @property {Function} set A function to set the value of the Atom instance with optional transformations.
    * @property {Function} subscribe A function to subscribe to changes in the Atom's value.
@@ -192,9 +193,13 @@ export function atom<
    * @property {Function} on Provides control over functions to execute on specific Atom events.
    */
   const fields: Fields<State, Context> = {
-    value: observable.value,
-    travel: {
-      timeline,
+    get value() {
+      return observable.value;
+    },
+    history: {
+      get timeline() {
+        return observable.timeline;
+      },
       get forward() {
         return forward();
       },
@@ -205,10 +210,12 @@ export function atom<
       undo,
     },
     set: setValueWithArgs,
-    subscribe: observable.subscribe,
+    subscribe,
     update,
     emit,
-    ctx: signal.value,
+    get ctx() {
+      return signal.value;
+    },
     dispose,
     on,
   };
@@ -220,7 +227,7 @@ export function atom<
    * @param {UseArgs} useArgs Optional arguments to pass to the `use` event.
    * @returns {void}
    */
-  const executeAtomUse = (...useArgs: UseArgs) => {
+  const useValueWithArgs = (...useArgs: UseArgs) => {
     const value = use?.(fields, ...useArgs);
     if (isFunction(value)) on.unmount(value);
     else {
@@ -257,28 +264,28 @@ export function atom<
     } = { ...options };
 
     // Add this store to the queue for future updates.
-    queue.add(executeAtomUse);
+    queue.add(useValueWithArgs);
 
     const [state, setState] = useState(fields.value);
     const [ctx, setProps] = useState(fields.ctx);
+
     const effect = () => {
-      if (!enabled) return;
-      return executeQueue(useArgs);
+      enabled ? executeQueue(useArgs) : void 0;
     };
 
     // Effect to await changes and execute the `use` function.
     useDebouncedShallowEffect(effect, [enabled, ...useArgs], delay);
-
     useEffect(() => {
-      // Effect to subscribe to context changes.
-      const provider = provide(setProps);
-
       // Effect to subscribe to state changes.
       const subscriber = subscribe(setState);
+
+      // Effect to subscribe to context changes.
+      const provider = provide(setProps);
 
       return () => {
         subscriber.unsubscribe();
         provider.unsubscribe();
+        dispose("unmount");
       };
     }, []);
 
@@ -286,8 +293,9 @@ export function atom<
     const atom = select(transform);
 
     // Function to set the atom's state.
-    const dispatch = (value: State | SetStateAction<State>) => {
-      set(getComputedState(value, state));
+    const dispatch = (value: SetStateAction<State>) => {
+      const resolvedValue = getComputedState(value, state);
+      set(resolvedValue);
     };
 
     dispatch.set = dispatch;

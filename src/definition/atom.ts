@@ -34,9 +34,9 @@ export interface Collector<T = void | (() => void) | undefined> {
  * Represents a time travel object.
  *
  * @template State The type of the state.
- * @typedef {Object} TimeTravel
+ * @typedef {Object} History
  */
-type TimeTravel<State> = {
+type History<State> = {
   /**
    * Gets the timeline of state changes.
    *
@@ -87,21 +87,21 @@ export type Fields<State, Context> = {
   /**
    * Travel to a specific state in the timeline.
    *
-   * @typedef {Object} TimeTravel
+   * @typedef {Object} History
    * @property {Array<State>} timeline An array containing the timeline of state changes.
    * @property {Function} rewind A function to access the previous value of the Atom.
    * @property {Function} forward A function to update the value of the Atom instance.
    * @property {Function} redo A function to redo a previous state change.
    * @property {Function} undo A function to undo a previous state change.
    */
-  travel: TimeTravel<State>;
+  history: History<State>;
   /**
-   * Sets the state with a new value, optionally transforming it using the provided function.
+   * Sets the state with a new value, optionally transforming it using the provided `set` function.
    *
    * @function
-   * @param {State} value The new state value.
+   * @param {State | ((prevState: State) => State)} value The new state value.
    */
-  set: (value: State) => void;
+  set: (value: SetStateAction<State>) => void;
   /**
    * Subscribes to changes in the Atom's value.
    *
@@ -313,14 +313,14 @@ export type AtomOptions<
   select?: (data: Data) => Select;
   /**
    * An array of arguments to pass to the atom's `use` function.
-   * 
+   *
    * @type {UseArgs}
    * @memberof AtomOptions
    */
   useArgs?: UseArgs;
   /**
    * An array of arguments to pass to the atom's `get` function.
-   * 
+   *
    * @type {GetArgs}
    * @memberof AtomOptions
    */
@@ -368,22 +368,22 @@ export interface Atom<
  *
  * @template State The type of the state.
  * @template Context The type of context associated with the Atom.
- * 
+ *
  * @typedef {Function} SetAtom
  */
 export type SetAtom<State, Context> = {
   /**
-   * Sets the state with a new value, optionally transforming it using the provided function.
-   * @param {State | ((state: State) => State)} value The new state value.
-   * @returns {State} The new state.
+   * Sets the state with a new value.
+   * @param {State | ((prevState: State) => State)} value The new state value.
+   * @returns {void}
    */
-  (value: State | SetStateAction<State>): void;
+  (value: SetStateAction<State>): void;
   /**
-   * Sets the state with a new value, optionally transforming it using the provided function.
-   * @param {State | ((state: State) => State)} value The new state value.
-   * @returns {State} The new state.
+   * Sets the state with a new value.
+   * @param {State | ((prevState: State) => State)} value The new state value.
+   * @returns {void}
    */
-  set(value: State | SetStateAction<State>): void;
+  set(value: SetStateAction<State>): void;
   /**
    * The current state of the Atom instance.
    * @type {State} value The new state value.

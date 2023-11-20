@@ -49,6 +49,21 @@ export class AtomSubject<State> {
   get value(): State {
     return this.state;
   }
+
+  /**
+   * Returns the history of state values for time-travel.
+   * @readonly
+   *
+   * @description
+   * This property is only available when the debug option is set to `true`.
+   * Otherwise, it will return an empty array.
+   *
+   * @returns {State[]} The history of state values.
+   */
+  get timeline() {
+    return this.history;
+  }
+
   /**
    * Determines whether it is possible to perform an undo operation.
    * @returns {boolean} `true` if an undo operation can be performed, `false` otherwise.
@@ -65,10 +80,6 @@ export class AtomSubject<State> {
   get canRedo(): boolean {
     if (!this.debug) return false;
     return this.currentIndex < this.history.length - 1;
-  }
-
-  get timeline() {
-    return this.history;
   }
 
   /**
