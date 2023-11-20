@@ -75,11 +75,11 @@ function useShallowCompare(dependencies?: DependencyList): [number] {
  *
  * @returns {() => () => void} A function to trigger the debounced effect.
  */
-const debounce = (effect: EffectCallback, delay: number): (() => void) => {
+const debounce = (effect: EffectCallback, delay: number) => {
   let destructor: ReturnType<EffectCallback>;
   let timeout: NodeJS.Timeout;
 
-  const later = (): (() => void) => {
+  const later = () => {
     if (timeout) clearTimeout(timeout);
 
     timeout = setTimeout(() => {
@@ -109,5 +109,8 @@ export function useDebouncedShallowEffect(
   dependencies: DependencyList = [],
   delay: number
 ): void {
-  useEffect(debounce(effect, delay), useShallowCompare(dependencies));
+  useEffect(
+    delay ? debounce(effect, delay) : effect,
+    useShallowCompare(dependencies)
+  );
 }

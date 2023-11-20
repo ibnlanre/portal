@@ -154,7 +154,6 @@ export function atom<
   const executeQueue = (useArgs: UseArgs) => {
     dispose("rerun");
     queue.forEach((fn) => fn(...useArgs));
-    queue.clear();
   };
 
   const setValueWithArgs = (value: SetStateAction<State>) => {
