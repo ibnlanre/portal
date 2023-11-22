@@ -2,8 +2,6 @@ import { handleSSRError } from "@/utilities";
 import { cookieStorage } from "@/component";
 
 import type {
-  CookieEntry,
-  CookieOptions,
   PortalMap,
   PortalValue,
   SetStore,
@@ -35,7 +33,6 @@ class Portal {
    *
    * @param {string} path The path of the item to be retrieved.
    * @param {State} initialState The initial state of the item.
-   * @param {boolean} [override=false] Whether to override an existing item with the same path.
    *
    * @returns {PortalValue<State, Path>} The portal entry with the specified path, or a new portal entry if not found.
    */
@@ -51,6 +48,7 @@ class Portal {
       observable: new BehaviorSubject(initialState),
       storage: new Set<SetStore<State>>(),
     };
+
     this.portalMap.set(path, subject);
     return subject;
   };

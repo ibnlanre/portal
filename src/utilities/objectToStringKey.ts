@@ -2,7 +2,7 @@ type Primitives = string | number | bigint | boolean | null | undefined;
 type ToString<T> = T extends Primitives ? `${T}` : Extract<T, string>;
 
 type ArrayToString<T extends any[]> = T extends [infer First, ...infer Rest]
-  ? `${ToString<First>}${Rest extends [] ? "" : ","}${ObjectToStringKey<Rest>}`
+  ? `${ToString<First>}${Rest extends [] ? "" : ","}${ArrayToString<Rest>}`
   : "";
 
 type UnionToIntersection<U> = (
@@ -25,8 +25,9 @@ type Construct<K extends keyof T, T> = ObjectToStringKey<T[K]> extends infer U
 
 type Flat<K, T> = UnionToTuple<K> extends [infer First, ...infer Rest]
   ? First extends keyof T
-    ? `${Construct<First, T>}${Rest extends [] ? "" : ";"}${ObjectToString<
-        Pick<T, Exclude<keyof T, First>>
+    ? `${Construct<First, T>}${Rest extends [] ? "" : ";"}${Flat<
+        Exclude<keyof T, First>,
+        T
       >}`
     : never
   : never;
@@ -37,22 +38,13 @@ type ObjectToString<T> = keyof T extends never
   ? Flat<K, T>
   : never;
 
-type ObjectToStringKey<T> = T extends any[]
+type ObjectToStringKey<T> = T extends string
+  ? T
+  : T extends any[]
   ? ArrayToString<T>
   : T extends object
   ? ObjectToString<T>
   : ToString<T>;
-
-type NestedObject<
-  T extends Record<string, any>,
-  P extends string[]
-> = P extends [infer First, ...infer Rest]
-  ? First extends string
-    ? Rest extends string[]
-      ? { [K in First]: NestedObject<T, Rest> }
-      : never
-    : never
-  : T;
 
 /**
  * Converts a reference type to a string representation that can be used as a key.
@@ -60,7 +52,7 @@ type NestedObject<
  * @param {any} value The value to convert.
  * @returns {string} The string representation of the value.
  */
-export function objectToStringKey(value: any): string {
+export function objectToStringKey<T>(value: T): string {
   if (typeof value === "object" && value !== null) {
     if (Array.isArray(value)) {
       const arrayString = value.map(objectToStringKey).join(",");

@@ -16,9 +16,11 @@ export type PortalOptions<Store, State, Data = State> = {
    * The initial value of the portal.
    *
    * @description
-   * If the `path` is defined within the portal, the state will be ignored.
+   * - This value is only used when the `path` is not defined within the portal.
+   * - This value will be overidden if the `get` method is defined.
+   * - It uses the `useState` hook internally.
    */
-  state?: State;
+  state?: State | (() => State);
 
   /**
    * Select the required data from the state.
@@ -43,9 +45,8 @@ export type PortalOptions<Store, State, Data = State> = {
    * Method to get the initial value.
    *
    * @description
-   * - When the `get` method is undefined, the initial value will be used.
-   * - If `override` is false, the value returned will not override the initial value.
-   * - This method is only called once, except when the `key` changes.
+   * - This method is only called when the `path` is not defined within the portal.
+   * - It uses the `useEffect` hook internally.
    */
   get?: GetState<State>;
 };
@@ -98,6 +99,14 @@ export type PortalValue<State> = {
   observable: BehaviorSubject<State>;
 };
 
+/**
+ * Represents the options for the usePortal hook.
+ * 
+ * @template State The type of the state.
+ * @template Path The type of the path.
+ * @template Store The type of the store.
+ * @template Data The type of the data.
+ */
 export interface UsePortalImplementation<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
@@ -111,14 +120,14 @@ export interface UsePortalImplementation<
 
 /**
  * Represents a map of keys and values in the portal entries.
- * @template S The type of the store value.
- * @template A The type of the action for the reducer.
+ * @template State The type of the state.
+ * @template Path The type of the path.
  */
 export type PortalMap<State, Path> = Map<Path, PortalValue<State>>;
 
 /**
  * Represents the result of the usePortal hook.
- * @template State The type of the store value.
+ * @template State The type of the state.
  */
 export type PortalState<State, Data = State> = [
   Data,

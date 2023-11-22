@@ -7,7 +7,7 @@ import {
   UsePortal,
 } from "@/definition";
 import { usePortalImplementation } from "@/addons";
-import { getValue } from "@/utilities";
+import { getResolvedState, getValue } from "@/utilities";
 import { cookieStorage } from "./cookieStorage";
 
 /**
@@ -29,7 +29,7 @@ export function usePortal<
 >(path: Path, options?: PortalOptions<Store, State, Data>) {
   const initialState = options?.store
     ? getValue(options.store, path)
-    : options?.state;
+    : getResolvedState(options?.state);
 
   return usePortalImplementation<Store, Path, State, Data>({
     path,
@@ -63,7 +63,7 @@ function useLocal<
 
   const initialState = config?.store
     ? getValue(config.store, path)
-    : config?.state;
+    : getResolvedState(config?.state);
 
   return usePortalImplementation<Store, Path, State, Data>({
     path,
@@ -97,7 +97,7 @@ function useSession<
 
   const initialState = config?.store
     ? getValue(config.store, path)
-    : config?.state;
+    : getResolvedState(config?.state);
 
   return usePortalImplementation<Store, Path, State, Data>({
     path,
@@ -132,7 +132,7 @@ function useCookie<
 
   const initialState = config?.store
     ? getValue(config.store, path)
-    : config?.state;
+    : getResolvedState(config?.state);
 
   return usePortalImplementation<Store, Path, State, Data>({
     path,

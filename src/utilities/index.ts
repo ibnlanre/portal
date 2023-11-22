@@ -1,4 +1,5 @@
 export * from "./getComputedState";
+export * from "./getResolvedState";
 export * from "./handleSSRError";
 export * from "./getValue";
 export * from "./isAtomStateFunction";

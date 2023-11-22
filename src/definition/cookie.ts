@@ -47,8 +47,7 @@ export type CookieOptions = {
 };
 
 /**
- * Represents a cookie entry with additional properties for storing state data.
- * @template S The type of the state value to be stored in the cookie entry.
+ * Represents a cookie entry in the cookie storage.
  */
 export type CookieEntry = CookieOptions & {
   /**

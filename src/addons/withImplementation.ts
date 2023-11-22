@@ -88,7 +88,7 @@ export function usePortalImplementation<
 
   /**
    * Return an array containing the current state and the setter function for state updates.
-   * @type {PortalState<S, A>}
+   * @type {PortalState<State>}
    */
   return [select(observable.value), observable.setter];
 }

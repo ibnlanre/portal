@@ -3,15 +3,15 @@ import { isSetStateFunction } from "@/utilities";
 
 import type { Subscription } from "@/definition";
 
-abstract class Subject<S> {
-  abstract next(value: S): void;
-  abstract subscribe(observer: (value: S) => void): Subscription;
+abstract class Subject<State> {
+  abstract next(value: State): void;
+  abstract subscribe(observer: (value: State) => void): Subscription;
   abstract unsubscribe(): void;
 }
 
 /**
  * Represents a subject that maintains a current value and emits it to subscribers.
- * @template S The type of the initial and emitted values.
+ * @template State The type of the initial and emitted values.
  */
 export class BehaviorSubject<State> implements Subject<State> {
   private state: State;
@@ -51,7 +51,7 @@ export class BehaviorSubject<State> implements Subject<State> {
 
   /**
    * Returns the current value of the subject.
-   * @returns {S} The current value.
+   * @returns {State} The current value.
    */
   get value(): State {
     return this.state;
@@ -59,7 +59,7 @@ export class BehaviorSubject<State> implements Subject<State> {
 
   /**
    * Emits a new value to the subject and notifies subscribers.
-   * @param {S} value The new value to emit.
+   * @param {State} value The new value to emit.
    */
   next = (value: State) => {
     if (!Object.is(this.state, value)) {
@@ -69,17 +69,12 @@ export class BehaviorSubject<State> implements Subject<State> {
   };
 
   /**
-   * Update the state using the provided value or action.
+   * Update the state using the provided value.
+   * @description The updated state is emitted through the `observable.next()` method.
+   * 
    * @template State The type of the state.
    *
-   * @param {SetStateAction<S, A>} value Value or action to update the state with.
-   *
-   * @summary If a dispatch function is provided, it is used to process the state update based on the previous state and the value or action.
-   * @summary If the dispatch function is not provided and the value is a function, it is called with the previous state and the return value is used as the new state.
-   * @summary If neither a dispatch function is provided nor the value is a function, the value itself is used as the new state.
-   *
-   * @description The updated state is emitted through the observable.next() method.
-   *
+   * @param {SetStateAction<State>} value Value to update the state with.
    * @returns void
    */
   setter = (value: SetStateAction<State>) => {
