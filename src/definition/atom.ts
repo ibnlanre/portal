@@ -1,4 +1,5 @@
 import type { SetStateAction } from "react";
+import { DebounceOptions } from ".";
 
 /**
  * A function type to update context.
@@ -245,7 +246,7 @@ export type AtomState<State, Context> = State | ((context: Context) => State);
  * @property {boolean} [debug] A boolean indicating whether to log the state history for debugging.
  * @property {AtomEvents<State, Data, Context, UseArgs, GetArgs>} [events] An object containing functions to interact with the Atom.
  * @property {Context} [context] Record of mutable context on the atom instance.
- * @property {number} [delay] Debounce delay in milliseconds before executing the `use` function.
+ * @property {DebounceOptions} [debounce] Options for debouncing the `use` function.
  *
  */
 export type AtomConfig<
@@ -274,9 +275,9 @@ export type AtomConfig<
    */
   context?: Context;
   /**
-   * Delay in milliseconds to wait before executing the `use` function.
+   * Options for debouncing the `use` function.
    */
-  delay?: number;
+  debounce?: DebounceOptions;
 };
 
 /**

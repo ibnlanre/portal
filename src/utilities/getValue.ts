@@ -7,10 +7,10 @@ import { GetValueByPath, Paths } from "@/definition";
  * @template Path The type of the path.
  * @template Value The type of the value.
  *
- * @param {Store} object - The object to retrieve the value from.
- * @param {Path} path - The path to the value.
+ * @param {Store} object The object to retrieve the value from.
+ * @param {Path} path The path to the value.
  *
- * @returns {Value} - The value at the specified path.
+ * @returns {Value} The value at the specified path.
  */
 export function getValue<
   Store extends Record<string, any>,

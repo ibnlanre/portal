@@ -64,6 +64,24 @@ export function objectToStringKey<T>(value: T): string {
       return `{${objectString}}`;
     }
   } else {
-    return String(value);
+    return JSON.stringify(value);
+  }
+}
+
+export function stringKeyToObject<T extends string>(key: T): any {
+  if (key.startsWith("{")) {
+    const objectString = key.slice(1, -1);
+    const entries = objectString.split(";");
+    const object = entries.reduce((acc, entry) => {
+      const [key, value] = entry.split(":") as [string, string];
+      return { ...acc, [key]: stringKeyToObject(value) };
+    }, {});
+    return object;
+  } else if (key.startsWith("[")) {
+    const arrayString = key.slice(1, -1);
+    const array = arrayString.split(",").map(stringKeyToObject);
+    return array;
+  } else {
+    return JSON.parse(key);
   }
 }

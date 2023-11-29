@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { DependencyList, SetStateAction } from "react";
+import type { SetStateAction } from "react";
 
 import {
   Atom,
@@ -11,33 +11,29 @@ import {
   SetAtom,
 } from "@/definition";
 import { AtomSubject } from "@/subject";
-import {
-  getComputedState,
-  isAtomStateFunction,
-  isFunction,
-  useDebouncedShallowEffect,
-} from "@/utilities";
+import { useDebouncedShallowEffect } from "@/addons";
+import { getComputedState, isAtomStateFunction, isFunction } from "@/utilities";
 
 /**
  * @description Creates an Atom instance for managing and updating state.
  * ---
- * @template State - The type of the state.
- * @template Data - The type of data returned by the `get` event.
- * @template Context - The type of context associated with the Atom.
- * @template UseArgs - An array of argument types for the `use` event.
- * @template GetArgs - An array of argument types for the `get` event.
+ * @template State The type of the state.
+ * @template Data The type of data returned by the `get` event.
+ * @template Context The type of context associated with the Atom.
+ * @template UseArgs An array of argument types for the `use` event.
+ * @template GetArgs An array of argument types for the `get` event.
  * ---
  * @typedef {Object} AtomConfig
- * @param {AtomConfig} config - Configuration object for the Atom.
- * @param {State | ((context: Context) => State)} config.state - Initial state or a function to generate the initial state.
- * @param {Context} [config.context] - Record of mutable context on the atom instance.
- * @param {number} [config.delay] - Debounce delay in milliseconds before executing the `use` function.
+ * @param {AtomConfig} config Configuration object for the Atom.
+ * @param {State | ((context: Context) => State)} config.state Initial state or a function to generate the initial state.
+ * @param {Context} [config.context] Record of mutable context on the atom instance.
+ * @param {number} [config.delay] Debounce delay in milliseconds before executing the `use` function.
  * ---
  * @typedef {Object} AtomEvents
- * @param {AtomEvents} [config.events] - events object containing functions to interact with the Atom.
- * @param {(params: Setter<State, Context>) => State} [config.events.set] - Function to set the Atom's state.
- * @param {(params: Getter<State, Context>) => Data} [config.events.get] - Function to get data from the Atom's state.
- * @param {(fields: Fields<State, Context>, ...useArgs: UseArgs) => Collector} [config.events.use] - Function to perform asynchronous events.
+ * @param {AtomEvents} [config.events] events object containing functions to interact with the Atom.
+ * @param {(params: Setter<State, Context>) => State} [config.events.set] Function to set the Atom's state.
+ * @param {(params: Getter<State, Context>) => Data} [config.events.get] Function to get data from the Atom's state.
+ * @param {(fields: Fields<State, Context>, ...useArgs: UseArgs) => Collector} [config.events.use] Function to perform asynchronous events.
  * ---
  * @typedef {Object} Atom
  * @returns {Atom<State, Data, Context, UseArgs, GetArgs>} An object containing Atom context and functions.
@@ -55,9 +51,9 @@ export function atom<
 ): Atom<State, Context, UseArgs, GetArgs, Data> {
   const {
     state,
+    debounce = {},
     context = {} as Context,
     debug = false,
-    delay = 0,
     events,
   } = config;
   const { set, get, use } = { ...events };
@@ -71,9 +67,9 @@ export function atom<
 
   /**
    * A set containing functions to execute when awaiting state changes.
-   * @type {WeeakMap<DependencyList, (...useArgs: UseArgs) => void>}
+   * @type {WeeakMap<DependencyList, (useArgs: UseArgs) => void> | null}
    */
-  const queue = new WeakMap<DependencyList, (...useArgs: UseArgs) => void>();
+  const queue = new Map<string, boolean>();
 
   const collector = {
     rerun: new Set<() => void>(),
@@ -143,22 +139,6 @@ export function atom<
    * @returns {Object} An object with an `unsubscribe` function to stop the subscription.
    */
   const provide = signal.subscribe;
-
-  /**
-   * A function to execute the `use` function in the `queue`.
-   *
-   * @function
-   * @param {UseArgs} useArgs Optional arguments to pass to the `use` event.
-   * @returns {() => void} A function to cleanup the atom `use` event upon unmount.
-   */
-  const executeQueue = (useArgs: UseArgs) => {
-    const handler = queue.get(useArgs);
-    if (handler) {
-      dispose("rerun");
-      handler(...useArgs);
-      queue.delete(useArgs);
-    }
-  };
 
   const setValueWithArgs = (value: SetStateAction<State>) => {
     const resolvedValue = getComputedState(value, observable.value);
@@ -252,6 +232,45 @@ export function atom<
     else return value as unknown as Data;
   };
 
+  let marker = 0;
+  const UUID = Math.random().toString(36).slice(2);
+
+  /**
+   * A function to execute the `use` function in the `queue`.
+   *
+   * @function
+   * @param {UseArgs} useArgs Optional arguments to pass to the `use` event.
+   * @param {boolean} enabled Whether or not to execute the `use` function.
+   * @returns {() => void} A function to cleanup the atom `use` event upon unmount.
+   */
+  const executeQueue = (useArgs: UseArgs, enabled: boolean) => {
+    if (!enabled) return;
+    if (!queue.get(JSON.stringify(useArgs))) return;
+
+    console.log(UUID, {
+      args: JSON.stringify(useArgs),
+      marker,
+    });
+
+    dispose("rerun");
+    useValueWithArgs(...useArgs);
+    queue.set(JSON.stringify(useArgs), false);
+  };
+
+  /**
+   * A hook to use the Atom instance.
+   *
+   * @template Select The type of data returned by the `use` event.
+   *
+   * @function
+   * @param {AtomOptions} options Optional options to customize the Atom hook.
+   * @param {Function} options.select A function to select data from the Atom's state.
+   * @param {GetArgs} options.getArgs Optional arguments to pass to the `get` event.
+   * @param {UseArgs} options.useArgs Optional arguments to pass to the `use` event.
+   * @param {boolean} options.enabled Whether or not to execute the `use` function.
+   *
+   * @returns {[Select, SetAtom<State, Context>]} An array containing the selected data and a function to set the Atom's state.
+   */
   const useAtom = <Select = Data>(
     options?: AtomOptions<State, UseArgs, GetArgs, Data, Select>
   ): [Select, SetAtom<State, Context>] => {
@@ -263,18 +282,19 @@ export function atom<
       enabled = true,
     } = { ...options };
 
-    // Add this store to the queue for future updates.
-    queue.set(useArgs, useValueWithArgs);
-
     const [state, setState] = useState(fields.value);
     const [ctx, setProps] = useState(fields.ctx);
 
-    const effect = () => {
-      enabled ? executeQueue(useArgs) : void 0;
-    };
+    const key = JSON.stringify(useArgs);
+    if (!queue.has(key)) queue.set(key, true);
 
     // Effect to await changes and execute the `use` function.
-    useDebouncedShallowEffect(effect, [enabled, ...useArgs], delay);
+    useDebouncedShallowEffect(
+      () => executeQueue(useArgs, enabled),
+      [enabled, ...useArgs],
+      debounce
+    );
+
     useEffect(() => {
       // Effect to subscribe to state changes.
       const subscriber = subscribe(setState);
@@ -310,8 +330,8 @@ export function atom<
    * Represents the context and functions associated with an Atom instance.
    *
    * @typedef {Object} AtomInstance
-   * @property {Function} get - A function to get the Atom's state.
-   * @property {Function} use - A hook to use the Atom instance.
+   * @property {Function} get A function to get the Atom's state.
+   * @property {Function} use A hook to use the Atom instance.
    */
   return {
     ...fields,

@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { useDebouncedShallowEffect } from "@/utilities";
+import { useDebouncedShallowEffect } from "@/addons";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -15,7 +15,11 @@ describe("useDebouncedShallowEffect", () => {
   it("should call the effect function after the delay", async () => {
     const effect = vi.fn();
 
-    renderHook(() => useDebouncedShallowEffect(effect, [], 1000));
+    renderHook(() =>
+      useDebouncedShallowEffect(effect, [], {
+        delay: 1000,
+      })
+    );
     expect(effect).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(1000);
@@ -26,7 +30,7 @@ describe("useDebouncedShallowEffect", () => {
     const effect = vi.fn();
 
     const { rerender } = renderHook(
-      (props) => useDebouncedShallowEffect(effect, props.dependencies, 0),
+      (props) => useDebouncedShallowEffect(effect, props.dependencies),
       {
         initialProps: {
           dependencies: [] as number[],
@@ -51,7 +55,10 @@ describe("useDebouncedShallowEffect", () => {
   it("should debounce the effect function with the specified delay", () => {
     const effect = vi.fn();
     const { rerender } = renderHook(
-      (props) => useDebouncedShallowEffect(effect, props.dependencies, 500),
+      (props) =>
+        useDebouncedShallowEffect(effect, props.dependencies, {
+          delay: 500,
+        }),
       {
         initialProps: {
           dependencies: [] as number[],

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 
-import { portal } from "@/subject";
 import type {
   GetValueByPath,
   Paths,
@@ -8,6 +7,7 @@ import type {
   Subscription,
   UsePortalImplementation,
 } from "@/definition";
+import { portal } from "@/subject";
 
 /**
  * Internal function to handle state and subscriptions for the `usePortal` hook.
@@ -66,7 +66,7 @@ export function usePortalImplementation<
      */
     const storedValue = get?.(observable.value);
     if (typeof storedValue !== "undefined") {
-      observable.setter(storedValue);
+      observable.set(storedValue);
     }
 
     /**
@@ -90,5 +90,5 @@ export function usePortalImplementation<
    * Return an array containing the current state and the setter function for state updates.
    * @type {PortalState<State>}
    */
-  return [select(observable.value), observable.setter];
+  return [select(observable.value), observable.set];
 }
