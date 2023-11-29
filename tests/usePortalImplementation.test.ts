@@ -1,13 +1,9 @@
 import { renderHook, act } from "@testing-library/react";
 import { expect, describe, afterEach, it } from "vitest";
-import { portal } from "@/subject";
-import { usePortalImplementation } from "../src/addons/withImplementation";
+
+import { usePortalImplementation } from "@/addons";
 
 describe("usePortalImplementation", () => {
-  afterEach(() => {
-    portal.clearEntries();
-  });
-
   it("should return the initial state", () => {
     const initialState = { count: 0 };
     const { result } = renderHook(() =>

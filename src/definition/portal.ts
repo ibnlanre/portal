@@ -89,11 +89,6 @@ export interface CookieConfig<Store, State> extends Config<Store, State> {
 
 export type PortalValue<State> = {
   /**
-   * A set of middlewares to run when the state is updated.
-   */
-  storage: Set<SetStore<State>>;
-
-  /**
    * The BehaviorSubject that contains the current value of the store.
    */
   observable: BehaviorSubject<State>;
@@ -192,6 +187,7 @@ export interface UsePortal<Store extends Record<string, any>> {
     path: Path,
     options?: PortalOptions<Store, State>
   ): PortalState<State>;
+
   /**
    * Custom hook to access and manage state in the portal system with localStorage support.
    *
@@ -205,6 +201,7 @@ export interface UsePortal<Store extends Record<string, any>> {
     path: Path,
     config?: Config<Store, State>
   ): PortalState<State>;
+  
   /**
    * Custom hook to access and manage state in the portal system with sessionStorage support.
    *

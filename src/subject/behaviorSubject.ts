@@ -71,13 +71,13 @@ export class BehaviorSubject<State> implements Subject<State> {
   /**
    * Update the state using the provided value.
    * @description The updated state is emitted through the `observable.next()` method.
-   * 
+   *
    * @template State The type of the state.
    *
    * @param {SetStateAction<State>} value Value to update the state with.
    * @returns void
    */
-  setter = (value: SetStateAction<State>) => {
+  set = (value: SetStateAction<State>) => {
     try {
       isSetStateFunction<State>(value)
         ? this.next(value(this.state))

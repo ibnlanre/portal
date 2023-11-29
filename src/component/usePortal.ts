@@ -8,7 +8,9 @@ import {
 } from "@/definition";
 import { usePortalImplementation } from "@/addons";
 import { getResolvedState, getValue } from "@/utilities";
+
 import { cookieStorage } from "./cookieStorage";
+import { portal } from "../subject/portal";
 
 /**
  * A hook for managing the portal states.
@@ -38,6 +40,17 @@ export function usePortal<
   });
 }
 
+/**
+ * A hook for managing the portal states with local storage.
+ *
+ * @template State The state of the portal
+ * @template Path The path to the portal's state
+ *
+ * @param path The path of the portal's state
+ * @param {Config<State>} [config] The config of the portal's state
+ *
+ * @returns {PortalState<State>}
+ */
 function useLocal<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
@@ -55,8 +68,12 @@ function useLocal<
       localStorage.setItem(key, set(value));
     },
     get: () => {
-      const value = localStorage.getItem(key);
-      if (value) return get(value) as State;
+      try {
+        const value = localStorage.getItem(key);
+        if (value) return get(value) as State;
+      } catch (e) {
+        console.warn(e);
+      }
       return undefined as State;
     },
   };
@@ -72,6 +89,17 @@ function useLocal<
   });
 }
 
+/**
+ * A hook for managing the portal states with session storage.
+ *
+ * @template State The state of the portal
+ * @template Path The path to the portal's state
+ *
+ * @param path The path of the portal's state
+ * @param {Config<State>} [config] The config of the portal's state
+ *
+ * @returns {PortalState<State>}
+ */
 function useSession<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
@@ -89,8 +117,12 @@ function useSession<
       sessionStorage.setItem(key, set(value));
     },
     get: () => {
-      const value = sessionStorage.getItem(key);
-      if (value) return get(value) as State;
+      try {
+        const value = sessionStorage.getItem(key);
+        if (value) return get(value) as State;
+      } catch (e) {
+        console.warn(e);
+      }
       return undefined as State;
     },
   };
@@ -106,6 +138,17 @@ function useSession<
   });
 }
 
+/**
+ * A hook for managing the portal states with cookie storage.
+ *
+ * @template State The state of the portal
+ * @template Path The path to the portal's state
+ *
+ * @param path The path of the portal's state
+ * @param {CookieConfig<State>} [config] The config of the portal's state
+ *
+ * @returns {PortalState<State>}
+ */
 function useCookie<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
@@ -124,8 +167,12 @@ function useCookie<
       cookieStorage.setItem(key, set(value), cookieOptions);
     },
     get: () => {
-      const value = cookieStorage.getItem(key);
-      if (value) return get(value) as State;
+      try {
+        const value = cookieStorage.getItem(key);
+        if (value) return get(value) as State;
+      } catch (e) {
+        console.warn(e);
+      }
       return undefined as State;
     },
   };
@@ -143,6 +190,8 @@ function useCookie<
 
 /**
  * Creates a portal that serves as a hook for accessing a store value at a given path.
+ *
+ * @template Store The type of the store.
  *
  * @param {Store} store The object that represents the store.
  * @returns A function that takes a path and returns a hook for accessing the store value at that path.
@@ -162,7 +211,7 @@ function makePortal<Store extends Record<string, any>>(
     return usePortal(path, updatedOptions);
   }
 
-  usePortalWithStore.local = function useLocalWithStoree<
+  usePortalWithStore.local = function useLocalWithStore<
     Path extends Paths<Store>,
     State extends GetValueByPath<Store, Path>
   >(path: Path, config?: Config<Store, State>) {
@@ -174,7 +223,7 @@ function makePortal<Store extends Record<string, any>>(
     return useLocal(path, updatedConfig);
   };
 
-  usePortalWithStore.session = function useSessionWithStoree<
+  usePortalWithStore.session = function useSessionWithStore<
     Path extends Paths<Store>,
     State extends GetValueByPath<Store, Path>
   >(path: Path, config?: Config<Store, State>) {
@@ -186,7 +235,7 @@ function makePortal<Store extends Record<string, any>>(
     return useSession(path, updatedConfig);
   };
 
-  usePortalWithStore.cookie = function useCookieWithStoree<
+  usePortalWithStore.cookie = function useCookieWithStore<
     Path extends Paths<Store>,
     State extends GetValueByPath<Store, Path>
   >(path: Path, config?: CookieConfig<Store, State>) {
@@ -201,7 +250,17 @@ function makePortal<Store extends Record<string, any>>(
   return usePortalWithStore;
 }
 
+// Hook functions
 usePortal.local = useLocal;
 usePortal.session = useSession;
 usePortal.cookie = useCookie;
 usePortal.make = makePortal;
+
+if (typeof portal !== "undefined") {
+  // Utility functions
+  usePortal.clear = portal.clear;
+  usePortal.removeItem = portal.removeItem;
+  usePortal.hasItem = portal.hasItem;
+  usePortal.getItem = portal.getItem;
+  usePortal.setItem = portal.setItem;
+}

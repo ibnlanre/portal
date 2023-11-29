@@ -92,6 +92,7 @@ describe("usePortal.local", () => {
 describe("usePortal.make", () => {
   afterEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
   });
 
   it("should make a custom portal with the provided store", () => {
@@ -125,7 +126,7 @@ describe("usePortal.make", () => {
     };
 
     const userPortal = usePortal.make(userStore);
-    const { result } = renderHook(() => userPortal.local("name"));
+    const { result, unmount } = renderHook(() => userPortal.local("name"));
 
     const [user, setUser] = result.current;
     expect(user).toBe("John Doe");
@@ -136,6 +137,8 @@ describe("usePortal.make", () => {
 
     const [newUser] = result.current;
     expect(newUser).toBe("Jane Doe");
+
+    unmount()
   });
 
   it("should update the state of the portal using usePortal.session with custom initial state", () => {
@@ -154,11 +157,13 @@ describe("usePortal.make", () => {
     sessionStorage.setItem("oh-my", JSON.stringify("uncle"));
 
     const userPortal = usePortal.make(userStore);
-    const { result } = renderHook(() =>
-      userPortal.session("name", { key: "oh-my", state: "world" })
-    );
-
+    const { result, rerender } = renderHook(() => userPortal.session("name"));
+    
     const [state, setState] = result.current;
+    console.log(sessionStorage.getItem("oh-my"), userStore, state);
+    expect(state).toBe("John Doe");
+
+    
     expect(state).toBe("uncle");
     expect(sessionStorage.getItem("oh-my")).toBe(JSON.stringify("uncle"));
 

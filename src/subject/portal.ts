@@ -1,12 +1,7 @@
 import { handleSSRError } from "@/utilities";
 import { cookieStorage } from "@/component";
 
-import type {
-  PortalMap,
-  PortalValue,
-  SetStore,
-  StorageType,
-} from "@/definition";
+import type { PortalMap, PortalValue, StorageType } from "@/definition";
 
 import { BehaviorSubject } from "./behaviorSubject";
 
@@ -46,7 +41,6 @@ class Portal {
 
     const subject = {
       observable: new BehaviorSubject(initialState),
-      storage: new Set<SetStore<State>>(),
     };
 
     this.portalMap.set(path, subject);
@@ -73,12 +67,11 @@ class Portal {
     try {
       if (this.portalMap.has(path)) {
         const originalValue = this.portalMap.get(path)!;
-        originalValue.observable.setter(value);
+        originalValue.observable.set(value);
       } else {
         console.warn("The path:", path, "does not exist in portal entries");
         this.portalMap.set(path, {
           observable: new BehaviorSubject(value),
-          storage: new Set<SetStore<State>>(),
         });
       }
     } catch (error) {
@@ -106,7 +99,7 @@ class Portal {
    * @param {any} path The path of the item to be deleted.
    * @returns {void}
    */
-  deleteItem = <Path>(path: Path) => {
+  private deleteItem = <Path>(path: Path) => {
     // Unsubscribe the observable associated with the item
     const subject = this.portalMap.get(path);
     if (subject) subject.observable.unsubscribe();
@@ -129,7 +122,7 @@ class Portal {
    *
    * @returns {void}
    */
-  deletePersistedItem = <Path extends string>(
+  private deletePersistedItem = <Path extends string>(
     path: Path,
     storageType: StorageType
   ): void => {
@@ -181,7 +174,7 @@ class Portal {
    *
    * @returns {void}
    */
-  removeItemFromEntries = <Path extends string>(
+  removeItem = <Path extends string>(
     path: Path,
     storageTypes: Array<StorageType> = ["local", "session", "cookie"]
   ): void => {
@@ -213,10 +206,10 @@ class Portal {
    * Clears all entries from the portal.
    * @returns {void}
    */
-  clearEntries = (): void => {
+  clear = (): void => {
     try {
       this.portalMap.forEach((value, path) => {
-        this.removeItemFromEntries(path);
+        this.removeItem(path);
       });
     } catch (error) {
       handleSSRError(error, `Error occured while clearing portal`);
