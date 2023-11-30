@@ -232,9 +232,6 @@ export function atom<
     else return value as unknown as Data;
   };
 
-  let marker = 0;
-  const UUID = Math.random().toString(36).slice(2);
-
   /**
    * A function to execute the `use` function in the `queue`.
    *
@@ -246,11 +243,6 @@ export function atom<
   const executeQueue = (useArgs: UseArgs, enabled: boolean) => {
     if (!enabled) return;
     if (!queue.get(JSON.stringify(useArgs))) return;
-
-    console.log(UUID, {
-      args: JSON.stringify(useArgs),
-      marker,
-    });
 
     dispose("rerun");
     useValueWithArgs(...useArgs);
