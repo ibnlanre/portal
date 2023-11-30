@@ -23,12 +23,8 @@ export function useSessionImplementation<
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
   Data
->({
-  path,
-  portal,
-  config,
-  initialState,
-}: UseSessionImplementation<Store, Path, State, Data>) {
+>(properties: UseSessionImplementation<Store, Path, State, Data>) {
+  const { path, portal, config, initialState } = properties;
   const {
     key = path,
     set = (value: State) => JSON.stringify(value),

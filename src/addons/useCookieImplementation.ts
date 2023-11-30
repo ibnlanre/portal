@@ -25,12 +25,8 @@ export function useCookieImplementation<
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
   Data
->({
-  path,
-  initialState,
-  config,
-  portal,
-}: UseCookieImplementation<Store, Path, State, Data>) {
+>(properties: UseCookieImplementation<Store, Path, State, Data>) {
+  const { path, portal, config, initialState } = properties;
   const {
     key = path,
     set = (value: State) => JSON.stringify(value),

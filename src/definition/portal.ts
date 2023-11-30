@@ -3,7 +3,16 @@ import type { SetStateAction, Dispatch } from "react";
 import type { BehaviorSubject, Portal } from "@/subject";
 import { CookieOptions } from "./cookie";
 
+/**
+ * Represents the method to get the portal's initial value.
+ * @template State The type of the state.
+ */
 export type GetState<State> = (state: State) => State;
+
+/**
+ * Represents the method to set the value of the store.
+ * @template State The type of the state.
+ */
 export type SetStore<State> = (value: State) => void;
 
 /**

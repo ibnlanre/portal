@@ -23,12 +23,8 @@ export function useLocalImplementation<
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
   Data
->({
-  path,
-  portal,
-  config,
-  initialState,
-}: UseLocalImplementation<Store, Path, State, Data>) {
+>(properties: UseLocalImplementation<Store, Path, State, Data>) {
+  const { path, portal, config, initialState } = properties;
   const {
     key = path,
     set = (value: State) => JSON.stringify(value),

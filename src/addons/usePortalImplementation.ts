@@ -51,15 +51,10 @@ export function usePortalImplementation<
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
   Data
->({
-  path,
-  initialState,
-  options,
-  portal,
-}: UsePortalImplementation<Store, Path, State, Data>): PortalState<
-  State,
-  Data
-> {
+>(
+  properties: UsePortalImplementation<Store, Path, State, Data>
+): PortalState<State, Data> {
+  const { path, portal, options, initialState } = properties;
   const {
     set,
     select = (value: State) => value as unknown as Data,
