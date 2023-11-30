@@ -1,19 +1,5 @@
-import { Config, GetValueByPath, Paths } from "@/definition";
-import { Portal } from "@/subject";
-
+import { GetValueByPath, Paths, UseLocalImplementation } from "@/definition";
 import { usePortalImplementation } from "./usePortalImplementation";
-
-interface UseLocalImplementation<
-  Store extends Record<string, any>,
-  Path extends Paths<Store>,
-  State extends GetValueByPath<Store, Path>,
-  Data
-> {
-  path: Path;
-  portal: Portal;
-  config?: Config<State, Data>;
-  initialState: State;
-}
 
 /**
  * A hook for managing the portal states with local storage.

@@ -1,28 +1,7 @@
-import { Paths, GetValueByPath, CookieConfig } from "@/definition";
-import { Portal } from "@/subject";
+import { Paths, GetValueByPath, UseCookieImplementation } from "@/definition";
 
 import { cookieStorage } from "../component";
 import { usePortalImplementation } from "./usePortalImplementation";
-
-/**
- * Represents the properties of the `useCookieImplementation` hook.
- *
- * @template Store The type of the store.
- * @template Path The type of the path.
- * @template State The type of the state.
- * @template Data The type of the data.
- */
-interface UseCookieImplementation<
-  Store extends Record<string, any>,
-  Path extends Paths<Store>,
-  State extends GetValueByPath<Store, Path>,
-  Data
-> {
-  path: Path;
-  portal: Portal;
-  initialState: State;
-  config?: CookieConfig<State, Data>;
-}
 
 /**
  * A hook for managing the portal states with cookie storage.

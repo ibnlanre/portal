@@ -56,6 +56,9 @@ export type CookieEntry = CookieOptions & {
   value: string;
 };
 
+/**
+ * Represents the cookie storage.
+ */
 export interface CookieStorage extends Storage {
   /**
    * Retrieves the value of the cookie with the specified name from the document.cookie.

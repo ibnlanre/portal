@@ -6,6 +6,9 @@ import { CookieOptions } from "./cookie";
 export type GetState<State> = (state: State) => State;
 export type SetStore<State> = (value: State) => void;
 
+/**
+ * Represents the options for the portal.
+ */
 export type PortalOptions<State, Data> = {
   /**
    * The initial value of the portal.
@@ -46,6 +49,12 @@ export type PortalOptions<State, Data> = {
   get?: GetState<State>;
 };
 
+/**
+ * Represents the config for the portal.
+ *
+ * @template State The type of the state.
+ * @template Data The type of the data.
+ */
 export interface Config<State, Data>
   extends Omit<PortalOptions<State, Data>, "set" | "get"> {
   /**
@@ -75,6 +84,12 @@ export interface Config<State, Data>
   get?: (value: string) => State;
 }
 
+/**
+ * Represents the config for the cookie portal.
+ *
+ * @template State The type of the state.
+ * @template Data The type of the data.
+ */
 export interface CookieConfig<State, Data> extends Config<State, Data> {
   /**
    * The options for the cookie.
@@ -82,6 +97,11 @@ export interface CookieConfig<State, Data> extends Config<State, Data> {
   cookieOptions?: CookieOptions;
 }
 
+/**
+ * Represents the value of a portal entry.
+ *
+ * @template State The type of the state.
+ */
 export type PortalValue<State> = {
   /**
    * The BehaviorSubject that contains the current value of the store.
@@ -130,9 +150,23 @@ export type Paths<Base, Delimiter extends string = "."> = Base extends Record<
     }[Keys]
   : never;
 
+/**
+ * Represents the value of a key in a store.
+ *
+ * @template Key The type of the key.
+ */
 export type ParseAsNumber<Key extends string | number> =
   Key extends `${infer Value extends number}` ? Value : Key;
 
+/**
+ * Represents the value at a path in a store.
+ *
+ * @template T The type of the store.
+ * @template Path The type of the path.
+ * @template Delimiter The type of the delimiter.
+ *
+ * @description It is a union of all the possible values in the store.
+ */
 export type GetValueByPath<
   T,
   Path extends string | number,
@@ -227,4 +261,64 @@ export interface UsePortal<Store extends Record<string, any>> {
     path: Path,
     config?: CookieConfig<State, Data>
   ): PortalState<State, Data>;
+}
+
+/**
+ * Represents the properties of the `useLocalImplementation` hook.
+ *
+ * @template State The type of the state.
+ * @template Path The type of the path.
+ * @template Store The type of the store.
+ * @template Data The type of the data.
+ */
+export interface UseLocalImplementation<
+  Store extends Record<string, any>,
+  Path extends Paths<Store>,
+  State extends GetValueByPath<Store, Path>,
+  Data
+> {
+  path: Path;
+  portal: Portal;
+  config?: Config<State, Data>;
+  initialState: State;
+}
+
+/**
+ * Represents the properties of the `useSessionImplementation` hook.
+ *
+ * @template State The type of the state.
+ * @template Path The type of the path.
+ * @template Store The type of the store.
+ * @template Data The type of the data.
+ */
+export interface UseSessionImplementation<
+  Store extends Record<string, any>,
+  Path extends Paths<Store>,
+  State extends GetValueByPath<Store, Path>,
+  Data
+> {
+  path: Path;
+  portal: Portal;
+  initialState: State;
+  config?: Config<State, Data>;
+}
+
+/**
+ * Represents the properties of the `useCookieImplementation` hook.
+ *
+ * @template Store The type of the store.
+ * @template Path The type of the path.
+ * @template State The type of the state.
+ * @template Data The type of the data.
+ */
+export interface UseCookieImplementation<
+  Store extends Record<string, any>,
+  Path extends Paths<Store>,
+  State extends GetValueByPath<Store, Path>,
+  Data
+> {
+  path: Path;
+  portal: Portal;
+  initialState: State;
+  config?: CookieConfig<State, Data>;
 }

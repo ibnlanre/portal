@@ -1,19 +1,5 @@
-import { Paths, GetValueByPath, Config } from "@/definition";
-import { Portal } from "@/subject";
-
+import { Paths, GetValueByPath, UseSessionImplementation } from "@/definition";
 import { usePortalImplementation } from "./usePortalImplementation";
-
-interface UseSessionImplementation<
-  Store extends Record<string, any>,
-  Path extends Paths<Store>,
-  State extends GetValueByPath<Store, Path>,
-  Data
-> {
-  path: Path;
-  portal: Portal;
-  initialState: State;
-  config?: Config<State, Data>;
-}
 
 /**
  * A hook for managing the portal states with session storage.
