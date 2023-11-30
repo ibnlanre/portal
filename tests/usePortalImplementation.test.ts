@@ -2,12 +2,19 @@ import { renderHook, act } from "@testing-library/react";
 import { expect, describe, afterEach, it } from "vitest";
 
 import { usePortalImplementation } from "@/addons";
+import { Portal } from "@/subject";
+
+const portal = new Portal();
+
+afterEach(() => {
+  portal.clear();
+})
 
 describe("usePortalImplementation", () => {
   it("should return the initial state", () => {
     const initialState = { count: 0 };
     const { result } = renderHook(() =>
-      usePortalImplementation({ path: "test", initialState })
+      usePortalImplementation({ path: "test", initialState, portal })
     );
 
     const [state] = result.current;
@@ -17,7 +24,7 @@ describe("usePortalImplementation", () => {
   it("should update the state when the setter is called", () => {
     const initialState = { count: 0 };
     const { result } = renderHook(() =>
-      usePortalImplementation({ path: "test", initialState })
+      usePortalImplementation({ path: "test", initialState, portal })
     );
 
     const [, setState] = result.current;
@@ -37,6 +44,7 @@ describe("usePortalImplementation", () => {
       usePortalImplementation({
         path: "test",
         initialState,
+        portal,
         options: {
           get: (value) => {
             const val = localStorage.getItem("test");
@@ -56,6 +64,7 @@ describe("usePortalImplementation", () => {
       usePortalImplementation({
         path: "test",
         initialState,
+        portal,
         options: {
           set: (value) => localStorage.setItem("test", JSON.stringify(value)),
           get: (value) => {
@@ -83,6 +92,7 @@ describe("usePortalImplementation", () => {
       usePortalImplementation({
         path: "test",
         initialState,
+        portal,
         options: {
           set: (value) => localStorage.setItem("test", JSON.stringify(value)),
           get: (value) => {
@@ -92,7 +102,7 @@ describe("usePortalImplementation", () => {
         },
       })
     );
-    
+
     const valBefore = localStorage.getItem("test");
     expect(valBefore).toEqual(JSON.stringify({ count: 1 }));
 
@@ -111,6 +121,7 @@ describe("usePortalImplementation", () => {
       usePortalImplementation({
         path: "test",
         initialState,
+        portal,
         options: {
           select: ({ count }) => count,
         },

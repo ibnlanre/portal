@@ -5,7 +5,7 @@ import type { PortalMap, PortalValue, StorageType } from "@/definition";
 
 import { BehaviorSubject } from "./behaviorSubject";
 
-class Portal {
+export class Portal {
   private portalMap: PortalMap<any, any> = new Map();
 
   /**
@@ -217,8 +217,8 @@ class Portal {
   };
 }
 
-/**
- * Represents a mapping of keys (stringified) to portal entries.
- * @type {PortalMap}
- */
-export const portal = new Portal();
+// /**
+//  * Represents a mapping of keys (stringified) to portal entries.
+//  * @type {PortalMap}
+//  */
+// export const portal = new Portal();

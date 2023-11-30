@@ -3,19 +3,48 @@ import { useState, useEffect } from "react";
 import type {
   GetValueByPath,
   Paths,
+  PortalOptions,
   PortalState,
   Subscription,
-  UsePortalImplementation,
 } from "@/definition";
-import { portal } from "@/subject";
+import { Portal } from "@/subject";
+
+/**
+ * Represents the properties of the `usePortalImplemenation` hook.
+ *
+ * @template State The type of the state.
+ * @template Path The type of the path.
+ * @template Store The type of the store.
+ * @template Data The type of the data.
+ */
+interface UsePortalImplementation<
+  Store extends Record<string, any>,
+  Path extends Paths<Store>,
+  State extends GetValueByPath<Store, Path>,
+  Data
+> {
+  path: Path;
+  portal: Portal;
+  initialState?: State;
+  options?: PortalOptions<State, Data>;
+}
 
 /**
  * Internal function to handle state and subscriptions for the `usePortal` hook.
  *
- * @template State The type of the state.
- * @template Path The type of the path.
+ * @template Store The store of the portal
+ * @template Path The path to the portal's state
+ * @template State The state of the portal
+ * @template Data The data of the portal
  *
- * @returns {PortalState<State>} An array containing the state and the setter function for state updates.
+ * @param {UsePortalImplementation<Store, Path, State, Data>} properties
+ *
+ * @property {Path} path The path of the portal's state
+ * @property {Portal} [portal] The portal to be used
+ * @property {Config<State>} [config] The config of the portal's state
+ * @property {State} initialState The initial state of the portal
+ *
+ * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
  */
 export function usePortalImplementation<
   Store extends Record<string, any>,
@@ -26,15 +55,16 @@ export function usePortalImplementation<
   path,
   initialState,
   options,
+  portal,
 }: UsePortalImplementation<Store, Path, State, Data>): PortalState<
   State,
   Data
 > {
   const {
     set,
-    get,
     select = (value: State) => value as unknown as Data,
     state = initialState as State,
+    get,
   } = { ...options };
 
   /**

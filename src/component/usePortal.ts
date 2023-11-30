@@ -4,37 +4,43 @@ import {
   GetValueByPath,
   Paths,
   PortalOptions,
-  UsePortal,
 } from "@/definition";
-import { usePortalImplementation } from "@/addons";
-import { getResolvedState, getValue } from "@/utilities";
+import { getResolvedState } from "@/utilities";
+import { Portal } from "@/subject";
+import {
+  makePortal,
+  useCookieImplementation,
+  useLocalImplementation,
+  usePortalImplementation,
+  useSessionImplementation,
+} from "@/addons";
 
-import { cookieStorage } from "./cookieStorage";
-import { portal } from "../subject/portal";
+const portal = new Portal();
 
 /**
  * A hook for managing the portal states.
  *
- * @template State The state of the portal
+ * @template Store The store of the portal
  * @template Path The path to the portal's state
+ * @template State The state of the portal
+ * @template Data The data of the portal
  *
  * @param path The path of the portal's state
  * @param {PortalOptions<State>} [options] The options of the portal's state
  *
- * @returns {PortalState<State>}
+ * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
  */
 export function usePortal<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
   Data = State
->(path: Path, options?: PortalOptions<Store, State, Data>) {
-  const initialState = options?.store
-    ? getValue(options.store, path)
-    : getResolvedState(options?.state);
+>(path: Path, options?: PortalOptions<State, Data>) {
+  const initialState = getResolvedState(options?.state);
 
   return usePortalImplementation<Store, Path, State, Data>({
     path,
+    portal,
     initialState,
     options,
   });
@@ -43,211 +49,88 @@ export function usePortal<
 /**
  * A hook for managing the portal states with local storage.
  *
- * @template State The state of the portal
+ * @template Store The store of the portal
  * @template Path The path to the portal's state
+ * @template State The state of the portal
+ * @template Data The data of the portal
  *
  * @param path The path of the portal's state
  * @param {Config<State>} [config] The config of the portal's state
  *
- * @returns {PortalState<State>}
+ * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
  */
 function useLocal<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
   Data = State
->(path: Path, config?: Config<Store, State>) {
-  const {
-    key = path,
-    set = (value: State) => JSON.stringify(value),
-    get = (value: string) => JSON.parse(value),
-  } = { ...config };
+>(path: Path, config?: Config<State, Data>) {
+  const initialState = getResolvedState(config?.state) as State;
 
-  const options = {
-    set: (value: State) => {
-      localStorage.setItem(key, set(value));
-    },
-    get: () => {
-      try {
-        const value = localStorage.getItem(key);
-        if (value) return get(value) as State;
-      } catch (e) {
-        console.warn(e);
-      }
-      return undefined as State;
-    },
-  };
-
-  const initialState = config?.store
-    ? getValue(config.store, path)
-    : getResolvedState(config?.state);
-
-  return usePortalImplementation<Store, Path, State, Data>({
+  return useLocalImplementation<Store, Path, State, Data>({
     path,
+    portal,
     initialState,
-    options,
+    config,
   });
 }
 
 /**
  * A hook for managing the portal states with session storage.
  *
- * @template State The state of the portal
+ * @template Store The store of the portal
  * @template Path The path to the portal's state
+ * @template State The state of the portal
+ * @template Data The data of the portal
  *
  * @param path The path of the portal's state
  * @param {Config<State>} [config] The config of the portal's state
  *
- * @returns {PortalState<State>}
+ * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
  */
 function useSession<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
   Data = State
->(path: Path, config?: Config<Store, State>) {
-  const {
-    key = path,
-    set = (value: State) => JSON.stringify(value),
-    get = (value: string) => JSON.parse(value),
-  } = { ...config };
+>(path: Path, config?: Config<State, Data>) {
+  const initialState = getResolvedState(config?.state) as State;
 
-  const options = {
-    set: (value: State) => {
-      sessionStorage.setItem(key, set(value));
-    },
-    get: () => {
-      try {
-        const value = sessionStorage.getItem(key);
-        if (value) return get(value) as State;
-      } catch (e) {
-        console.warn(e);
-      }
-      return undefined as State;
-    },
-  };
-
-  const initialState = config?.store
-    ? getValue(config.store, path)
-    : getResolvedState(config?.state);
-
-  return usePortalImplementation<Store, Path, State, Data>({
+  return useSessionImplementation<Store, Path, State, Data>({
     path,
+    portal,
     initialState,
-    options,
+    config,
   });
 }
 
 /**
  * A hook for managing the portal states with cookie storage.
  *
- * @template State The state of the portal
+ * @template Store The store of the portal
  * @template Path The path to the portal's state
+ * @template State The state of the portal
+ * @template Data The data of the portal
  *
  * @param path The path of the portal's state
  * @param {CookieConfig<State>} [config] The config of the portal's state
  *
- * @returns {PortalState<State>}
+ * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
  */
 function useCookie<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
   Data = State
->(path: Path, config?: CookieConfig<Store, State>) {
-  const {
-    key = path,
-    set = (value: State) => JSON.stringify(value),
-    get = (value: string) => JSON.parse(value),
-    cookieOptions,
-  } = { ...config };
+>(path: Path, config?: CookieConfig<State, Data>) {
+  const initialState = getResolvedState(config?.state) as State;
 
-  const options = {
-    set: (value: State) => {
-      cookieStorage.setItem(key, set(value), cookieOptions);
-    },
-    get: () => {
-      try {
-        const value = cookieStorage.getItem(key);
-        if (value) return get(value) as State;
-      } catch (e) {
-        console.warn(e);
-      }
-      return undefined as State;
-    },
-  };
-
-  const initialState = config?.store
-    ? getValue(config.store, path)
-    : getResolvedState(config?.state);
-
-  return usePortalImplementation<Store, Path, State, Data>({
+  return useCookieImplementation<Store, Path, State, Data>({
     path,
+    portal,
     initialState,
-    options,
+    config,
   });
-}
-
-/**
- * Creates a portal that serves as a hook for accessing a store value at a given path.
- *
- * @template Store The type of the store.
- *
- * @param {Store} store The object that represents the store.
- * @returns A function that takes a path and returns a hook for accessing the store value at that path.
- */
-function makePortal<Store extends Record<string, any>>(
-  store: Store
-): UsePortal<Store> {
-  function usePortalWithStore<
-    Path extends Paths<Store>,
-    State extends GetValueByPath<Store, Path>
-  >(path: Path, options?: PortalOptions<Store, State>) {
-    const updatedOptions = {
-      ...options,
-      store,
-    };
-
-    return usePortal(path, updatedOptions);
-  }
-
-  usePortalWithStore.local = function useLocalWithStore<
-    Path extends Paths<Store>,
-    State extends GetValueByPath<Store, Path>
-  >(path: Path, config?: Config<Store, State>) {
-    const updatedConfig = {
-      ...config,
-      store,
-    };
-
-    return useLocal(path, updatedConfig);
-  };
-
-  usePortalWithStore.session = function useSessionWithStore<
-    Path extends Paths<Store>,
-    State extends GetValueByPath<Store, Path>
-  >(path: Path, config?: Config<Store, State>) {
-    const updatedConfig = {
-      ...config,
-      store,
-    };
-
-    return useSession(path, updatedConfig);
-  };
-
-  usePortalWithStore.cookie = function useCookieWithStore<
-    Path extends Paths<Store>,
-    State extends GetValueByPath<Store, Path>
-  >(path: Path, config?: CookieConfig<Store, State>) {
-    const updatedConfig = {
-      ...config,
-      store,
-    };
-
-    return useCookie(path, updatedConfig);
-  };
-
-  return usePortalWithStore;
 }
 
 // Hook functions
@@ -256,11 +139,9 @@ usePortal.session = useSession;
 usePortal.cookie = useCookie;
 usePortal.make = makePortal;
 
-if (typeof portal !== "undefined") {
-  // Utility functions
-  usePortal.clear = portal.clear;
-  usePortal.removeItem = portal.removeItem;
-  usePortal.hasItem = portal.hasItem;
-  usePortal.getItem = portal.getItem;
-  usePortal.setItem = portal.setItem;
-}
+// Utility functions
+usePortal.clear = portal.clear;
+usePortal.removeItem = portal.removeItem;
+usePortal.hasItem = portal.hasItem;
+usePortal.getItem = portal.getItem;
+usePortal.setItem = portal.setItem;

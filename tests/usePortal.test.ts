@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, expectTypeOf, it } from "vitest";
 
 import { usePortal } from "@/component";
 
@@ -30,9 +30,8 @@ describe("usePortal", () => {
   });
 
   it("should return the correct value for a given path", () => {
-    const { result } = renderHook(() =>
-      usePortal("count", { store: { count: 0 } })
-    );
+    const { result } = renderHook(() => usePortal("count", { state: 0 }));
+
     const [count, setCount] = result.current;
     expect(count).toBe(0);
 
@@ -44,19 +43,25 @@ describe("usePortal", () => {
     expect(newCount).toBe(1);
   });
 
-  it("should return the correct value for a nested path", () => {
-    const store = { user: { name: "John", age: 30 } };
-    const { result } = renderHook(() => usePortal("user.name", { store }));
+  it("should return the correct type selected", () => {
+    const { result } = renderHook(() =>
+      usePortal("name", {
+        state: "John",
+        select: (state) => (state === "John" ? 5 : 10),
+      })
+    );
 
     const [name, setName] = result.current;
-    expect(name).toBe("John");
+    expectTypeOf(name).toEqualTypeOf<number>();
+    expect(name).toBe(5);
 
     act(() => {
       setName("Jane");
     });
 
     const [newName] = result.current;
-    expect(newName).toBe("Jane");
+    expectTypeOf(name).toEqualTypeOf<number>();
+    expect(newName).toBe(10);
   });
 });
 
@@ -138,7 +143,7 @@ describe("usePortal.make", () => {
     const [newUser] = result.current;
     expect(newUser).toBe("Jane Doe");
 
-    unmount()
+    unmount();
   });
 
   it("should update the state of the portal using usePortal.session with custom initial state", () => {
@@ -157,13 +162,14 @@ describe("usePortal.make", () => {
     sessionStorage.setItem("oh-my", JSON.stringify("uncle"));
 
     const userPortal = usePortal.make(userStore);
-    const { result, rerender } = renderHook(() => userPortal.session("name"));
-    
-    const [state, setState] = result.current;
-    console.log(sessionStorage.getItem("oh-my"), userStore, state);
-    expect(state).toBe("John Doe");
+    const { result } = renderHook(() =>
+      userPortal.session("name", {
+        key: "oh-my",
+      })
+    );
 
-    
+    const [state, setState] = result.current;
+
     expect(state).toBe("uncle");
     expect(sessionStorage.getItem("oh-my")).toBe(JSON.stringify("uncle"));
 
