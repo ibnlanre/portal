@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { SetStateAction } from "react";
+import { SetStateAction } from "react";
 
 import {
   Atom,
@@ -10,7 +10,12 @@ import {
   AtomOptions,
   SetAtom,
 } from "@/definition";
-import { getComputedState, isAtomStateFunction, isFunction } from "@/utilities";
+import {
+  deepSort,
+  getComputedState,
+  isAtomStateFunction,
+  isFunction,
+} from "@/utilities";
 
 import { AtomSubject } from "./atomSubject";
 import { useDebouncedShallowEffect } from "./useDebouncedShallowEffect";
@@ -278,7 +283,7 @@ export function atom<
     const [state, setState] = useState(fields.value);
     const [ctx, setProps] = useState(fields.ctx);
 
-    const key = JSON.stringify(useArgs);
+    const key = JSON.stringify(deepSort(useArgs));
     if (!queue.has(key)) queue.set(key, true);
 
     // Effect to await changes and execute the `use` function.

@@ -1,4 +1,5 @@
 export * from "./debounce";
+export * from "./deepSort";
 export * from "./getComputedState";
 export * from "./getResolvedState";
 export * from "./handleSSRError";
