@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-import { useDebouncedShallowEffect } from "@/addons";
+import { useDebouncedShallowEffect } from "@/atom";
 
 beforeEach(() => {
   vi.useFakeTimers();

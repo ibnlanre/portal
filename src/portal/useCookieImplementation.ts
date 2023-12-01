@@ -1,6 +1,6 @@
 import { Paths, GetValueByPath, UseCookieImplementation } from "@/definition";
 
-import { cookieStorage } from "../component";
+import { cookieStorage } from "@/cookies";
 import { usePortalImplementation } from "./usePortalImplementation";
 
 /**

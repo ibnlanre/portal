@@ -6,14 +6,14 @@ import {
   PortalOptions,
 } from "@/definition";
 import { getResolvedState } from "@/utilities";
-import { Portal } from "@/subject";
-import {
-  makePortal,
-  useCookieImplementation,
-  useLocalImplementation,
-  usePortalImplementation,
-  useSessionImplementation,
-} from "@/addons";
+
+import { Portal } from "./portal";
+import { makePortal } from "./makePortal";
+import { useCookieImplementation } from "./useCookieImplementation";
+import { useLocalImplementation } from "./useLocalImplementation";
+import { usePortalImplementation } from "./usePortalImplementation";
+import { useSessionImplementation } from "./useSessionImplementation";
+
 
 const portal = new Portal();
 

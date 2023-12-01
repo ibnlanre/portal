@@ -6,13 +6,13 @@ import {
   CookieConfig,
   Config,
 } from "@/definition";
-import { Portal } from "@/subject";
 import { getValue } from "@/utilities";
 
 import { useCookieImplementation } from "./useCookieImplementation";
 import { useLocalImplementation } from "./useLocalImplementation";
 import { usePortalImplementation } from "./usePortalImplementation";
 import { useSessionImplementation } from "./useSessionImplementation";
+import { Portal } from "./portal";
 
 /**
  * Creates a portal that serves as a hook for accessing a store value at a given path.

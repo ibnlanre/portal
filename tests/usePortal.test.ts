@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, expectTypeOf, it } from "vitest";
 
-import { usePortal } from "@/component";
+import { usePortal } from "@/portal";
 
 describe("usePortal", () => {
   const path = "is-open";

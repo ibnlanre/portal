@@ -6,3 +6,4 @@ export * from "./getCookieValue";
 export * from "./getCookieValueByRegex";
 export * from "./removeCookieValue";
 export * from "./setCookieValue";
+export * from "./cookieStorage";

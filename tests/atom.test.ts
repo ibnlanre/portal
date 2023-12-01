@@ -1,7 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, test, expect } from "vitest";
 
-import { atom } from "@/component";
+import { atom } from "@/atom";
 
 describe("atom", () => {
   test("should update the state", () => {

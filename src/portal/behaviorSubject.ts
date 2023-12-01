@@ -1,7 +1,7 @@
 import { SetStateAction } from "react";
-import { isSetStateFunction } from "@/utilities";
 
-import type { Subscription } from "@/definition";
+import { isSetStateFunction } from "@/utilities";
+import { Subscription } from "@/definition";
 
 abstract class Subject<State> {
   abstract next(value: State): void;

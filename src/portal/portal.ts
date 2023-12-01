@@ -1,5 +1,5 @@
 import { handleSSRError } from "@/utilities";
-import { cookieStorage } from "@/component";
+import { cookieStorage } from "@/cookies";
 
 import type { PortalMap, PortalValue, StorageType } from "@/definition";
 

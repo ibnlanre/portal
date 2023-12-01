@@ -1,14 +1,13 @@
 import { renderHook, act } from "@testing-library/react";
 import { expect, describe, afterEach, it } from "vitest";
 
-import { usePortalImplementation } from "@/addons";
-import { Portal } from "@/subject";
+import { usePortalImplementation, Portal } from "@/portal";
 
 const portal = new Portal();
 
 afterEach(() => {
   portal.clear();
-})
+});
 
 describe("usePortalImplementation", () => {
   it("should return the initial state", () => {

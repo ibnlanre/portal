@@ -10,9 +10,10 @@ import {
   AtomOptions,
   SetAtom,
 } from "@/definition";
-import { AtomSubject } from "@/subject";
-import { useDebouncedShallowEffect } from "@/addons";
 import { getComputedState, isAtomStateFunction, isFunction } from "@/utilities";
+
+import { AtomSubject } from "./atomSubject";
+import { useDebouncedShallowEffect } from "./useDebouncedShallowEffect";
 
 /**
  * @description Creates an Atom instance for managing and updating state.

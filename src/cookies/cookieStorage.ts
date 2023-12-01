@@ -1,12 +1,11 @@
-import {
-  clearCookieStorage,
-  getCookieByIndex,
-  getCookieStorageLength,
-  getCookieValue,
-  removeCookieValue,
-  setCookieValue,
-} from "@/cookies";
 import { CookieStorage } from "@/definition";
+
+import { clearCookieStorage } from "./clearCookieStorage";
+import { getCookieByIndex } from "./getCookieByIndex";
+import { getCookieStorageLength } from "./getCookieStorageLength";
+import { getCookieValue } from "./getCookieValue";
+import { removeCookieValue } from "./removeCookieValue";
+import { setCookieValue } from "./setCookieValue";
 
 /**
  * An object representing a cookie storage with various methods to interact with cookies.

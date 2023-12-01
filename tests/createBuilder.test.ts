@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createBuilder } from "@/component";
+import { createBuilder } from "@/builder";
 
 describe("createBuilder", () => {
   const obj = {
@@ -55,7 +55,7 @@ describe("createBuilder", () => {
         bar: {
           baz: { use, get },
           use,
-          get
+          get,
         },
         qux: { use, get },
         use,

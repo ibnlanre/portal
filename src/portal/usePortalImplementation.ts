@@ -7,7 +7,7 @@ import type {
   PortalState,
   Subscription,
 } from "@/definition";
-import { Portal } from "@/subject";
+import { Portal } from "./portal";
 
 /**
  * Represents the properties of the `usePortalImplemenation` hook.
