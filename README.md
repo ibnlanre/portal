@@ -1,6 +1,6 @@
 # @ibnlanre/portal
 
-Inspired by [React Holmes](https://github.com/devx-os/react-holmes) and [Tanstack Query](https://tanstack.com/query), `@ibnlanre/portal` is a simple **application** state management library for managing component state on a global level.
+Inspired by [React Holmes](https://github.com/devx-os/react-holmes), `@ibnlanre/portal` is a simple **application** state management library for managing component state on a global level.
 
 ## Installation
 
@@ -74,7 +74,7 @@ This library exports the following APIs to enhance state management and facilita
 
 1. **Import the necessary components and hooks.**
 
-    ```js
+    ```typescript
     import {
       atom,
       createBuilder,
@@ -116,7 +116,7 @@ This library exports the following APIs to enhance state management and facilita
 
 3. **Create a typed `portal` with a defined store using `usePortal.make``.**
 
-    ```js
+    ```typescript
     // Create a store for type safety
     const store = {
       foo: {
@@ -137,7 +137,7 @@ This library exports the following APIs to enhance state management and facilita
 
 4. **Persist the state by utilizing browser storage mechanisms.**
 
-    ```js
+    ```typescript
     // To persist the state in `localStorage`:
     const [state, setState] = useStorePortal.local("foo.bar");
 
@@ -145,7 +145,7 @@ This library exports the following APIs to enhance state management and facilita
     const [state, setState] = useStorePortal.session("foo.bar.baz");
 
     // To persist the state in `document.cookie`
-    const [state, setState] = useStorePortal.cookie("foo.rim", { 
+    const [state, setState] = useStorePortal.cookie("foo.rim", {
       path: "/"
     });
     ```
@@ -154,14 +154,14 @@ This library exports the following APIs to enhance state management and facilita
 
     - Create the `atom` with a key, value, and optional reducer:
 
-      ```js
+      ```typescript
       // Atoms should be created outside React Components
       const counterAtom = atom({ state: 9 });
       ```
 
     - To access the atom value within a component:
 
-      ```js
+      ```typescript
       // An atom state is isolated from the portal system and can be accessed
       // by explicitly exporting and importing the atom from where it was declared.
       const [counter, setCounter] = counterAtom.use();
@@ -169,7 +169,7 @@ This library exports the following APIs to enhance state management and facilita
 
     - An advanced example would be:
 
-      ```js
+      ```typescript
       const messagesAtom = atom({
         state: {} as Messages,
         events: {
@@ -207,7 +207,7 @@ This library exports the following APIs to enhance state management and facilita
 
     - Make of nested record of a `key` and `value` pair:
 
-      ```js
+      ```typescript
       const store = {
         foo: {
           baz: (id: number) => `/bazaar/${id}`,
@@ -220,7 +220,7 @@ This library exports the following APIs to enhance state management and facilita
 
     - Access the `keys`:
 
-      ```js
+      ```typescript
       // `use` expects that the required arguments are passed.
       builder.foo.baz.use(11); // ["foo", "baz", 11]
 
@@ -233,7 +233,7 @@ This library exports the following APIs to enhance state management and facilita
 
     - Get nested `values`:
 
-      ```js
+      ```typescript
       builder.use(); // store
       builder.use().foo.baz(12); // "/bazaar/12"
       builder.use().foo.bar; // 10
@@ -241,7 +241,7 @@ This library exports the following APIs to enhance state management and facilita
 
     - Add a prefix to the keys:
 
-      ```js
+      ```typescript
       const builderWithPrefix = createBuilder(store, "tap", "root");
       builderWithPrefix.foo.bar.use() // ["tap", "root", "foo", "bar"]
       ```
