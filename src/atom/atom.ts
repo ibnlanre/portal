@@ -22,27 +22,29 @@ import { useDebouncedShallowEffect } from "./useDebouncedShallowEffect";
 
 /**
  * @description Creates an Atom instance for managing and updating state.
- * ---
+ *
  * @template State The type of the state.
  * @template Data The type of data returned by the `get` event.
  * @template Context The type of context associated with the Atom.
  * @template UseArgs An array of argument types for the `use` event.
  * @template GetArgs An array of argument types for the `get` event.
- * ---
+ *
+ * @function
+ *
  * @typedef {Object} AtomConfig
  * @param {AtomConfig} config Configuration object for the Atom.
  * @param {State | ((context: Context) => State)} config.state Initial state or a function to generate the initial state.
  * @param {Context} [config.context] Record of mutable context on the atom instance.
  * @param {number} [config.delay] Debounce delay in milliseconds before executing the `use` function.
- * ---
+ *
  * @typedef {Object} AtomEvents
  * @param {AtomEvents} [config.events] events object containing functions to interact with the Atom.
  * @param {(params: Setter<State, Context>) => State} [config.events.set] Function to set the Atom's state.
  * @param {(params: Getter<State, Context>) => Data} [config.events.get] Function to get data from the Atom's state.
  * @param {(fields: Fields<State, Context>, ...useArgs: UseArgs) => Collector} [config.events.use] Function to perform asynchronous events.
- * ---
+ *
  * @typedef {Object} Atom
- * @returns {Atom<State, Data, Context, UseArgs, GetArgs>} An object containing Atom context and functions.
+ * @returns {Atom<State, Data, Context, UseArgs, GetArgs>} An Atom instance.
  */
 export function atom<
   State,
@@ -72,8 +74,8 @@ export function atom<
   const { forward, rewind, redo, undo, update, subscribe } = observable;
 
   /**
-   * A set containing functions to execute when awaiting state changes.
-   * @type {WeeakMap<DependencyList, (useArgs: UseArgs) => void> | null}
+   * A set defining whether a `useArgs` has been executed by the `use` function.
+   * @type {Map<string, boolean>}
    */
   const queue = new Map<string, boolean>();
 
@@ -146,6 +148,13 @@ export function atom<
    */
   const provide = signal.subscribe;
 
+  /**
+   * Sets the value of the Atom instance.
+   *
+   * @function
+   * @param {SetStateAction<State>} value The value to set the Atom instance to.
+   * @returns {void}
+   */
   const setValueWithArgs = (value: SetStateAction<State>) => {
     const resolvedValue = getComputedState(value, observable.value);
     const params: Params<State, Context> = {
@@ -222,6 +231,15 @@ export function atom<
     }
   };
 
+  /**
+   * Gets the value of the Atom instance with optional transformations.
+   *
+   * @function
+   * @param {State} value The value of the Atom instance.
+   * @param {GetArgs} getArgs Optional arguments to pass to the `get` event.
+   *
+   * @returns {Data} The value of the Atom instance.
+   */
   const getValueWithArgs = (
     value: State = observable.value,
     ...getArgs: GetArgs
@@ -239,20 +257,34 @@ export function atom<
   };
 
   /**
+   * Creates a key to identify the `use` function in the `queue`.
+   *
+   * @function
+   * @param {UseArgs} useArgs Optional arguments to pass to the `use` event.
+   *
+   * @returns {string} A key to identify the `use` function in the `queue`.
+   */
+  const createKey = (useArgs: UseArgs) => {
+    return JSON.stringify(deepSort(useArgs));
+  };
+
+  /**
    * A function to execute the `use` function in the `queue`.
    *
    * @function
    * @param {UseArgs} useArgs Optional arguments to pass to the `use` event.
    * @param {boolean} enabled Whether or not to execute the `use` function.
+   * @param {string} key The key of the `use` function in the `queue`.
+   *
    * @returns {() => void} A function to cleanup the atom `use` event upon unmount.
    */
-  const executeQueue = (useArgs: UseArgs, enabled: boolean) => {
+  const executeQueue = (useArgs: UseArgs, enabled: boolean, key: string) => {
     if (!enabled) return;
-    if (!queue.get(JSON.stringify(useArgs))) return;
+    if (!queue.get(key)) return;
 
     dispose("rerun");
     useValueWithArgs(...useArgs);
-    queue.set(JSON.stringify(useArgs), false);
+    queue.set(key, false);
   };
 
   /**
@@ -283,13 +315,13 @@ export function atom<
     const [state, setState] = useState(fields.value);
     const [ctx, setProps] = useState(fields.ctx);
 
-    const key = JSON.stringify(deepSort(useArgs));
+    const key = createKey(useArgs);
     if (!queue.has(key)) queue.set(key, true);
 
     // Effect to await changes and execute the `use` function.
     useDebouncedShallowEffect(
-      () => executeQueue(useArgs, enabled),
-      [enabled, ...useArgs],
+      () => executeQueue(useArgs, enabled, key),
+      [enabled, key],
       debounce
     );
 

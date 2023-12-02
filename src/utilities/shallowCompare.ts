@@ -4,13 +4,13 @@ import { shallowEqual } from "./shallowEqual";
 /**
  * A function that compares two dependency lists shallowly.
  *
- * @param {DependencyList | null | undefined} prevValue The previous dependency list.
+ * @param {DependencyList | undefined} prevValue The previous dependency list.
  * @param {DependencyList} currValue The current dependency list.
  *
  * @returns {boolean} Whether the two dependency lists are equal shallowly.
  */
 export function shallowCompare(
-  prevValue?: DependencyList | null,
+  prevValue?: DependencyList,
   currValue?: DependencyList
 ): boolean {
   if (!prevValue || !currValue) return false;

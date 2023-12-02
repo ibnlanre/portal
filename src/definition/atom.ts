@@ -71,11 +71,13 @@ type History<State> = {
 };
 
 /**
- * Represents an Atom in the portal system.
- * An Atom is a special type of portal entry that allows you to manage and update state.
+ * Represents the fields associated with an Atom.
  *
  * @template State The type of the state.
  * @template Context The type of context associated with the Atom.
+ *
+ * @typedef {Object} Fields
+ * @memberof Atom
  */
 export type Fields<State, Context> = {
   /**
@@ -329,13 +331,16 @@ export type AtomOptions<
 };
 
 /**
- * Represents an Atom in the portal system.
- * An Atom is a special type of portal entry that allows you to manage and update state.
+ * Represents an Atom.
  *
  * @template State The type of the state.
  * @template UseArgs An array of argument types for the `use` event.
  * @template Data The type of data returned by the `get` event.
  * @template Context The type of context associated with the Atom.
+ *
+ * @typedef {Object} Atom
+ * @property {Function} get Retrieves the current state or optionally transforms it using the provided function.
+ * @property {Function} use Represents the result of using an Atom.
  */
 export interface Atom<
   State,
