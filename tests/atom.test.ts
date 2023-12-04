@@ -1,10 +1,9 @@
 import { renderHook, act } from "@testing-library/react";
-import { describe, test, expect, vi, expectTypeOf } from "vitest";
-import { useState } from "react";
+import { describe, test, expect, vi, expectTypeOf, afterEach } from "vitest";
 
 import { atom } from "@/atom";
 
-describe.todo("atom", () => {
+describe("atom", () => {
   const initialState = 0;
   const numberAtom = atom({ state: initialState });
 
@@ -32,84 +31,75 @@ describe.todo("atom", () => {
 });
 
 describe("atom.use", () => {
-  const initialState = 0;
-  const use = vi.fn((value, dep: number) => {
-    dep++;
+  const states = [0, 0, 0, 1, 0];
+  let currentStateIndex = 0;
+  let currentState = states.at(currentStateIndex)!;
+
+  afterEach(() => {
+    currentState = states.at(++currentStateIndex)!;
   });
 
+  const use = vi.fn((value, dep: number) => {});
   const numberAtom = atom({
-    state: initialState,
+    state: 4,
     events: {
       use,
     },
   });
 
   test("should not run the use method if enabled is false", () => {
-    const { result } = renderHook(() => useState(initialState));
-
     renderHook(() => {
       numberAtom.use({
-        enabled: Boolean(result.current[0]),
-        useArgs: [result.current[0]],
+        enabled: false,
+        useArgs: [currentState],
       });
     });
 
+    expect(currentState).toBe(0);
     expect(use).not.toHaveBeenCalled();
   });
 
   test("should run the use method if enabled is true", () => {
-    const { result } = renderHook(() => useState(initialState));
     renderHook(() => {
       numberAtom.use({
-        useArgs: [result.current[0]],
+        useArgs: [currentState],
       });
     });
 
+    expect(currentState).toBe(0);
     expect(use).toHaveBeenCalledOnce();
   });
 
   test("should not rerun the use method if the argument is the same", () => {
-    const { result } = renderHook(() => useState(initialState));
     renderHook(() => {
       numberAtom.use({
-        useArgs: [result.current[0]],
+        useArgs: [currentState],
       });
     });
 
+    expect(currentState).toBe(0);
     expect(use).toHaveBeenCalledTimes(1);
   });
 
-  test("should rerun the use method if the state changes", () => {
-    const { result } = renderHook(() => useState(initialState));
-    const { rerender } = renderHook(() => {
+  test("should rerun the use method if the state changes to a new value", () => {
+    renderHook(() => {
       numberAtom.use({
-        useArgs: [result.current[0]],
+        useArgs: [currentState],
       });
     });
 
-    act(() => {
-      result.current[1]((prev) => prev + 1);
-    });
-
-    rerender();
+    expect(currentState).toBe(1);
     expect(use).toHaveBeenCalledTimes(2);
   });
 
   test("should run the use method if the state changes to a previous value", () => {
-    const initialStateIncrement = 1 + initialState;
-
-    const { result } = renderHook(() => useState(initialStateIncrement));
-    const { rerender } = renderHook(() => {
+    renderHook(() => {
       numberAtom.use({
-        useArgs: [result.current[0]],
+        useArgs: [currentState],
       });
     });
 
-    act(() => {
-      result.current[1]((prev) => prev - 1);
-    });
-
-    rerender();
+    expect(currentState).toBe(0);
     expect(use).toHaveBeenCalledTimes(3);
   });
 });
