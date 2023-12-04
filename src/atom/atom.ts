@@ -79,6 +79,13 @@ export function atom<
    */
   const queue = new Map<string, boolean>();
 
+  /**
+   * Represents the functions to execute on specific Atom events.
+   *
+   * @typedef {Object} Collector
+   * @property {Set<() => void>} rerun A set of functions to execute on the next execution of the `use` function.
+   * @property {Set<() => void>} unmount A set of functions to execute on unmount.
+   */
   const collector = {
     rerun: new Set<() => void>(),
     unmount: new Set<() => void>(),
@@ -257,18 +264,6 @@ export function atom<
   };
 
   /**
-   * Creates a key to identify the `use` function in the `queue`.
-   *
-   * @function
-   * @param {UseArgs} useArgs Optional arguments to pass to the `use` event.
-   *
-   * @returns {string} A key to identify the `use` function in the `queue`.
-   */
-  const createKey = (useArgs: UseArgs) => {
-    return JSON.stringify(deepSort(useArgs));
-  };
-
-  /**
    * A function to execute the `use` function in the `queue`.
    *
    * @function
@@ -282,9 +277,37 @@ export function atom<
     if (!enabled) return;
     if (!queue.get(key)) return;
 
+    // Dispose of the previous `use` function.
     dispose("rerun");
+
+    // Execute the `use` function.
     useValueWithArgs(...useArgs);
+
+    // Pause the `use` function until the state changes.
     queue.set(key, false);
+  };
+
+  /**
+   * Creates a key to identify the `use` function in the `queue`.
+   *
+   * @function
+   * @param {UseArgs} useArgs Optional arguments to pass to the `use` event.
+   *
+   * @returns {string} A key to identify the `use` function in the `queue`.
+   */
+  const createKey = (useArgs: UseArgs) => JSON.stringify(deepSort(useArgs));
+
+  /**
+   * Resets the `queue` to allow the `use` function to be executed again.
+   *
+   * @function
+   * @param {string} key The key of the `use` function in the `queue`.
+   *
+   * @returns {void}
+   */
+  const resetQueue = (key: string) => {
+    queue.forEach((_, key) => queue.set(key, true));
+    queue.set(key, true);
   };
 
   /**
@@ -316,7 +339,7 @@ export function atom<
     const [ctx, setProps] = useState(fields.ctx);
 
     const key = createKey(useArgs);
-    if (!queue.has(key)) queue.set(key, true);
+    if (!queue.has(key)) resetQueue(key);
 
     // Effect to await changes and execute the `use` function.
     useDebouncedShallowEffect(
@@ -344,8 +367,7 @@ export function atom<
 
     // Function to set the atom's state.
     const dispatch = (value: SetStateAction<State>) => {
-      const resolvedValue = getComputedState(value, state);
-      set(resolvedValue);
+      set(getComputedState(value, state));
     };
 
     dispatch.set = dispatch;

@@ -69,12 +69,12 @@ describe("useDebouncedShallowEffect", () => {
     expect(effect).not.toHaveBeenCalled();
 
     rerender({ dependencies: [1, 2, 3] });
-    rerender({ dependencies: [1, 2, 3] });
+    rerender({ dependencies: [4, 5, 6] });
 
     vi.advanceTimersByTime(500);
     expect(effect).toHaveBeenCalledTimes(1);
 
-    rerender({ dependencies: [4, 5, 6] });
+    rerender({ dependencies: [7, 8, 9] });
     vi.advanceTimersByTime(500);
     expect(effect).toHaveBeenCalledTimes(2);
   });
