@@ -10,25 +10,26 @@ import { DebounceOptions } from "@/definition";
  * @param {boolean} [options.leading=false] The effect function should be invoked on the leading edge.
  * @param {boolean} [options.trailing=true] The effect function should be invoked on the trailing edge.
  *
- * @returns {() => () => void} A function to trigger the debounced effect.
+ * @returns {(...args: Arguments) => () => void} A function to trigger the debounced effect.
  */
-export function debounceEffect(
-  effect: EffectCallback,
-  options: DebounceOptions = {}
-) {
+export function debounceEffect<
+  Destructor extends ReturnType<EffectCallback>,
+  Arguments extends ReadonlyArray<any>,
+  Effect extends (...args: Arguments) => Destructor
+>(effect: Effect, options: DebounceOptions = {}) {
   const { delay = 0, leading = false, trailing = true } = options;
 
   if (!delay) return effect;
 
   let timeout: NodeJS.Timeout | null = null;
-  let destructor: ReturnType<EffectCallback> | null = null;
+  let destructor: Destructor
 
-  const debouncedEffect = () => {
+  const debouncedEffect = (...args: Arguments) => {
     if (timeout) clearTimeout(timeout);
-    if (leading && !timeout) destructor = effect();
+    if (leading && !timeout) destructor = effect(...args);
 
     timeout = setTimeout(() => {
-      if (trailing) destructor = effect();
+      if (trailing) destructor = effect(...args);
       timeout = null;
     }, delay);
 
@@ -38,5 +39,5 @@ export function debounceEffect(
     };
   };
 
-  return debouncedEffect;
+  return debouncedEffect as Effect;
 }
