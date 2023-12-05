@@ -1,7 +1,7 @@
 import { useEffect, DependencyList, EffectCallback } from "react";
 
 import { DebounceOptions } from "@/definition";
-import { debounce } from "@/utilities";
+import { debounceEffect } from "@/utilities";
 
 import { useShallowCompare } from "./useShallowCompare";
 
@@ -20,5 +20,5 @@ export function useDebouncedShallowEffect(
   options: DebounceOptions = {}
 ): void {
   const comparison = useShallowCompare(dependencies);
-  useEffect(debounce(effect, options), comparison);
+  useEffect(debounceEffect(effect, options), comparison);
 }

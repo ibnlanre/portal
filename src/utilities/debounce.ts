@@ -12,7 +12,7 @@ import { DebounceOptions } from "@/definition";
  *
  * @returns {() => () => void} A function to trigger the debounced effect.
  */
-export function debounce(
+export function debounceEffect(
   effect: EffectCallback,
   options: DebounceOptions = {}
 ) {

@@ -1,4 +1,4 @@
-import { debounce } from "../src/utilities/debounce";
+import { debounceEffect } from "../src/utilities/debounce";
 import { afterAll, expect, test, vi } from "vitest";
 
 afterAll(() => {
@@ -9,7 +9,7 @@ test("Debounced effect should be called after the specified delay", () => {
   vi.useFakeTimers();
 
   const effect = vi.fn();
-  const debouncedEffect = debounce(effect, { delay: 100 });
+  const debouncedEffect = debounceEffect(effect, { delay: 100 });
 
   debouncedEffect();
 
@@ -24,7 +24,7 @@ test("Debounced effect should be immediately called if delay is 0", () => {
   vi.useFakeTimers();
 
   const effect = vi.fn();
-  const debouncedEffect = debounce(effect, { delay: 0 });
+  const debouncedEffect = debounceEffect(effect, { delay: 0 });
 
   debouncedEffect();
 
@@ -35,7 +35,7 @@ test("Debounced effect should be called only once if leading is true and trailin
   vi.useFakeTimers();
 
   const effect = vi.fn();
-  const debouncedEffect = debounce(effect, {
+  const debouncedEffect = debounceEffect(effect, {
     delay: 100,
     leading: true,
     trailing: false,
@@ -56,7 +56,7 @@ test("Debounced effect should be called twice if leading is true and trailing is
   vi.useFakeTimers();
 
   const effect = vi.fn();
-  const debouncedEffect = debounce(effect, { delay: 100, leading: true });
+  const debouncedEffect = debounceEffect(effect, { delay: 100, leading: true });
 
   debouncedEffect();
   debouncedEffect();
@@ -74,7 +74,10 @@ test("Debounced effect should be called on both leading and trailing edge if tra
   vi.useFakeTimers();
 
   const effect = vi.fn();
-  const debouncedEffect = debounce(effect, { delay: 100, trailing: true });
+  const debouncedEffect = debounceEffect(effect, {
+    delay: 100,
+    trailing: true,
+  });
 
   debouncedEffect();
   expect(effect).not.toBeCalled();
