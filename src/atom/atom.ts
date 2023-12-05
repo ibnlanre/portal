@@ -310,6 +310,10 @@ export function atom<
     queue.set(key, true);
   };
 
+  /**
+   * The function to execute on unmount.
+   * @returns {void}
+   */
   const unmount = () => {
     dispose("unmount");
 

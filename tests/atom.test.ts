@@ -30,7 +30,7 @@ describe("atom", () => {
   });
 });
 
-describe("atom.use", () => {
+describe.concurrent("atom.use", () => {
   const use = vi.fn((value, dep: number) => {});
   const numberAtom = atom({
     state: 4,
@@ -39,7 +39,7 @@ describe("atom.use", () => {
     },
   });
 
-  test.concurrent.each([
+  test.each([
     ["should not run the use method if enabled is false", 0, 0, false],
     ["should run the use method if enabled is true", 0, 1, true],
     ["should not rerun the use method if the argument is the same", 0, 1, true],

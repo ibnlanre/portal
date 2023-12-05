@@ -13,8 +13,8 @@ export function shallowCompare(
   prevValue?: DependencyList,
   currValue?: DependencyList
 ): boolean {
-  if (!prevValue || !currValue) return false;
   if (prevValue === currValue) return true;
+  if (!prevValue || !currValue) return false;
   if (prevValue.length !== currValue.length) return false;
 
   for (let i = 0; i < prevValue.length; i++) {

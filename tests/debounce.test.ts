@@ -1,4 +1,4 @@
-import { debounceEffect } from "../src/utilities/debounce";
+import { debounceEffect } from "@/utilities";
 import { afterAll, expect, test, vi } from "vitest";
 
 afterAll(() => {
@@ -66,7 +66,6 @@ test("Debounced effect should be called twice if leading is true and trailing is
 
   vi.advanceTimersByTime(100);
 
-  //
   expect(effect).toBeCalledTimes(2);
 });
 

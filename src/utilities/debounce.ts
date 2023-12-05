@@ -22,11 +22,11 @@ export function debounceEffect<
   if (!delay) return effect;
 
   let timeout: NodeJS.Timeout | null = null;
-  let destructor: Destructor
+  let destructor: Destructor;
 
   const debouncedEffect = (...args: Arguments) => {
     if (timeout) clearTimeout(timeout);
-    if (leading && !timeout) destructor = effect(...args);
+    else if (leading) destructor = effect(...args);
 
     timeout = setTimeout(() => {
       if (trailing) destructor = effect(...args);
