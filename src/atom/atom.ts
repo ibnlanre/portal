@@ -310,6 +310,14 @@ export function atom<
     queue.set(key, true);
   };
 
+  const unmount = () => {
+    dispose("unmount");
+
+    if (!collector.rerun.size) {
+      queue.clear();
+    }
+  };
+
   /**
    * A hook to use the Atom instance.
    *
@@ -358,7 +366,7 @@ export function atom<
       return () => {
         subscriber.unsubscribe();
         provider.unsubscribe();
-        dispose("unmount");
+        unmount();
       };
     }, []);
 
