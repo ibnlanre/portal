@@ -34,9 +34,9 @@ The following is an overview of the utility functions and hooks available in the
 |--------------------|------------------------------------------------------------------|
 | atom               | A utility for creating isolated states outside a component       |
 | usePortal          | Create a portal for accessing and updating states                |
-| usePortal.local      | A hook to persist state in Local Storage                         |
-| usePortal.session    | A hook to persist state in Session Storage                       |
-| usePortal.cookie     | A hook to persist state in `document.cookie`                     |
+| usePortal.local    | A hook to persist state in Local Storage                         |
+| usePortal.session  | A hook to persist state in Session Storage                       |
+| usePortal.cookie   | A hook to persist state in `document.cookie`                     |
 | createBuilder      | Create a builder object for defining keys and values             |
 | cookieStorage      | An object representing the Cookie Storage API                    |
 | debounceEffect     | A utility for creating a debounced effect in React               |
