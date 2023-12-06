@@ -1,6 +1,6 @@
 # @ibnlanre/portal
 
-Inspired by [React Holmes](https://github.com/devx-os/react-holmes), `@ibnlanre/portal` is a simple **application** state management library for managing component state on a global level.
+Inspired by [React Holmes](https://github.com/devx-os/react-holmes) and [Tanstack Query](https://tanstack.com/query/latest), `@ibnlanre/portal` is a simple **application** state management library for managing component state on a global level.
 
 ## Table of Contents
 
@@ -32,221 +32,223 @@ The following is an overview of the utility functions and hooks available in the
 
 | Function           | Description                                                      |
 |--------------------|------------------------------------------------------------------|
-| atom               | A utility for creating isolated states outside a component       |
-| usePortal          | Create a portal for accessing and updating states                |
-| usePortal.local    | A hook to persist state in Local Storage                         |
-| usePortal.session  | A hook to persist state in Session Storage                       |
-| usePortal.cookie   | A hook to persist state in `document.cookie`                     |
-| createBuilder      | Create a builder object for defining keys and values             |
-| cookieStorage      | An object representing the Cookie Storage API                    |
-| debounceEffect     | A utility for creating a debounced effect in React               |
+| `atom`             | A utility for creating isolated states outside a component       |
+| `usePortal`          | Create a portal for accessing and updating states                |
+| `usePortal.local`    | A hook to persist state in Local Storage                         |
+| `usePortal.session`  | A hook to persist state in Session Storage                       |
+| `usePortal.cookie`   | A hook to persist state in `document.cookie`                     |
+| `createBuilder`      | Create a builder object for defining keys and values             |
+| `cookieStorage`      | An object representing the Cookie Storage API                    |
+| `debounceEffect`     | A utility for creating a debounced effect in React               |
 
 ## Usage
 
-1. **Import the necessary functions and hooks.**
+### Import the necessary functions and hooks
 
-    This library exports the following APIs to enhance state management and facilitate state manipulation
+This library exports the following APIs to enhance state management and facilitate state manipulation
 
-    ```typescript
-    import {
-      atom,
-      createBuilder,
-      cookieStorage,
-      usePortal,
-      debounceEffect
-    } from "@ibnlanre/portal";
-    ```
+```typescript
+import {
+  atom,
+  createBuilder,
+  cookieStorage,
+  usePortal,
+  debounceEffect
+} from "@ibnlanre/portal";
+```
 
-2. **To create a `portal` for managing state, use the `usePortal` function**
+### To create a `portal` for managing state, use the `usePortal` function
 
-    Here is an example:
+Here is an example:
 
-    ```typescript
-    // Setting an initial state is optional.
-    const [name, setName] = usePortal("client", {
-      state: {
-        name: "John Doe",
-        age: 54,
-      }
-    })
-    ```
+```typescript
+// Setting an initial state is optional.
+const [name, setName] = usePortal("client", {
+  state: {
+    name: "John Doe",
+    age: 54,
+  }
+})
+```
 
-    The state can also be retrieved from a browser store. A good practice is to define the `get` function before the `set` function, because of type inference.
+The state can also be retrieved from a browser store. A good practice is to define the `get` function before the `set` function, because of type inference.
 
-    ```typescript
-    const [token, setToken] = usePortal("token", {
-      // Fallback initial state
-      state: "",
+```typescript
+const [token, setToken] = usePortal("token", {
+  // Fallback initial state
+  state: "",
 
-      // Get initial state from a persistent storage.
-      get: (state) => {
-        const value = cookieStorage.getItem("token");
-        if (value) return JSON.parse(value) as string
-        return state;
-      },
+  // Get initial state from a persistent storage.
+  get: (state) => {
+    const value = cookieStorage.getItem("token");
+    if (value) return JSON.parse(value) as string
+    return state;
+  },
 
-      // The set method is called when the state changes.
-      // As well as, upon instantiation.
-      set: (value) => {
-        const state = JSON.stringify(value);
-        cookieStorage.setItem("token", state);
-      },
-    });
-    ```
+  // The set method is called when the state changes.
+  // As well as, upon instantiation.
+  set: (value) => {
+    const state = JSON.stringify(value);
+    cookieStorage.setItem("token", state);
+  },
+});
+```
 
-3. **To create a typed `portal` with a defined store, you can use the `usePortal.make` function**
+### To create a typed `portal` with a defined store, you can use the `usePortal.make` function
 
-    This allows you to manage and access the store value outside of a React component. Here's an example of how to use `usePortal.make`:
+This allows you to manage and access the store value outside of a React component. Here's an example of how to use `usePortal.make`:
 
-    ```typescript
-    // Create a store for type safety
-    const store = {
-      foo: {
-        bar: {
-          baz: "qux"
-        },
-        rim: "raf"
-      },
-    };
+```typescript
+// Create a store for type safety
+const store = {
+  foo: {
+    bar: {
+      baz: "qux"
+    },
+    rim: "raf"
+  },
+};
 
-    // Create the portal outside the React Component,
-    // so that it can be exported and used elsewhere.
-    export const useStorePortal = usePortal.make(store);
+// Create the portal outside the React Component,
+// so that it can be exported and used elsewhere.
+export const useStorePortal = usePortal.make(store);
 
-    // Manage and access the store value
-    const [state, setState] = useStorePortal("foo");
-    ```
+// Manage and access the store value
+const [state, setState] = useStorePortal("foo");
+```
 
-4. **Persist the state by utilizing browser storage mechanisms.**
+### Persist the state by utilizing browser storage mechanisms
 
-    To persist the state in `localStorage`:
+To persist the state in `localStorage`:
 
-    ```typescript
-    const [state, setState] = useStorePortal.local("foo.bar");
-    ```
+```typescript
+const [state, setState] = useStorePortal.local("foo.bar");
+```
 
-    To persist the state in `sessionStorage`:
+To persist the state in `sessionStorage`:
 
-    ```typescript
-    const [state, setState] = useStorePortal.session("foo.bar.baz");
-    ```
+```typescript
+const [state, setState] = useStorePortal.session("foo.bar.baz");
+```
 
-    To persist the state in `document.cookie`:
+To persist the state in `document.cookie`:
 
-    ```typescript
-    const [state, setState] = useStorePortal.cookie("foo.rim", {
-     path: "/"
-    });
-    ```
+```typescript
+const [state, setState] = useStorePortal.cookie("foo.rim", {
+ path: "/"
+});
+```
 
-5. **To manage state outside of a React Component, create an `atom`.**
+### To manage state outside of a React Component, create an `atom`
 
-    An atom is a standalone state container that can be accessed and modified from anywhere in your application. Here's an example of creating an atom:
+An atom is a standalone state container that can be accessed and modified from anywhere in your application. Here's an example of creating an atom:
 
-    ```typescript
-    // Atoms should be created outside React Components
-    const counterAtom = atom({ state: 9 });
-    ```
+```typescript
+// Atoms should be created outside React Components
+const counterAtom = atom({ state: 9 });
+```
 
-    To access the value of an atom within a component, you can use the following code:
+To access the value of an atom within a component, you can use the following code:
 
-    ```typescript
-    // An atom state is isolated from the portal system and can be accessed
-    // by explicitly exporting and importing the atom from where it was declared.
-    const [counter, setCounter] = counterAtom.use();
-    ```
+```typescript
+// An atom state is isolated from the portal system and can be accessed
+// by explicitly exporting and importing the atom from where it was declared.
+const [counter, setCounter] = counterAtom.use();
+```
 
-    This following code snippet demonstrates an advanced example using TypeScript. It defines two atoms, `messagesAtom` and `userAtom`, which are part of a state management system.
+This following code snippet demonstrates an advanced example using TypeScript. It defines two atoms, `messagesAtom` and `userAtom`, which are part of a state management system.
 
-    ```typescript
-    const messagesAtom = atom({
-      state: {} as Messages,
-      events: {
-        get: ({ value }) => value?.messages?.at(0)?.last_24_hr_data,
-        set: ({ value }) => decrypt(value),
-      },
-    });
-    ```
+```typescript
+const messagesAtom = atom({
+  state: {} as Messages,
+  events: {
+    get: ({ value }) => value?.messages?.at(0)?.last_24_hr_data,
+    set: ({ value }) => decrypt(value),
+  },
+});
+```
 
-    `messagesAtom` is initialized with an empty object as its state and has two events:
-    - `get`: Retrieves the `last_24_hr_data` property from the `messages` object.
-    - `set`: Decrypts the provided value before setting it as the new state.
+`messagesAtom` is initialized with an empty object as its state and has two events:
 
-    ```typescript
-    export const userAtom = atom({
-      state: {} as UserData,
-      events: {
-        set: ({ value }) => decrypt(value),
-        use: ({ on, set, ctx }, user: string) => {
-          const { getUrl } = ctx;
-          const ws = new WebSocket(getUrl(user));
-          ws.onmessage = ((value) => set(JSON.parse(value.data)));
-          on.rerun(() => {
-            if (ws.readyState === WebSocket.OPEN) ws.close();
-          })
-        },
-      },
-      context: {
-        getUrl: (user: string) => {
-          return builders.use().socket.users(user);
-        },
-      },
-    });
-    ```
+- `get`: Retrieves the `last_24_hr_data` property from the `messages` object.
+- `set`: Decrypts the provided value before setting it as the new state.
 
-    `userAtom` is initialized with an empty object as its state and has three events:
-    - `set`: Decrypts the provided value before setting it as the new state.
-    - `use`: Accepts a `user` string parameter and establishes a WebSocket connection using the `getUrl` function from the context. It listens for incoming messages and updates the state accordingly. It also closes the WebSocket connection when the `on` event is rerun.
-    - `context`: Provides a `getUrl` function that returns a URL based on the `user` parameter.
+```typescript
+export const userAtom = atom({
+  state: {} as UserData,
+  events: {
+    set: ({ value }) => decrypt(value),
+    use: ({ on, set, ctx }, user: string) => {
+      const { getUrl } = ctx;
+      const ws = new WebSocket(getUrl(user));
+      ws.onmessage = ((value) => set(JSON.parse(value.data)));
+      on.rerun(() => {
+        if (ws.readyState === WebSocket.OPEN) ws.close();
+      })
+    },
+  },
+  context: {
+    getUrl: (user: string) => {
+      return builders.use().socket.users(user);
+    },
+  },
+});
+```
 
-    ```typescript
-    // Atoms are typically used within the context of a React component
-    const [messages, setMessages] = messagesAtom.use();
-    const [users, setUsers] = userAtom.use({ useArgs: [messages.user] });
-    ```
+`userAtom` is initialized with an empty object as its state and has three events:
 
-6. **To create a `builder` pattern for property access.**
+- `set`: Decrypts the provided value before setting it as the new state.
+- `use`: Accepts a `user` string parameter and establishes a WebSocket connection using the `getUrl` function from the context. It listens for incoming messages and updates the state accordingly. It also closes the WebSocket connection when the `on` event is rerun.
+- `context`: Provides a `getUrl` function that returns a URL based on the `user` parameter.
 
-    To create a nested record with a `key` and `value` pair, you can use the following code:
+```typescript
+// Atoms are typically used within the context of a React component
+const [messages, setMessages] = messagesAtom.use();
+const [users, setUsers] = userAtom.use({ useArgs: [messages.user] });
+```
 
-    ```typescript
-    const store = {
-      foo: {
-        baz: (id: number) => `/bazaar/${id}`,
-        bar: 10,
-      },
-    };
+### To create a `builder` pattern for property access
 
-    const builder = createBuilder(store);
-    ```
+To create a nested record with a `key` and `value` pair, you can use the following code:
 
-    To access the keys of the `builder` object, you can use the following code:
+```typescript
+const store = {
+  foo: {
+    baz: (id: number) => `/bazaar/${id}`,
+    bar: 10,
+  },
+};
 
-    ```typescript
-    // `use` expects that the required arguments are passed.
-    builder.foo.baz.use(11); // ["foo", "baz", 11]
+const builder = createBuilder(store);
+```
 
-    // `get` retrieves the keys without invoking the function.
-    builder.foo.baz.get(); // ["foo", "baz"]
+To access the keys of the `builder` object, you can use the following code:
 
-    // `get` also allows you to add more keys
-    builder.foo.baz.get("test"); // ["foo", "baz", "test"]
-    ```
+```typescript
+// `use` expects that the required arguments are passed.
+builder.foo.baz.use(11); // ["foo", "baz", 11]
 
-    To retrieve nested `values`, you can use the following code:
+// `get` retrieves the keys without invoking the function.
+builder.foo.baz.get(); // ["foo", "baz"]
 
-    ```typescript
-    builder.use(); // store
-    builder.use().foo.baz(12); // "/bazaar/12"
-    builder.use().foo.bar; // 10
-    ```
+// `get` also allows you to add more keys
+builder.foo.baz.get("test"); // ["foo", "baz", "test"]
+```
 
-    To add a prefix to the keys, you can use the following code:
+To retrieve nested `values`, you can use the following code:
 
-    ```typescript
-    const builderWithPrefix = createBuilder(store, "tap", "root");
-    builderWithPrefix.foo.bar.use() // ["tap", "root", "foo", "bar"]
-    ```
+```typescript
+builder.use(); // store
+builder.use().foo.baz(12); // "/bazaar/12"
+builder.use().foo.bar; // 10
+```
+
+To add a prefix to the keys, you can use the following code:
+
+```typescript
+const builderWithPrefix = createBuilder(store, "tap", "root");
+builderWithPrefix.foo.bar.use() // ["tap", "root", "foo", "bar"]
+```
 
 ## Author
 
