@@ -316,10 +316,6 @@ export function atom<
    */
   const unmount = () => {
     dispose("unmount");
-
-    if (!collector.rerun.size) {
-      queue.clear();
-    }
   };
 
   /**
@@ -351,7 +347,8 @@ export function atom<
     const [ctx, setProps] = useState(fields.ctx);
 
     const key = createKey(useArgs);
-    if (!queue.has(key)) resetQueue(key);
+    const lastAddedKey = Array.from(queue.keys()).pop();
+    if (lastAddedKey !== key) resetQueue(key);
 
     // Effect to await changes and execute the `use` function.
     useDebouncedShallowEffect(
