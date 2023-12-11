@@ -1,7 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, test, expect, vi, expectTypeOf } from "vitest";
 
-import { atom } from "@/atom";
+import { atom } from "@/atom"
 
 describe("atom", () => {
   const initialState = 0;

@@ -1,5 +1,5 @@
 import { deepSort } from "@/utilities";
-import { expect, describe, it } from "vitest";
+import { expect, describe, it, vi } from "vitest";
 
 describe("deepSort", () => {
   it("should sort an object recursively by its keys", () => {
@@ -153,23 +153,56 @@ describe("deepSort", () => {
   });
 
   it("should handle strings", () => {
-    const data = "hello"
+    const data = "hello";
 
     const sortedData = deepSort(data);
     expect(sortedData).toEqual("hello");
-  })
+  });
 
   it("should handle numbers", () => {
-    const data = 42
+    const data = 42;
 
     const sortedData = deepSort(data);
     expect(sortedData).toEqual(42);
-  })
+  });
 
   it("should handle booleans", () => {
-    const data = true
+    const data = true;
 
     const sortedData = deepSort(data);
     expect(sortedData).toEqual(true);
-  })
+  });
+
+  it("should handle null", () => {
+    const data = null;
+
+    const sortedData = deepSort(data);
+    expect(sortedData).toEqual(null);
+  });
+
+  it("should handle cyclic objects", () => {
+    const data: any = {
+      a: 1,
+      b: 2,
+    };
+
+    data.c = data;
+
+    const sortedData = deepSort(data);
+    const result = {
+      a: 1,
+      b: 2,
+      c: {
+        a: 1,
+        b: 2,
+        c: expect.objectContaining({
+          a: 1,
+          b: 2,
+          c: expect.anything()
+        }),
+      },
+    };
+
+    expect(sortedData).toEqual(result);
+  });
 });

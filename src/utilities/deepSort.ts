@@ -1,25 +1,34 @@
 function arraySort(a: any, b: any): number {
   const aKey = JSON.stringify(a);
   const bKey = JSON.stringify(b);
-
   return aKey.localeCompare(bKey);
 }
 
-export function deepSort(data: any): any {
+export function deepSort<T>(data: T): T {
   if (!data) return data;
+  const visited = new Set<any>();
 
-  if (Array.isArray(data)) {
-    return data.map(deepSort).sort(arraySort);
-  }
+  function sortHelper(obj: any): any {
+    if (visited.has(obj)) return obj;
+    visited.add(obj);
 
-  if (typeof data === "object") {
-    const sortedObject: any = {};
-    const keys = Object.keys(data).sort();
-    for (const key of keys) {
-      sortedObject[key] = deepSort(data[key]);
+    if (Array.isArray(obj)) {
+      return obj.map(sortHelper).sort(arraySort);
     }
-    return sortedObject;
+
+    if (typeof obj === "object" && obj !== null) {
+      const sortedObject: any = {};
+      const keys = Object.keys(obj).sort();
+
+      for (const key of keys) {
+        sortedObject[key] = sortHelper(obj[key]);
+      }
+
+      return sortedObject;
+    }
+
+    return obj;
   }
 
-  return data;
+  return sortHelper(data) as T;
 }

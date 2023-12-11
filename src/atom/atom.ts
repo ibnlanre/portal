@@ -11,14 +11,14 @@ import {
   SetAtom,
 } from "@/definition";
 import {
-  deepSort,
+  debounceEffect,
   getComputedState,
   isAtomStateFunction,
   isFunction,
 } from "@/utilities";
 
 import { AtomSubject } from "./atomSubject";
-import { useDebouncedShallowEffect } from "./useDebouncedShallowEffect";
+import { createSynchronizedEffect } from "./createSynchronizedEffect";
 
 /**
  * @description Creates an Atom instance for managing and updating state.
@@ -72,12 +72,6 @@ export function atom<
   const signal = new AtomSubject(context);
 
   const { forward, rewind, redo, undo, update, subscribe } = observable;
-
-  /**
-   * A set defining whether a `useArgs` has been executed by the `use` function.
-   * @type {Map<string, boolean>}
-   */
-  const queue = new Map<string, boolean>();
 
   /**
    * Represents the functions to execute on specific Atom events.
@@ -263,60 +257,7 @@ export function atom<
     else return value as unknown as Data;
   };
 
-  /**
-   * A function to execute the `use` function in the `queue`.
-   *
-   * @function
-   * @param {UseArgs} useArgs Optional arguments to pass to the `use` event.
-   * @param {boolean} enabled Whether or not to execute the `use` function.
-   * @param {string} key The key of the `use` function in the `queue`.
-   *
-   * @returns {() => void} A function to cleanup the atom `use` event upon unmount.
-   */
-  const executeQueue = (useArgs: UseArgs, enabled: boolean, key: string) => {
-    if (!enabled) return;
-    if (!queue.get(key)) return;
-
-    // Dispose of the previous `use` function.
-    dispose("rerun");
-
-    // Execute the `use` function.
-    useValueWithArgs(...useArgs);
-
-    // Pause the `use` function until the state changes.
-    queue.set(key, false);
-  };
-
-  /**
-   * Creates a key to identify the `use` function in the `queue`.
-   *
-   * @function
-   * @param {UseArgs} useArgs Optional arguments to pass to the `use` event.
-   *
-   * @returns {string} A key to identify the `use` function in the `queue`.
-   */
-  const createKey = (useArgs: UseArgs) => JSON.stringify(deepSort(useArgs));
-
-  /**
-   * Resets the `queue` to allow the `use` function to be executed again.
-   *
-   * @function
-   * @param {string} key The key of the `use` function in the `queue`.
-   *
-   * @returns {void}
-   */
-  const resetQueue = (key: string) => {
-    queue.forEach((_, key) => queue.set(key, true));
-    queue.set(key, true);
-  };
-
-  /**
-   * The function to execute on unmount.
-   * @returns {void}
-   */
-  const unmount = () => {
-    dispose("unmount");
-  };
+  const useSynchronizedEffect = createSynchronizedEffect();
 
   /**
    * A hook to use the Atom instance.
@@ -344,30 +285,26 @@ export function atom<
     } = { ...options };
 
     const [state, setState] = useState(fields.value);
-    const [ctx, setProps] = useState(fields.ctx);
+    const [ctx, setCtx] = useState(fields.ctx);
 
-    const key = createKey(useArgs);
-    const lastAddedKey = Array.from(queue.keys()).pop();
-    if (lastAddedKey !== key) resetQueue(key);
+    const execute = debounceEffect(() => {
+      dispose("rerun");
+      useValueWithArgs(...useArgs);
+    }, debounce);
 
-    // Effect to await changes and execute the `use` function.
-    useDebouncedShallowEffect(
-      () => executeQueue(useArgs, enabled, key),
-      [enabled, key],
-      debounce
-    );
+    useSynchronizedEffect(execute, useArgs, enabled);
 
     useEffect(() => {
       // Effect to subscribe to state changes.
       const subscriber = subscribe(setState);
 
       // Effect to subscribe to context changes.
-      const provider = provide(setProps);
+      const provider = provide(setCtx);
 
       return () => {
         subscriber.unsubscribe();
         provider.unsubscribe();
-        unmount();
+        dispose("unmount");
       };
     }, []);
 
