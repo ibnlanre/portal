@@ -8,6 +8,5 @@ export * from "./isAtomStateFunction";
 export * from "./isFunction";
 export * from "./isSetStateFunction";
 export * from "./isDefined";
-export * from "./shallowCompare";
 export * from "./shallowEqual";
 export * from "./toStringKey";

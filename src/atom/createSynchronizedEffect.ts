@@ -58,6 +58,6 @@ export function createSynchronizedEffect() {
     enabled: boolean
   ) {
     const key = createKey(dependencies);
-    useEffect(synchronize(effect, key, enabled), [enabled, key]);
+    useEffect(synchronize(effect, key, enabled), [key, enabled]);
   };
 }

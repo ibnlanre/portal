@@ -1,7 +1,7 @@
+const { stringify } = JSON;
+
 function arraySort(a: any, b: any): number {
-  const aKey = JSON.stringify(a);
-  const bKey = JSON.stringify(b);
-  return aKey.localeCompare(bKey);
+  return stringify(a).localeCompare(stringify(b));
 }
 
 export function deepSort<T>(data: T): T {
@@ -18,9 +18,9 @@ export function deepSort<T>(data: T): T {
 
     if (typeof obj === "object" && obj !== null) {
       const sortedObject: any = {};
-      const keys = Object.keys(obj).sort();
+      const sortedKeys = Object.keys(obj).sort();
 
-      for (const key of keys) {
+      for (const key of sortedKeys) {
         sortedObject[key] = sortHelper(obj[key]);
       }
 
