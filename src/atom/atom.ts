@@ -257,6 +257,10 @@ export function atom<
     else return value as unknown as Data;
   };
 
+  /**
+   * A hook to synchronize the execution of the `use` function.
+   * @type {Function}
+   */
   const useSynchronizedEffect = createSynchronizedEffect();
 
   /**
