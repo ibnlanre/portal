@@ -18,7 +18,7 @@ import {
 } from "@/utilities";
 
 import { AtomSubject } from "./atomSubject";
-import { createSynchronizedEffect } from "./createSynchronizedEffect";
+import { makeUseSyncEffect } from "./makeUseSyncEffect";
 
 /**
  * @description Creates an Atom instance for managing and updating state.
@@ -261,7 +261,7 @@ export function atom<
    * A hook to synchronize the execution of the `use` function.
    * @type {Function}
    */
-  const useSynchronizedEffect = createSynchronizedEffect();
+  const useSynchronizedEffect = makeUseSyncEffect();
 
   /**
    * A hook to use the Atom instance.

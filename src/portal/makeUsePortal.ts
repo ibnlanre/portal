@@ -22,7 +22,7 @@ import { Portal } from "./portal";
  * @param {Store} store The object that represents the store.
  * @returns A function that takes a path and returns a hook for accessing the store value at that path.
  */
-export function makePortal<Store extends Record<string, any>>(
+export function makeUsePortal<Store extends Record<string, any>>(
   store: Store
 ): UsePortal<Store> {
   const portal = new Portal();

@@ -8,12 +8,11 @@ import {
 import { getResolvedState } from "@/utilities";
 
 import { Portal } from "./portal";
-import { makePortal } from "./makePortal";
+import { makeUsePortal } from "./makeUsePortal";
 import { useCookieImplementation } from "./useCookieImplementation";
 import { useLocalImplementation } from "./useLocalImplementation";
 import { usePortalImplementation } from "./usePortalImplementation";
 import { useSessionImplementation } from "./useSessionImplementation";
-
 
 const portal = new Portal();
 
@@ -137,7 +136,7 @@ function useCookie<
 usePortal.local = useLocal;
 usePortal.session = useSession;
 usePortal.cookie = useCookie;
-usePortal.make = makePortal;
+usePortal.make = makeUsePortal;
 
 // Utility functions
 usePortal.clear = portal.clear;
