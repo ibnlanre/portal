@@ -35,4 +35,5 @@ export type Builder<
   P extends readonly string[] = []
 > = {
   use: () => T;
+  is: T;
 } & KeyBuilder<T, P>;

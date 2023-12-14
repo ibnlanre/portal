@@ -250,6 +250,18 @@ const builderWithPrefix = createBuilder(store, "tap", "root");
 builderWithPrefix.foo.bar.use() // ["tap", "root", "foo", "bar"]
 ```
 
+To get the type of object passed to the builder
+
+```typescript
+const builder = createBuilder(store);
+
+// Note that the actual value of builder.is is undefined.
+type StoreType = typeof builder.is;
+
+// Ease of use accessing the type of nested properties.
+type BarType = typeof builder.is.foo.bar;
+```
+
 ## Author
 
 Ridwan Olanrewaju, [root.i.ng](https://www.root.i.ng), [@ibnlanre](https://linkedin.com/in/ibnlanre)

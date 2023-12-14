@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, expectTypeOf } from "vitest";
 
 import { createBuilder } from "@/builder";
 
@@ -88,5 +88,9 @@ describe("createBuilder", () => {
 
   it("should return undefined for non-existing nested value", () => {
     expect(builder.use().dex).toBeUndefined();
+  });
+
+  it("should return the correct type of the builder", () => {
+    expectTypeOf(builder.is).toEqualTypeOf(obj);
   });
 });
