@@ -1,7 +1,6 @@
 import { handleSSRError } from "@/utilities";
 import { cookieStorage } from "@/cookies";
-
-import type { PortalMap, PortalValue, StorageType } from "@/definition";
+import { PortalMap, PortalValue, StorageType } from "@/definition";
 
 import { BehaviorSubject } from "./behaviorSubject";
 
@@ -13,7 +12,13 @@ export class Portal {
    * @type {PortalMap}
    */
   get entries() {
-    return this.portalMap;
+    const result: Record<string, any> = {};
+
+    this.portalMap.forEach(({ observable }, key) => {
+      result[key] = observable.value;
+    });
+
+    return result;
   }
 
   /**
@@ -216,9 +221,3 @@ export class Portal {
     }
   };
 }
-
-// /**
-//  * Represents a mapping of keys (stringified) to portal entries.
-//  * @type {PortalMap}
-//  */
-// export const portal = new Portal();

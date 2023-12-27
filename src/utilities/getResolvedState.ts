@@ -7,8 +7,8 @@ import { isFunction } from "./isFunction";
  * @returns {State} The actual state value.
  */
 export function getResolvedState<State>(
-  initialState: State | (() => State)
+  initialState?: State | (() => State)
 ): State {
   if (isFunction(initialState)) return initialState();
-  return initialState;
+  return initialState as State;
 }

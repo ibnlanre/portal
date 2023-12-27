@@ -1,15 +1,15 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, expectTypeOf, it } from "vitest";
 
-import { usePortal } from "@/portal";
+import { portal } from "@/portal";
 
-describe("usePortal", () => {
+describe("portal.use", () => {
   const path = "is-open";
   const initialState = { isOpen: true };
 
   it("should return the portal state", () => {
     const { result } = renderHook(() =>
-      usePortal(path, { state: initialState })
+      portal.use(path, { state: initialState })
     );
     const [state] = result.current;
     expect(state).toMatchObject(initialState);
@@ -17,7 +17,7 @@ describe("usePortal", () => {
 
   it("should update the portal state", () => {
     const { result } = renderHook(() =>
-      usePortal(path, { state: initialState })
+      portal.use(path, { state: initialState })
     );
     const [, setState] = result.current;
 
@@ -30,7 +30,7 @@ describe("usePortal", () => {
   });
 
   it("should return the correct value for a given path", () => {
-    const { result } = renderHook(() => usePortal("count", { state: 0 }));
+    const { result } = renderHook(() => portal.use("count", { state: 0 }));
 
     const [count, setCount] = result.current;
     expect(count).toBe(0);
@@ -45,7 +45,7 @@ describe("usePortal", () => {
 
   it("should return the correct type selected", () => {
     const { result } = renderHook(() =>
-      usePortal("name", {
+      portal.use("name", {
         state: "John",
         select: (state) => (state === "John" ? 5 : 10),
       })
@@ -65,7 +65,7 @@ describe("usePortal", () => {
   });
 });
 
-describe("usePortal.local", () => {
+describe("portal.local", () => {
   afterEach(() => {
     localStorage.clear();
   });
@@ -73,14 +73,14 @@ describe("usePortal.local", () => {
   localStorage.setItem("foo", JSON.stringify("baz"));
 
   it("should set initial state from local storage", () => {
-    const { result } = renderHook(() => usePortal.local("foo"));
+    const { result } = renderHook(() => portal.local("foo"));
 
     const [state] = result.current;
     expect(state).toEqual("baz");
   });
 
   it("should set local storage on state change", () => {
-    const { result } = renderHook(() => usePortal.local("foo"));
+    const { result } = renderHook(() => portal.local("foo"));
     const [, setState] = result.current;
 
     act(() => {
@@ -94,7 +94,7 @@ describe("usePortal.local", () => {
   });
 });
 
-describe("usePortal.make", () => {
+describe("portal.make", () => {
   afterEach(() => {
     localStorage.clear();
     sessionStorage.clear();
@@ -113,11 +113,11 @@ describe("usePortal.make", () => {
       },
     };
 
-    const userPortal = usePortal.make(userStore);
+    const userPortal = portal.make(userStore);
     expect(userPortal).toBeDefined();
   });
 
-  it("should update the state of the portal using usePortal.local", () => {
+  it("should update the state of the portal using portal.local", () => {
     const userStore = {
       name: "John Doe",
       email: "johndoe@jmail.com",
@@ -130,7 +130,7 @@ describe("usePortal.make", () => {
       },
     };
 
-    const userPortal = usePortal.make(userStore);
+    const userPortal = portal.make(userStore);
     const { result, unmount } = renderHook(() => userPortal.local("name"));
 
     const [user, setUser] = result.current;
@@ -146,7 +146,7 @@ describe("usePortal.make", () => {
     unmount();
   });
 
-  it("should update the state of the portal using usePortal.session with custom initial state", () => {
+  it("should update the state of the portal using portal.session with custom initial state", () => {
     const userStore = {
       name: "John Doe",
       email: "johndoe@jmail.com",
@@ -161,7 +161,7 @@ describe("usePortal.make", () => {
 
     sessionStorage.setItem("oh-my", JSON.stringify("uncle"));
 
-    const userPortal = usePortal.make(userStore);
+    const userPortal = portal.make(userStore);
     const { result } = renderHook(() =>
       userPortal.session("name", {
         key: "oh-my",

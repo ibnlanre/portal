@@ -1,6 +1,6 @@
 import { Paths, GetValueByPath, UseCookieImplementation } from "@/definition";
-
 import { cookieStorage } from "@/cookies";
+
 import { usePortalImplementation } from "./usePortalImplementation";
 
 /**
@@ -18,7 +18,7 @@ import { usePortalImplementation } from "./usePortalImplementation";
  * @property {CookieConfig<State>} [config] The config of the portal's state
  * @property {State} initialState The initial state of the portal
  *
- * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
+ * @returns {PortalState<State, Data>} A tuple containing the current state and a function to update the state.
  */
 export function useCookieImplementation<
   Store extends Record<string, any>,
@@ -26,7 +26,7 @@ export function useCookieImplementation<
   State extends GetValueByPath<Store, Path>,
   Data
 >(properties: UseCookieImplementation<Store, Path, State, Data>) {
-  const { path, portal, config, initialState } = properties;
+  const { path, store, config, initialState } = properties;
   const {
     key = path,
     set = (value: State) => JSON.stringify(value),
@@ -53,6 +53,6 @@ export function useCookieImplementation<
     path,
     initialState,
     options,
-    portal,
+    store,
   });
 }

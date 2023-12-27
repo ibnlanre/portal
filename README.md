@@ -33,13 +33,10 @@ The following is an overview of the utility functions and hooks available in the
 | Function           | Description                                                      |
 |--------------------|------------------------------------------------------------------|
 | `atom`             | A utility for creating isolated states outside a component       |
-| `usePortal`          | Create a portal for accessing and updating states                |
-| `usePortal.local`    | A hook to persist state in Local Storage                         |
-| `usePortal.session`  | A hook to persist state in Session Storage                       |
-| `usePortal.cookie`   | A hook to persist state in `document.cookie`                     |
-| `createBuilder`      | Create a builder object for defining keys and values             |
-| `cookieStorage`      | An object representing the Cookie Storage API                    |
-| `debounceEffect`     | A utility for creating a debounced effect in React               |
+| `portal`           | Create a portal for accessing and updating states                |
+| `createBuilder`    | Create a builder object for defining keys and values             |
+| `cookieStorage`    | An object representing the Cookie Storage API                    |
+| `debounceEffect`   | A utility for creating a debounced effect in React               |
 
 ## Usage
 
@@ -52,18 +49,18 @@ import {
   atom,
   createBuilder,
   cookieStorage,
-  usePortal,
+  portal,
   debounceEffect
 } from "@ibnlanre/portal";
 ```
 
-### To create a `portal` for managing state, use the `usePortal` function
+### To create a `portal` for managing state, use the `portal` function
 
 Here is an example:
 
 ```typescript
 // Setting an initial state is optional.
-const [name, setName] = usePortal("client", {
+const [name, setName] = portal.use("client", {
   state: {
     name: "John Doe",
     age: 54,
@@ -74,7 +71,7 @@ const [name, setName] = usePortal("client", {
 The state can also be retrieved from a browser store. A good practice is to define the `get` function before the `set` function, because of type inference.
 
 ```typescript
-const [token, setToken] = usePortal("token", {
+const [token, setToken] = portal.use("token", {
   // Fallback initial state
   state: "",
 
@@ -94,13 +91,13 @@ const [token, setToken] = usePortal("token", {
 });
 ```
 
-### To create a typed `portal` with a defined store, you can use the `usePortal.make` function
+### To create a typed `portal` with a defined store, you can use the `portal.make` function
 
-This allows you to manage and access the store value outside of a React component. Here's an example of how to use `usePortal.make`:
+This allows you to manage and access the store value outside of a React component. Here's an example of how to use `portal.make`:
 
 ```typescript
 // Create a store for type safety
-const store = {
+const record = {
   foo: {
     bar: {
       baz: "qux"
@@ -109,12 +106,12 @@ const store = {
   },
 };
 
-// Create the portal outside the React Component,
+// Make typed portals outside of React Components,
 // so that it can be exported and used elsewhere.
-export const useStorePortal = usePortal.make(store);
+export const store = portal.make(record);
 
 // Manage and access the store value
-const [state, setState] = useStorePortal("foo");
+const [state, setState] = store.use("foo");
 ```
 
 ### Persist the state by utilizing browser storage mechanisms
@@ -122,19 +119,19 @@ const [state, setState] = useStorePortal("foo");
 To persist the state in `localStorage`:
 
 ```typescript
-const [state, setState] = useStorePortal.local("foo.bar");
+const [state, setState] = store.local("foo.bar");
 ```
 
 To persist the state in `sessionStorage`:
 
 ```typescript
-const [state, setState] = useStorePortal.session("foo.bar.baz");
+const [state, setState] = store.session("foo.bar.baz");
 ```
 
 To persist the state in `document.cookie`:
 
 ```typescript
-const [state, setState] = useStorePortal.cookie("foo.rim", {
+const [state, setState] = store.cookie("foo.rim", {
  path: "/"
 });
 ```

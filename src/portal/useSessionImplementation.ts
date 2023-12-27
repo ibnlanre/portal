@@ -16,7 +16,7 @@ import { usePortalImplementation } from "./usePortalImplementation";
  * @property {Config<State>} [config] The config of the portal's state
  * @property {State} initialState The initial state of the portal
  *
- * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
+ * @returns {PortalState<State, Data>} A tuple containing the current state and a function to update the state.
  */
 export function useSessionImplementation<
   Store extends Record<string, any>,
@@ -24,7 +24,7 @@ export function useSessionImplementation<
   State extends GetValueByPath<Store, Path>,
   Data
 >(properties: UseSessionImplementation<Store, Path, State, Data>) {
-  const { path, portal, config, initialState } = properties;
+  const { path, store, config, initialState } = properties;
   const {
     key = path,
     set = (value: State) => JSON.stringify(value),
@@ -50,6 +50,6 @@ export function useSessionImplementation<
     path,
     initialState,
     options,
-    portal,
+    store,
   });
 }

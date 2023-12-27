@@ -220,7 +220,7 @@ export interface UsePortal<Store extends Record<string, any>> {
    * @template Data The type of the data.
    *
    * @param {Path} path The path to the store value.
-   * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
+   * @returns {PortalState<State, Data>} A tuple containing the current state and a function to update the state.
    */
   local<
     Path extends Paths<Store>,
@@ -239,7 +239,7 @@ export interface UsePortal<Store extends Record<string, any>> {
    * @template Data The type of the data.
    *
    * @param {Path} path The path to the store value.
-   * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
+   * @returns {PortalState<State, Data>} A tuple containing the current state and a function to update the state.
    */
   session<
     Path extends Paths<Store>,
@@ -260,7 +260,7 @@ export interface UsePortal<Store extends Record<string, any>> {
    * @param {Path} path The path to the store value.
    * @param {CookieOptions} cookieOptions The options for the cookie.
    *
-   * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
+   * @returns {PortalState<State, Data>} A tuple containing the current state and a function to update the state.
    */
   cookie<
     Path extends Paths<Store>,
@@ -270,6 +270,26 @@ export interface UsePortal<Store extends Record<string, any>> {
     path: Path,
     config?: CookieConfig<State, Data>
   ): PortalState<State, Data>;
+}
+
+/**
+ * Represents the properties of the `usePortalImplemenation` hook.
+ *
+ * @template State The type of the state.
+ * @template Path The type of the path.
+ * @template Store The type of the store.
+ * @template Data The type of the data.
+ */
+export interface UsePortalImplementation<
+  Store extends Record<string, any>,
+  Path extends Paths<Store>,
+  State extends GetValueByPath<Store, Path>,
+  Data
+> {
+  path: Path;
+  store: Portal;
+  initialState?: State;
+  options?: PortalOptions<State, Data>;
 }
 
 /**
@@ -287,7 +307,7 @@ export interface UseLocalImplementation<
   Data
 > {
   path: Path;
-  portal: Portal;
+  store: Portal;
   config?: Config<State, Data>;
   initialState: State;
 }
@@ -307,7 +327,7 @@ export interface UseSessionImplementation<
   Data
 > {
   path: Path;
-  portal: Portal;
+  store: Portal;
   initialState: State;
   config?: Config<State, Data>;
 }
@@ -327,7 +347,7 @@ export interface UseCookieImplementation<
   Data
 > {
   path: Path;
-  portal: Portal;
+  store: Portal;
   initialState: State;
   config?: CookieConfig<State, Data>;
 }

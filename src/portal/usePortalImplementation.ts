@@ -1,33 +1,12 @@
 import { useState, useEffect } from "react";
 
 import type {
+  UsePortalImplementation,
   GetValueByPath,
   Paths,
-  PortalOptions,
   PortalState,
   Subscription,
 } from "@/definition";
-import { Portal } from "./portal";
-
-/**
- * Represents the properties of the `usePortalImplemenation` hook.
- *
- * @template State The type of the state.
- * @template Path The type of the path.
- * @template Store The type of the store.
- * @template Data The type of the data.
- */
-interface UsePortalImplementation<
-  Store extends Record<string, any>,
-  Path extends Paths<Store>,
-  State extends GetValueByPath<Store, Path>,
-  Data
-> {
-  path: Path;
-  portal: Portal;
-  initialState?: State;
-  options?: PortalOptions<State, Data>;
-}
 
 /**
  * Internal function to handle state and subscriptions for the `usePortal` hook.
@@ -44,7 +23,7 @@ interface UsePortalImplementation<
  * @property {Config<State>} [config] The config of the portal's state
  * @property {State} initialState The initial state of the portal
  *
- * @returns {PortalState<State>} A tuple containing the current state and a function to update the state.
+ * @returns {PortalState<State, Data>} A tuple containing the current state and a function to update the state.
  */
 export function usePortalImplementation<
   Store extends Record<string, any>,
@@ -54,7 +33,7 @@ export function usePortalImplementation<
 >(
   properties: UsePortalImplementation<Store, Path, State, Data>
 ): PortalState<State, Data> {
-  const { path, portal, options, initialState } = properties;
+  const { path, store, options, initialState } = properties;
   const {
     set,
     select = (value: State) => value as unknown as Data,
@@ -72,7 +51,7 @@ export function usePortalImplementation<
    * Retrieve the portal entry associated with the specified key or create a new one if not found.
    * @type {PortalValue<State>}
    */
-  const { observable } = portal.getItem(path, resolvedState);
+  const { observable } = store.getItem(path, resolvedState);
 
   /**
    * Subscribe to state changes and update the component's state accordingly.
@@ -113,7 +92,7 @@ export function usePortalImplementation<
 
   /**
    * Return an array containing the current state and the setter function for state updates.
-   * @type {PortalState<State>}
+   * @type {PortalState<State, Data>}
    */
   return [select(observable.value), observable.set];
 }

@@ -3,17 +3,17 @@ import { expect, describe, afterEach, it } from "vitest";
 
 import { usePortalImplementation, Portal } from "@/portal";
 
-const portal = new Portal();
+const store = new Portal();
 
 afterEach(() => {
-  portal.clear();
+  store.clear();
 });
 
 describe("usePortalImplementation", () => {
   it("should return the initial state", () => {
     const initialState = { count: 0 };
     const { result } = renderHook(() =>
-      usePortalImplementation({ path: "test", initialState, portal })
+      usePortalImplementation({ path: "test", initialState, store })
     );
 
     const [state] = result.current;
@@ -23,7 +23,7 @@ describe("usePortalImplementation", () => {
   it("should update the state when the setter is called", () => {
     const initialState = { count: 0 };
     const { result } = renderHook(() =>
-      usePortalImplementation({ path: "test", initialState, portal })
+      usePortalImplementation({ path: "test", initialState, store })
     );
 
     const [, setState] = result.current;
@@ -43,7 +43,7 @@ describe("usePortalImplementation", () => {
       usePortalImplementation({
         path: "test",
         initialState,
-        portal,
+        store,
         options: {
           get: (value) => {
             const val = localStorage.getItem("test");
@@ -63,7 +63,7 @@ describe("usePortalImplementation", () => {
       usePortalImplementation({
         path: "test",
         initialState,
-        portal,
+        store,
         options: {
           set: (value) => localStorage.setItem("test", JSON.stringify(value)),
           get: (value) => {
@@ -91,7 +91,7 @@ describe("usePortalImplementation", () => {
       usePortalImplementation({
         path: "test",
         initialState,
-        portal,
+        store,
         options: {
           set: (value) => localStorage.setItem("test", JSON.stringify(value)),
           get: (value) => {
@@ -120,7 +120,7 @@ describe("usePortalImplementation", () => {
       usePortalImplementation({
         path: "test",
         initialState,
-        portal,
+        store,
         options: {
           select: ({ count }) => count,
         },

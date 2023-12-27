@@ -5,7 +5,7 @@ import type { Builder, KeyBuilder } from "@/definition";
  *
  * @template T The type of the object.
  *
- * @param {T} obj The object to traverse and retrieve the nested keys.
+ * @param {T} register The object to traverse and retrieve the nested keys.
  * @param {string[]} [prefix=[]] An optional prefix to prepend to keys array in the builder object.
  *
  * @returns {Builder<T>} A builder object with callable functions representing the nested keys.
@@ -16,11 +16,11 @@ import type { Builder, KeyBuilder } from "@/definition";
 export function createBuilder<
   T extends Record<string, any>,
   P extends readonly string[] = []
->(obj: T, ...prefix: P): Builder<T, P> {
-  const keys = Object.keys(obj) as Array<keyof T>;
+>(register: T, ...prefix: P): Builder<T, P> {
+  const keys = Object.keys(register) as Array<keyof T>;
 
   const builder = keys.reduce((acc, key) => {
-    const value = obj[key];
+    const value = register[key];
     const newPath = prefix ? prefix.concat([key as string]) : [key as string];
 
     if (typeof value === "function") {
@@ -55,5 +55,5 @@ export function createBuilder<
     };
   }, {} as KeyBuilder<T>);
 
-  return Object.assign({ use: () => obj }, builder) as Builder<T, P>;
+  return Object.assign({ use: () => register }, builder) as Builder<T, P>;
 }
