@@ -38,11 +38,12 @@ export function makeUseSyncEffect() {
    *
    * @returns {EffectCallback} The effect function to be synchronized.
    */
-  function synchronize(effect: EffectCallback, key: string, enabled: boolean) {
-    if (enabled && queue.get(key)) {
-      queue.set(key, false);
-      return effect;
-    } else return () => undefined;
+  function sync(effect: EffectCallback, key: string, enabled: boolean) {
+    if (!enabled) return;
+    if (!queue.get(key)) return;
+
+    queue.set(key, false);
+    return effect();
   }
 
   /**
@@ -58,6 +59,6 @@ export function makeUseSyncEffect() {
     enabled: boolean
   ) {
     const key = createKey(dependencies);
-    useEffect(synchronize(effect, key, enabled), [key, enabled]);
+    useEffect(() => sync(effect, key, enabled), [key, enabled]);
   };
 }

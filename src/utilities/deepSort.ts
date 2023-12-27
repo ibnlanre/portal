@@ -1,7 +1,5 @@
-const { stringify } = JSON;
-
 function arraySort(a: any, b: any): number {
-  return stringify(a).localeCompare(stringify(b));
+  return JSON.stringify(a).localeCompare(JSON.stringify(b));
 }
 
 export function deepSort<T>(data: T): T {

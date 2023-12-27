@@ -1,7 +1,8 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, test, expect, vi, expectTypeOf } from "vitest";
+import { StrictMode } from "react";
 
-import { atom } from "@/atom"
+import { atom } from "@/atom";
 
 describe("atom", () => {
   const initialState = 0;
@@ -30,7 +31,13 @@ describe("atom", () => {
   });
 });
 
-describe.concurrent("atom.use", () => {
+describe.concurrent.each([
+  [
+    "atom.use without strict mode",
+    undefined,
+  ],
+  ["atom.use with strict mode", StrictMode],
+])(`%s`, (description, wrapper) => {
   const use = vi.fn((value, dep: number) => {});
   const numberAtom = atom({
     state: 4,
@@ -42,26 +49,36 @@ describe.concurrent("atom.use", () => {
   test.each([
     ["should not run the use method if enabled is false", 0, 0, false],
     ["should run the use method if enabled is true", 0, 1, true],
-    ["should not rerun the use method if the argument is the same", 0, 1, true],
+    [
+      "should not rerun the use method if the argument is the same",
+      0,
+      1,
+      undefined,
+    ],
     [
       "should rerun the use method if the state changes to a new value",
       1,
       2,
-      true,
+      undefined,
     ],
     [
       "should run the use method if the state changes to a previous value",
       0,
       3,
-      true,
+      undefined,
     ],
   ])(`%s`, (condition, state, expected, enabled) => {
-    renderHook(() => {
-      numberAtom.use({
-        useArgs: [state],
-        enabled,
-      });
-    });
+    renderHook(
+      () => {
+        numberAtom.use({
+          useArgs: [state],
+          enabled,
+        });
+      },
+      {
+        wrapper,
+      }
+    );
     expect(use).toHaveBeenCalledTimes(expected);
   });
 });

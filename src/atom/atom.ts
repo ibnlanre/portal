@@ -261,7 +261,7 @@ export function atom<
    * A hook to synchronize the execution of the `use` function.
    * @type {Function}
    */
-  const useSynchronizedEffect = makeUseSyncEffect();
+  const useSyncEffect = makeUseSyncEffect();
 
   /**
    * A hook to use the Atom instance.
@@ -296,8 +296,7 @@ export function atom<
       useValueWithArgs(...useArgs);
     }, debounce);
 
-    useSynchronizedEffect(execute, useArgs, enabled);
-
+    useSyncEffect(execute, useArgs, enabled);
     useEffect(() => {
       // Effect to subscribe to state changes.
       const subscriber = subscribe(setState);
