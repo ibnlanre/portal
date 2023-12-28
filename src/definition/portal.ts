@@ -116,6 +116,14 @@ export type PortalValue<State> = {
    * The BehaviorSubject that contains the current value of the store.
    */
   observable: BehaviorSubject<State>;
+  /**
+   * The method to set the value of the store.
+   */
+  set?: SetStore<State>;
+  /**
+   * The method to get the value of the store.
+   */
+  get?: GetState<State>;
 };
 
 /**

@@ -22,7 +22,7 @@ export function useLocalImplementation<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
-  Data
+  Data = State
 >(properties: UseLocalImplementation<Store, Path, State, Data>) {
   const { path, store, config, initialState } = properties;
   const {

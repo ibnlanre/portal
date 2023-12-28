@@ -29,16 +29,15 @@ export function usePortalImplementation<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
-  Data
+  Data = State
 >(
   properties: UsePortalImplementation<Store, Path, State, Data>
 ): PortalState<State, Data> {
   const { path, store, options, initialState } = properties;
   const {
-    set,
     select = (value: State) => value as unknown as Data,
     state = initialState as State,
-    get,
+    ...events
   } = { ...options };
 
   /**
@@ -51,7 +50,11 @@ export function usePortalImplementation<
    * Retrieve the portal entry associated with the specified key or create a new one if not found.
    * @type {PortalValue<State>}
    */
-  const { observable } = store.getItem(path, resolvedState);
+  const { observable, set, get } = store.insertItem(
+    path,
+    resolvedState,
+    events
+  );
 
   /**
    * Subscribe to state changes and update the component's state accordingly.

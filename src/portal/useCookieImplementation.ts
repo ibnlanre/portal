@@ -24,7 +24,7 @@ export function useCookieImplementation<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
-  Data
+  Data = State
 >(properties: UseCookieImplementation<Store, Path, State, Data>) {
   const { path, store, config, initialState } = properties;
   const {
