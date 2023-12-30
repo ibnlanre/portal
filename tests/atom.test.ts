@@ -6,7 +6,13 @@ import { atom } from "@/atom";
 
 describe("atom", () => {
   const initialState = 0;
-  const numberAtom = atom({ state: initialState });
+
+  const numberAtom = atom({
+    state: initialState,
+    context: {
+      type: "number",
+    },
+  });
 
   test("should return the state and setState", () => {
     const { result } = renderHook(() => numberAtom.use());
@@ -29,13 +35,41 @@ describe("atom", () => {
     const [newState] = result.current;
     expect(newState).toBe(10);
   });
+
+  test("should retrieve the context from an array destructure", () => {
+    const { result } = renderHook(() => numberAtom.use());
+    const [, { type }] = result.current;
+    expect(type).toEqual("number");
+  });
+
+  test("should retrieve the context from an object destructure", () => {
+    const { result } = renderHook(() => numberAtom.use());
+    const { type } = result.current;
+    expect(type).toEqual("number");
+  });
+
+  test("should retrieve the name from the key", () => {
+    const { result } = renderHook(() =>
+      numberAtom.use({
+        key: "number",
+      })
+    );
+    const { number, setNumber } = result.current;
+
+    expect(number).toEqual(10);
+    expect(setNumber).toBeInstanceOf(Function);
+
+    act(() => {
+      setNumber(20);
+    });
+
+    const [newNumber] = result.current;
+    expect(newNumber).toBe(20);
+  });
 });
 
 describe.concurrent.each([
-  [
-    "atom.use without strict mode",
-    undefined,
-  ],
+  ["atom.use without strict mode", undefined],
   ["atom.use with strict mode", StrictMode],
 ])(`%s`, (description, wrapper) => {
   const use = vi.fn((value, dep: number) => {});

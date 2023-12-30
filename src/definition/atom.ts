@@ -2,6 +2,14 @@ import type { SetStateAction } from "react";
 import { DebounceOptions } from ".";
 
 /**
+ * Pretty prints a type.
+ * @template T The type to pretty print.
+ */
+export type Prettify<T> = {
+  [K in keyof T]: T[K];
+} & {};
+
+/**
  * A function type to update context.
  *
  * @template Context The type of context to update.
@@ -15,7 +23,7 @@ export type Emit<Context> = (
  */
 export interface Collector<T = void | (() => void) | undefined> {
   /**
-   * Adds a cleanup function to be executed when the Atom is updated.
+   * Adds a cleanup function to be executed when the `atom` is updated.
    *
    * @function
    * @param {() => void} fn The cleanup function to add.
@@ -23,7 +31,7 @@ export interface Collector<T = void | (() => void) | undefined> {
   rerun(fn?: T): void;
 
   /**
-   * Adds a cleanup function to be executed when the Atom is unmounted.
+   * Adds a cleanup function to be executed when the `atom` is unmounted.
    *
    * @function
    * @param {() => void} fn The cleanup function to add.
@@ -71,17 +79,17 @@ type History<State> = {
 };
 
 /**
- * Represents the fields associated with an Atom.
+ * Represents the fields associated with an `atom`.
  *
  * @template State The type of the state.
- * @template Context The type of context associated with the Atom.
+ * @template Context The type of context associated with the `atom`.
  *
  * @typedef {Object} Fields
  * @memberof Atom
  */
 export type Fields<State, Context> = {
   /**
-   * Gets the current state of the Atom instance.
+   * Gets the current state of the `atom` instance.
    *
    * @function
    * @returns {State} The current state.
@@ -92,8 +100,8 @@ export type Fields<State, Context> = {
    *
    * @typedef {Object} History
    * @property {Array<State>} timeline An array containing the timeline of state changes.
-   * @property {Function} rewind A function to access the previous value of the Atom.
-   * @property {Function} forward A function to update the value of the Atom instance.
+   * @property {Function} rewind A function to access the previous value of the `atom`.
+   * @property {Function} forward A function to update the value of the `atom` instance.
    * @property {Function} redo A function to redo a previous state change.
    * @property {Function} undo A function to undo a previous state change.
    */
@@ -106,7 +114,7 @@ export type Fields<State, Context> = {
    */
   set: (value: SetStateAction<State>) => void;
   /**
-   * Subscribes to changes in the Atom's value.
+   * Subscribes to changes in the `atom`'s value.
    *
    * @function
    * @param {Function} observer The callback function to be called with the new value.
@@ -126,14 +134,14 @@ export type Fields<State, Context> = {
    */
   update: (value: State) => void;
   /**
-   * Sets the context associated with the Atom.
+   * Sets the context associated with the `atom`.
    *
    * @param {Partial<Context> | ((curr: Context) => Context)} ctx The new context or a function to transform the existing context.
    * @returns {Context} The updated context.
    */
   emit: Emit<Context>;
   /**
-   * Gets the `context` associated with the Atom instance.
+   * Gets the `context` associated with the `atom` instance.
    *
    * @function
    * @returns {Context} The `context`.
@@ -146,11 +154,11 @@ export type Fields<State, Context> = {
    */
   dispose: (bin: "rerun" | "unmount") => void;
   /**
-   * Provides control over functions to execute on specific Atom events.
+   * Provides control over functions to execute on specific `atom` events.
    *
    * @typedef {Object} Collector
-   * @property {Function} rerun A function to add a cleanup function to be executed when the Atom is updated.
-   * @property {Function} unmount A function to add a cleanup function to be executed when the Atom is unmounted.
+   * @property {Function} rerun A function to add a cleanup function to be executed when the `atom` is updated.
+   * @property {Function} unmount A function to add a cleanup function to be executed when the `atom` is unmounted.
    */
   on: Collector;
 };
@@ -159,8 +167,8 @@ export type Fields<State, Context> = {
  * Represents a garbage collector for managing functions.
  *
  * @description
- * The `rerun` function adds a cleanup function to be executed when the Atom is updated.
- * The `unmount` function adds a cleanup function to be executed when the Atom is unmounted.
+ * The `rerun` function adds a cleanup function to be executed when the `atom` is updated.
+ * The `unmount` function adds a cleanup function to be executed when the `atom` is unmounted.
  *
  * @typedef {Function} () => void
  * The cleanup function to be executed on unmount.
@@ -174,7 +182,7 @@ type Garbage =
  * Defines the parameters used by the `get` and `set` method.
  *
  * @template State The type of the state.
- * @template Context The type of context associated with the Atom.
+ * @template Context The type of context associated with the `atom`.
  */
 export type Params<State, Context> = {
   value: State;
@@ -184,10 +192,10 @@ export type Params<State, Context> = {
 };
 
 /**
- * Represents events associated with an Atom.
+ * Represents events associated with an `atom`.
  *
  * @template State The type of the state.
- * @template Context The type of context associated with the Atom.
+ * @template Context The type of context associated with the `atom`.
  * @template Data The type of data returned by the `get` event.
  * @template UseArgs An array of argument types for the `use` event.
  * @template GetArgs An array of argument types for the `get` event.
@@ -220,7 +228,7 @@ export interface AtomEvents<
   /**
    * An effect to execute based on the dependencies.
    *
-   * @param fields The fields associated with the Atom.
+   * @param fields The fields associated with the `atom`.
    * @param useArgs An array of arguments to pass to the `use` function.
    * @returns {Garbage} A garbage collector for cleaning up effects.
    */
@@ -228,25 +236,25 @@ export interface AtomEvents<
 }
 
 /**
- * Represents the state of an Atom.
+ * Represents the state of an `atom`.
  *
  * @template State The type of the state.
- * @template Context The type of context associated with the Atom.
+ * @template Context The type of context associated with the `atom`.
  */
 export type AtomState<State, Context> = State | ((context: Context) => State);
 
 /**
- * Configuration options for creating an Atom.
+ * Configuration options for creating an `atom`.
  *
  * @template State The type of the state.
  * @template Data The type of data returned by the `get` event.
- * @template Context The type of context associated with the Atom.
+ * @template Context The type of context associated with the `atom`.
  * @template UseArgs An array of argument types for the `use` event.
  * @template GetArgs An array of argument types for the `get` event.
  *
  * @property {AtomState<State, Context>} state The initial state or a function to generate the initial state.
  * @property {boolean} [debug] A boolean indicating whether to log the state history for debugging.
- * @property {AtomEvents<State, Data, Context, UseArgs, GetArgs>} [events] An object containing functions to interact with the Atom.
+ * @property {AtomEvents<State, Data, Context, UseArgs, GetArgs>} [events] An object containing functions to interact with the `atom`.
  * @property {Context} [context] Record of mutable context on the atom instance.
  * @property {DebounceOptions} [debounce] Options for debouncing the `use` function.
  *
@@ -269,7 +277,7 @@ export type AtomConfig<
    */
   debug?: boolean;
   /**
-   * An object containing functions to interact with the Atom.
+   * An object containing functions to interact with the `atom`.
    */
   events?: AtomEvents<State, Data, Context, UseArgs, GetArgs>;
   /**
@@ -283,14 +291,14 @@ export type AtomConfig<
 };
 
 /**
- * Represents configuration options for an Atom.
+ * Represents configuration options for an `atom`.
  *
  * @template State The type of the atom's state.
  * @template Data The type of data derived from the atom's state.
- * @template Context The type of context associated with the Atom.
+ * @template Context The type of context associated with the `atom`.
  * @template UseArgs The type of the atom's` function.
  * @template GetArgs The type of the atom's `get` function.
- * @template Select The type of selected data associated with the Atom.
+ * @template Select The type of selected data associated with the `atom`.
  *
  * @property {boolean} [enabled] A boolean indicating whether the `use` function should be executed.
  * @property {(data: Data) => Select} [select] A function to select data from the atom's data.
@@ -298,12 +306,17 @@ export type AtomConfig<
  * @property {GetArgs} [getArgs] An array of arguments to pass to the atom's `get` function.
  */
 export type AtomOptions<
+  Key extends string,
   State,
   UseArgs extends ReadonlyArray<any>,
   GetArgs extends ReadonlyArray<any>,
   Data = State,
   Select = Data
 > = {
+  /**
+   * The key to use for the atom.
+   */
+  key?: Key;
   /**
    * A boolean indicating whether the `use` function should be executed.
    */
@@ -331,16 +344,40 @@ export type AtomOptions<
 };
 
 /**
- * Represents an Atom.
+ * Represents the state and dispatch of an `atom`.
+ *
+ * @template Key The type of the key.
+ * @template State The type of the state.
+ * @template Context The type of context associated with the `atom`.
+ * @template Select The type of selected data associated with the `atom`.
+ *
+ * @typedef {Array<Select, (value: SetStateAction<State>) => void>} UseAtomResult
+ */
+export type UseAtomResult<Key extends string, State, Context, Select> = [
+  Select,
+  ((value: SetStateAction<State>) => void) & Context
+] &
+  Prettify<
+    Context & {
+      [K in Key]: Select;
+    } & {
+      [K in Key as `set${Capitalize<Key>}`]: (
+        value: SetStateAction<State>
+      ) => void;
+    }
+  >;
+
+/**
+ * Represents an `atom`.
  *
  * @template State The type of the state.
  * @template UseArgs An array of argument types for the `use` event.
  * @template Data The type of data returned by the `get` event.
- * @template Context The type of context associated with the Atom.
+ * @template Context The type of context associated with the `atom`.
  *
  * @typedef {Object} Atom
  * @property {Function} get Retrieves the current state or optionally transforms it using the provided function.
- * @property {Function} use Represents the result of using an Atom.
+ * @property {Function} use Represents the result of using an `atom`.
  */
 export interface Atom<
   State,
@@ -358,22 +395,22 @@ export interface Atom<
    */
   get(value?: State, ...getArgs: GetArgs): Data;
   /**
-   * Represents the result of using an Atom.
+   * Represents the result of using an `atom`.
    *
-   * @template Select The type of selected data associated with the Atom.
+   * @template Select The type of selected data associated with the `atom`.
    * @template State The type of the state.
-   * @template Context The type of context associated with the Atom.
+   * @template Context The type of context associated with the `atom`.
    */
-  use<Select = Data>(
-    options?: AtomOptions<State, UseArgs, GetArgs, Data, Select>
-  ): [Select, SetAtom<State, Context>];
+  use<Key extends string, Select = Data>(
+    options?: AtomOptions<Key, State, UseArgs, GetArgs, Data, Select>
+  ): UseAtomResult<Key, State, Context, Select>;
 }
 
 /**
- * Represents a function to set the state of an Atom.
+ * Represents a function to set the state of an `atom`.
  *
  * @template State The type of the state.
- * @template Context The type of context associated with the Atom.
+ * @template Context The type of context associated with the `atom`.
  *
  * @typedef {Function} SetAtom
  */
@@ -391,19 +428,19 @@ export type SetAtom<State, Context> = {
    */
   set(value: SetStateAction<State>): void;
   /**
-   * The current state of the Atom instance.
+   * The current state of the `atom` instance.
    * @type {State} value The new state value.
    */
   state: State;
   /**
-   * Sets the context associated with the Atom.
+   * Sets the context associated with the `atom`.
    *
    * @type {Partial<Context> | ((curr: Context) => Context)}
    * @memberof Fields<State, Context>
    */
   emit: Emit<Context>;
   /**
-   * Gets the `context` associated with the Atom instance.
+   * Gets the `context` associated with the `atom` instance.
    *
    * @type {Context}
    * @memberof Fields<State, Context>
