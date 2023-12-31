@@ -1,12 +1,12 @@
 import { atom } from "./atom";
 import { createBuilder } from "./builder";
 import { cookieStorage } from "./cookies";
-import { usePortal } from "./portal";
 import { debounceEffect } from "./utilities";
+import { portal } from "./portal";
 
 export {
   atom,
-  usePortal,
+  portal,
   cookieStorage,
   createBuilder,
   debounceEffect,

@@ -23,9 +23,11 @@ Inspired by [React Holmes](https://github.com/devx-os/react-holmes) and [Tanstac
     - [Using the `state`, `get`, and `set` properties](#using-the-state-get-and-set-properties)
     - [Using the `select` property](#using-the-select-property)
   - [Persisting state](#persisting-state)
-  - [Persistent mechanisms](#persistent-mechanisms)
+    - [Using the `local` hook](#using-the-local-hook)
     - [Modifying the `local` hook](#modifying-the-local-hook)
+    - [Using the `session` hook](#using-the-session-hook)
     - [Modifying the `session` hook](#modifying-the-session-hook)
+    - [Using the `cookie` hook](#using-the-cookie-hook)
     - [Modifying the `cookie` hook](#modifying-the-cookie-hook)
   - [Portal register](#portal-register)
     - [Register keys and values](#register-keys-and-values)
@@ -154,7 +156,7 @@ The `get` property can be used to retrieve the initial state from a persistent s
 ```typescript
 const [name, setName] = portal.use("client", {
   get: (state) => {
-    const value = cookieStorage.getItem("client");
+    const value = localStorage.getItem("client");
     if (value) return JSON.parse(value) as string
     return state;
   }
@@ -169,26 +171,28 @@ The `set` property is a side effect that can be used to update the browser store
 const [name, setName] = portal.use("client", {
   set: (state) => {
     const value = JSON.stringify(state);
-    cookieStorage.setItem("client", value);
+    localStorage.setItem("client", value);
   }
 });
 ```
 
 #### Using the `state`, `get`, and `set` properties
 
-The `state`, `get`, and `set` properties can be used together to define the initial state, how the initial state is retrieved, and how the state is persisted. A good practice is to define the `get` function before the `set` function, because of type inference. The following code snippet demonstrates how to use the `state`, `get`, and `set` properties:
+The `state`, `get`, and `set` properties can be used together to define the initial state, how the initial state is retrieved, and how the state is persisted. If the `state` property is not defined, a good practice is to define the `get` function before the `set` function, because of type inference. The following code snippet demonstrates how to use the `state`, `get`, and `set` properties:
 
 ```typescript
+import { get, set } from 'idb-keyval';
+
 const [name, setName] = portal.use("client", {
   state: "John Doe",
-  get: (state) => {
-    const value = cookieStorage.getItem("client");
-    if (value) return JSON.parse(value) as string
+  get: async (state) => {
+    const value = await get('client');
+    if (value) return JSON.parse(value);
     return state;
   },
-  set: (state) => {
+  set: async (state) => {
     const value = JSON.stringify(state);
-    cookieStorage.setItem("client", value);
+    await set('client', value);
   }
 });
 ```
@@ -205,7 +209,14 @@ const [name, setName] = portal.use("client", {
 
 ### Persisting state
 
-Rather than using a configuration object to persist the state, `portal` provides utility hooks to do so. The following code snippet demonstrates how to persist the state without a configuration object:
+Rather than using the configuration object to manually persist state, `portal` provides utility hooks to do so. Internally, each of these hooks use the `set` and `get` properties to modify the state, before it is used. The `get` function is called on the retrieved value before it is set as the next state. While, the `set` function is called on the current state before it is passed to the browser storage. The following code snippet demonstrates how the mechanism is implemented **internally**:
+
+```typescript
+const {
+  set = (value: State) => JSON.stringify(value),
+  get = (value: string) => JSON.parse(value),
+} = { ...config };
+```
 
 #### Using the `local` hook
 
@@ -213,35 +224,6 @@ The `local` hook is used to persist the state in `localStorage`. The following c
 
 ```typescript
 const [name, setName] = portal.local("client");
-```
-
-#### Using the `session` hook
-
-The `session` hook is used to persist the state in `sessionStorage`. The following code snippet demonstrates how to use the `session` hook:
-
-```typescript
-const [name, setName] = portal.session("client");
-```
-
-#### Using the `cookie` hook
-
-The `cookie` hook is used to persist the state in `document.cookie`. The following code snippet demonstrates how to use the `cookie` hook:
-
-```typescript
-const [name, setName] = portal.cookie("client", {
- path: "/"
-});
-```
-
-### Persistent mechanisms
-
-The persistent mechanisms are the underlying storage mechanisms used by the `local`, `session`, and `cookie` hooks. Internally, each of the persistent hooks uses the `set` and `get` properties to modify the state, before it is used. The `get` function is called on the retrieved value before it is set as the next state. While, the `set` function is called on the current state before it is passed to the browser storage. The following code snippet demonstrates how the persistent mechanisms is implemented:
-
-```typescript
-const {
-  set = (value: State) => JSON.stringify(value),
-  get = (value: string) => JSON.parse(value),
-} = { ...config };
 ```
 
 #### Modifying the `local` hook
@@ -255,6 +237,14 @@ const [name, setName] = portal.local("client", {
 });
 ```
 
+#### Using the `session` hook
+
+The `session` hook is used to persist the state in `sessionStorage`. The following code snippet demonstrates how to use the `session` hook:
+
+```typescript
+const [name, setName] = portal.session("client");
+```
+
 #### Modifying the `session` hook
 
 The `session` hook uses the `sessionStorage` API to persist the state. The `sessionStorage` API accepts a `key` and a `value` as arguments. The `value` is converted to a string using the `JSON.stringify` function before it is persisted. The following code snippet demonstrates how to override the `set` and `get` properties of the `session` hook:
@@ -263,6 +253,16 @@ The `session` hook uses the `sessionStorage` API to persist the state. The `sess
 const [name, setName] = portal.session("client", {
   set: (value) => encrypt(value),
   get: (value) => decrypt(value),
+});
+```
+
+#### Using the `cookie` hook
+
+The `cookie` hook is used to persist the state in `document.cookie`. The following code snippet demonstrates how to use the `cookie` hook:
+
+```typescript
+const [name, setName] = portal.cookie("client", {
+  path: "/"
 });
 ```
 
@@ -294,7 +294,7 @@ const register = {
 
 #### Register keys and values
 
-The keys of a register are the possible keys of a portal. And the values of a register are the possible values of a portal, based on those keys. The pairs generated from the register include the following properties:
+The nested keys of a register are the possible keys of a portal. And the values of each corresponding key in the register are the possible values of the portal. The pairs generated from the register above include the following properties:
 
 ```txt
 - foo = { bar: { baz: "qux" }, rim: "raf" }
@@ -505,23 +505,31 @@ The `set` event is triggered when the state of the atom is about to be updated. 
 
 #### Using the `set` event
 
-A `set` function, which internally calls the `set` event, is made accessible within the `fields` parameter of the `use` effect of the atom. This ensures that the `set` event is called when the state of the atom is updated. To bypass the `set` event from being called, you can use the `publish` function instead, to immediately update the state. The following code snippet demonstrates how to use the `set` event:
+The callback passed to the `set` event changes the value just before it is set as the new state of the atom. The following code snippet demonstrates how to use the `set` event:
 
-```typescript
+```tsx
 const capitalizeAtom = atom({
   state: "",
   events: {
-    set: ({ value }) => value.slice(0, 1).toUpperCase() + value.slice(1),
+    set: ({ value }) => {
+      return value.split(" ").map((word) => {
+        return word.slice(0, 1).toUpperCase() + word.slice(1);
+      }).join(" ");
+    },
   },
 });
+```
 
+An alternative would be to use the `get` event to achieve the same effect without setting it as the state of the atom, or using the `select` property of the `use` hook. The following code snippet demonstrates its usage:
+
+```typescript
 const [name, setName] = capitalizeAtom.use();
 
-useEffect(() => {
-  setName("john doe");
-}, []);
-
-// name = "John doe"
+return (
+  <input value={name} onChange={(event) => {
+    setName(event.target.value);
+  }} />
+);
 ```
 
 #### `.get`
@@ -547,8 +555,9 @@ const counterAtom = atom({
   },
 });
 
-const [counter, setCounter] = counterAtom.use({ getArgs: [10, 2] });
-// counter = 18
+const [counter, setCounter] = counterAtom.use({
+  getArgs: [10, 2] // 18
+});
 ```
 
 #### `.use`
@@ -560,7 +569,7 @@ The `use` event is a wrapper around the `useEffect` hook. It is suitable for exe
 - `value`: The current state of the atom.
 - `subscribe`: A function used to subscribe to the state of the atom.
 - `publish`: A function used to update the state of the atom without triggering the `set` event.
-- `timeline`: Provides access to the previous states of the atom.
+- `timeline`: An object that provides methods to navigate previous states of the atom.
 - `set`: A function used to update the state of the atom.
 
 ##### Context propeties
@@ -576,13 +585,17 @@ The `use` event is a wrapper around the `useEffect` hook. It is suitable for exe
 
 #### Using the `use` event
 
-The `use` event is triggered as a result of an atom being used in a React Component. It is invoked when the component mounts, and when the dependencies passed through the `use` hook changes. The following code snippet demonstrates how to use the `use` event:
+The `use` event is triggered as a result of an atom being used in a React Component. It is invoked when the component mounts, and when the arbitrary number of arguments passed on the `use` hook changes. This matters only if the `use` event has an arbitrary number of arguments. The following code snippet demonstrates how to use the `use` event:
 
 ```typescript
-const dataAtom = atom({
+const contactsAtom = atom({
   state: ["John Doe", "Jane Doe"],
   events: {
-    use: ({ publish }, search: string = "") => {
+    set: ({ value }) => decrypt(value),
+    get: ({ value }) => {
+      return value.sort((a, b) => a.localeCompare(b));
+    },
+    use: ({ set }, search: string = "") => {
       const abortController = new AbortController();
 
       const url = new URL("http://example.com/contact");
@@ -593,7 +606,9 @@ const dataAtom = atom({
         signal: abortController.signal,
       })
         .then(response => response.json())
-        .then(publish)
+        .then((value) => {
+          set(value.data);
+        })
         .catch((error) => {
           console.error('Error:', error.message);
         });
@@ -606,35 +621,83 @@ const dataAtom = atom({
 });
 ```
 
+#### Using the `useArgs` property
+
 The arbitrary number of arguments are expected to be passed on the `use` hook, via its `useArgs` property. These arguments can be seen as dependencies of the `use` event. If the `enabled` property of the `use` hook is set to `false`, the `use` event will not triggered. It is however `true` by default. The following code snippet demonstrates how to use the `use` hook, with the `useArgs` property:
 
 ```tsx
 const [search, setSearch] = useState("");
-const [data, setData] = dataAtom.use({ useArgs: [search] });
+const [data, setData] = contactsAtom.use({ useArgs: [search] });
 
 return (
   <input onChange={(event) => setSearch(event.target.value)} />
 );
 ```
 
-### atom `context`
+#### Disposing the garbage
 
-The `context` property is an object containing **reactive** states that do not influence the state of the atom. The `context` property is made available during instantiation and usage. The following code snippet demonstrates how to use the `context` property:
+Garbage collection is a mechanism for reclaiming memory that is no longer being used by an application. It is important to dispose the garbage, in order to prevent memory leaks. The `use` event provides two ways of disposing the garbage: using the `dispose` function, or using the `dispose` object. Additionally, the `on` object can be used to manage garbage collection.
+
+##### Using the `dispose` function
+
+The `use` event returns a function that can be used for cleanup, in order words, dispose the garbage. The function is called only when the component `unmounts`. The following code snippet shows what that function looks like:
 
 ```typescript
-const counterAtom = atom({
+return () => {
+  abortController.abort();
+}
+```
+
+##### Using the `dispose` object
+
+An object containing functions for managing garbage collection, during `rerun` and `unmount` could also be returned, instead. This may be convenient when cleanups are required both during `rerun` and `unmount`. The following code shows what the object looks like:
+
+```typescript
+return {
+  rerun: () => {
+    abortController.abort();
+  },
+  unmount: () => {
+    abortController.abort();
+  },
+}
+```
+
+##### Using the `on` object
+
+A final alternative would be to use the `on` object, which is made available within the `use` event. Consequently, it can be used within callbacks, and the `use` event itself. The following code snippet demonstrates how to use the `on` object:
+
+```typescript
+on.rerun(() => {
+  abortController.abort();
+});
+
+on.unmount(() => {
+  abortController.abort();
+});
+```
+
+### atom `context`
+
+The `context` property is an object containing **reactive** states that do not influence the state of the atom. The `context` property is made available during instantiation and usage.
+
+#### Using the `context` property
+
+The `publish` function is used in the following example to update the state of the atom, because the `set` event is not defined. Still, using the `set` function would have achieved the same result. The following code snippet demonstrates how to use the `context` property:
+
+```typescript
+const contactsAtom = atom({
   state: ["John Doe", "Jane Doe"],
   context: {
+    url: new URL("http://example.com/contact"),
     isLoading: false,
     isError: false,
   },
   events: {
-    set: ({ value }) => decrypt(value),
-    use: ({ emit, set }, search: string = "") => {
+    use: ({ emit, publish, ctx: { url } }, search: string) => {
       const abortController = new AbortController();
       emit({ isLoading: true });
 
-      const url = new URL("http://example.com/contact");
       if (search) url.searchParams.set("filter", search);
       else url.searchParams.delete("filter");
 
@@ -642,8 +705,8 @@ const counterAtom = atom({
         signal: abortController.signal,
       })
         .then(response => response.json())
-        .then((data) => {
-          set(data);
+        .then((value) => {
+          publish(value.data);
           emit({ isLoading: false });
         })
         .catch((error) => {
@@ -665,90 +728,126 @@ const counterAtom = atom({
 });
 ```
 
-The `emit` function is used to update the context of the atom. It can accept partial values, which are merged with the current context of the atom. Rather than using a `set` function, the `publish` function is used to update the state of the atom. This is because the `set` event is not defined.
+#### Leveraging `context` for storing references
+
+The need for the `context` property becomes more apparent when working with **websockets**, or for storing object references. The ``
+. The following code snippet demonstrates how to use the `context` property with **websockets**:
 
 ```typescript
+type Weather = {
+  time: string,
+  temperature: number,
+  period: "morning" | "afternoon" | "evening",
+};
 
+function getWeather(atom: typeof weatherAtom, filter: Partial<Weather>) {
+  const { emit, publish, on } = atom;
+  const ws = new WebSocket("ws://example.com/users");
 
+  ws.onopen = (() => {
+    ws.send(JSON.stringify(filter));
+    emit({ ws });
+  });
 
-#### Using the `set` event
+  ws.onmessage = ((value) => {
+    publish(JSON.parse(value.message));
+    emit({ isLoading: false });
+  });
 
-The `set` event is triggered when the state of the atom is updated. It accepts a callback as its argument. The callback accepts the current state as its argument and returns a value. The returned value is used to update the state of the atom. The following code snippet demonstrates how to use the `set` event:
+  ws.onerror = ((error) => {
+    emit({ isLoading: false, ws: null });
+    console.error('Error:', error.message);
 
-```typescript
+    if (ws.readyState === WebSocket.OPEN) ws.close();
+    getWeather(atom, filter);
+  });
+}
 
-This following code snippet demonstrates an advanced example using TypeScript. It defines two atoms, `messagesAtom` and `userAtom`, which are part of a state management system.
-
-```typescript
-const messagesAtom = atom({
-  state: {} as Messages,
-  events: {
-    get: ({ value }) => value?.messages?.at(0)?.last_24_hr_data,
-    set: ({ value }) => decrypt(value),
-  },
-});
-```
-
-`messagesAtom` is initialized with an empty object as its state and has two events:
-
-- `get`: Retrieves the `last_24_hr_data` property from the `messages` object.
-- `set`: Decrypts the provided value before setting it as the new state.
-
-```typescript
-export const userAtom = atom({
-  state: {} as UserData,
-  events: {
-    set: ({ value }) => decrypt(value),
-    use: ({ on, set, ctx }, user: string) => {
-      const { getUrl } = ctx;
-      const ws = new WebSocket(getUrl(user));
-      ws.onmessage = ((value) => set(JSON.parse(value.data)));
-      on.rerun(() => {
-        if (ws.readyState === WebSocket.OPEN) ws.close();
-      })
-    },
-  },
+const weatherAtom = atom({
+  state: [] as Array<Weather>,
   context: {
-    getUrl: (user: string) => {
-      return builders.use().socket.users(user);
+    ws: null as WebSocket | null,
+    isLoading: false,
+  },
+  events: {
+    use: ({ emit, ctx: { ws } }, filter: Partial<Weather>) => {
+      emit({ isLoading: true });
+
+      if (ws) ws.send(JSON.stringify(filter));
+      else getWeather(weatherAtom, filter);
     },
   },
 });
 ```
 
-`userAtom` is initialized with an empty object as its state and has three events:
+### `atom` utilities
 
-- `set`: Decrypts the provided value before setting it as the new state.
-- `use`: Accepts a `user` string parameter and establishes a WebSocket connection using the `getUrl` function from the context. It listens for incoming messages and updates the state accordingly. It also closes the WebSocket connection when the `on` event is rerun.
-- `context`: Provides a `getUrl` function that returns a URL based on the `user` parameter.
+The `atom` object ships with a couple of utility functions that can be used to manipulate the state of an atom. The following code snippet demonstrates how to use the `atom` utilities:
+
+#### `.emit`
+
+The `emit` function is used to update the context of the atom. It can accept partial values, which are merged with the current context of the atom, or a callback that accepts the current context as its argument and returns a value. The returned value is used to update the context of the atom. The following code snippet demonstrates how to use the `emit` function:
 
 ```typescript
-// Atoms are typically used within the context of a React component
+```
+
+### `.subscribe`
+
+Although it is possible to use atoms as dependencies of other atoms, it is not recommended. This is because referencing an atom in another atom, does not make the referencing atom reactive. It is possible to subscribe to the state of the referencing atom,
+
+```typescript
 const [messages, setMessages] = messagesAtom.use();
 const [users, setUsers] = userAtom.use({ useArgs: [messages.user] });
 ```
 
-### To create a `builder` pattern for property access
+## `createBuilder`
 
-To create a nested record with a `key` and `value` pair, you can use the following code:
+The `createBuilder` function is used to create a builder object for defining keys and values. It accepts a register as its first argument, and an optional list of prefixes as its second argument. The following code snippet demonstrates how to use the `createBuilder` function:
 
 ```typescript
-const store = {
+const register = {
   foo: {
     baz: (id: number) => `/bazaar/${id}`,
     bar: 10,
   },
 };
 
-const builder = createBuilder(store);
+const builder = createBuilder(register, "tap", "root");
 ```
 
-To access the keys of the `builder` object, you can use the following code:
+### Using the `builder` object
+
+The main motivation behind the `builder` object is to provide a way of defining keys and values, without having to worry about constructing a meaningful key. The `key` returned by the `builder` object is an array of strings, constructed by the nested keys of the register. While the value can be any value. The following code snippet demonstrates how to use the `builder` object:
+
+#### `.use` function
+
+The `use` function is used to retrieve the keys, expecting the same signature as the defined value. Such that, if the value is a function, the arguments expected by the defined function, must be passed to the `use` function. The `use` function returns an array of strings, constructed by the nested keys of the register, and the arguments passed to the `use` function.
+
+#### Using the `use` function
+
+`foo.baz` is a function that expects an `id` of `number` type, therefore, the `use` function expects an `id` of `number` type as well. If the argument was optional, it would equally be optional. The following code snippet demonstrates what the returned value looks like:
 
 ```typescript
-// `use` expects that the required arguments are passed.
 builder.foo.baz.use(11); // ["foo", "baz", 11]
+```
 
+#### `.get` function
+
+The `get` function is used to retrieve the keys, without following the signature of the defined value. The following code snippet demonstrates how to use the `get` function:
+
+```typescript
+builder.foo.baz.get(); // ["foo", "baz"]
+```
+
+#### Using the `get` function
+
+The `get` function also accepts an arbitrary number of arguments, which are added to the returned array of strings. This flexibility is useful when you want to add more keys that are not defined in the register. The following code snippet demonstrates how to use the `get` function:
+
+```typescript
+
+
+
+// `use` expects that the required arguments are passed.
 // `get` retrieves the keys without invoking the function.
 builder.foo.baz.get(); // ["foo", "baz"]
 
