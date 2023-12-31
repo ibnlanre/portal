@@ -138,3 +138,17 @@ function makePortal<Store extends Record<string, any>>(register: Store) {
 }
 
 export const portal = makePortal({} as Record<string, any>);
+
+const store = portal.make({
+  user: {
+    name: "John",
+    age: 20,
+  },
+  cart: {
+    items: ["item-1", "item-2"],
+  },
+})
+
+store.use("cart.items", {
+  state: ["item-3"],
+})

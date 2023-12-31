@@ -71,7 +71,7 @@ export function atom<
   const observable = new AtomSubject(initialState, debug);
   const signal = new AtomSubject(context);
 
-  const { forward, rewind, redo, undo, update, subscribe } = observable;
+  const { forward, rewind, redo, undo, publish, subscribe } = observable;
 
   /**
    * Represents the functions to execute on specific `atom` events.
@@ -112,8 +112,8 @@ export function atom<
    */
   const emit = (ctx: Partial<Context> | ((curr: Context) => Context)) => {
     const curr = signal.value;
-    if (typeof ctx === "function") signal.update({ ...ctx(curr) });
-    else signal.update({ ...curr, ...ctx });
+    if (typeof ctx === "function") signal.publish({ ...ctx(curr) });
+    else signal.publish({ ...curr, ...ctx });
     return signal.value;
   };
 
@@ -166,8 +166,8 @@ export function atom<
     };
 
     // The set function allows optional transformations and returns the new state.
-    if (set) update(set(params));
-    else update(resolvedValue);
+    if (set) publish(set(params));
+    else publish(resolvedValue);
   };
 
   /**
@@ -176,11 +176,11 @@ export function atom<
    * @typedef {Object} Fields
    *
    * @property {State} value The current state of the `atom` instance.
-   * @property {History<State>} history An object containing functions to travel through the `atom`'s timeline.
+   * @property {Timeline<State>} timeline An object containing functions to travel through the `atom`'s timeline.
    *
    * @property {Function} set A function to set the value of the `atom` instance with optional transformations.
    * @property {Function} subscribe A function to subscribe to changes in the `atom`'s value.
-   * @property {Function} update A function to update the value of the `atom` instance.
+   * @property {Function} publish A function to update the value of the `atom` instance.
    *
    * @property {Function} emit Sets the context of the `atom` instance.
    * @property {Context} ctx The context associated with the `atom` instance.
@@ -192,9 +192,9 @@ export function atom<
     get value() {
       return observable.value;
     },
-    history: {
-      get timeline() {
-        return observable.timeline;
+    timeline: {
+      get history() {
+        return observable.history;
       },
       get forward() {
         return forward();
@@ -207,7 +207,7 @@ export function atom<
     },
     set: setValueWithArgs,
     subscribe,
-    update,
+    publish,
     emit,
     get ctx() {
       return signal.value;

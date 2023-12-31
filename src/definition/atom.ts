@@ -40,18 +40,18 @@ export interface Collector<T = void | (() => void) | undefined> {
 }
 
 /**
- * Represents a time travel object.
+ * Represents the state timeline of an `atom`.
  *
  * @template State The type of the state.
- * @typedef {Object} History
+ * @typedef {Object} Timeline
  */
-type History<State> = {
+type Timeline<State> = {
   /**
-   * Gets the timeline of state changes.
+   * An array containing the history of state changes.
    *
-   * @type {Array<State>} An array containing the timeline of state changes.
+   * @type {Array<State>} The history of state changes.
    */
-  timeline: State[];
+  history: State[];
   /**
    * Retrieves the previous state in the timeline, if available.
    *
@@ -98,14 +98,14 @@ export type Fields<State, Context> = {
   /**
    * Travel to a specific state in the timeline.
    *
-   * @typedef {Object} History
-   * @property {Array<State>} timeline An array containing the timeline of state changes.
+   * @typedef {Object} Timeline
+   * @property {Array<State>} history An array containing the history of state changes.
    * @property {Function} rewind A function to access the previous value of the `atom`.
    * @property {Function} forward A function to update the value of the `atom` instance.
    * @property {Function} redo A function to redo a previous state change.
    * @property {Function} undo A function to undo a previous state change.
    */
-  history: History<State>;
+  timeline: Timeline<State>;
   /**
    * Sets the state with a new value, optionally transforming it using the provided `set` function.
    *
@@ -132,7 +132,7 @@ export type Fields<State, Context> = {
    * @function
    * @param {State} value The new state value.
    */
-  update: (value: State) => void;
+  publish: (value: State) => void;
   /**
    * Sets the context associated with the `atom`.
    *

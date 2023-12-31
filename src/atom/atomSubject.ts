@@ -6,10 +6,29 @@ import type { Subscription } from "@/definition";
  */
 export class AtomSubject<State> {
   private state: State;
-  private history: State[] = [];
   private subscribers: Set<Function>;
   private currentIndex: number = 0;
+
+  /**
+   * Determines whether to log the state history for debugging.
+   * @type {boolean}
+   *
+   * @private
+   * @default false
+   */
   private debug: boolean = false;
+
+  /**
+   * The history of state values for time-travel.
+   * @readonly
+   *
+   * @description
+   * This property is only available when the debug option is set to `true`.
+   * Otherwise, it is an empty array.
+   *
+   * @type {State[]} The history of state values.
+   */
+  public history: State[] = [];
 
   /**
    * Creates a new instance of AtomSubject.
@@ -51,20 +70,6 @@ export class AtomSubject<State> {
   }
 
   /**
-   * Returns the history of state values for time-travel.
-   * @readonly
-   *
-   * @description
-   * This property is only available when the debug option is set to `true`.
-   * Otherwise, it will return an empty array.
-   *
-   * @returns {State[]} The history of state values.
-   */
-  get timeline() {
-    return this.history;
-  }
-
-  /**
    * Determines whether it is possible to perform an undo operation.
    * @returns {boolean} `true` if an undo operation can be performed, `false` otherwise.
    */
@@ -88,7 +93,7 @@ export class AtomSubject<State> {
    * @param {State} value The new state value to set.
    * @returns {State} The updated state value.
    */
-  update = (value: State): State => {
+  publish = (value: State): State => {
     if (!Object.is(this.state, value)) {
       // Update the current state with the new value
       this.state = value;
