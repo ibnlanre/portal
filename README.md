@@ -116,7 +116,7 @@ import { portal } from "@ibnlanre/portal";
 
 ## Portal
 
-Portal is a utility that facilitates sharing and accessing state across components. It is a wrapper around the `useState` hook, and returns a tuple containing the state and a function to update the state. It accepts a key and an optional configuration object. The configuration object can have the following properties:
+`Portal` is a utility that facilitates sharing and accessing state across components. It eliminates the need for prop drilling, and the `context` API. Furthermore, it does not require a provider, or a consumer. It is a simple function that returns a tuple containing the state and a function to update the state. `Portal` accepts a key and an optional configuration object. The configuration object can have the following properties:
 
 - `state`: The initial state of the portal. It can be a primitive value, an object, or an array. Technically, it can be any value.
 - `get`: A function that accepts the current state as an argument and returns a value. The value is used to override the initial state.
@@ -125,7 +125,7 @@ Portal is a utility that facilitates sharing and accessing state across componen
 
 ### Difference between `state` and `get` properties
 
-The difference between the `state` and `get` properties is that the `state` property is expected to be a pure value that doesn't involve any side effects. it is passed to a `useState` hook as the initial state of the `portal`. The `get` property, on the other hand, can be used to retrieve the initial state from a persistent storage, or network request. It is called within a `useEffect` hook. The `get` property is therefore invoked after the `state` is set, and overrides the `state` if present.
+The difference between the `state` and `get` properties is that the `state` property is expected to be a pure value that doesn't involve any side effects. it is passed to a `useState` hook as the initial state of the `portal`. The `get` property, on the other hand, can be used to retrieve the initial state from a persistent storage, or network request. It is called within a `useEffect` hook, and is therefore invoked after the `state` is set, and overrides the `state` if present.
 
 ### Basic usage
 
@@ -730,7 +730,10 @@ const contactsAtom = atom({
 
 #### Leveraging `context` for storing references
 
-The need for the `context` property becomes more apparent when working with **websockets**, or for storing object references. The ``
+The need for the `context` property becomes more apparent when working with **websockets**, or for storing object references. Creating an `atom` returns an object with the same properties as the first argument passed to the `use` event callback, including two additional properties: the `get` and `use` callbacks passed during instantiation. This makes it suitable as a type for external functions, as the
+ `weatherAtom`
+
+
 . The following code snippet demonstrates how to use the `context` property with **websockets**:
 
 ```typescript
@@ -750,13 +753,13 @@ function getWeather(atom: typeof weatherAtom, filter: Partial<Weather>) {
   });
 
   ws.onmessage = ((value) => {
-    publish(JSON.parse(value.message));
+    publish(JSON.parse(value.data));
     emit({ isLoading: false });
   });
 
   ws.onerror = ((error) => {
     emit({ isLoading: false, ws: null });
-    console.error('Error:', error.message);
+    console.error('Error:', error);
 
     if (ws.readyState === WebSocket.OPEN) ws.close();
     getWeather(atom, filter);
@@ -812,20 +815,16 @@ const register = {
   },
 };
 
-const builder = createBuilder(register, "tap", "root");
+const builder = createBuilder(register);
 ```
 
-### Using the `builder` object
+### Constructing keys
 
-The main motivation behind the `builder` object is to provide a way of defining keys and values, without having to worry about constructing a meaningful key. The `key` returned by the `builder` object is an array of strings, constructed by the nested keys of the register. While the value can be any value. The following code snippet demonstrates how to use the `builder` object:
+The main motivation behind the `builder` object is to provide a way of defining keys and values, without having to worry about constructing a meaningful key, or accessing its corresponding value. Generating the key requires either the `use` or `get` function. These functions are found at every level of the `builder` object. The `key` returned from calling the `use` or `get` function is an array of strings, crafted from the branches in the register.
 
 #### `.use` function
 
-The `use` function is used to retrieve the keys, expecting the same signature as the defined value. Such that, if the value is a function, the arguments expected by the defined function, must be passed to the `use` function. The `use` function returns an array of strings, constructed by the nested keys of the register, and the arguments passed to the `use` function.
-
-#### Using the `use` function
-
-`foo.baz` is a function that expects an `id` of `number` type, therefore, the `use` function expects an `id` of `number` type as well. If the argument was optional, it would equally be optional. The following code snippet demonstrates what the returned value looks like:
+The `use` function is used to retrieve the keys, expecting the same signature as the defined value. If the value of that branch is a primitive value, object or array, the `use` function expects no arguments. However, if the value is a function that expects arguments, the `use` function expects the same arguments. `foo.baz` is a function that expects an `id` of `number` type, therefore, the `use` function expects an `id` of `number` type as well. If the argument was optional, it would equally be optional. The following code snippet demonstrates how to use the `use` function:
 
 ```typescript
 builder.foo.baz.use(11); // ["foo", "baz", 11]
@@ -833,42 +832,50 @@ builder.foo.baz.use(11); // ["foo", "baz", 11]
 
 #### `.get` function
 
-The `get` function is used to retrieve the keys, without following the signature of the defined value. The following code snippet demonstrates how to use the `get` function:
+The `get` function is used to retrieve the keys, without following the pattern defined by the value. It expects an arbitrary number of arguments, which are added to the returned array of strings. This flexibility is useful when you want to add more keys that are not defined in the register. The following code snippet demonstrates how to use the `get` function:
+
+ The following code snippet demonstrates how to use the `get` function:
 
 ```typescript
 builder.foo.baz.get(); // ["foo", "baz"]
-```
-
-#### Using the `get` function
-
-The `get` function also accepts an arbitrary number of arguments, which are added to the returned array of strings. This flexibility is useful when you want to add more keys that are not defined in the register. The following code snippet demonstrates how to use the `get` function:
-
-```typescript
-
-
-
-// `use` expects that the required arguments are passed.
-// `get` retrieves the keys without invoking the function.
-builder.foo.baz.get(); // ["foo", "baz"]
-
-// `get` also allows you to add more keys
 builder.foo.baz.get("test"); // ["foo", "baz", "test"]
 ```
 
-To retrieve nested `values`, you can use the following code:
+#### Transforming the key using .join
+
+Because the `key` returned from calling the `use` or `get` function is an array of strings, it is possible to transform the key using the `join` method. The `join` method is a function that concatenates the strings in the array, using a separator. The following code snippet demonstrates how to use the `join` functions:
 
 ```typescript
-builder.use(); // store
+builder.foo.baz.get().join("."); // "foo.baz"
+builder.foo.baz.use(11).join("/"); // "/foo/baz/11"
+```
+
+### Retrieving values
+
+The root is the starting point of the `builder` object. It is effectively the register, which is passed to the `createBuilder` function. Calling the `.use` function on the root branch returns the register itself, while calling the `.get` function constructs a key for the root. This is a different behavior from the other branches, which instead, generates a key from the nested keys of the register. The following code snippet demonstrates what the root branch looks like:
+
+```typescript
+builder.use(); // register
+builder.get(); // []
+```
+
+As a consequence of the `use` function returning the register, it is possible to retrieve the nested values of the register. The following code snippet demonstrates how to retrieve the nested values of the register:
+
+```typescript
 builder.use().foo.baz(12); // "/bazaar/12"
 builder.use().foo.bar; // 10
 ```
 
-To add a prefix to the keys, you can use the following code:
+### Using prefixes
+
+The `createBuilder` function accepts an optional list of prefixes as its second argument. The prefixes are used to construct the keys of the `builder` object. The following code snippet demonstrates how to use prefixes:
 
 ```typescript
-const builderWithPrefix = createBuilder(store, "tap", "root");
-builderWithPrefix.foo.bar.use() // ["tap", "root", "foo", "bar"]
-```
+
+
+
+
+
 
 To get the type of object passed to the builder
 

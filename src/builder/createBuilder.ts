@@ -55,5 +55,8 @@ export function createBuilder<
     };
   }, {} as KeyBuilder<T>);
 
-  return Object.assign({ use: () => register }, builder) as Builder<T, P>;
+  return Object.assign({
+    use: () => register,
+    get: () => prefix,
+  }, builder) as Builder<T, P>;
 }
