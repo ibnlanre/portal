@@ -7,7 +7,7 @@ import {
   StorageType,
 } from "@/definition";
 
-import { BehaviorSubject } from "./behaviorSubject";
+import { Dimension } from "./dimension";
 
 export class Portal {
   private portalMap: PortalMap<any, any> = new Map();
@@ -132,7 +132,7 @@ export class Portal {
     }
 
     const subject = {
-      observable: new BehaviorSubject(initialState),
+      observable: new Dimension(initialState),
       ...events,
     };
     this.portalMap.set(path, subject);
@@ -184,7 +184,7 @@ export class Portal {
       } else {
         console.warn("The path:", path, "does not exist in portal entries");
         this.portalMap.set(path, {
-          observable: new BehaviorSubject(value),
+          observable: new Dimension(value),
         });
       }
     } catch (error) {

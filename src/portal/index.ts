@@ -1,4 +1,4 @@
-export * from "./behaviorSubject";
-export * from "./usePortalImplementation";
-export * from "./makePortal";
+export * from "./dimension";
+export * from "./use-portal";
+export * from "./make-portal";
 export * from "./portal";

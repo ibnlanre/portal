@@ -8,10 +8,11 @@ import {
 import { getResolvedState, getValue } from "@/utilities";
 
 import { Portal } from "./portal";
-import { useCookieImplementation } from "./useCookieImplementation";
-import { useLocalImplementation } from "./useLocalImplementation";
-import { usePortalImplementation } from "./usePortalImplementation";
-import { useSessionImplementation } from "./useSessionImplementation";
+import { usePortal } from "./use-portal";
+
+import { useLocal } from "./use-local";
+import { useSession } from "./use-session";
+import { useCookie } from "./use-cookie";
 
 function makePortal<Store extends Record<string, any>>(register: Store) {
   /**
@@ -42,7 +43,7 @@ function makePortal<Store extends Record<string, any>>(register: Store) {
         ? getResolvedState(options.state)
         : getValue(register, path);
 
-      return usePortalImplementation<Store, Path, State, Data>({
+      return usePortal<Store, Path, State, Data>({
         path,
         initialState,
         options,
@@ -67,7 +68,7 @@ function makePortal<Store extends Record<string, any>>(register: Store) {
         ? getResolvedState(config.state)
         : getValue(register, path);
 
-      return useLocalImplementation<Store, Path, State, Data>({
+      return useLocal<Store, Path, State, Data>({
         path,
         initialState,
         config,
@@ -92,7 +93,7 @@ function makePortal<Store extends Record<string, any>>(register: Store) {
         ? getResolvedState(config.state)
         : getValue(register, path);
 
-      return useSessionImplementation<Store, Path, State, Data>({
+      return useSession<Store, Path, State, Data>({
         path,
         initialState,
         config,
@@ -117,7 +118,7 @@ function makePortal<Store extends Record<string, any>>(register: Store) {
         ? getResolvedState(config.state)
         : getValue(register, path);
 
-      return useCookieImplementation<Store, Path, State, Data>({
+      return useCookie<Store, Path, State, Data>({
         path,
         initialState,
         config,

@@ -1,7 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import { expect, describe, afterEach, it } from "vitest";
 
-import { usePortalImplementation, Portal } from "@/portal";
+import { usePortal, Portal } from "@/portal";
 
 const store = new Portal();
 
@@ -9,11 +9,11 @@ afterEach(() => {
   store.clear();
 });
 
-describe("usePortalImplementation", () => {
+describe("usePortal", () => {
   it("should return the initial state", () => {
     const initialState = { count: 0 };
     const { result } = renderHook(() =>
-      usePortalImplementation({ path: "test", initialState, store })
+      usePortal({ path: "test", initialState, store })
     );
 
     const [state] = result.current;
@@ -23,7 +23,7 @@ describe("usePortalImplementation", () => {
   it("should update the state when the setter is called", () => {
     const initialState = { count: 0 };
     const { result } = renderHook(() =>
-      usePortalImplementation({ path: "test", initialState, store })
+      usePortal({ path: "test", initialState, store })
     );
 
     const [, setState] = result.current;
@@ -40,7 +40,7 @@ describe("usePortalImplementation", () => {
     localStorage.setItem("test", JSON.stringify({ count: 1 }));
 
     const { result } = renderHook(() =>
-      usePortalImplementation({
+      usePortal({
         path: "test",
         initialState,
         store,
@@ -60,7 +60,7 @@ describe("usePortalImplementation", () => {
   it("should persist the state to storage when the set method is provided", () => {
     const initialState = { count: 0 };
     const { result } = renderHook(() =>
-      usePortalImplementation({
+      usePortal({
         path: "test",
         initialState,
         store,
@@ -88,7 +88,7 @@ describe("usePortalImplementation", () => {
     localStorage.setItem("test", JSON.stringify({ count: 1 }));
 
     const { result } = renderHook(() =>
-      usePortalImplementation({
+      usePortal({
         path: "test",
         initialState,
         store,
@@ -117,7 +117,7 @@ describe("usePortalImplementation", () => {
   it("should select the specified data from the state", () => {
     const initialState = { count: 0 };
     const { result } = renderHook(() =>
-      usePortalImplementation({
+      usePortal({
         path: "test",
         initialState,
         store,

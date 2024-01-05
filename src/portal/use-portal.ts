@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 import type {
-  UsePortalImplementation,
+  UsePortal,
   GetValueByPath,
   Paths,
   PortalState,
@@ -16,7 +16,7 @@ import type {
  * @template State The state of the portal
  * @template Data The data of the portal
  *
- * @param {UsePortalImplementation<Store, Path, State, Data>} properties
+ * @param {UsePortal<Store, Path, State, Data>} properties
  *
  * @property {Path} path The path of the portal's state
  * @property {Portal} [portal] The portal to be used
@@ -25,14 +25,12 @@ import type {
  *
  * @returns {PortalState<State, Data>} A tuple containing the current state and a function to update the state.
  */
-export function usePortalImplementation<
+export function usePortal<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
   Data = State
->(
-  properties: UsePortalImplementation<Store, Path, State, Data>
-): PortalState<State, Data> {
+>(properties: UsePortal<Store, Path, State, Data>): PortalState<State, Data> {
   const { path, store, options, initialState } = properties;
   const {
     select = (value: State) => value as unknown as Data,

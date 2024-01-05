@@ -1,7 +1,7 @@
 import type { SetStateAction, Dispatch } from "react";
 
 import { CookieOptions } from "./cookie";
-import { BehaviorSubject, Portal } from "@/portal";
+import { Dimension, Portal } from "@/portal";
 
 /**
  * Represents the method to get the portal's initial value.
@@ -115,7 +115,7 @@ export type PortalValue<State> = {
   /**
    * The BehaviorSubject that contains the current value of the store.
    */
-  observable: BehaviorSubject<State>;
+  observable: Dimension<State>;
   /**
    * The method to set the value of the store.
    */
@@ -197,98 +197,14 @@ export type GetValueByPath<
   : never;
 
 /**
- * Represents the result of the makeUsePortal function.
- * @template Store The type of the store.
- */
-export interface UsePortal<Store extends Record<string, any>> {
-  /**
-   * Custom hook to access and manage state in the portal system.
-   *
-   * @template Path The type of the path.
-   * @template State The type of the state.
-   * @template Data The type of the data.
-   *
-   * @param {Path} path The path to the store value.
-   * @returns {[State, Dispatch<SetStateAction<State>>]} A tuple containing the state and a function for updating the state.
-   */
-  <
-    Path extends Paths<Store>,
-    State extends GetValueByPath<Store, Path>,
-    Data = State
-  >(
-    path: Path,
-    options?: PortalOptions<State, Data>
-  ): PortalState<State, Data>;
-
-  /**
-   * Custom hook to access and manage state in the portal system with localStorage support.
-   *
-   * @template Path The type of the path.
-   * @template State The type of the state.
-   * @template Data The type of the data.
-   *
-   * @param {Path} path The path to the store value.
-   * @returns {PortalState<State, Data>} A tuple containing the current state and a function to update the state.
-   */
-  local<
-    Path extends Paths<Store>,
-    State extends GetValueByPath<Store, Path>,
-    Data = State
-  >(
-    path: Path,
-    config?: Config<State, Data>
-  ): PortalState<State, Data>;
-
-  /**
-   * Custom hook to access and manage state in the portal system with sessionStorage support.
-   *
-   * @template Path The type of the path.
-   * @template State The type of the state.
-   * @template Data The type of the data.
-   *
-   * @param {Path} path The path to the store value.
-   * @returns {PortalState<State, Data>} A tuple containing the current state and a function to update the state.
-   */
-  session<
-    Path extends Paths<Store>,
-    State extends GetValueByPath<Store, Path>,
-    Data = State
-  >(
-    path: Path,
-    config?: Config<State, Data>
-  ): PortalState<State, Data>;
-
-  /**
-   * Custom hook to access and manage state in the portal system with cookie support.
-   *
-   * @template Path The type of the path.
-   * @template State The type of the state.
-   * @template Data The type of the data.
-   *
-   * @param {Path} path The path to the store value.
-   * @param {CookieOptions} cookieOptions The options for the cookie.
-   *
-   * @returns {PortalState<State, Data>} A tuple containing the current state and a function to update the state.
-   */
-  cookie<
-    Path extends Paths<Store>,
-    State extends GetValueByPath<Store, Path>,
-    Data = State
-  >(
-    path: Path,
-    config?: CookieConfig<State, Data>
-  ): PortalState<State, Data>;
-}
-
-/**
- * Represents the properties of the `usePortalImplemenation` hook.
+ * Represents the properties of the `usePortal` hook.
  *
  * @template State The type of the state.
  * @template Path The type of the path.
  * @template Store The type of the store.
  * @template Data The type of the data.
  */
-export interface UsePortalImplementation<
+export interface UsePortal<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
@@ -301,14 +217,14 @@ export interface UsePortalImplementation<
 }
 
 /**
- * Represents the properties of the `useLocalImplementation` hook.
+ * Represents the properties of the `useLocal` hook.
  *
  * @template State The type of the state.
  * @template Path The type of the path.
  * @template Store The type of the store.
  * @template Data The type of the data.
  */
-export interface UseLocalImplementation<
+export interface UseLocal<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
@@ -321,14 +237,14 @@ export interface UseLocalImplementation<
 }
 
 /**
- * Represents the properties of the `useSessionImplementation` hook.
+ * Represents the properties of the `useSession` hook.
  *
  * @template State The type of the state.
  * @template Path The type of the path.
  * @template Store The type of the store.
  * @template Data The type of the data.
  */
-export interface UseSessionImplementation<
+export interface UseSession<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
@@ -341,14 +257,14 @@ export interface UseSessionImplementation<
 }
 
 /**
- * Represents the properties of the `useCookieImplementation` hook.
+ * Represents the properties of the `useCookie` hook.
  *
  * @template Store The type of the store.
  * @template Path The type of the path.
  * @template State The type of the state.
  * @template Data The type of the data.
  */
-export interface UseCookieImplementation<
+export interface UseCookie<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,

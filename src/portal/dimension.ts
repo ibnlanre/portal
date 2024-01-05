@@ -13,12 +13,12 @@ abstract class Subject<State> {
  * Represents a subject that maintains a current value and emits it to subscribers.
  * @template State The type of the initial and emitted values.
  */
-export class BehaviorSubject<State> implements Subject<State> {
+export class Dimension<State> implements Subject<State> {
   private state: State;
   private subscribers: Set<Function>;
 
   /**
-   * Creates a new instance of BehaviorSubject.
+   * Creates a new instance of Dimension.
    * @param {State} initialValue The initial value of the subject.
    */
   constructor(initialValue: State) {
@@ -108,7 +108,7 @@ export class BehaviorSubject<State> implements Subject<State> {
       this.subscribers.add(observer);
       if (immediate) observer(this.state);
     }
-    
+
     return {
       unsubscribe: () => {
         this.subscribers.delete(observer);
