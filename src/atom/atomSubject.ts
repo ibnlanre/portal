@@ -207,8 +207,9 @@ export class AtomSubject<State> {
   ): Subscription => {
     // Check if the observer is not already subscribed
     if (!this.subscribers.has(observer)) {
-      // Add the observer to the subscribers and notify it with the current state
+      // Add the observer to the subscribers set
       this.subscribers.add(observer);
+      // notify the observer with the current state if immediate is true
       if (immediate) observer(this.state);
     }
 

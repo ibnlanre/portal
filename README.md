@@ -129,11 +129,21 @@ The difference between the `state` and `get` properties is that the `state` prop
 
 ### Basic usage
 
+While `portal` itself is an object containing a couple of utility functions, creating states requires the `use` hook. The `use` hook accepts a key and an optional configuration object as its arguments. The configuration object defines the initial state of the portal, and how the state is treated.
+
+
+ It returns a tuple containing the state and a function to update the state. The following code snippet demonstrates how to use the `portal` function:
+
+```typescript
 A configuration object can be passed to the `portal` function to define the initial state and how the state is updated. It is however not required. If a configuration object is not passed to the `portal` function, the initial state is set to `undefined`. The following code snippet demonstrates how to use the `portal` function without a configuration object:
 
 ```typescript
 const [name, setName] = portal.use("client")
 ```
+
+### Configuration object
+
+The configuration object can have the following properties:
 
 #### Using the `state` property
 

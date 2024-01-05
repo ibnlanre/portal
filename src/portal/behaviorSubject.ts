@@ -108,6 +108,7 @@ export class BehaviorSubject<State> implements Subject<State> {
       this.subscribers.add(observer);
       if (immediate) observer(this.state);
     }
+    
     return {
       unsubscribe: () => {
         this.subscribers.delete(observer);

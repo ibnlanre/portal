@@ -61,6 +61,7 @@
     "react-dom": ">16.7"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.2.0",
     "@testing-library/react": "^14.1.0",
     "@types/node": "^20.2.3",
     "@types/react": "^18.2.14",
@@ -72,5 +73,8 @@
     "tsup": "^6.7.0",
     "typescript": "^5.0.4",
     "vitest": "^0.34.6"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.2.1"
   }
 }

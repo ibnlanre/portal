@@ -23,6 +23,7 @@ describe("createBuilder", () => {
 
     expect(builder).toEqual({
       use,
+      get,
       dex: { use, get },
       foo: {
         bar: {
@@ -50,6 +51,7 @@ describe("createBuilder", () => {
   it("should still have the same structure as its first argument", () => {
     expect(builder).toEqual({
       use,
+      get,
       dex: { use, get },
       foo: {
         bar: {
@@ -84,6 +86,7 @@ describe("createBuilder", () => {
 
   it("should correctly retrieve nested value using the use method on the root", () => {
     expect(builder.use()).toEqual(obj);
+    expect(builder.get()).toEqual(["parent"]);
   });
 
   it("should return undefined for non-existing nested value", () => {
