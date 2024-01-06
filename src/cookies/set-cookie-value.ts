@@ -1,4 +1,4 @@
-import { formatCookieOptions } from "./formatCookieOptions";
+import { formatCookieOptions } from "./format-cookie-options";
 import type { CookieOptions } from "@/definition";
 
 /**

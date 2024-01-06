@@ -1,11 +1,11 @@
 import { CookieStorage } from "@/definition";
 
-import { clearCookieStorage } from "./clearCookieStorage";
-import { getCookieByIndex } from "./getCookieByIndex";
-import { getCookieStorageLength } from "./getCookieStorageLength";
-import { getCookieValue } from "./getCookieValue";
-import { removeCookieValue } from "./removeCookieValue";
-import { setCookieValue } from "./setCookieValue";
+import { clearCookieStorage } from "./clear-cookie-storage";
+import { getCookieByIndex } from "./get-cookie-by-index";
+import { getCookieStorageLength } from "./get-cookie-storage-length";
+import { getCookieValue } from "./get-cookie-value";
+import { removeCookieValue } from "./remove-cookie-value";
+import { setCookieValue } from "./set-cookie-value";
 
 /**
  * An object representing a cookie storage with various methods to interact with cookies.
