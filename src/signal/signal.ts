@@ -25,30 +25,6 @@ class Signal<T> {
     return value;
   }
 
-  /**
-   * Subscribes to changes in the signal.
-   *
-   * @param {Function} observer The callback function to execute when the signal changes.
-   * @param {boolean} [immediate=true] Whether to run the callback immediately with the current state. Defaults to `true`.
-   *
-   * @description
-   * When immediate is true, the callback will execute immediately with the current state.
-   * When immediate is false or not provided, the callback will only execute after a change has occurred.
-   *
-   * @returns {Function} A function to unsubscribe the callback.
-   */
-  subscribe = (callback: (value: T) => void, immediate = true) => {
-    const unsubscribe = () => {
-      this.subscribers.delete(callback);
-    };
-
-    if (this.subscribers.has(callback)) return unsubscribe;
-    if (immediate) callback(this.state);
-
-    this.subscribers.add(callback);
-    return unsubscribe;
-  };
-
   constructor(initialValue: T = undefined as T) {
     this.state = initialValue;
   }
@@ -80,6 +56,61 @@ class Signal<T> {
   get current() {
     return this.use();
   }
+
+  /**
+   * Subscribes to changes in the signal.
+   *
+   * @param {Function} callback The callback function to execute when the signal changes.
+   * @param {boolean} [immediate=true] Whether to run the callback immediately with the current state. Defaults to `true`.
+   *
+   * @description
+   * When immediate is true, the callback will execute immediately with the current state.
+   * When immediate is false or not provided, the callback will only execute after a change has occurred.
+   *
+   * @returns {Function} A function to unsubscribe the callback.
+   */
+  subscribe = (callback: (value: T) => void, immediate = true) => {
+    const unsubscribe = () => {
+      this.subscribers.delete(callback);
+    };
+
+    if (this.subscribers.has(callback)) return unsubscribe;
+    if (immediate) callback(this.state);
+
+    this.subscribers.add(callback);
+    return unsubscribe;
+  };
+
+  static identifier = () => {
+    const error = new Error();
+    const stack = error.stack?.split("\n").at(3) || "";
+
+    const file = stack.replace(/[^a-zA-Z]/g, "");
+    const path = stack.match(/:\d+:\d+/g);
+    const filepath = file + path;
+
+    let hash = 0;
+    for (const char of filepath) {
+      hash = (hash << 5) - hash + char.charCodeAt(0);
+      hash |= 0;
+    }
+
+    return hash;
+  };
 }
 
-export const signal = <T>(initialValue: T) => new Signal(initialValue);
+const store = new Map<number, Signal<any>>();
+
+export const signal = <T>(initialValue: T) => {
+  const uuid = Signal.identifier();
+
+  if (store.has(uuid)) {
+    const instance = store.get(uuid) as Signal<T>;
+    instance.value = initialValue;
+    return instance;
+  }
+
+  const instance = new Signal(initialValue);
+  store.set(uuid, instance);
+  return instance;
+};

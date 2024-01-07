@@ -947,3 +947,49 @@ const { user, setUser, isLoading } = userAtom.use({
   key: "user",
 });
 ```
+
+
+## Signals
+
+Signals are objects with a 
+
+
+
+
+A signal is an object that has a value and can be observed for changes. It is similar to a state, but it is not bound to a component. It can be used to share data between components. It updates the components when the signal changes and updates the UI without re-rendering the whole component.
+
+
+```typescript
+import { signal } from "@ibnlanre/portal";
+
+// this could equally be defined inside the component
+const count = signal(0);
+const sideEffect = (value) => {
+  console.log("count", value);
+};
+
+// if defined within the Counter component
+// peek.value would be updated when count changes
+// because count.current causes a re-render
+const peek = signal(count.value + 2);
+
+function Counter() {
+  // .current makes the value reactive, .value does not
+  // but re-renders can make .value seem reactive
+ const double = signal(count.current * 3);
+
+  // subscriptions can happen within the component
+  // because the callback is defined outside it
+  const dispose = count.subscribe(sideEffect);
+
+ return (
+    <div>
+      <p>No change: value + 2 = {peek.value}</p>
+    <button onClick={() => count.value++}>
+     Value: {count.value}, value x 3 = {double.value}
+    </button>
+    </div>
+ );
+}
+
+```

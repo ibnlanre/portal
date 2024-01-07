@@ -4,24 +4,35 @@
   "description": "React state management library",
   "main": "cjs/index.js",
   "module": "esm/index.js",
-  "types": "cjs/index.d.ts",
   "files": [
-    "esm",
-    "cjs"
+    "dist/*"
   ],
-  "release-it": {
-    "git": {
-      "commitMessage": "chore(release): v${version}"
-    },
-    "github": {
-      "release": true
-    },
-    "npm": {
-      "publish": true
-    }
-  },
   "engines": {
     "node": ">=14"
+  },
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json",
+    "./components": {
+      "import": "./dist/components/index.js",
+      "types": "./dist/components/index.d.mts"
+    },
+    "./hooks": {
+      "import": "./dist/hooks/index.js",
+      "types": "./dist/hooks/index.d.mts"
+    },
+    "./*": {
+      "import": "./dist/*.mjs",
+      "types": "./dist/*.d.mts"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "hooks": [
+        "./dist/hooks/index.d.mts"
+      ]
+    }
   },
   "scripts": {
     "lint": "tsc --pretty --noEmit --project tsconfig.json",
