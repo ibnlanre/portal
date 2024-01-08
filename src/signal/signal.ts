@@ -101,16 +101,30 @@ class Signal<T> {
 
 const store = new Map<number, Signal<any>>();
 
-export const signal = <T>(initialValue: T) => {
-  const uuid = Signal.identifier();
+// export const signal = <T>(initialValue: T) => {
+//   const uuid = Signal.identifier();
 
-  if (store.has(uuid)) {
-    const instance = store.get(uuid) as Signal<T>;
-    instance.value = initialValue;
-    return instance;
+//   if (store.has(uuid)) {
+//     const instance = store.get(uuid) as Signal<T>;
+//     instance.value = initialValue;
+//     return instance;
+//   }
+
+//   const instance = new Signal(initialValue);
+//   store.set(uuid, instance);
+//   return instance;
+// };
+
+function signal<T>(initialValue: T) {
+  function useSignal<T>(signal: Signal<T>) {
+    const [value, setValue] = useState(signal.value);
+    useEffect(() => signal.subscribe(setValue), []);
+    return value;
   }
 
-  const instance = new Signal(initialValue);
-  store.set(uuid, instance);
-  return instance;
-};
+  return {
+    use: useSignal,
+  };
+}
+
+const count = signal(0);
