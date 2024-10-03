@@ -139,8 +139,19 @@ export type PortalMap<State, Path> = Map<Path, PortalValue<State>>;
  */
 export type PortalState<State, Data = State> = [
   Data,
-  Dispatch<SetStateAction<State>>
+  Dispatch<SetStateAction<State>>,
 ];
+
+type PathsHelper<Base, Delimiter extends string> =
+  Base extends Record<PropertyKey, unknown>
+    ? {
+        [Key in keyof Base]: Key extends Extract<Key, string | number>
+          ? Base[Key] extends Record<PropertyKey, unknown>
+            ? `${Key}` | `${Key}${Delimiter}${Paths<Base[Key], Delimiter>}`
+            : `${Key}`
+          : never;
+      }[keyof Base]
+    : never;
 
 /**
  * Represents the path to a value in a store.
@@ -154,18 +165,10 @@ export type PortalState<State, Data = State> = [
  * 1. It is a string literal type.
  * 2. It is a union of all the possible paths in the store.
  */
-export type Paths<Base, Delimiter extends string = "."> = Base extends Record<
-  infer Keys extends string | number,
-  infer Value
->
-  ? {
-      [Key in Keys]: Key extends string | number
-        ? Extract<Value, Base[Key]> extends Record<string, any>
-          ? `${Key}` | `${Key}${Delimiter}${Paths<Base[Key], Delimiter>}`
-          : `${Keys}`
-        : never;
-    }[Keys]
-  : never;
+export type Paths<Base, Delimiter extends string = "."> =
+  Base extends Partial<infer Impartial>
+    ? PathsHelper<Impartial, Delimiter>
+    : PathsHelper<Base, Delimiter>;
 
 /**
  * Represents the value of a key in a store.
@@ -175,26 +178,36 @@ export type Paths<Base, Delimiter extends string = "."> = Base extends Record<
 export type ParseAsNumber<Key extends string | number> =
   Key extends `${infer Value extends number}` ? Value : Key;
 
+type GetValueByPathHelper<
+  Store,
+  Path extends string | number,
+  Delimiter extends string,
+> =
+  ParseAsNumber<Path> extends keyof Store
+    ? Store[ParseAsNumber<Path>]
+    : Path extends `${infer Key}${Delimiter}${infer Rest}`
+      ? ParseAsNumber<Key> extends keyof Store
+        ? GetValueByPath<Store[ParseAsNumber<Key>], Rest>
+        : never
+      : never;
+
 /**
  * Represents the value at a path in a store.
  *
- * @template T The type of the store.
+ * @template Store The type of the store.
  * @template Path The type of the path.
  * @template Delimiter The type of the delimiter.
  *
  * @description It is a union of all the possible values in the store.
  */
 export type GetValueByPath<
-  T,
+  Store,
   Path extends string | number,
-  Delimiter extends string = "."
-> = ParseAsNumber<Path> extends keyof T
-  ? T[ParseAsNumber<Path>]
-  : Path extends `${infer Key}${Delimiter}${infer Rest}`
-  ? ParseAsNumber<Key> extends keyof T
-    ? GetValueByPath<T[ParseAsNumber<Key>], Rest>
-    : never
-  : never;
+  Delimiter extends string = ".",
+> =
+  Store extends Partial<infer Impartial>
+    ? GetValueByPathHelper<Impartial, Path, Delimiter>
+    : GetValueByPathHelper<Store, Path, Delimiter>;
 
 /**
  * Represents the properties of the `usePortal` hook.
@@ -208,7 +221,7 @@ export interface UsePortal<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
-  Data
+  Data,
 > {
   path: Path;
   store: Portal;
@@ -228,7 +241,7 @@ export interface UseLocal<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
-  Data
+  Data,
 > {
   path: Path;
   store: Portal;
@@ -248,7 +261,7 @@ export interface UseSession<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
-  Data
+  Data,
 > {
   path: Path;
   store: Portal;
@@ -268,7 +281,7 @@ export interface UseCookie<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
-  Data
+  Data,
 > {
   path: Path;
   store: Portal;

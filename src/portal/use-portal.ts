@@ -29,7 +29,7 @@ export function usePortal<
   Store extends Record<string, any>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
-  Data = State
+  Data = State,
 >(properties: UsePortal<Store, Path, State, Data>): PortalState<State, Data> {
   const { path, store, options, initialState } = properties;
   const {
@@ -51,7 +51,7 @@ export function usePortal<
   const { observable, set, get } = store.insertItem(
     path,
     resolvedState,
-    events
+    events,
   );
 
   /**

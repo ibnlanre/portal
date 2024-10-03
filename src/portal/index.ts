@@ -1,4 +1,4 @@
-export * from "./dimension";
-export * from "./use-portal";
-export * from "./make-portal";
-export * from "./portal";
+export { Dimension } from "./dimension";
+export { usePortal } from "./use-portal";
+export { portal } from "./make-portal";
+export { Portal } from "./portal";
