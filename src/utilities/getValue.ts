@@ -13,12 +13,13 @@ import { GetValueByPath, Paths } from "@/definition";
  * @returns {Value} The value at the specified path.
  */
 export function getValue<
-  Store extends Record<string, any>,
-  Path extends Paths<Store>,
-  Value extends GetValueByPath<Store, Path>
->(object: Store, path: Path, delimiter = ".") {
-  let value = object;
+  Store extends Record<PropertyKey, unknown>,
+  Path extends Paths<Store, Delimiter>,
+  Value,
+  Delimiter extends string = ".",
+>(object: Store, path: Path, delimiter: Delimiter = "." as Delimiter): Value {
+  let value: any = object;
   const paths = path.split(delimiter);
   for (const key of paths) value = value[key];
-  return value as unknown as Value;
+  return value as Value;
 }

@@ -26,7 +26,7 @@ import type {
  * @returns {PortalState<State, Data>} A tuple containing the current state and a function to update the state.
  */
 export function usePortal<
-  Store extends Record<string, any>,
+  Store extends Record<PropertyKey, unknown>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
   Data = State,

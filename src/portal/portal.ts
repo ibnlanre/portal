@@ -45,7 +45,7 @@ export class Portal {
    */
   private deletePersistedItem = <Path extends string>(
     path: Path,
-    storageType: StorageType
+    storageType: StorageType,
   ): void => {
     switch (storageType) {
       case "local":
@@ -56,7 +56,7 @@ export class Portal {
         } catch (error) {
           console.error(
             `Error occurred deleting ${path} from localStorage`,
-            error
+            error,
           );
         }
         break;
@@ -69,7 +69,7 @@ export class Portal {
         } catch (error) {
           console.error(
             `Error occurred deleting ${path} from sessionStorage`,
-            error
+            error,
           );
         }
         break;
@@ -90,7 +90,7 @@ export class Portal {
    * @type {PortalMap}
    */
   get entries() {
-    const result: Record<string, any> = {};
+    const result: Record<PropertyKey, unknown> = {};
 
     this.portalMap.forEach(({ observable }, key) => {
       result[key] = observable.value;
@@ -120,7 +120,7 @@ export class Portal {
     events: {
       set?: SetStore<State>;
       get?: GetState<State>;
-    }
+    },
   ): PortalValue<State> => {
     if (this.portalMap.has(path)) {
       const subject = this.portalMap.get(path) as PortalValue<State>;
@@ -216,7 +216,7 @@ export class Portal {
    */
   removeItem = <Path extends string>(
     path: Path,
-    storageTypes: Array<StorageType> = ["local", "session", "cookie"]
+    storageTypes: Array<StorageType> = ["local", "session", "cookie"],
   ): void => {
     const removeFromStorageIterator = () => {
       for (const storageType of storageTypes) {

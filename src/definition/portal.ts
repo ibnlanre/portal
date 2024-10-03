@@ -218,7 +218,7 @@ export type GetValueByPath<
  * @template Data The type of the data.
  */
 export interface UsePortal<
-  Store extends Record<string, any>,
+  Store extends Record<PropertyKey, unknown>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
   Data,
@@ -238,7 +238,7 @@ export interface UsePortal<
  * @template Data The type of the data.
  */
 export interface UseLocal<
-  Store extends Record<string, any>,
+  Store extends Record<PropertyKey, unknown>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
   Data,
@@ -258,7 +258,7 @@ export interface UseLocal<
  * @template Data The type of the data.
  */
 export interface UseSession<
-  Store extends Record<string, any>,
+  Store extends Record<PropertyKey, unknown>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
   Data,
@@ -278,7 +278,7 @@ export interface UseSession<
  * @template Data The type of the data.
  */
 export interface UseCookie<
-  Store extends Record<string, any>,
+  Store extends Record<PropertyKey, unknown>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
   Data,

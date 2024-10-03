@@ -13,7 +13,7 @@ import { useLocal } from "./use-local";
 import { useSession } from "./use-session";
 import { useCookie } from "./use-cookie";
 
-export function makePortal<Store extends Record<PropertyKey, any>>(
+export function makePortal<Store extends Record<PropertyKey, unknown>>(
   register: Store,
 ) {
   /**
@@ -40,9 +40,9 @@ export function makePortal<Store extends Record<PropertyKey, any>>(
       State extends GetValueByPath<Store, Path>,
       Data = State,
     >(path: Path, options?: PortalOptions<State, Data>) {
-      const initialState = options?.state
-        ? getResolvedState(options.state)
-        : getValue(register, path);
+      const initialState =
+        getResolvedState(options?.state) ??
+        getValue<Store, Path, State>(register, path);
 
       return usePortal<Store, Path, State, Data>({
         path,
@@ -65,9 +65,9 @@ export function makePortal<Store extends Record<PropertyKey, any>>(
       State extends GetValueByPath<Store, Path>,
       Data = State,
     >(path: Path, config?: Config<State, Data>) {
-      const initialState = config?.state
-        ? getResolvedState(config.state)
-        : getValue(register, path);
+      const initialState =
+        getResolvedState(config?.state) ??
+        getValue<Store, Path, State>(register, path);
 
       return useLocal<Store, Path, State, Data>({
         path,
@@ -90,9 +90,9 @@ export function makePortal<Store extends Record<PropertyKey, any>>(
       State extends GetValueByPath<Store, Path>,
       Data = State,
     >(path: Path, config?: Config<State, Data>) {
-      const initialState = config?.state
-        ? getResolvedState(config.state)
-        : getValue(register, path);
+      const initialState =
+        getResolvedState(config?.state) ??
+        getValue<Store, Path, State>(register, path);
 
       return useSession<Store, Path, State, Data>({
         path,
@@ -115,9 +115,9 @@ export function makePortal<Store extends Record<PropertyKey, any>>(
       State extends GetValueByPath<Store, Path>,
       Data = State,
     >(path: Path, config?: CookieConfig<State, Data>) {
-      const initialState = config?.state
-        ? getResolvedState(config.state)
-        : getValue(register, path);
+      const initialState =
+        getResolvedState(config?.state) ??
+        getValue<Store, Path, State>(register, path);
 
       return useCookie<Store, Path, State, Data>({
         path,
