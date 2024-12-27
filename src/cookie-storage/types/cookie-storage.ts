@@ -1,23 +1,16 @@
-import { CookieStorage } from "@/definition";
-
-import { clearCookieStorage } from "./clear-cookie-storage";
-import { getCookieByIndex } from "./get-cookie-by-index";
-import { getCookieStorageLength } from "./get-cookie-storage-length";
-import { getCookieValue } from "./get-cookie-value";
-import { removeCookieValue } from "./remove-cookie-value";
-import { setCookieValue } from "./set-cookie-value";
+import type { CookieOptions } from "./cookie-options";
 
 /**
- * An object representing a cookie storage with various methods to interact with cookies.
+ * Represents the cookie storage.
  */
-export const cookieStorage: CookieStorage = {
+export interface CookieStorage extends Storage {
   /**
    * Retrieves the value of the cookie with the specified name from the document.cookie.
    *
    * @param {string} name The name of the cookie.
    * @returns {string|null} The value of the cookie, or null if the cookie is not found.
    */
-  getItem: getCookieValue,
+  getItem: (name: string) => string | null;
 
   /**
    * Sets a cookie with the specified name and value.
@@ -27,7 +20,7 @@ export const cookieStorage: CookieStorage = {
    * @param {CookieOptions} [options] Optional cookie options.
    * @returns {void}
    */
-  setItem: setCookieValue,
+  setItem: (name: string, value: string, options?: CookieOptions) => void;
 
   /**
    * Removes a cookie with the specified name.
@@ -36,26 +29,24 @@ export const cookieStorage: CookieStorage = {
    * @param {string} [path] The path of the cookie to be removed.
    * @returns {void}
    */
-  removeItem: removeCookieValue,
+  removeItem: (name: string, path?: string) => void;
 
   /**
    * Clears all cookies from cookieStorage.
    * @returns {void}
    */
-  clear: clearCookieStorage,
+  clear: () => void;
 
   /**
    * Get the length of cookieStorage (the number of individual cookies).
    * @returns {number} The number of cookies in cookieStorage.
    */
-  get length() {
-    return getCookieStorageLength();
-  },
+  length: number;
 
   /**
    * Get a cookie by index from cookieStorage.
    * @param {number} index The index of the cookie to retrieve.
    * @returns {string | null} The cookie value if found, or null if not found.
    */
-  key: getCookieByIndex,
-};
+  key: (index: number) => string | null;
+}

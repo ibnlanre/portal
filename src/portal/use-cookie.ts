@@ -1,5 +1,5 @@
 import { Paths, GetValueByPath, UseCookie } from "@/definition";
-import { cookieStorage } from "@/cookies";
+import { cookieStorage } from "@/cookie-storage";
 
 import { usePortal } from "./use-portal";
 
@@ -24,7 +24,7 @@ export function useCookie<
   Store extends Record<PropertyKey, unknown>,
   Path extends Paths<Store>,
   State extends GetValueByPath<Store, Path>,
-  Data = State,
+  Data = State
 >(properties: UseCookie<Store, Path, State, Data>) {
   const { path, store, config, initialState } = properties;
   const {

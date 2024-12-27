@@ -11,7 +11,8 @@ export function formatCookieOptions(options?: CookieOptions): string {
 
   let optionsString = `; path=${options.path ?? "/"}`;
   if (options.domain) optionsString += `; domain=${options.domain}`;
-  if (options.secure || options.httpOnly) optionsString += "; secure";
+  if (options.secure) optionsString += "; secure";
+  if (options.httpOnly) optionsString += "; httpOnly";
   if (options.expires) {
     const expires =
       options.expires instanceof Date
@@ -19,9 +20,8 @@ export function formatCookieOptions(options?: CookieOptions): string {
         : options.expires;
     optionsString += `; expires=${expires}`;
   }
-  if (options.sameSite) optionsString += `; samesite=${options.sameSite}`;
+  if (options.sameSite) optionsString += `; SameSite=${options.sameSite}`;
   if (options.maxAge) optionsString += `; max-age=${options.maxAge}`;
-  if (options.httpOnly) optionsString += "; httpOnly";
   if (options.partitioned) optionsString += "; partitioned";
 
   return optionsString;

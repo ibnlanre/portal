@@ -1,14 +1,11 @@
 {
   "compilerOptions": {
-    "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ES2020"
-    ],
+    "lib": ["DOM", "DOM.Iterable", "ES2020"],
     "target": "es2015",
     "module": "ES2022",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
+    "verbatimModuleSyntax": true,
     "strict": true,
     "noImplicitAny": true,
     "noImplicitReturns": true,
@@ -27,9 +24,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   }
 }

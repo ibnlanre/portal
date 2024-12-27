@@ -16,9 +16,7 @@ export function setCookieValue(
 ) {
   try {
     if (typeof value !== "string") {
-      if (process.env.NODE_ENV === "development") {
-        console.warn("Cookie value should be a string:", value);
-      }
+      console.warn("Cookie value should be a string:", value);
       return;
     }
 
