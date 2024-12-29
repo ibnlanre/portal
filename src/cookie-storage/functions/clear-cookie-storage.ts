@@ -1,4 +1,4 @@
-import { removeCookieValue } from "./remove-cookie-value";
+import { removeCookieValue } from "@/cookie-storage/functions/remove-cookie-value";
 
 /**
  * Clears all cookies from cookieStorage.
@@ -6,13 +6,13 @@ import { removeCookieValue } from "./remove-cookie-value";
  */
 export function clearCookieStorage() {
   try {
-    if (typeof document !== "undefined") {
-      const cookies = document.cookie.split(";");
-      cookies.forEach((cookie) => {
-        const [name, _] = cookie.split("=");
-        removeCookieValue(name as string);
-      });
-    }
+    if (typeof document === "undefined") return;
+
+    const cookies = document.cookie.split(";");
+    cookies.forEach((cookie) => {
+      const [name] = cookie.split("=");
+      if (name) removeCookieValue(name);
+    });
   } catch (error) {
     console.error("Error occurred while clearing cookieStorage:", error);
   }

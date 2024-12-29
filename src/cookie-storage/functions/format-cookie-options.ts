@@ -1,4 +1,4 @@
-import { CookieOptions } from "@/definition";
+import type { CookieOptions } from "@/cookie-storage/types/cookie-options";
 
 /**
  * Formats the provided cookie options into a string format compatible with the document.cookie API.
