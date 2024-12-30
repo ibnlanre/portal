@@ -26,9 +26,9 @@ export type CookieOptions = {
 
   /**
    * Specifies the SameSite attribute for the cookie.
-   * It can be one of the following values: "strict", "lax", or "none".
+   * It can be one of the following values: "Strict", "Lax", or "None".
    */
-  sameSite?: "strict" | "lax" | "none";
+  sameSite?: "Strict" | "Lax" | "None";
 
   /**
    * The maximum age of the cookie in seconds.

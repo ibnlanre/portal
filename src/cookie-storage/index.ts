@@ -1,61 +1,26 @@
-import type { CookieStorage } from "./types/cookie-storage";
+import type { CookieStorage } from "@/cookie-storage/types/cookie-storage";
 
-import { clearCookieStorage } from "./functions/clear-cookie-storage";
-import { getCookieByIndex } from "./functions/get-cookie-by-index";
-import { getCookieStorageLength } from "./functions/get-cookie-storage-length";
-import { getCookieValue } from "./functions/get-cookie-value";
-import { removeCookieValue } from "./functions/remove-cookie-value";
-import { setCookieValue } from "./functions/set-cookie-value";
+import { clearCookieStorage } from "@/cookie-storage/functions/clear-cookie-storage";
+import { getCookieByIndex } from "@/cookie-storage/functions/get-cookie-by-index";
+import { getCookieStorageLength } from "@/cookie-storage/functions/get-cookie-storage-length";
+import { getCookieValue } from "@/cookie-storage/functions/get-cookie-value";
+import { removeCookieValue } from "@/cookie-storage/functions/remove-cookie-value";
+import { setCookieValue } from "@/cookie-storage/functions/set-cookie-value";
+import { signCookie } from "@/cookie-storage/functions/sign-cookie";
+import { unsignCookie } from "@/cookie-storage/functions/unsign-cookie";
 
 /**
  * An object representing a cookie storage with various methods to interact with cookies.
  */
 export const cookieStorage = <CookieStorage>{
-  /**
-   * Retrieves the value of the cookie with the specified name from the document.cookie.
-   *
-   * @param {string} name The name of the cookie.
-   * @returns {string|null} The value of the cookie, or null if the cookie is not found.
-   */
+  sign: signCookie,
+  unsign: unsignCookie,
   getItem: getCookieValue,
-
-  /**
-   * Sets a cookie with the specified name and value.
-   *
-   * @param {string} name The name of the cookie.
-   * @param {string} value The value to be set for the cookie.
-   * @param {CookieOptions} [options] Optional cookie options.
-   * @returns {void}
-   */
   setItem: setCookieValue,
-
-  /**
-   * Removes a cookie with the specified name.
-   *
-   * @param {string} name The name of the cookie to be removed.
-   * @param {string} [path] The path of the cookie to be removed.
-   * @returns {void}
-   */
   removeItem: removeCookieValue,
-
-  /**
-   * Clears all cookies from cookieStorage.
-   * @returns {void}
-   */
   clear: clearCookieStorage,
-
-  /**
-   * Get the length of cookieStorage (the number of individual cookies).
-   * @returns {number} The number of cookies in cookieStorage.
-   */
+  key: getCookieByIndex,
   get length() {
     return getCookieStorageLength();
   },
-
-  /**
-   * Get a cookie by index from cookieStorage.
-   * @param {number} index The index of the cookie to retrieve.
-   * @returns {string | null} The cookie value if found, or null if not found.
-   */
-  key: getCookieByIndex,
 };

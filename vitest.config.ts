@@ -1,5 +1,5 @@
-import { defineConfig } from "vitest/config";
 import { resolve } from "node:path";
+import { defineConfig } from "vitest/config";
 
 import react from "@vitejs/plugin-react";
 
@@ -7,14 +7,9 @@ import react from "@vitejs/plugin-react";
  * @type {import("vitest/config").Config}
  */
 export default defineConfig({
-  plugins: [
-    react({
-      // babel: {
-      //   plugins: ["@babel/plugin-transform-modules-commonjs"],
-      // },
-    }),
-  ],
+  plugins: [react()],
   test: {
+    setupFiles: "vitest.setup.ts",
     environment: "jsdom",
     globals: true,
   },
