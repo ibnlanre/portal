@@ -6,10 +6,6 @@ import type { Possible } from "@/create-store/types/possible";
 export function resolveValue<State>(
   initialState: Possible<Factory<State | undefined>>
 ): State {
-  if (isFunction<State>(initialState)) {
-    const value = initialState();
-    if (value) return value;
-  }
-
+  if (isFunction<State>(initialState)) return initialState();
   return <State>initialState;
 }

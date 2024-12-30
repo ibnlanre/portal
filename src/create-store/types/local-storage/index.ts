@@ -24,11 +24,6 @@ export type SetLocalStorage<State> = (value?: State) => void;
 
 export interface LocalStorageAdapter<State> {
   /**
-   * The key to use in local storage.
-   */
-  key: string;
-
-  /**
    * A function to serialize the state to a string.
    *
    * @param value The state to serialize.

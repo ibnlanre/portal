@@ -45,10 +45,7 @@ export function createCompositeStore<State extends Dictionary>(
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>
   >(value: Value, path?: Path) {
-    if (!path) {
-      setState(value);
-      return;
-    }
+    if (!path) return setState(value);
 
     const keys = splitPath(path);
     const snapshot = <any>createSnapshot(state);
@@ -56,7 +53,7 @@ export function createCompositeStore<State extends Dictionary>(
     const current = keys.reduce((acc, key) => acc[key], snapshot);
 
     current[pivot] = value;
-    setState(snapshot);
+    setState(snapshot, path);
   }
 
   function createSetStatePathAction<
@@ -94,6 +91,10 @@ export function createCompositeStore<State extends Dictionary>(
 
   function $get(): State;
 
+  function $get<Path extends Paths<State> = never>(
+    path?: Path
+  ): ResolvePath<State, Path>;
+
   function $get<
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>
@@ -117,7 +118,7 @@ export function createCompositeStore<State extends Dictionary>(
       return resolvePath(state, path);
     });
 
-    useEffect(() => $sub(setValue, path), []);
+    useEffect(() => $sub(setValue, path), [path]);
     return [value, $set(path)];
   }
 
@@ -136,7 +137,13 @@ export function createCompositeStore<State extends Dictionary>(
     Value extends ResolvePath<State, Path>
   >(subscriber: (value: Value) => void, path?: Path) {
     const subscribers = getSubscribersByPath(path);
+
     subscribers.add(subscriber);
+    subscriber($get(path));
+
+    const value = $get(path);
+    console.log("value", value);
+    console.log("subscriber", subscriber);
 
     return () => {
       subscribers.delete(subscriber);

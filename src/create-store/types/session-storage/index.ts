@@ -24,11 +24,6 @@ export type SetSessionStorage<State> = (value?: State) => void;
 
 export interface SessionStorageAdapter<State> {
   /**
-   * The key to use in session storage.
-   */
-  key: string;
-
-  /**
    * A function to serialize the state to a string.
    *
    * @param value The state to serialize.

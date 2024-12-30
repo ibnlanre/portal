@@ -28,24 +28,30 @@ export type SetCookieStorage<State> = (
   options?: CookieOptions
 ) => void;
 
-type CookieValue = {
-  /**
-   * Specifies if the cookie is designed for use by a single application.
-   */
-  signed?: boolean;
+type CookieSignature =
+  | {
+      signed?: never;
+      secret?: never;
+    }
+  | {
+      /**
+       * Specifies if the cookie is designed for use by a single application.
+       *
+       * @default false
+       * @type {boolean}
+       */
+      signed: boolean;
 
-  /**
-   * The secret to use for signing the cookie.
-   */
-  secret?: string;
-};
+      /**
+       * The secret to use for signing the cookie.
+       *
+       * @throws An error if the secret is not provided.
+       * @type {string | undefined}
+       */
+      secret: string | undefined;
+    };
 
 type CookieData<State> = {
-  /**
-   * The key to use in cookie storage.
-   */
-  key: string;
-
   /**
    * A function to serialize the state to a string.
    *
@@ -81,4 +87,4 @@ type CookieData<State> = {
   options?: CookieOptions;
 };
 
-export type CookieStorageAdapter<State> = CookieData<State> & CookieValue;
+export type CookieStorageAdapter<State> = CookieData<State> & CookieSignature;

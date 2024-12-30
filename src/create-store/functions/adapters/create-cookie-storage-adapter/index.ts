@@ -10,13 +10,18 @@ import { shallowMerge } from "@/create-store/functions/helpers/shallow-merge";
 import { safeStringify } from "@/create-store/functions/utilities/safe-stringify";
 import { tryParse } from "@/create-store/functions/utilities/try-parse";
 
-export function createCookieStorageAdapter<State>({
-  key,
-  stringify = safeStringify,
-  parse = tryParse,
-  signed = false,
-  secret,
-}: CookieStorageAdapter<State>): [
+export function createCookieStorageAdapter<State>(
+  /**
+   * The key to use in cookie storage.
+   */
+  key: string,
+  {
+    parse = tryParse,
+    stringify = safeStringify,
+    signed = false,
+    secret,
+  }: CookieStorageAdapter<State> = {}
+): [
   getCookieStorageState: GetCookieStorage<State>,
   setCookieStorageState: SetCookieStorage<State>
 ] {
@@ -48,13 +53,7 @@ export function createCookieStorageAdapter<State>({
     const value = cookieStorage.getItem(key);
     if (!value) return <State>fallback;
 
-    if (signed) {
-      if (!secret) {
-        throw new Error(
-          `A secret must be provided to sign the cookie: "${key}".`
-        );
-      }
-
+    if (secret) {
       const parsedValue = cookieStorage.unsign(value, secret);
       if (parsedValue) return parse(parsedValue);
     }
@@ -73,17 +72,12 @@ export function createCookieStorageAdapter<State>({
     const mergedOptions = shallowMerge(previousOptions, options);
     const serializedValue = stringify(value);
 
-    if (signed) {
-      if (!secret) {
-        throw new Error(
-          `A secret must be provided to sign the cookie: "${key}".`
-        );
-      }
-
+    if (secret) {
       const hashedCookieData = cookieStorage.sign(serializedValue, secret);
       cookieStorage.setItem(key, hashedCookieData, mergedOptions);
     }
 
+    cookieStorage.setItem(key, serializedValue, mergedOptions);
     cookieOptionsMap.set(key, mergedOptions);
   };
 

@@ -1,5 +1,5 @@
 {
-  "portal": "Portal",
-  "atom": "Atom",
-  "create-builder": "createBuilder"
+  "getting-started": "Getting Started",
+  "core-concepts": "Core Concepts",
+  "utilities": "Utilities"
 }

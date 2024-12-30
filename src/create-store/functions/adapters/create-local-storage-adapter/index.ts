@@ -7,11 +7,16 @@ import type {
 import { safeStringify } from "@/create-store/functions/utilities/safe-stringify";
 import { tryParse } from "@/create-store/functions/utilities/try-parse";
 
-export function createLocalStorageAdapter<State>({
-  key,
-  stringify = safeStringify,
-  parse = tryParse,
-}: LocalStorageAdapter<State>): [
+export function createLocalStorageAdapter<State>(
+  /**
+   * The key to use in local storage.
+   */
+  key: string,
+  {
+    stringify = safeStringify,
+    parse = tryParse,
+  }: LocalStorageAdapter<State> = {}
+): [
   getLocalStorageState: GetLocalStorage<State>,
   setLocalStorageState: SetLocalStorage<State>
 ] {

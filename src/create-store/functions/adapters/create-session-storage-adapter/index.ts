@@ -7,11 +7,16 @@ import type {
 import { safeStringify } from "@/create-store/functions/utilities/safe-stringify";
 import { tryParse } from "@/create-store/functions/utilities/try-parse";
 
-export function createSessionStorageAdapter<State>({
-  key,
-  stringify = safeStringify,
-  parse = tryParse,
-}: SessionStorageAdapter<State>): [
+export function createSessionStorageAdapter<State>(
+  /**
+   * The key to use in session storage.
+   */
+  key: string,
+  {
+    stringify = safeStringify,
+    parse = tryParse,
+  }: SessionStorageAdapter<State> = {}
+): [
   getSessionStorageState: GetSessionStorage<State>,
   setSessionStorageState: SetSessionStorage<State>
 ] {
