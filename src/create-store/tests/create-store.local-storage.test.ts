@@ -1,6 +1,6 @@
 import { createLocalStorageAdapter } from "@/create-store/functions/adapters/create-local-storage-adapter";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createStore } from "./index";
+import { createStore } from "../index";
 
 const getItem = vi.spyOn(localStorage, "getItem");
 const setItem = vi.spyOn(localStorage, "setItem");

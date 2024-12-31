@@ -141,10 +141,6 @@ export function createCompositeStore<State extends Dictionary>(
     subscribers.add(subscriber);
     subscriber($get(path));
 
-    const value = $get(path);
-    console.log("value", value);
-    console.log("subscriber", subscriber);
-
     return () => {
       subscribers.delete(subscriber);
     };

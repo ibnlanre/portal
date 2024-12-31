@@ -74,15 +74,6 @@ type CookieData<State> = {
 
   /**
    * The options to use when setting the cookie.
-   *
-   * @default
-   * {
-   *   path: "/",
-   *   secure: false,
-   *   partitioned: false,
-   *   sameSite: "Lax",
-   *   expires: 0,
-   * }
    */
   options?: CookieOptions;
 };

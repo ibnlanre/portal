@@ -1,5 +1,5 @@
 import { describe, expectTypeOf, it } from "vitest";
-import type { Segments } from ".";
+import type { Segments } from "./index";
 
 describe("Segments type", () => {
   it("should correctly infer types for nested objects", () => {

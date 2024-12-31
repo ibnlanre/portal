@@ -11,7 +11,7 @@ export function clearCookieStorage() {
     const cookies = document.cookie.split(";");
     cookies.forEach((cookie) => {
       const [name] = cookie.split("=");
-      if (name) removeCookieValue(name);
+      if (name) removeCookieValue(name.trim());
     });
   } catch (error) {
     console.error("Error occurred while clearing cookieStorage:", error);

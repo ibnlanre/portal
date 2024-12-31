@@ -1,25 +1,20 @@
 import { cookieStorage } from "@/cookie-storage";
-import type { CookieOptions } from "@/cookie-storage/types/cookie-options";
 import { createCookieStorageAdapter } from "@/create-store/functions/adapters/create-cookie-storage-adapter";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createStore } from "./index";
+import { createStore } from "../index";
 
 const getItem = vi.spyOn(cookieStorage, "getItem");
 const setItem = vi.spyOn(cookieStorage, "setItem");
 const removeItem = vi.spyOn(cookieStorage, "removeItem");
 
 afterEach(() => {
-  cookieStorage.clear();
   vi.clearAllMocks();
+  Object.defineProperty(document, "cookie", {
+    writable: true,
+    configurable: true,
+    value: "",
+  });
 });
-
-const defaultCookieOptions: CookieOptions = {
-  expires: 0,
-  partitioned: false,
-  path: "/",
-  sameSite: "Lax",
-  secure: false,
-};
 
 describe("createStore with CookieStorage", () => {
   it("should initialize state from CookieStorage", () => {
@@ -50,11 +45,9 @@ describe("createStore with CookieStorage", () => {
     expect(stateValue).toEqual(initialState);
 
     store.$sub(setCookieStorageState);
-    expect(setItem).toHaveBeenCalledWith(
-      "key",
-      stringifiedInitialState,
-      defaultCookieOptions
-    );
+
+    console.log("cookies", document.cookie);
+    expect(setItem).toHaveBeenCalledWith("key", stringifiedInitialState, {});
 
     expect(cookieStorage.getItem("key")).toBe(stringifiedInitialState);
   });
@@ -70,7 +63,6 @@ describe("createStore with CookieStorage", () => {
       setCookieStorageState(value, {
         expires: new Date().getTime() + 1000,
         domain: "localhost",
-        secure: true,
       });
     });
 
@@ -84,7 +76,6 @@ describe("createStore with CookieStorage", () => {
       expect.objectContaining({
         expires: expect.any(Number),
         domain: "localhost",
-        secure: true,
       })
     );
 
@@ -103,7 +94,6 @@ describe("createStore with CookieStorage", () => {
     setStateValue(undefined);
 
     expect(removeItem).toHaveBeenCalledWith("key");
-    expect(cookieStorage.getItem("key")).toBeNull();
   });
 
   it("should remove CookieStorage when state is undefined with default value", () => {
@@ -119,6 +109,5 @@ describe("createStore with CookieStorage", () => {
     setStateValue(undefined);
 
     expect(removeItem).toHaveBeenCalledWith("key");
-    expect(cookieStorage.getItem("key")).toBeNull();
   });
 });

@@ -30,18 +30,11 @@ export function createCookieStorageAdapter<State>(
   }
 
   const cookieOptionsMap = new Map<string, CookieOptions>();
-  const defaultCookieOptions: CookieOptions = {
-    path: "/",
-    secure: false,
-    partitioned: false,
-    sameSite: "Lax",
-    expires: 0,
-  };
 
   const retrieveCookieOptions = (key: string): CookieOptions => {
     const options = cookieOptionsMap.get(key);
     if (options) return options;
-    else return defaultCookieOptions;
+    else return {};
   };
 
   function getCookieStorageState(): State | undefined;

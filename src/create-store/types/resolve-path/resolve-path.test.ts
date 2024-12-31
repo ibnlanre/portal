@@ -1,5 +1,5 @@
 import { describe, expectTypeOf, it } from "vitest";
-import type { ResolvePath } from ".";
+import type { ResolvePath } from "./index";
 
 describe("ResolvePath", () => {
   it("should get a top-level value", () => {

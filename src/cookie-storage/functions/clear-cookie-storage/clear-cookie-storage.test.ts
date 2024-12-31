@@ -1,0 +1,55 @@
+import { removeCookieValue } from "@/cookie-storage/functions/remove-cookie-value";
+import { describe, expect, it, vi } from "vitest";
+import { clearCookieStorage } from "./index";
+
+vi.mock("@/cookie-storage/functions/remove-cookie-value");
+
+describe("clearCookieStorage", () => {
+  it("should clear all cookies", () => {
+    Object.defineProperty(document, "cookie", {
+      writable: true,
+      value: "cookie1=value1; cookie2=value2; cookie3=value3",
+      configurable: true,
+    });
+
+    clearCookieStorage();
+
+    expect(removeCookieValue).toHaveBeenCalledTimes(3);
+    expect(removeCookieValue).toHaveBeenCalledWith("cookie1");
+    expect(removeCookieValue).toHaveBeenCalledWith("cookie2");
+    expect(removeCookieValue).toHaveBeenCalledWith("cookie3");
+  });
+
+  it("should not throw an error if document is undefined", () => {
+    const originalDocument = global.document;
+
+    Object.defineProperty(global, "document", {
+      writable: true,
+      value: undefined,
+    });
+
+    expect(() => clearCookieStorage()).not.toThrow();
+    global.document = originalDocument;
+  });
+
+  it("should handle errors gracefully", () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    Object.defineProperty(document, "cookie", {
+      get() {
+        throw new Error("Test error");
+      },
+    });
+
+    clearCookieStorage();
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Error occurred while clearing cookieStorage:",
+      expect.any(Error)
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
+});

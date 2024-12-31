@@ -11,8 +11,8 @@ export function getCookieByIndex(index: number): string | null {
     const cookie = cookies[index];
 
     if (cookie) {
-      const [name = null] = cookie.trim().split("=");
-      return name;
+      const [name] = cookie.split("=");
+      if (name) return name.trim();
     }
 
     return null;

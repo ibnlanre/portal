@@ -1,6 +1,6 @@
 import type { CookieOptions } from "@/cookie-storage/types/cookie-options";
 
-import { formatCookieOptions } from "@/cookie-storage/functions/format-cookie-options";
+import { formatCookieOptions } from "@/cookie-storage/helpers/format-cookie-options";
 
 /**
  * Sets a cookie with the specified name and value.

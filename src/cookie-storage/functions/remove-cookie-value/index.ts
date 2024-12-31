@@ -11,7 +11,8 @@ import { setCookieValue } from "@/cookie-storage/functions/set-cookie-value";
 export function removeCookieValue(name: string, path: string = "/") {
   try {
     if (typeof document === "undefined") return;
-    setCookieValue(name, "", { path, expires: -1 });
+
+    setCookieValue(name, "", { path, expires: 0 });
   } catch (error) {
     console.error(
       `Error occurred while removing ${name} from document.cookie`,

@@ -1,5 +1,5 @@
 import { describe, expectTypeOf, it } from "vitest";
-import type { Paths } from ".";
+import type { Paths } from "./index";
 
 describe("Paths type", () => {
   it("should generate correct paths for nested objects", () => {

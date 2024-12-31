@@ -1,5 +1,5 @@
-import { describe, it, expectTypeOf } from "vitest";
-import type { ResolveSegment } from ".";
+import { describe, expectTypeOf, it } from "vitest";
+import type { ResolveSegment } from "./index";
 
 describe("ResolveSegment", () => {
   it("should resolve the correct type for a nested dictionary", () => {

@@ -2,7 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { createStore } from "./index";
+import { createStore } from "../index";
 
 describe("createStore", () => {
   it("should create a primitive store when initial state is undefined", () => {

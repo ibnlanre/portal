@@ -1,21 +1,17 @@
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
 import { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
-import { createStore } from "./index";
+import { createStore } from "../index";
 
 vi.mock("@/create-store/functions/library/create-composite-store");
 vi.mock("@/create-store/functions/library/create-primitive-store");
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
-afterAll(() => {
-  vi.restoreAllMocks();
-});
-
 describe("Smoke test for createPrimitiveStore and createCompositeStore", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("should create a primitive store when initial state is undefined", () => {
     createStore();
     expect(createPrimitiveStore).toHaveBeenCalled();

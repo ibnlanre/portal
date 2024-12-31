@@ -1,5 +1,5 @@
 import { describe, expectTypeOf, test } from "vitest";
-import type { ParseAsNumber } from ".";
+import type { ParseAsNumber } from "./index";
 
 type TestCases = {
   input: string | number;
