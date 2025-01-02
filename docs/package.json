@@ -1,12 +1,11 @@
 {
-  "name": "@ibnlanre/docs",
+  "name": "@ibnlanre/portal",
   "version": "0.0.1",
-  "description": "Repository holding all documentation",
+  "description": "React state management library",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "prepare": "husky install"
+    "start": "next start"
   },
   "license": "MIT",
   "dependencies": {

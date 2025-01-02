@@ -1,7 +1,5 @@
-import React from "react";
-
-import { DocsThemeConfig } from "nextra-theme-docs";
 import { useRouter } from "next/router";
+import type { DocsThemeConfig } from "nextra-theme-docs";
 
 const logoStyle = {
   display: "flex",

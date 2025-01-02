@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import { defineConfig } from "vitest/config";
 
 import react from "@vitejs/plugin-react";
+const app = resolve(__dirname, "./app");
 
 /**
  * @type {import("vitest/config").Config}
@@ -14,6 +15,6 @@ export default defineConfig({
     globals: true,
   },
   resolve: {
-    alias: [{ find: "@", replacement: resolve(__dirname, "./app") }],
+    alias: [{ find: "@", replacement: app }],
   },
 });
