@@ -7,7 +7,9 @@ import { createStore } from "../index";
 describe("createStore", () => {
   it("should create a primitive store when initial state is undefined", () => {
     const store = createStore();
+
     expect(store).toBeDefined();
+    expect(store.$get()).toBeUndefined();
   });
 
   it("should get a primitive state value", () => {
