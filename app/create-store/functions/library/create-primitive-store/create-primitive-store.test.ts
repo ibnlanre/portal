@@ -30,7 +30,6 @@ describe("createPrimitiveStore", () => {
     store.$sub(subscriber);
 
     store.$set()("new value");
-
     expect(subscriber).toHaveBeenCalledWith("new value");
   });
 

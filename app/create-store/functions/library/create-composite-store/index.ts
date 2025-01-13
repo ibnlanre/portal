@@ -1,3 +1,4 @@
+import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { Dictionary } from "@/create-store/types/dictionary";
 import type { Paths } from "@/create-store/types/paths";
 import type { ResolvePath } from "@/create-store/types/resolve-path";
@@ -14,7 +15,7 @@ import { useEffect, useState } from "react";
 
 export function createCompositeStore<State extends Dictionary>(
   initialState: State
-) {
+): CompositeStore<State> {
   let state = initialState;
   const subscribers = new Map<string, Set<(value: any) => void>>();
 

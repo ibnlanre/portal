@@ -77,13 +77,21 @@ const store = createStore("initial value");
 // Object store
 const store = createStore({ key: "value" });
 
-// Nested state
+// Nested object store
 const store = createStore({
   location: {
+    unit: "Apt 1",
     address: {
       street: "123 Main St",
+      city: "Springfield",
     },
   },
+});
+
+// Asynchronous store
+const store = createStore(async () => {
+  const response = await fetch("https://api.example.com/data");
+  return response.json();
 });
 ```
 
@@ -107,6 +115,12 @@ setValue("new value");
 // Update nested value
 const setStreet = store.$set("location.address.street");
 setStreet("456 Elm St");
+
+// Update nested value with callback
+setStreet((prev) => {
+  const unit = store.$get("location.unit");
+  return `${unit} ${prev}`;
+});
 ```
 
 ### React Integration
@@ -117,14 +131,16 @@ Use state in React components:
 function Component() {
   // Get state
   const [value, setValue] = store.$use();
+
   // or get nested value
   const [street, setStreet] = store.$use("location.address.street");
 
   // Update state
-  const handleChange = (event) => setValue(event.target.value);
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) =>
+    setValue(event.target.value);
 
   // or update nested value
-  const handleStreetChange = (event) => {
+  const handleStreetChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     return setStreet((prev) => {
       if (event.target.value === " ") return prev;
       return event.target.value;
@@ -145,6 +161,8 @@ function Component() {
 ### Local Storage Adapter
 
 ```typescript
+import { createStore, createLocalStorageAdapter } from "@ibnlanre/portal";
+
 // Create local storage adapter
 const [setLocalStorageState, getLocalStorageState] =
   createLocalStorageAdapter("storage-key");
@@ -155,13 +173,15 @@ const store = createStore(getLocalStorageState);
 // or with a fallback state
 const store = createStore(() => getLocalStorageState(fallbackState));
 
-// subscribe to store changes
+// Subscribe to store changes
 store.$sub(setLocalStorageState);
 ```
 
 ### Session Storage Adapter
 
 ```typescript
+import { createStore, createSessionStorageAdapter } from "@ibnlanre/portal";
+
 // Create session storage adapter
 const [setSessionStorageState, getSessionStorageState] =
   createSessionStorageAdapter("storage-key");
@@ -179,14 +199,9 @@ store.$sub(setSessionStorageState);
 ### Cookie Storage Adapter
 
 ```typescript
-const store = createStore(initialState, {
-  storage: createCookieStorageAdapter("cookie-key", {
-    path: "/",
-    domain: "example.com",
-  }),
-});
+import { createStore, createCookieStorageAdapter } from "@ibnlanre/portal";
 
-// Create store with cookie storage
+// Create cookie storage adapter
 const [setCookieStorageState, getCookieStorageState] =
   createCookieStorageAdapter("cookie-key", {
     path: "/",
@@ -203,13 +218,13 @@ const store = createStore(() => getCookieStorageState(fallbackState));
 store.$sub(setCookieStorageState);
 
 // with options
-store.$sub((value) =>
+store.$sub((value) => {
   setCookieStorageState(value, {
     expires: new Date(Date.now() + 15 * 60 * 1000),
     secure: true,
     httpOnly: true,
-  })
-);
+  });
+});
 ```
 
 ## Cookie Storage

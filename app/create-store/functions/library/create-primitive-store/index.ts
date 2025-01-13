@@ -1,3 +1,4 @@
+import type { PrimitiveStore } from "@/create-store/types/primitive-store";
 import type { StateManager } from "@/create-store/types/state-manager";
 import type { Subscriber } from "@/create-store/types/subscriber";
 import type { SetStateAction } from "react";
@@ -5,7 +6,9 @@ import type { SetStateAction } from "react";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { useEffect, useState } from "react";
 
-export function createPrimitiveStore<State>(initialState: State) {
+export function createPrimitiveStore<State>(
+  initialState: State
+): PrimitiveStore<State> {
   let state = initialState;
   const subscribers = new Set<Subscriber<State>>();
 
