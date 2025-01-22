@@ -10,18 +10,14 @@ import { shallowMerge } from "@/create-store/functions/helpers/shallow-merge";
 import { safeStringify } from "@/create-store/functions/utilities/safe-stringify";
 import { tryParse } from "@/create-store/functions/utilities/try-parse";
 
-export function createCookieStorageAdapter<State>(
-  /**
-   * The key to use in cookie storage.
-   */
-  key: string,
-  {
-    parse = tryParse,
-    stringify = safeStringify,
-    signed = false,
-    secret,
-  }: CookieStorageAdapter<State> = {}
-): [
+export function createCookieStorageAdapter<State>({
+  key,
+  parse = tryParse,
+  stringify = safeStringify,
+  signed = false,
+  secret,
+  ...cookieOptions
+}: CookieStorageAdapter<State>): [
   getCookieStorageState: GetCookieStorage<State>,
   setCookieStorageState: SetCookieStorage<State>
 ] {
@@ -34,7 +30,7 @@ export function createCookieStorageAdapter<State>(
   const retrieveCookieOptions = (key: string): CookieOptions => {
     const options = cookieOptionsMap.get(key);
     if (options) return options;
-    else return {};
+    return cookieOptions;
   };
 
   function getCookieStorageState(): State | undefined;
@@ -76,3 +72,9 @@ export function createCookieStorageAdapter<State>(
 
   return [getCookieStorageState, setCookieStorageState];
 }
+
+createCookieStorageAdapter({
+  signed: true,
+  key: "test-key",
+  secret: "",
+});

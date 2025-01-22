@@ -1,4 +1,34 @@
 import type { CookieOptions } from "@/cookie-storage/types/cookie-options";
+import type { StorageAdapter } from "@/create-store/types/storage-adapter";
+
+type CookieSignature =
+  | {
+      signed?: never;
+      secret?: never;
+    }
+  | {
+      signed?: false;
+      secret?: string;
+    }
+  | {
+      /**
+       * Specifies if the cookie is designed for use by a single application.
+       *
+       * @throws An error if `signed` is true and `secret` is undefined.
+       */
+      signed: true;
+
+      /**
+       * The secret to use for signing the cookie.
+       *
+       * @throws An error if `signed` is true and `secret` is undefined.
+       */
+      secret: string | undefined;
+    };
+
+interface CookieData<State> extends StorageAdapter<State>, CookieOptions {}
+
+export type CookieStorageAdapter<State> = CookieData<State> & CookieSignature;
 
 export interface GetCookieStorage<State> {
   /**
@@ -27,55 +57,3 @@ export type SetCookieStorage<State> = (
   value?: State,
   options?: CookieOptions
 ) => void;
-
-type CookieSignature =
-  | {
-      signed?: never;
-      secret?: never;
-    }
-  | {
-      /**
-       * Specifies if the cookie is designed for use by a single application.
-       *
-       * @default false
-       * @type {boolean}
-       */
-      signed: boolean;
-
-      /**
-       * The secret to use for signing the cookie.
-       *
-       * @throws An error if the secret is not provided.
-       * @type {string | undefined}
-       */
-      secret: string | undefined;
-    };
-
-type CookieData<State> = {
-  /**
-   * A function to serialize the state to a string.
-   *
-   * @param value The state to serialize.
-   * @default JSON.stringify
-   *
-   * @returns The serialized state.
-   */
-  stringify?: (value: State) => string;
-
-  /**
-   * A function to parse the state from a string.
-   *
-   * @param value The string to parse.
-   * @default JSON.parse
-   *
-   * @returns The parsed state.
-   */
-  parse?: (value: string) => State;
-
-  /**
-   * The options to use when setting the cookie.
-   */
-  options?: CookieOptions;
-};
-
-export type CookieStorageAdapter<State> = CookieData<State> & CookieSignature;

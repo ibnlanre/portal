@@ -17,11 +17,6 @@ export function createPrimitiveStore<State>(
     notifySubscribers(value);
   }
 
-  function setStateAction(value: SetStateAction<State>) {
-    if (isSetStateActionFunction<State>(value)) setState(value(state));
-    else setState(value);
-  }
-
   function notifySubscribers(value: State) {
     subscribers.forEach((subscriber) => subscriber(value));
   }
@@ -30,18 +25,21 @@ export function createPrimitiveStore<State>(
     return state;
   }
 
-  function $set() {
-    return setStateAction;
+  function $set(value: SetStateAction<State>) {
+    if (isSetStateActionFunction<State>(value)) setState(value(state));
+    else setState(value);
   }
 
   function $use(): StateManager<State> {
     const [value, setValue] = useState(state);
     useEffect(() => $sub(setValue), []);
-    return [value, $set()];
+    return [value, $set];
   }
 
-  function $sub(subscriber: Subscriber<State>) {
+  function $sub(subscriber: Subscriber<State>, notify = true) {
     subscribers.add(subscriber);
+    if (notify) subscriber(state);
+
     return () => {
       subscribers.delete(subscriber);
     };

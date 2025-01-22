@@ -12,12 +12,15 @@ afterEach(() => {
 });
 
 describe("createStore with LocalStorage", () => {
+  const key = "test-key";
+
   it("should initialize state from LocalStorage", () => {
     const initialState = { key: "value" };
     localStorage.setItem("key", JSON.stringify(initialState));
 
-    const [getLocalStorageState] =
-      createLocalStorageAdapter<typeof initialState>("key");
+    const [getLocalStorageState] = createLocalStorageAdapter<
+      typeof initialState
+    >({ key });
 
     const store = createStore(getLocalStorageState);
     expect(getItem).toHaveBeenCalledWith("key");
@@ -30,7 +33,7 @@ describe("createStore with LocalStorage", () => {
     const initialState = { key: "value" };
 
     const [getLocalStorageState, setLocalStorageState] =
-      createLocalStorageAdapter<typeof initialState>("key");
+      createLocalStorageAdapter<typeof initialState>({ key });
 
     const store = createStore(() => getLocalStorageState(initialState));
     expect(getItem).toHaveBeenCalledWith("key");
@@ -46,13 +49,11 @@ describe("createStore with LocalStorage", () => {
     const initialState = { key: "value" };
 
     const [getLocalStorageState, setLocalStorageState] =
-      createLocalStorageAdapter<typeof initialState>("key");
-
+      createLocalStorageAdapter<typeof initialState>({ key });
     const store = createStore(getLocalStorageState);
-    store.$sub(setLocalStorageState);
 
-    const setStateValue = store.$set();
-    setStateValue({ key: "new value" });
+    store.$sub(setLocalStorageState);
+    store.$set({ key: "new value" });
 
     const newStateValue = JSON.stringify({ key: "new value" });
     expect(setItem).toHaveBeenCalledWith("key", newStateValue);
@@ -62,13 +63,11 @@ describe("createStore with LocalStorage", () => {
   it("should remove localStorage when state is undefined", () => {
     type State = number | undefined;
 
-    const [, setLocalStorageState] = createLocalStorageAdapter<State>("key");
-
+    const [, setLocalStorageState] = createLocalStorageAdapter<State>({ key });
     const store = createStore<State>(1);
-    store.$sub(setLocalStorageState);
 
-    const setStateValue = store.$set();
-    setStateValue(undefined);
+    store.$sub(setLocalStorageState);
+    store.$set(undefined);
 
     expect(removeItem).toHaveBeenCalledWith("key");
     expect(localStorage.getItem("key")).toBeNull();
@@ -78,13 +77,11 @@ describe("createStore with LocalStorage", () => {
     type State = number | undefined;
 
     const [getLocalStorageState, setLocalStorageState] =
-      createLocalStorageAdapter<State>("key");
-
+      createLocalStorageAdapter<State>({ key });
     const store = createStore(() => getLocalStorageState(1));
-    store.$sub(setLocalStorageState);
 
-    const setStateValue = store.$set();
-    setStateValue(undefined);
+    store.$sub(setLocalStorageState);
+    store.$set(undefined);
 
     expect(removeItem).toHaveBeenCalledWith("key");
     expect(localStorage.getItem("key")).toBeNull();

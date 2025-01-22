@@ -15,9 +15,13 @@ A TypeScript state management library for React applications.
   - [Updating State](#updating-state)
   - [React Integration](#react-integration)
 - [Storage Integration](#storage-integration)
-  - [Local Storage](#local-storage)
-  - [Session Storage](#session-storage)
-  - [Cookie Storage](#cookie-storage)
+  - [Local Storage Adapter](#local-storage-adapter)
+  - [Session Storage Adapter](#session-storage-adapter)
+  - [Cookie Storage Adapter](#cookie-storage-adapter)
+  - [Custom Storage Adapter](#custom-storage-adapter)
+- [Cookie Storage](#cookie-storage)
+  - [Functions](#functions)
+  - [Usage](#usage)
 - [License](#license)
 
 ## Installation
@@ -28,23 +32,35 @@ To install `@ibnlanre/portal`, you can use either a CDN, or a package manager. R
 
 If you are working on a project that uses a package manager, you can copy one of the following commands to install `@ibnlanre/portal` using your preferred package manager:
 
-#### `yarn`
-
-```shell
-yarn add @ibnlanre/portal
-```
-
 #### `npm`
 
 ```shell
 npm i @ibnlanre/portal
 ```
 
-#### `pnpm`
+<details>
+  <summary>
+    <code>pnpm</code>
+  </summary>
+  <br/>
 
 ```bash
 pnpm i @ibnlanre/portal
 ```
+
+</details>
+
+<details>
+  <summary>
+    <code>yarn</code>
+  </summary>
+  <br/>
+
+```shell
+yarn add @ibnlanre/portal
+```
+
+</details>
 
 ### Using a CDN
 
@@ -62,22 +78,47 @@ If you are working on a project that uses markup languages like HTML, you can co
 <script src="https://cdn.jsdelivr.net/npm/@ibnlanre/portal"></script>
 ```
 
-## Core Features
+## Usage
 
-### Create Store
+`@ibnlanre/portal` helps you manage state using a simple and intuitive API. Its aim is to provide a flexible and scalable solution for managing state in your React applications. The library is designed to be easy to use and integrate with existing codebases. Managing application state should not be a complex task, and `@ibnlanre/portal` aims to simplify the process.
 
-Create a store to manage application state:
+### Managing State
+
+Creating a store is as simple as calling the `createStore` function with an initial value. The function returns an object with methods to access and update the state. These methods are `$get`, `$set`, and `$use`. The `$get` method returns the current state, the `$set` method updates the state, and the `$use` method is a `React` hook that allows you to manage the state within functional components.
 
 ```typescript
 import { createStore } from "@ibnlanre/portal";
 
-// Basic store with primitive value
 const store = createStore("initial value");
 
-// Object store
-const store = createStore({ key: "value" });
+const value = store.$get();
+console.log(value); // "initial value"
+```
 
-// Nested object store
+Asides the aforementioned methods, the store object also has a `$sub` method to subscribe to state changes. This method takes a callback function that is called whenever the state changes. This allows you to react to state changes and perform side effects based on the new state.
+
+```typescript
+store.$sub((value) => console.log(value));
+store.$set("new value");
+
+const newValue = store.$get(); // "new value"
+```
+
+The return value of the `$sub` method is a function that can be called to unsubscribe from the store. This is useful when you want to stop listening to state changes, such as when a component is unmounted. **Note** that the callback function is called immediately after subscribing to the store. To opt out of this behavior, you can pass `false` as the second argument to the `$sub` method. This prevents the callback function from being called immediately.
+
+```typescript
+const unsubscribe = store.$sub((value) => {
+  console.log(value);
+}, false);
+
+unsubscribe();
+```
+
+#### Chained Store
+
+Asides regular stores, you can also create chained stores by passing an object to the `createStore` function. The object can contain nested objects, arrays, and primitive values. Each store in the chain has access to its own value, with methods to update and manage that value. This allows you to work with state at any level of the object hierarchy, with minimal effort. This approach also aligns well with the `Flux` architecture, where having a single source of truth can improve the modularity of your application.
+
+```typescript
 const store = createStore({
   location: {
     unit: "Apt 1",
@@ -88,92 +129,130 @@ const store = createStore({
   },
 });
 
-// Asynchronous store
-const store = createStore(async () => {
+const street = store.location.address.street.$get();
+console.log(street); // "123 Main St"
+```
+
+Remember that each point in an object chain is a store, and can be broken off into its own store at any point in the chain. This is useful when you want to work with a nested state independently of the parent store. For example, you can break off the `address` store from the `location` store and work with it independently. **Note**
+
+```typescript
+const { address } = store.location;
+
+const street = address.street.$get();
+console.log(street); // "123 Main St"
+```
+
+Updating a nested store is similar to updating a regular store. You can use the `$set` method to update the value of a nested store. You can also pass a callback function to the `$set` method to update the value based on the previous value. **Note** that the `$set` method updates the value of the store immediately.
+
+```typescript
+const setStreet = store.location.address.street.$set();
+
+setStreet("456 Elm St");
+setStreet((prev) => `${prev} Apt 2`);
+```
+
+#### Asynchronous State
+
+The `createStore` function can also accept an asynchronous function that returns a promise. This is useful for fetching data asynchronously. The function must return a promise that resolves to the initial state. **Note** that the store will be empty until the promise resolves. Additionally, even if the promise returns an object, it would be treated as a primitive value. This is because chained stores are created from objects passed to the `createStore` function, during initialization.
+
+```typescript
+type State = { apartment: string };
+
+async function fetchData(): Promise<State> {
   const response = await fetch("https://api.example.com/data");
   return response.json();
-});
+}
+
+const store = await createStore(fetchData);
+const state = store.$get(); // { apartment: "123 Main St" }
 ```
 
-### Accessing State
+## React Integration
 
-Get state values using $get:
-
-```typescript
-const value = store.$get(); // Get full state
-const street = store.$get("location.address.street"); // Get nested value
-```
-
-### Updating State
-
-Update state using $set:
+`@ibnlanre/portal` has first-class support for React applications. When a store is created, it creates a React hook, `$use`, that allows you to manage the store's state within functional components. Just like the `useState` hook in React, the `$use` hook returns an array with two elements: the state value and a dispatch function to update the state. The benefit of using the `$use` hook over `$get` and `$set` is that it automatically subscribes to state changes and updates the component when the state changes.
 
 ```typescript
-const setValue = store.$set();
-setValue("new value");
+import type { ChangeEvent } from "react";
+import { store } from "./path-to-your-store";
 
-// Update nested value
-const setStreet = store.$set("location.address.street");
-setStreet("456 Elm St");
-
-// Update nested value with callback
-setStreet((prev) => {
-  const unit = store.$get("location.unit");
-  return `${unit} ${prev}`;
-});
-```
-
-### React Integration
-
-Use state in React components:
-
-```typescript
 function Component() {
-  // Get state
-  const [value, setValue] = store.$use();
+  const [state, setState] = store.$use();
 
-  // or get nested value
-  const [street, setStreet] = store.$use("location.address.street");
-
-  // Update state
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) =>
-    setValue(event.target.value);
-
-  // or update nested value
-  const handleStreetChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    return setStreet((prev) => {
-      if (event.target.value === " ") return prev;
-      return event.target.value;
-    });
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    return setState(event.target.value);
   };
 
-  return (
-    <div>
-      <input value={value} onChange={handleChange} />
-      <input value={street} onChange={handleStreetChange} />
-    </div>
-  );
+  return <input value={value} onChange={handleChange} />;
 }
+
+export default Component;
 ```
 
-## Storage Integration
+## Persistence
 
-### Local Storage Adapter
+`@ibnlanre/portal` provides storage adapters for local storage, session storage, and cookies. These adapters allow you to persist state across sessions and devices. The storage adapters are created using the `createLocalStorageAdapter`, `createSessionStorageAdapter`, and `createCookieStorageAdapter` functions. Each function takes a key as a parameter and returns two functions: one to get the state and the other to set the state. The `createStore` function can then be used with these storage adapters to create a store that persists state in the browser's storage.
+
+### Browser Storage Adapter
+
+To persist state within the local/session storage of the browser, you can use either the `createLocalStorageAdapter` or `createSessionStorageAdapter` functions respectively. The parameters for these functions are the same. The following are the parameters for the storage adapter functions:
+
+- `key`: The key used to store the state in the browser's storage.
+- `stringify`: A function to serialize the state to a string. The default is `JSON.stringify`.
+- `parse`: A function to deserialize the state from a string. The default is `JSON.parse`.
+
+```typescript
+import { createLocalStorageAdapter } from "@ibnlanre/portal";
+
+const [getLocalStorageState, setLocalStorageState] = createLocalStorageAdapter({
+  key: "storage",
+});
+```
+
+Through `stringify` and `parse` functions, you can customize how the state is serialized and deserialized. This is useful when working with non-JSON serializable values or when you want to encrypt the state before storing it in the browser's storage.
+
+```typescript
+import { createSessionStorageAdapter } from "@ibnlanre/portal";
+
+const [getSessionStorageState, setSessionStorageState] =
+  createSessionStorageAdapter({
+    key: "storage",
+    stringify: (state) => btoa(state),
+    parse: (state) => atob(state),
+  });
+```
+
+The benefit of using the storage adapters is that they automatically load the state from the storage when the store is created. This allows you to initialize the store with the persisted state. Additionally, the storage adapters provide a way to update the storage when the store changes. This is done by subscribing to the store changes and updating the storage with the new state.
+
+```typescript
+import { createStore } from "@ibnlanre/portal";
+
+const store = createStore(getLocalStorageState);
+store.$sub(setLocalStorageState);
+```
+
+In situations where the store requires an initial value of some sort, you can pass the fallback state to the `getLocalStorageState` or `getSessionStorageState` functions. This allows you to initialize the store with the fallback state if the state is not found in the storage.
+
+```typescript
+import { createStore, getSessionStorageState } from "@ibnlanre/portal";
+
+const fallbackState = "initial value";
+const store = createStore(() => getSessionStorageState(fallbackState));
+```
 
 ```typescript
 import { createStore, createLocalStorageAdapter } from "@ibnlanre/portal";
 
-// Create local storage adapter
-const [setLocalStorageState, getLocalStorageState] =
+// Initialize local storage adapter
+const [getLocalStorageState, setLocalStorageState] =
   createLocalStorageAdapter("storage-key");
 
-// Create store with local storage
+// Create a store using the local storage adapter
 const store = createStore(getLocalStorageState);
 
-// or with a fallback state
+// Create a store with a fallback state using the local storage adapter
 const store = createStore(() => getLocalStorageState(fallbackState));
 
-// Subscribe to store changes
+// Subscribe to store changes to update the local storage
 store.$sub(setLocalStorageState);
 ```
 
@@ -182,49 +261,18 @@ store.$sub(setLocalStorageState);
 ```typescript
 import { createStore, createSessionStorageAdapter } from "@ibnlanre/portal";
 
-// Create session storage adapter
-const [setSessionStorageState, getSessionStorageState] =
+// Initialize session storage adapter
+const [getSessionStorageState, setSessionStorageState] =
   createSessionStorageAdapter("storage-key");
 
-// Create store with session storage
+// Create a store using the session storage adapter
 const store = createStore(getSessionStorageState);
 
-// or with a fallback state
+// Create a store with a fallback state using the session storage adapter
 const store = createStore(() => getSessionStorageState(fallbackState));
 
-// subscribe to store changes
+// Subscribe to store changes to update the session storage
 store.$sub(setSessionStorageState);
-```
-
-### Cookie Storage Adapter
-
-```typescript
-import { createStore, createCookieStorageAdapter } from "@ibnlanre/portal";
-
-// Create cookie storage adapter
-const [setCookieStorageState, getCookieStorageState] =
-  createCookieStorageAdapter("cookie-key", {
-    path: "/",
-    domain: "example.com",
-  });
-
-// Create store with cookie storage
-const store = createStore(getCookieStorageState);
-
-// or with a fallback state
-const store = createStore(() => getCookieStorageState(fallbackState));
-
-// subscribe to store changes
-store.$sub(setCookieStorageState);
-
-// with options
-store.$sub((value) => {
-  setCookieStorageState(value, {
-    expires: new Date(Date.now() + 15 * 60 * 1000),
-    secure: true,
-    httpOnly: true,
-  });
-});
 ```
 
 ## Cookie Storage
@@ -314,6 +362,66 @@ const key = cookieStorage.key(0);
 
 // Get the number of cookies stored
 const length = cookieStorage.length;
+```
+
+### Cookie Storage Adapter
+
+Through the `Cookie` module, we have included a cookie storage adapter for use with the `createStore` function. The `createCookieStorageAdapter` function takes two parameters: the cookie key and an optional configuration object with cookie options.
+
+```typescript
+import { createStore, createCookieStorageAdapter } from "@ibnlanre/portal";
+
+// Initialize cookie storage adapter with options
+const [setCookieStorageState, getCookieStorageState] =
+  createCookieStorageAdapter("cookie-key", {
+    path: "/",
+    domain: "example.com",
+  });
+
+// Create a store using the cookie storage adapter
+const store = createStore(getCookieStorageState);
+
+// Create a store with a fallback state using the cookie storage adapter
+const store = createStore(() => getCookieStorageState(fallbackState));
+
+// Subscribe to store changes to update the cookie storage
+store.$sub(setCookieStorageState);
+
+// Subscribe to store changes with additional cookie options
+store.$sub((value) => {
+  setCookieStorageState(value, {
+    expires: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes expiration
+    secure: true, // Secure flag
+    httpOnly: true, // HTTP only flag
+  });
+});
+```
+
+### Custom Storage Adapter
+
+Although the storage adapters provided by the library are a select few, if you need to use a different storage mechanism, such as IndexedDB or a custom API, you can also create your own custom storage adapter. The custom storage adapter should be a function that returns two functions: one to set the state and the other to get the state.
+
+```typescript
+import { createStore, createCustomStorageAdapter } from "@ibnlanre/portal";
+
+// Create an instance of your custom storage
+const storage = new Storage();
+
+// Create custom storage adapter with your storage instance
+const [getStorageState, setStorageState] = createCustomStorageAdapter(
+  "my-key",
+  {
+    getItem: (key: string) => storage.getItem(key),
+    setItem: (key: string, value: string) => storage.setItem(key, value),
+    removeItem: (key: string) => storage.removeItem(key),
+  }
+);
+
+// Create a store with the custom storage adapter
+const store = createStore(getStorageState);
+
+// Subscribe to store changes to update your storage
+store.$sub(setStorageState);
 ```
 
 ## License

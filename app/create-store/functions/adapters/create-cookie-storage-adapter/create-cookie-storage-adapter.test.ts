@@ -16,13 +16,15 @@ afterEach(() => {
 });
 
 describe("createCookieStorageAdapter", () => {
+  const key = "test-key";
+
   it("should get state from cookieStorage", () => {
-    const key = "test-key";
-    const initialState = { key: "value" };
+    const initialState = { state: "value" };
     cookieStorage.setItem(key, JSON.stringify(initialState));
 
-    const [getCookieStorageState] =
-      createCookieStorageAdapter<typeof initialState>(key);
+    const [getCookieStorageState] = createCookieStorageAdapter<
+      typeof initialState
+    >({ key });
     const state = getCookieStorageState();
 
     expect(state).toEqual(initialState);
@@ -30,11 +32,11 @@ describe("createCookieStorageAdapter", () => {
   });
 
   it("should return fallback state if cookieStorage is empty", () => {
-    const key = "test-key";
-    const fallbackState = { key: "fallback" };
+    const fallbackState = { state: "fallback" };
 
-    const [getCookieStorageState] =
-      createCookieStorageAdapter<typeof fallbackState>(key);
+    const [getCookieStorageState] = createCookieStorageAdapter<
+      typeof fallbackState
+    >({ key });
     const state = getCookieStorageState(fallbackState);
 
     expect(state).toEqual(fallbackState);
@@ -42,11 +44,11 @@ describe("createCookieStorageAdapter", () => {
   });
 
   it("should set state to cookieStorage", () => {
-    const key = "test-key";
-    const newState = { key: "new value" };
+    const newState = { state: "new value" };
 
-    const [, setCookieStorageState] =
-      createCookieStorageAdapter<typeof newState>(key);
+    const [, setCookieStorageState] = createCookieStorageAdapter<
+      typeof newState
+    >({ key });
     setCookieStorageState(newState);
 
     expect(setItem).toHaveBeenCalledWith(key, JSON.stringify(newState), {});
@@ -54,23 +56,22 @@ describe("createCookieStorageAdapter", () => {
   });
 
   it("should remove state from cookieStorage when value is undefined", () => {
-    const key = "test-key";
-    cookieStorage.setItem(key, JSON.stringify({ key: "value" }));
+    cookieStorage.setItem(key, JSON.stringify({ state: "value" }));
 
-    const [, setCookieStorageState] = createCookieStorageAdapter(key);
+    const [, setCookieStorageState] = createCookieStorageAdapter({ key });
     setCookieStorageState(undefined);
 
     expect(removeItem).toHaveBeenCalledWith(key);
   });
 
   it("should handle custom stringify and parse functions", () => {
-    const key = "test-key";
-    const newState = { key: "new value" };
+    const newState = { state: "new value" };
     const customStringify = vi.fn(JSON.stringify);
     const customParse = vi.fn(JSON.parse);
 
     const [getCookieStorageState, setCookieStorageState] =
-      createCookieStorageAdapter<typeof newState>(key, {
+      createCookieStorageAdapter<typeof newState>({
+        key,
         stringify: customStringify,
         parse: customParse,
       });

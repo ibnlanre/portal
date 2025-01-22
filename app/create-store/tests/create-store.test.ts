@@ -68,7 +68,7 @@ describe("createStore", () => {
       const initialState = { location: { address: { street: "123 Main St" } } };
       const store = createStore(initialState);
 
-      const streetValue = store.$get("location.address.street");
+      const streetValue = store.location.address.street.$get();
       expect(streetValue).toBe("123 Main St");
     });
 
@@ -85,8 +85,7 @@ describe("createStore", () => {
       const initialState = "value";
       const store = createStore(initialState);
 
-      const setStateValue = store.$set();
-      setStateValue("new value");
+      store.$set("new value");
 
       const updatedStateValue = store.$get();
       expect(updatedStateValue).toBe("new value");
@@ -96,8 +95,7 @@ describe("createStore", () => {
       const initialState = { key: "value" };
       const store = createStore(initialState);
 
-      const setStateValue = store.$set();
-      setStateValue({ key: "new value" });
+      store.$set({ key: "new value" });
 
       const updatedStateValue = store.$get();
       expect(updatedStateValue).toEqual({ key: "new value" });
@@ -107,10 +105,9 @@ describe("createStore", () => {
       const initialState = { location: { address: { street: "123 Main St" } } };
       const store = createStore(initialState);
 
-      const setStreetValue = store.$set("location.address.street");
-      setStreetValue("456 Elm St");
+      store.location.address.street.$set("456 Elm St");
 
-      const updatedStreetValue = store.$get("location.address.street");
+      const updatedStreetValue = store.location.address.street.$get();
       expect(updatedStreetValue).toBe("456 Elm St");
     });
 
@@ -118,18 +115,15 @@ describe("createStore", () => {
       const initialState = { location: { address: { street: "123 Main St" } } };
       const store = createStore(initialState);
 
-      const setStreetValue = store.$set("location.address.street");
-      setStreetValue((street) => `${street} Suite 100`);
+      store.location.address.street.$set((street) => `${street} Suite 100`);
 
-      const updatedStreetValue = store.$get("location.address.street");
+      const updatedStreetValue = store.location.address.street.$get();
       expect(updatedStreetValue).toBe("123 Main St Suite 100");
     });
 
     it("should set the state value with .$set", async () => {
       const store = await createStore(placeholder);
-
-      const setStateValue = store.$set();
-      setStateValue(placeholderUpdatedValue);
+      store.$set(placeholderUpdatedValue);
 
       const stateValue = store.$get();
       expect(stateValue).toEqual(placeholderUpdatedValue);
@@ -140,13 +134,12 @@ describe("createStore", () => {
     it("should subscribe to state changes", () => {
       const initialState = { key: "value" };
       const store = createStore(initialState);
-
       const subscriber = vi.fn();
+
       store.$sub(subscriber);
+      expect(subscriber).toHaveBeenCalledWith(initialState);
 
-      const setStateValue = store.$set();
-      setStateValue({ key: "new value" });
-
+      store.$set({ key: "new value" });
       expect(subscriber).toHaveBeenCalledWith({ key: "new value" });
     });
 
@@ -156,11 +149,13 @@ describe("createStore", () => {
       const setStorageState = vi.fn();
 
       const store = createStore(getStorageState);
+      expect(getStorageState).toHaveBeenCalled();
+
       store.$sub(setStorageState);
+      expect(setStorageState).toHaveBeenCalledWith(initialState);
 
       const stateValue = store.$get();
       expect(stateValue).toEqual(initialState);
-      expect(getStorageState).toHaveBeenCalled();
     });
 
     it("should update Storage when state changes", () => {
@@ -171,9 +166,7 @@ describe("createStore", () => {
       const store = createStore(getStorageState);
       store.$sub(setStorageState);
 
-      const setStateValue = store.$set();
-      setStateValue({ key: "new value" });
-
+      store.$set({ key: "new value" });
       expect(setStorageState).toHaveBeenCalledWith({ key: "new value" });
     });
   });
@@ -185,7 +178,7 @@ describe("createStore", () => {
       const store = createStore(initialState);
       expect(store).toBeDefined();
 
-      const { result } = renderHook(() => store.$use());
+      const { result } = renderHook(store.$use);
       const [stateValue] = result.current;
 
       expect(stateValue).toEqual(initialState);
@@ -195,7 +188,7 @@ describe("createStore", () => {
       const initialState = { key: "value" };
       const store = createStore(initialState);
 
-      const { result } = renderHook(() => store.$use());
+      const { result } = renderHook(store.$use);
       const [, setStateValue] = result.current;
 
       act(() => {
@@ -210,9 +203,7 @@ describe("createStore", () => {
       const initialState = { location: { address: { street: "123 Main St" } } };
       const store = createStore(initialState);
 
-      const { result } = renderHook(() =>
-        store.$use("location.address.street")
-      );
+      const { result } = renderHook(store.location.address.street.$use);
       const [streetValue] = result.current;
 
       expect(streetValue).toBe("123 Main St");
@@ -222,8 +213,8 @@ describe("createStore", () => {
       const initialState = { location: { address: { street: "123 Main St" } } };
       const store = createStore(initialState);
 
-      const { result, rerender } = renderHook(() =>
-        store.$use("location.address.street")
+      const { result, rerender } = renderHook(
+        store.location.address.street.$use
       );
       const [, setStreetValue] = result.current;
 

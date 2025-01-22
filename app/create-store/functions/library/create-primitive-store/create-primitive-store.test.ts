@@ -16,7 +16,7 @@ describe("createPrimitiveStore", () => {
     const initialState = "value";
     const store = createPrimitiveStore(initialState);
 
-    store.$set()("new value");
+    store.$set("new value");
 
     const updatedStateValue = store.$get();
     expect(updatedStateValue).toBe("new value");
@@ -28,8 +28,9 @@ describe("createPrimitiveStore", () => {
 
     const subscriber = vi.fn();
     store.$sub(subscriber);
+    expect(subscriber).toHaveBeenCalledWith(initialState);
 
-    store.$set()("new value");
+    store.$set("new value");
     expect(subscriber).toHaveBeenCalledWith("new value");
   });
 
@@ -41,9 +42,9 @@ describe("createPrimitiveStore", () => {
     const unsubscribe = store.$sub(subscriber);
 
     unsubscribe();
-    store.$set()("new value");
+    store.$set("new value");
 
-    expect(subscriber).not.toHaveBeenCalled();
+    expect(subscriber).toHaveBeenCalledOnce();
   });
 
   it("should use the state value in a React component", () => {

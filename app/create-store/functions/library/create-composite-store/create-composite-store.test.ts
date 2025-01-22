@@ -24,7 +24,7 @@ describe("createCompositeStore", () => {
       const initialState = { location: { address: { street: "123 Main St" } } };
       const store = createCompositeStore(initialState);
 
-      const streetValue = store.$get("location.address.street");
+      const streetValue = store.location.address.street.$get();
       expect(streetValue).toBe("123 Main St");
     });
   });
@@ -34,8 +34,7 @@ describe("createCompositeStore", () => {
       const initialState = { key: "value" };
       const store = createCompositeStore(initialState);
 
-      const setStateValue = store.$set();
-      setStateValue({ key: "new value" });
+      store.$set({ key: "new value" });
 
       const updatedStateValue = store.$get();
       expect(updatedStateValue).toEqual({ key: "new value" });
@@ -45,21 +44,25 @@ describe("createCompositeStore", () => {
       const initialState = { location: { address: { street: "123 Main St" } } };
       const store = createCompositeStore(initialState);
 
-      const setStreetValue = store.$set("location.address.street");
-      setStreetValue("456 Elm St");
+      store.location.address.street.$set("456 Elm St");
 
-      const updatedStreetValue = store.$get("location.address.street");
-      expect(updatedStreetValue).toBe("456 Elm St");
+      expect(store.$get()).toEqual({
+        location: { address: { street: "456 Elm St" } },
+      });
+      expect(store.location.$get()).toEqual({
+        address: { street: "456 Elm St" },
+      });
+      expect(store.location.address.$get()).toEqual({ street: "456 Elm St" });
+      expect(store.location.address.street.$get()).toBe("456 Elm St");
     });
 
     it("should set a nested state value with .$set using a function", () => {
       const initialState = { location: { address: { street: "123 Main St" } } };
       const store = createCompositeStore(initialState);
 
-      const setStreetValue = store.$set("location.address.street");
-      setStreetValue((street) => `${street} Suite 100`);
+      store.location.address.street.$set((street) => `${street} Suite 100`);
 
-      const updatedStreetValue = store.$get("location.address.street");
+      const updatedStreetValue = store.location.address.street.$get();
       expect(updatedStreetValue).toBe("123 Main St Suite 100");
     });
   });
@@ -71,10 +74,9 @@ describe("createCompositeStore", () => {
 
       const subscriber = vi.fn();
       store.$sub(subscriber);
+      expect(subscriber).toHaveBeenCalledWith(initialState);
 
-      const setStateValue = store.$set();
-      setStateValue({ key: "new value" });
-
+      store.$set({ key: "new value" });
       expect(subscriber).toHaveBeenCalledWith({ key: "new value" });
     });
 
@@ -84,7 +86,7 @@ describe("createCompositeStore", () => {
       const store = createCompositeStore(initialState);
       expect(store).toBeDefined();
 
-      const { result } = renderHook(() => store.$use());
+      const { result } = renderHook(store.$use);
       const [stateValue] = result.current;
 
       expect(stateValue).toEqual(initialState);
@@ -96,7 +98,7 @@ describe("createCompositeStore", () => {
       const initialState = { key: "value" };
       const store = createCompositeStore(initialState);
 
-      const { result } = renderHook(() => store.$use());
+      const { result } = renderHook(store.$use);
       const [, setStateValue] = result.current;
 
       act(() => {
@@ -111,9 +113,7 @@ describe("createCompositeStore", () => {
       const initialState = { location: { address: { street: "123 Main St" } } };
       const store = createCompositeStore(initialState);
 
-      const { result } = renderHook(() =>
-        store.$use("location.address.street")
-      );
+      const { result } = renderHook(() => store.location.address.street.$use());
       const [streetValue] = result.current;
 
       expect(streetValue).toBe("123 Main St");
@@ -124,7 +124,7 @@ describe("createCompositeStore", () => {
       const store = createCompositeStore(initialState);
 
       const { result, rerender } = renderHook(() =>
-        store.$use("location.address.street")
+        store.location.address.street.$use()
       );
       const [, setStreetValue] = result.current;
 

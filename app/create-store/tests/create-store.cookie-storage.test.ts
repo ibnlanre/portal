@@ -17,12 +17,17 @@ afterEach(() => {
 });
 
 describe("createStore with CookieStorage", () => {
+  const key = "test-key";
+
   it("should initialize state from CookieStorage", () => {
-    const initialState = { key: "value" };
+    const initialState = { state: "value" };
     cookieStorage.setItem("key", JSON.stringify(initialState));
 
-    const [getCookieStorageState] =
-      createCookieStorageAdapter<typeof initialState>("key");
+    const [getCookieStorageState] = createCookieStorageAdapter<
+      typeof initialState
+    >({
+      key,
+    });
 
     const store = createStore(getCookieStorageState);
     expect(getItem).toHaveBeenCalledWith("key");
@@ -32,11 +37,11 @@ describe("createStore with CookieStorage", () => {
   });
 
   it("should initialize state from CookieStorage with default value", () => {
-    const initialState = { key: "value" };
+    const initialState = { state: "value" };
     const stringifiedInitialState = JSON.stringify(initialState);
 
     const [getCookieStorageState, setCookieStorageState] =
-      createCookieStorageAdapter<typeof initialState>("key");
+      createCookieStorageAdapter<typeof initialState>({ key });
 
     const store = createStore(() => getCookieStorageState(initialState));
     expect(getItem).toHaveBeenCalledWith("key");
@@ -51,10 +56,10 @@ describe("createStore with CookieStorage", () => {
   });
 
   it("should update CookieStorage when state changes", () => {
-    const initialState = { key: "value" };
+    const initialState = { state: "value" };
 
     const [getCookieStorageState, setCookieStorageState] =
-      createCookieStorageAdapter<typeof initialState>("key");
+      createCookieStorageAdapter<typeof initialState>({ key });
 
     const store = createStore(getCookieStorageState);
     store.$sub((value) => {
@@ -64,10 +69,9 @@ describe("createStore with CookieStorage", () => {
       });
     });
 
-    const setStateValue = store.$set();
-    setStateValue({ key: "new value" });
+    store.$set({ state: "new value" });
 
-    const newStateValue = JSON.stringify({ key: "new value" });
+    const newStateValue = JSON.stringify({ state: "new value" });
     expect(setItem).toHaveBeenCalledWith(
       "key",
       newStateValue,
@@ -83,13 +87,13 @@ describe("createStore with CookieStorage", () => {
   it("should remove CookieStorage when state is undefined", () => {
     type State = number | undefined;
 
-    const [, setCookieStorageState] = createCookieStorageAdapter<State>("key");
-
+    const [, setCookieStorageState] = createCookieStorageAdapter<State>({
+      key,
+    });
     const store = createStore<State>(1);
-    store.$sub(setCookieStorageState);
 
-    const setStateValue = store.$set();
-    setStateValue(undefined);
+    store.$sub(setCookieStorageState);
+    store.$set(undefined);
 
     expect(removeItem).toHaveBeenCalledWith("key");
   });
@@ -98,13 +102,11 @@ describe("createStore with CookieStorage", () => {
     type State = number | undefined;
 
     const [getCookieStorageState, setCookieStorageState] =
-      createCookieStorageAdapter<State>("key");
-
+      createCookieStorageAdapter<State>({ key });
     const store = createStore(() => getCookieStorageState(1));
-    store.$sub(setCookieStorageState);
 
-    const setStateValue = store.$set();
-    setStateValue(undefined);
+    store.$sub(setCookieStorageState);
+    store.$set(undefined);
 
     expect(removeItem).toHaveBeenCalledWith("key");
   });

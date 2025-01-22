@@ -12,11 +12,14 @@ afterEach(() => {
 });
 
 describe("createStore with SessionStorage", () => {
+  const key = "test-key";
+
   it("should initialize state from SessionStorage", () => {
     const initialState = { key: "value" };
 
-    const [getSessionStorageState] =
-      createSessionStorageAdapter<typeof initialState>("key");
+    const [getSessionStorageState] = createSessionStorageAdapter<
+      typeof initialState
+    >({ key });
 
     const store = createStore(getSessionStorageState);
     expect(getItem).toHaveBeenCalledWith("key");
@@ -29,7 +32,7 @@ describe("createStore with SessionStorage", () => {
     const initialState = { key: "value" };
 
     const [getSessionStorageState, setSessionStorageState] =
-      createSessionStorageAdapter<typeof initialState>("key");
+      createSessionStorageAdapter<typeof initialState>({ key });
 
     const store = createStore(() => getSessionStorageState(initialState));
     expect(getItem).toHaveBeenCalledWith("key");
@@ -45,13 +48,11 @@ describe("createStore with SessionStorage", () => {
     const initialState = { key: "value" };
 
     const [getSessionStorageState, setSessionStorageState] =
-      createSessionStorageAdapter<typeof initialState>("key");
-
+      createSessionStorageAdapter<typeof initialState>({ key });
     const store = createStore(getSessionStorageState);
-    store.$sub(setSessionStorageState);
 
-    const setStateValue = store.$set();
-    setStateValue({ key: "new value" });
+    store.$sub(setSessionStorageState);
+    store.$set({ key: "new value" });
 
     const newStateValue = JSON.stringify({ key: "new value" });
     expect(setItem).toHaveBeenCalledWith("key", newStateValue);
@@ -61,14 +62,13 @@ describe("createStore with SessionStorage", () => {
   it("should remove sessionStorage when state is undefined", () => {
     type State = number | undefined;
 
-    const [, setSessionStorageState] =
-      createSessionStorageAdapter<State>("key");
-
+    const [, setSessionStorageState] = createSessionStorageAdapter<State>({
+      key,
+    });
     const store = createStore<State>(1);
-    store.$sub(setSessionStorageState);
 
-    const setStateValue = store.$set();
-    setStateValue(undefined);
+    store.$sub(setSessionStorageState);
+    store.$set(undefined);
 
     expect(removeItem).toHaveBeenCalledWith("key");
     expect(sessionStorage.getItem("key")).toBeNull();
@@ -78,13 +78,11 @@ describe("createStore with SessionStorage", () => {
     type State = number | undefined;
 
     const [getSessionStorageState, setSessionStorageState] =
-      createSessionStorageAdapter<State>("key");
-
+      createSessionStorageAdapter<State>({ key });
     const store = createStore(() => getSessionStorageState(1));
-    store.$sub(setSessionStorageState);
 
-    const setStateValue = store.$set();
-    setStateValue(undefined);
+    store.$sub(setSessionStorageState);
+    store.$set(undefined);
 
     expect(removeItem).toHaveBeenCalledWith("key");
     expect(sessionStorage.getItem("key")).toBeNull();

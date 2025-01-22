@@ -6,13 +6,10 @@ import type { Possible } from "@/create-store/types/possible";
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
 
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
+import { isPromise } from "@/create-store/functions/assertions/is-promise";
 import { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
 import { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
 import { resolveValue } from "@/create-store/functions/utilities/resolve-value";
-
-function isPromise<State>(state: unknown): state is Promise<State> {
-  return state instanceof Promise;
-}
 
 export function createStore<State extends Dictionary>(
   state: Factory<State>

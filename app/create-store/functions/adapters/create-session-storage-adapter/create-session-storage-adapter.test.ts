@@ -11,13 +11,15 @@ afterEach(() => {
 });
 
 describe("createSessionStorageAdapter", () => {
+  const key = "test-key";
+
   it("should get state from sessionStorage", () => {
-    const key = "test-key";
-    const initialState = { key: "value" };
+    const initialState = { state: "value" };
     sessionStorage.setItem(key, JSON.stringify(initialState));
 
-    const [getSessionStorageState] =
-      createSessionStorageAdapter<typeof initialState>(key);
+    const [getSessionStorageState] = createSessionStorageAdapter<
+      typeof initialState
+    >({ key });
     const state = getSessionStorageState();
 
     expect(state).toEqual(initialState);
@@ -25,11 +27,11 @@ describe("createSessionStorageAdapter", () => {
   });
 
   it("should return fallback state if sessionStorage is empty", () => {
-    const key = "test-key";
-    const fallbackState = { key: "fallback" };
+    const fallbackState = { state: "fallback" };
 
-    const [getSessionStorageState] =
-      createSessionStorageAdapter<typeof fallbackState>(key);
+    const [getSessionStorageState] = createSessionStorageAdapter<
+      typeof fallbackState
+    >({ key });
     const state = getSessionStorageState(fallbackState);
 
     expect(state).toEqual(fallbackState);
@@ -37,11 +39,11 @@ describe("createSessionStorageAdapter", () => {
   });
 
   it("should set state to sessionStorage", () => {
-    const key = "test-key";
-    const newState = { key: "new value" };
+    const newState = { state: "new value" };
 
-    const [, setSessionStorageState] =
-      createSessionStorageAdapter<typeof newState>(key);
+    const [, setSessionStorageState] = createSessionStorageAdapter<
+      typeof newState
+    >({ key });
     setSessionStorageState(newState);
 
     expect(setItem).toHaveBeenCalledWith(key, JSON.stringify(newState));
@@ -49,10 +51,9 @@ describe("createSessionStorageAdapter", () => {
   });
 
   it("should remove state from sessionStorage when value is undefined", () => {
-    const key = "test-key";
-    sessionStorage.setItem(key, JSON.stringify({ key: "value" }));
+    sessionStorage.setItem(key, JSON.stringify({ state: "value" }));
 
-    const [, setSessionStorageState] = createSessionStorageAdapter(key);
+    const [, setSessionStorageState] = createSessionStorageAdapter({ key });
     setSessionStorageState(undefined);
 
     expect(removeItem).toHaveBeenCalledWith(key);
@@ -60,13 +61,13 @@ describe("createSessionStorageAdapter", () => {
   });
 
   it("should handle custom stringify and parse functions", () => {
-    const key = "test-key";
-    const newState = { key: "new value" };
+    const newState = { state: "new value" };
     const customStringify = vi.fn(JSON.stringify);
     const customParse = vi.fn(JSON.parse);
 
     const [getSessionStorageState, setSessionStorageState] =
-      createSessionStorageAdapter<typeof newState>(key, {
+      createSessionStorageAdapter<typeof newState>({
+        key,
         stringify: customStringify,
         parse: customParse,
       });
