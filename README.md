@@ -53,53 +53,29 @@ To install `@ibnlanre/portal`, you can use either a [CDN][cdn], or a [package ma
 
 If you are working on a project that uses a [package manager][package-manager], you can copy one of the following commands to install `@ibnlanre/portal` using your preferred [package manager][package-manager], whether it's [npm][npm], [pnpm][pnpm], or [yarn][yarn].
 
-<details id="npm" open>
-  <summary>
-    <code>npm</code>
-  </summary>
-  <br/>
+#### `npm`
 
 ```bash
-# {% highlight bash %}
 npm i @ibnlanre/portal
-# {% endhighlight %}
 ```
 
-</details>
+#### `pnpm`
 
-<details id="pnpm">
-  <summary>
-    <code>pnpm</code>
-  </summary>
-  <br/>
-
-{% highlight bash %}
+```bash
 pnpm add @ibnlanre/portal
-{% endhighlight %}
+```
 
-</details>
+#### `yarn`
 
-<details id="yarn">
-  <summary>
-    <code>yarn</code>
-  </summary>
-  <br/>
-
-{% highlight bash %}
+```bash
 yarn add @ibnlanre/portal
-{% endhighlight %}
-
-</details>
+```
 
 ### Using a CDN
 
 If you are working on a project that uses markup languages like [HTML][html] or [XML][xml], you can copy one of the following script tags to install `@ibnlanre/portal` using your preferred [CDN][cdn]:
 
-<details id="skypack" open>
-  <summary>
-    <code>skypack</code>
-  </summary>
-  <br/>
+#### `skypack`
 
 ```html
 <script type="module">
@@ -107,31 +83,17 @@ If you are working on a project that uses markup languages like [HTML][html] or 
 </script>
 ```
 
-</details>
-
-<details id="unpkg">
-  <summary>
-    <code>unpkg</code>
-  </summary>
-  <br/>
+#### `unpkg`
 
 ```html
 <script src="https://unpkg.com/@ibnlanre/portal"></script>
 ```
 
-</details>
-
-<details id="jsdelivr">
-  <summary>
-    <code>jsDelivr</code>
-  </summary>
-  <br/>
+#### `jsDelivr`
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@ibnlanre/portal"></script>
 ```
-
-</details>
 
 ## Usage
 
