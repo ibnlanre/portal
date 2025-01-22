@@ -21,7 +21,9 @@ export function createCookieStorageAdapter<State>({
   getCookieStorageState: GetCookieStorage<State>,
   setCookieStorageState: SetCookieStorage<State>
 ] {
-  if (signed && !secret) {
+  const hasSecret = typeof secret !== "undefined";
+
+  if (signed && !hasSecret) {
     throw new Error(`A secret must be provided to sign the cookie: "${key}".`);
   }
 
@@ -72,9 +74,3 @@ export function createCookieStorageAdapter<State>({
 
   return [getCookieStorageState, setCookieStorageState];
 }
-
-createCookieStorageAdapter({
-  signed: true,
-  key: "test-key",
-  secret: "",
-});

@@ -17,7 +17,7 @@ import { useEffect, useState } from "react";
 
 export function createCompositeStore<State extends Dictionary>(
   initialState: State
-) {
+): CompositeStore<State> {
   let state = initialState;
   const subscribers = new Map<string, Set<(value: any) => void>>();
 
@@ -104,8 +104,8 @@ export function createCompositeStore<State extends Dictionary>(
   >(path: Path): Value;
 
   function get<Path extends Paths<State>>(path?: Path) {
-    if (path) return resolvePath(state, path);
-    return state;
+    if (!path) return state;
+    return resolvePath(state, path);
   }
 
   function use<Path extends Paths<State> = never>(
@@ -118,12 +118,13 @@ export function createCompositeStore<State extends Dictionary>(
   >(path: Path): StateManager<Value>;
 
   function use<Path extends Paths<State>>(path?: Path) {
+    const dependecies = splitPath(path);
     const [value, setValue] = useState<StatePath<State, Path>>(() => {
       if (!path) return state;
       return resolvePath(state, path);
     });
 
-    useEffect(() => sub(setValue, path), [path]);
+    useEffect(() => sub(setValue, path), dependecies);
     return [value, set(path)];
   }
 
@@ -154,9 +155,9 @@ export function createCompositeStore<State extends Dictionary>(
   function buildStore<Path extends Paths<State>>(path?: Path) {
     return {
       $get() {
-        return get();
+        return get(path);
       },
-      $set(value: SetStateAction<State>) {
+      $set(value: StatePath<State, Path>) {
         return set(path)(value);
       },
       $sub(subscriber: Subscriber<State>) {
@@ -169,7 +170,8 @@ export function createCompositeStore<State extends Dictionary>(
   }
 
   function traverse<Path extends Paths<State> = never>(
-    initialState: State
+    initialState: State,
+    chain?: Path
   ): CompositeStore<State>;
 
   function traverse<
@@ -183,7 +185,7 @@ export function createCompositeStore<State extends Dictionary>(
       const path = <Path>[chain, key].filter(Boolean).join(".");
 
       if (isDictionary(property)) {
-        clone[key] = <any>traverse(property);
+        clone[key] = <any>traverse(property, path);
       } else {
         clone[key] = <any>buildStore(path);
       }

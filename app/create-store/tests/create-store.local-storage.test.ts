@@ -16,14 +16,14 @@ describe("createStore with LocalStorage", () => {
 
   it("should initialize state from LocalStorage", () => {
     const initialState = { key: "value" };
-    localStorage.setItem("key", JSON.stringify(initialState));
+    localStorage.setItem(key, JSON.stringify(initialState));
 
     const [getLocalStorageState] = createLocalStorageAdapter<
       typeof initialState
     >({ key });
 
     const store = createStore(getLocalStorageState);
-    expect(getItem).toHaveBeenCalledWith("key");
+    expect(getItem).toHaveBeenCalledWith(key);
 
     const stateValue = store.$get();
     expect(stateValue).toEqual(initialState);
@@ -36,13 +36,13 @@ describe("createStore with LocalStorage", () => {
       createLocalStorageAdapter<typeof initialState>({ key });
 
     const store = createStore(() => getLocalStorageState(initialState));
-    expect(getItem).toHaveBeenCalledWith("key");
+    expect(getItem).toHaveBeenCalledWith(key);
 
     const stateValue = store.$get();
     expect(stateValue).toEqual(initialState);
 
     store.$sub(setLocalStorageState);
-    expect(localStorage.getItem("key")).toBe(JSON.stringify(initialState));
+    expect(localStorage.getItem(key)).toBe(JSON.stringify(initialState));
   });
 
   it("should update localStorage when state changes", () => {
@@ -56,8 +56,8 @@ describe("createStore with LocalStorage", () => {
     store.$set({ key: "new value" });
 
     const newStateValue = JSON.stringify({ key: "new value" });
-    expect(setItem).toHaveBeenCalledWith("key", newStateValue);
-    expect(localStorage.getItem("key")).toBe(newStateValue);
+    expect(setItem).toHaveBeenCalledWith(key, newStateValue);
+    expect(localStorage.getItem(key)).toBe(newStateValue);
   });
 
   it("should remove localStorage when state is undefined", () => {
@@ -69,8 +69,8 @@ describe("createStore with LocalStorage", () => {
     store.$sub(setLocalStorageState);
     store.$set(undefined);
 
-    expect(removeItem).toHaveBeenCalledWith("key");
-    expect(localStorage.getItem("key")).toBeNull();
+    expect(removeItem).toHaveBeenCalledWith(key);
+    expect(localStorage.getItem(key)).toBeNull();
   });
 
   it("should remove localStorage when state is undefined with default value", () => {
@@ -83,7 +83,7 @@ describe("createStore with LocalStorage", () => {
     store.$sub(setLocalStorageState);
     store.$set(undefined);
 
-    expect(removeItem).toHaveBeenCalledWith("key");
-    expect(localStorage.getItem("key")).toBeNull();
+    expect(removeItem).toHaveBeenCalledWith(key);
+    expect(localStorage.getItem(key)).toBeNull();
   });
 });

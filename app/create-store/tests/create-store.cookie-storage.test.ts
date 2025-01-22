@@ -21,7 +21,7 @@ describe("createStore with CookieStorage", () => {
 
   it("should initialize state from CookieStorage", () => {
     const initialState = { state: "value" };
-    cookieStorage.setItem("key", JSON.stringify(initialState));
+    cookieStorage.setItem(key, JSON.stringify(initialState));
 
     const [getCookieStorageState] = createCookieStorageAdapter<
       typeof initialState
@@ -30,7 +30,7 @@ describe("createStore with CookieStorage", () => {
     });
 
     const store = createStore(getCookieStorageState);
-    expect(getItem).toHaveBeenCalledWith("key");
+    expect(getItem).toHaveBeenCalledWith(key);
 
     const stateValue = store.$get();
     expect(stateValue).toEqual(initialState);
@@ -44,15 +44,15 @@ describe("createStore with CookieStorage", () => {
       createCookieStorageAdapter<typeof initialState>({ key });
 
     const store = createStore(() => getCookieStorageState(initialState));
-    expect(getItem).toHaveBeenCalledWith("key");
+    expect(getItem).toHaveBeenCalledWith(key);
 
     const stateValue = store.$get();
     expect(stateValue).toEqual(initialState);
 
     store.$sub(setCookieStorageState);
 
-    expect(setItem).toHaveBeenCalledWith("key", stringifiedInitialState, {});
-    expect(cookieStorage.getItem("key")).toBe(stringifiedInitialState);
+    expect(setItem).toHaveBeenCalledWith(key, stringifiedInitialState, {});
+    expect(cookieStorage.getItem(key)).toBe(stringifiedInitialState);
   });
 
   it("should update CookieStorage when state changes", () => {
@@ -73,7 +73,7 @@ describe("createStore with CookieStorage", () => {
 
     const newStateValue = JSON.stringify({ state: "new value" });
     expect(setItem).toHaveBeenCalledWith(
-      "key",
+      key,
       newStateValue,
       expect.objectContaining({
         expires: expect.any(Number),
@@ -81,7 +81,7 @@ describe("createStore with CookieStorage", () => {
       })
     );
 
-    expect(cookieStorage.getItem("key")).toBe(newStateValue);
+    expect(cookieStorage.getItem(key)).toBe(newStateValue);
   });
 
   it("should remove CookieStorage when state is undefined", () => {
@@ -95,7 +95,7 @@ describe("createStore with CookieStorage", () => {
     store.$sub(setCookieStorageState);
     store.$set(undefined);
 
-    expect(removeItem).toHaveBeenCalledWith("key");
+    expect(removeItem).toHaveBeenCalledWith(key);
   });
 
   it("should remove CookieStorage when state is undefined with default value", () => {
@@ -108,6 +108,26 @@ describe("createStore with CookieStorage", () => {
     store.$sub(setCookieStorageState);
     store.$set(undefined);
 
-    expect(removeItem).toHaveBeenCalledWith("key");
+    expect(removeItem).toHaveBeenCalledWith(key);
+  });
+
+  it("can be signed with an empty secret", () => {
+    const initialState = { state: "value" };
+
+    const [getCookieStorageState, setCookieStorageState] =
+      createCookieStorageAdapter<typeof initialState>({
+        key,
+        signed: true,
+        secret: "",
+      });
+
+    const store = createStore(getCookieStorageState);
+    store.$sub(setCookieStorageState);
+
+    store.$set({ state: "new value" });
+
+    const newStateValue = JSON.stringify({ state: "new value" });
+    expect(setItem).toHaveBeenCalledWith(key, newStateValue, {});
+    expect(cookieStorage.getItem(key)).toBe(newStateValue);
   });
 });

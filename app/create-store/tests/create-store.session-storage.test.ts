@@ -22,7 +22,7 @@ describe("createStore with SessionStorage", () => {
     >({ key });
 
     const store = createStore(getSessionStorageState);
-    expect(getItem).toHaveBeenCalledWith("key");
+    expect(getItem).toHaveBeenCalledWith(key);
 
     const stateValue = store.$get();
     expect(stateValue).toEqual(undefined);
@@ -35,13 +35,13 @@ describe("createStore with SessionStorage", () => {
       createSessionStorageAdapter<typeof initialState>({ key });
 
     const store = createStore(() => getSessionStorageState(initialState));
-    expect(getItem).toHaveBeenCalledWith("key");
+    expect(getItem).toHaveBeenCalledWith(key);
 
     const stateValue = store.$get();
     expect(stateValue).toEqual(initialState);
 
     store.$sub(setSessionStorageState);
-    expect(sessionStorage.getItem("key")).toBe(JSON.stringify(initialState));
+    expect(sessionStorage.getItem(key)).toBe(JSON.stringify(initialState));
   });
 
   it("should update sessionStorage when state changes", () => {
@@ -55,8 +55,8 @@ describe("createStore with SessionStorage", () => {
     store.$set({ key: "new value" });
 
     const newStateValue = JSON.stringify({ key: "new value" });
-    expect(setItem).toHaveBeenCalledWith("key", newStateValue);
-    expect(sessionStorage.getItem("key")).toBe(newStateValue);
+    expect(setItem).toHaveBeenCalledWith(key, newStateValue);
+    expect(sessionStorage.getItem(key)).toBe(newStateValue);
   });
 
   it("should remove sessionStorage when state is undefined", () => {
@@ -70,8 +70,8 @@ describe("createStore with SessionStorage", () => {
     store.$sub(setSessionStorageState);
     store.$set(undefined);
 
-    expect(removeItem).toHaveBeenCalledWith("key");
-    expect(sessionStorage.getItem("key")).toBeNull();
+    expect(removeItem).toHaveBeenCalledWith(key);
+    expect(sessionStorage.getItem(key)).toBeNull();
   });
 
   it("should remove sessionStorage when state is undefined with default value", () => {
@@ -84,7 +84,7 @@ describe("createStore with SessionStorage", () => {
     store.$sub(setSessionStorageState);
     store.$set(undefined);
 
-    expect(removeItem).toHaveBeenCalledWith("key");
-    expect(sessionStorage.getItem("key")).toBeNull();
+    expect(removeItem).toHaveBeenCalledWith(key);
+    expect(sessionStorage.getItem(key)).toBeNull();
   });
 });
