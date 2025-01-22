@@ -15,15 +15,24 @@ A [TypeScript][typescript] state management library for [React][react] applicati
     - [`jsDelivr`](#jsdelivr)
 - [Usage](#usage)
   - [Managing State](#managing-state)
+    - [`$get` Method](#get-method)
+    - [`$set` Method](#set-method)
+    - [`$sub` Method](#sub-method)
   - [Chained Store](#chained-store)
+    - [Breaking Off Stores](#breaking-off-stores)
+    - [Updating Nested Stores](#updating-nested-stores)
   - [Asynchronous State](#asynchronous-state)
   - [React Integration](#react-integration)
 - [Persistence](#persistence)
   - [Web Storage Adapter](#web-storage-adapter)
+    - [Local Storage Adapter](#local-storage-adapter)
+    - [Session Storage Adapter](#session-storage-adapter)
   - [Browser Storage Adapter](#browser-storage-adapter)
   - [Cookie Storage Adapter](#cookie-storage-adapter)
+    - [Signed Cookies](#signed-cookies)
+    - [Updating Cookie Options](#updating-cookie-options)
 - [Cookie Storage](#cookie-storage)
-  - [Functions](#functions)
+  - [Utility Functions](#utility-functions)
     - [sign(value: string, secret: string): string](#signvalue-string-secret-string-string)
     - [unsign(signedValue: string, secret: string): string](#unsignsignedvalue-string-secret-string-string)
     - [getItem(key: string): string](#getitemkey-string-string)
@@ -128,7 +137,7 @@ If you are working on a project that uses markup languages like [HTML][html] or 
 
 ### Managing State
 
-State management using this library is as simple as calling the `createStore` function with an initial value. The function returns an object with [methods][method] to access and update the state. These [methods][method] are `$get`, `$set`, and `$use`.
+State management using this library is as simple as calling the `createStore` function with an initial value. The function returns an object with [methods][method] to access and update the state. These [methods][method] are `$get`, `$set`, and `$use`. The `$get` [method][method] returns the current state, the `$set` [method][method] updates the state, and the `$use` [method][method] is a [React hook][react-hook] that allows you to manage the state within functional components.
 
 ```typescript
 import { createStore } from "@ibnlanre/portal";
@@ -136,15 +145,25 @@ import { createStore } from "@ibnlanre/portal";
 const store = createStore("initial value");
 ```
 
-The `$get` [method][method] returns the current state, the `$set` [method][method] updates the state, and the `$use` [method][method] is a [React hook][react-hook] that allows you to manage the state within functional components.
+#### `$get` Method
+
+The `$get` [method][method] is a synchronous operation that returns the current state. It is useful when you want to access the state without subscribing to state changes.
 
 ```typescript
 const value = store.$get();
 console.log(value); // "initial value"
+```
 
+#### `$set` Method
+
+The `$set` [method][method] is used to update the state. It takes a new value as an argument and updates the state with that value. It can also take a [callback function][callback] that is called with the previous value. This allows you to update the state based on the previous value. **Note** that the `$set` [method][method] updates the state immediately.
+
+```typescript
 store.$set("new value");
 const newValue = store.$get(); // "new value"
 ```
+
+#### `$sub` Method
 
 Asides the aforementioned [methods][method], the store object also has a `$sub` [method][method] to subscribe to state changes. This [method][method] takes a [callback function][callback] that is called whenever the state changes. This allows you to react to state changes and perform [side effects][side-effects] based on the new state.
 
@@ -183,6 +202,8 @@ const street = store.location.address.street.$get();
 console.log(street); // "123 Main St"
 ```
 
+#### Breaking Off Stores
+
 Remember that each point in an object chain is a store, and can be broken off into its own store at any point in the chain. This is useful when you want to work with a nested state independently of the parent store. For example, you can break off the `address` store from the `location` store and work with it independently.
 
 ```typescript
@@ -192,13 +213,15 @@ const street = address.street.$get();
 console.log(street); // "123 Main St"
 ```
 
-Updating a nested store is similar to updating a regular store. You can use the `$set` method to update the value of a nested store. You can also pass a [callback function][callback] to the `$set` method to update the value based on the previous value. **Note** that the `$set` method updates the value of the store immediately.
+#### Updating Nested Stores
+
+Updating a nested store works similarly to updating a regular store. You can use the `$set` method to change the value of a nested store. Additionally, you can pass a [callback function][callback] to the `$set` method to modify the value based on the previous state. Since a nested store shares the same state across all levels of the object hierarchy, updating a nested store will also update the parent store. This feature is beneficial when you need to manage state at various levels of the object hierarchy.
 
 ```typescript
-const setStreet = store.location.address.street.$set();
+const { street } = store.location.address;
 
-setStreet("456 Elm St");
-setStreet((prev) => `${prev} Apt 2`);
+street.$set("456 Elm St");
+street.$set((prev) => `${prev} Apt 2`);
 ```
 
 ### Asynchronous State
@@ -254,6 +277,10 @@ To persist state within the local/session storage of the browser, you can use ei
 - `stringify`: A function to serialize the state to a string. The default is `JSON.stringify`.
 - `parse`: A function to deserialize the state from a string. The default is `JSON.parse`.
 
+#### Local Storage Adapter
+
+The only required parameter for the [web storage][web-storage] adapters is the `key`. This is the key used to store the state in the [storage][web-storage], as well as, to retrieve and update the state from the [storage][web-storage]. It's important to **note** that the `key` is unique to each store, and should be unique to prevent conflicts with other stores.
+
 ```typescript
 import { createLocalStorageAdapter } from "@ibnlanre/portal";
 
@@ -265,23 +292,24 @@ const [getLocalStorageState, setLocalStorageState] = createLocalStorageAdapter({
 Through the `stringify` and `parse` functions, you can customize how the state is serialized and deserialized. This is useful when working with non-JSON serializable values or when you want to encrypt the state before storing it in the [web storage][web-storage].
 
 ```typescript
-import { createSessionStorageAdapter } from "@ibnlanre/portal";
+import { createLocalStorageAdapter } from "@ibnlanre/portal";
 
-const [getSessionStorageState, setSessionStorageState] =
-  createSessionStorageAdapter({
-    key: "storage",
-    stringify: (state) => btoa(state),
-    parse: (state) => atob(state),
-  });
+const [getLocalStorageState, setLocalStorageState] = createLocalStorageAdapter({
+  key: "storage",
+  stringify: (state) => btoa(state),
+  parse: (state) => atob(state),
+});
 ```
+
+#### Session Storage Adapter
 
 The benefit of using the storage [adapters][adapter] is that they automatically load the state from the storage when the store is created. This allows you to initialize the store with the persisted state. Additionally, the storage [adapters][adapter] provide a way to update the storage when the store changes. This is done by subscribing to the store changes and updating the storage with the new state.
 
 ```typescript
 import { createStore } from "@ibnlanre/portal";
 
-const store = createStore(getLocalStorageState);
-store.$sub(setLocalStorageState);
+const store = createStore(getSessionStorageState);
+store.$sub(setSessionStorageState);
 ```
 
 In situations where the store requires an initial value of some sort, you can pass the fallback state to the `getLocalStorageState` or `getSessionStorageState` functions. This allows you to initialize the store with the fallback state if the state is not found in the storage.
@@ -326,6 +354,8 @@ const [getCookieStorageState, setCookieStorageState] =
   });
 ```
 
+#### Signed Cookies
+
 For enhanced security, you can provide a `secret` parameter to sign the cookie value. This adds an extra layer of security to the cookie value, and ensures that the cookie value has not been tampered with. **Note** that you also have to provide the `signed` option to explicitly indicate that the cookie value is signed, or should be signed.
 
 ```typescript
@@ -345,6 +375,8 @@ const [getCookieStorageState, setCookieStorageState] =
     secret,
   });
 ```
+
+#### Updating Cookie Options
 
 One key difference between the `createCookieStorageAdapter` function and the other storage adapter functions is that its `setCookieStorageState` function takes an additional parameter: the `cookie options`. This allows you to update the initial cookie options when setting the cookie value. This is useful when you want to update the `max-age` or `expires` options of the cookie.
 
@@ -373,7 +405,7 @@ One key module provided by the library is the `cookieStorage` module. This modul
 import { cookieStorage } from "@ibnlanre/portal";
 ```
 
-### Functions
+### Utility Functions
 
 All functions in the `cookieStorage` module are static and do not require an [instance][instance] of the module to be created. This is because the module is a utility module that provides a set of functions to manage [cookies][cookies]. The following are the functions provided by the `cookieStorage` module:
 
@@ -467,7 +499,7 @@ All contributions are welcome and appreciated. Thank you for taking the time to 
 
 ## License
 
-This library is licensed under the [BSD-3-Clause][bsd-3-clause]. See the [LICENSE](LICENSE) file for more information.
+This library is [licensed][licensed] under the [BSD-3-Clause][bsd-3-clause]. See the [LICENSE](LICENSE) file for more information.
 
 [adapter]: https://blog.stackademic.com/mastering-the-adapter-design-pattern-c118e90f696b
 [api]: https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Client-side_APIs/Introduction
@@ -480,6 +512,7 @@ This library is licensed under the [BSD-3-Clause][bsd-3-clause]. See the [LICENS
 [html]: https://developer.mozilla.org/en-US/docs/Web/HTML
 [initialization]: https://web.dev/learn/javascript/data-types/variable
 [instance]: https://www.altcademy.com/blog/what-is-an-instance-in-javascript/
+[licensed]: https://choosealicense.com/licenses/bsd-3-clause/
 [local-storage]: https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage
 [method]: https://www.altcademy.com/blog/what-are-methods-in-javascript/
 [npm]: https://www.npmjs.com/
