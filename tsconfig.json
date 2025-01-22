@@ -21,6 +21,10 @@
     "declarationMap": true,
     "emitDeclarationOnly": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    }
   }
 }

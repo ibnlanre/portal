@@ -2,7 +2,7 @@ import type {
   GetBrowserStorage,
   SetBrowserStorage,
   StorageInterface,
-} from "@/create-store/types/storage-adapter";
+} from "@/create-store/types/browser-storage-adapter";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createBrowserStorageAdapter } from "./index";
