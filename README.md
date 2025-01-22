@@ -57,36 +57,43 @@ If you are working on a project that uses a [package manager][package-manager], 
   <summary>
     <code>npm</code>
   </summary>
-  <br/>
+  <p>
 
 ```zsh
 npm i @ibnlanre/portal
 ```
 
+  </p>
 </details>
+
+<br/>
 
 <details id="pnpm">
   <summary>
     <code>pnpm</code>
   </summary>
-  <br/>
+  <p>
 
 ```bash
 pnpm i @ibnlanre/portal
 ```
 
+  </p>
 </details>
+
+<br/>
 
 <details id="yarn">
   <summary>
     <code>yarn</code>
   </summary>
-  <br/>
+  <p>
 
 ```shell
 yarn add @ibnlanre/portal
 ```
 
+  </p>
 </details>
 
 ### Using a CDN
@@ -94,10 +101,10 @@ yarn add @ibnlanre/portal
 If you are working on a project that uses markup languages like [HTML][html] or [XML][xml], you can copy one of the following script tags to install `@ibnlanre/portal` using your preferred [CDN][cdn]:
 
 <details id="skypack" open>
-    <summary>
-      <code>skypack</code>
-    </summary>
-  <br/>
+  <summary>
+    <code>skypack</code>
+  </summary>
+  <p>
 
 ```html
 <script type="module">
@@ -105,32 +112,37 @@ If you are working on a project that uses markup languages like [HTML][html] or 
 </script>
 ```
 
+  </p>
 </details>
+
+<br/>
 
 <details id="unpkg">
   <summary>
     <code>unpkg</code>
   </summary>
-  <br/>
+  <p>
 
 ```html
 <script src="https://unpkg.com/@ibnlanre/portal"></script>
 ```
 
+  </p>
 </details>
 
-</details>
+<br/>
 
 <details id="jsdelivr">
   <summary>
     <code>jsDelivr</code>
   </summary>
-  <br/>
+  <p>
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@ibnlanre/portal"></script>
 ```
 
+  </p>
 </details>
 
 ## Usage
