@@ -58,11 +58,9 @@ If you are working on a project that uses a [package manager][package-manager], 
     <code>npm</code>
   </summary>
   <p>
-
-    ```zsh
-    npm i @ibnlanre/portal
-    ```
-
+```bash
+npm i @ibnlanre/portal
+```
   </p>
 </details>
 
@@ -71,11 +69,9 @@ If you are working on a project that uses a [package manager][package-manager], 
     <code>pnpm</code>
   </summary>
   <p>
-
 ```bash
 pnpm i @ibnlanre/portal
 ```
-
   </p>
 </details>
 
@@ -84,11 +80,9 @@ pnpm i @ibnlanre/portal
     <code>yarn</code>
   </summary>
   <p>
-
 ```shell
 yarn add @ibnlanre/portal
 ```
-
   </p>
 </details>
 
@@ -101,13 +95,11 @@ If you are working on a project that uses markup languages like [HTML][html] or 
     <code>skypack</code>
   </summary>
   <p>
-
 ```html
 <script type="module">
   import { createStore } from "https://cdn.skypack.dev/@ibnlanre/portal";
 </script>
 ```
-
   </p>
 </details>
 
@@ -116,11 +108,9 @@ If you are working on a project that uses markup languages like [HTML][html] or 
     <code>unpkg</code>
   </summary>
   <p>
-
 ```html
 <script src="https://unpkg.com/@ibnlanre/portal"></script>
 ```
-
   </p>
 </details>
 
@@ -129,11 +119,9 @@ If you are working on a project that uses markup languages like [HTML][html] or 
     <code>jsDelivr</code>
   </summary>
   <p>
-
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@ibnlanre/portal"></script>
 ```
-
   </p>
 </details>
 
