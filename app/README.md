@@ -192,7 +192,7 @@ export default Component;
 
 `@ibnlanre/portal` provides storage adapters for local storage, session storage, and cookies. These adapters allow you to persist state across sessions and devices. The storage adapters are created using the `createLocalStorageAdapter`, `createSessionStorageAdapter`, and `createCookieStorageAdapter` functions. Each function takes a key as a parameter and returns two functions: one to get the state and the other to set the state. The `createStore` function can then be used with these storage adapters to create a store that persists state in the browser's storage.
 
-### Browser Storage Adapter
+### Local/Session Storage Adapter
 
 To persist state within the local/session storage of the browser, you can use either the `createLocalStorageAdapter` or `createSessionStorageAdapter` functions respectively. The parameters for these functions are the same. The following are the parameters for the storage adapter functions:
 
@@ -239,47 +239,83 @@ const fallbackState = "initial value";
 const store = createStore(() => getSessionStorageState(fallbackState));
 ```
 
+### Browser Storage Adapter
+
+Although the storage adapters provided by the library are a select few, if you need to use a different storage mechanism, such as IndexedDB or a custom API, you can also create your own custom browser storage adapter. The browser storage adapter only requires a key, and functions to **get** the item, **set** the item, and **remove** the item from the storage. Other options like `stringify` and `parse` are optional.
+
 ```typescript
-import { createStore, createLocalStorageAdapter } from "@ibnlanre/portal";
+import { createStore, createBrowserStorageAdapter } from "@ibnlanre/portal";
 
-// Initialize local storage adapter
-const [getLocalStorageState, setLocalStorageState] =
-  createLocalStorageAdapter("storage-key");
+// Create an instance of your custom storage
+const storage = new Storage();
 
-// Create a store using the local storage adapter
-const store = createStore(getLocalStorageState);
-
-// Create a store with a fallback state using the local storage adapter
-const store = createStore(() => getLocalStorageState(fallbackState));
-
-// Subscribe to store changes to update the local storage
-store.$sub(setLocalStorageState);
+// Create custom storage adapter with your storage instance
+const [getStorageState, setStorageState] = createBrowserStorageAdapter({
+  key: "storage",
+  getItem: (key: string) => storage.getItem(key),
+  setItem: (key: string, value: string) => storage.setItem(key, value),
+  removeItem: (key: string) => storage.removeItem(key),
+});
 ```
 
-### Session Storage Adapter
+### Cookie Storage Adapter
+
+The last of the storage adapters provided by the library is the cookie storage adapter. It is created using the `createCookieStorageAdapter` function, which takes a key and an optional configuration object with cookie options. These options are similar to those provided by the `document.cookie` API.
 
 ```typescript
-import { createStore, createSessionStorageAdapter } from "@ibnlanre/portal";
+import { createCookieStorageAdapter } from "@ibnlanre/portal";
 
-// Initialize session storage adapter
-const [getSessionStorageState, setSessionStorageState] =
-  createSessionStorageAdapter("storage-key");
+const [getCookieStorageState, setCookieStorageState] =
+  createCookieStorageAdapter({
+    key: "storage",
+    domain: "example.com",
+    maxAge: 60 * 60 * 24 * 7, // 1 week
+    path: "/",
+  });
+```
 
-// Create a store using the session storage adapter
-const store = createStore(getSessionStorageState);
+For enhanced security, you can provide a `secret` parameter to sign the cookie value. This adds an extra layer of security to the cookie value, and ensures that the cookie value has not been tampered with. **Note** that you also have to provide the `signed` option to explicitly indicate that the cookie value is signed, or should be signed.
 
-// Create a store with a fallback state using the session storage adapter
-const store = createStore(() => getSessionStorageState(fallbackState));
+```typescript
+import { createCookieStorageAdapter } from "@ibnlanre/portal";
 
-// Subscribe to store changes to update the session storage
-store.$sub(setSessionStorageState);
+const secret = process.env.COOKIE_SECRET_KEY;
+
+const [getCookieStorageState, setCookieStorageState] =
+  createCookieStorageAdapter({
+    key: "storage",
+    signed: true
+    sameSite: "strict",
+    secret,
+  });
+```
+
+One key difference between the `createCookieStorageAdapter` function and the other storage adapter functions is that its `setCookieStorageState` function takes an additional parameter: the cookie options. This allows you to update the initial cookie options when setting the cookie value. This is useful when you want to update the `max-age` or `expires` options of the cookie.
+
+```typescript
+const store = createStore(getCookieStorageState);
+
+store.$sub((value) => {
+  setCookieStorageState(value, {
+    secure: true,
+    partitioned: false,
+    expires: new Date(Date.now() + 15 * 60 * 1000),
+    httpOnly: true,
+  });
+});
 ```
 
 ## Cookie Storage
 
-The `cookieStorage` module provides a set of functions to manage cookies in a web application. It includes functionalities to set, get, remove, and clear cookies, as well as to sign and unsign cookie values for added security.
+One key module provided by the library is the `cookieStorage` module. This module provides a set of functions to manage cookies in a web application. Just like `localStorage` and `sessionStorage`, cookies are a way to store data in the browser. Cookies are useful for storing small amounts of data that need to be sent with each request to the server. However, most modern web browsers do not have a means to manage cookies, and this is where the `cookieStorage` module comes in. Accessing the `cookieStorage` module is similar to accessing the other modules provided by the library.
+
+```typescript
+import { cookieStorage } from "@ibnlanre/portal";
+```
 
 ### Functions
+
+All functions in the `cookieStorage` module are static and do not require an instance of the module to be created. This is because the module is a utility module that provides a set of functions to manage cookies. The following are the functions provided by the `cookieStorage` module:
 
 - **sign(value: string, secret: string): string**
 
@@ -289,6 +325,10 @@ The `cookieStorage` module provides a set of functions to manage cookies in a we
     - `secret`: The secret key used to sign the cookie.
   - Returns: The signed cookie value.
 
+  ```typescript
+  const signedValue = cookieStorage.sign("value", "secret");
+  ```
+
 - **unsign(signedValue: string, secret: string): string**
 
   - Unsigns a signed cookie value using a secret key.
@@ -297,12 +337,20 @@ The `cookieStorage` module provides a set of functions to manage cookies in a we
     - `secret`: The secret key used to unsign the cookie.
   - Returns: The original cookie value.
 
+  ```typescript
+  const originalValue = cookieStorage.unsign(signedValue, "secret");
+  ```
+
 - **getItem(key: string): string**
 
   - Retrieves the value of a cookie by its key.
   - Parameters:
     - `key`: The key of the cookie to retrieve.
   - Returns: The value of the cookie.
+
+  ```typescript
+  const value = cookieStorage.getItem("key");
+  ```
 
 - **setItem(key: string, value: string): void**
 
@@ -311,15 +359,27 @@ The `cookieStorage` module provides a set of functions to manage cookies in a we
     - `key`: The key of the cookie to set.
     - `value`: The value to set for the cookie.
 
+  ```typescript
+  cookieStorage.setItem("key", "value");
+  ```
+
 - **removeItem(key: string): void**
 
   - Removes a cookie by its key.
   - Parameters:
     - `key`: The key of the cookie to remove.
 
+  ```typescript
+  cookieStorage.removeItem("key");
+  ```
+
 - **clear(): void**
 
   - Clears all cookies.
+
+  ```typescript
+  cookieStorage.clear();
+  ```
 
 - **key(index: number): string**
 
@@ -328,100 +388,16 @@ The `cookieStorage` module provides a set of functions to manage cookies in a we
     - `index`: The index of the cookie to retrieve the key for.
   - Returns: The key of the cookie.
 
+  ```typescript
+  const key = cookieStorage.key(0);
+  ```
+
 - **length: number**
   - Retrieves the number of cookies stored.
   - Returns: The number of cookies.
 
-### Usage
-
-To use the `cookieStorage` module, import it and call the desired functions:
-
 ```typescript
-import { cookieStorage } from "@ibnlanre/portal";
-
-// Sign a cookie value
-const signedValue = cookieStorage.sign("value", "secret");
-
-// Unsign a cookie value
-const originalValue = cookieStorage.unsign(signedValue, "secret");
-
-// Set a cookie value
-cookieStorage.setItem("key", "value");
-
-// Get a cookie value
-const value = cookieStorage.getItem("key");
-
-// Remove a cookie
-cookieStorage.removeItem("key");
-
-// Clear all cookies
-cookieStorage.clear();
-
-// Get a cookie key by index
-const key = cookieStorage.key(0);
-
-// Get the number of cookies stored
 const length = cookieStorage.length;
-```
-
-### Cookie Storage Adapter
-
-Through the `Cookie` module, we have included a cookie storage adapter for use with the `createStore` function. The `createCookieStorageAdapter` function takes two parameters: the cookie key and an optional configuration object with cookie options.
-
-```typescript
-import { createStore, createCookieStorageAdapter } from "@ibnlanre/portal";
-
-// Initialize cookie storage adapter with options
-const [setCookieStorageState, getCookieStorageState] =
-  createCookieStorageAdapter("cookie-key", {
-    path: "/",
-    domain: "example.com",
-  });
-
-// Create a store using the cookie storage adapter
-const store = createStore(getCookieStorageState);
-
-// Create a store with a fallback state using the cookie storage adapter
-const store = createStore(() => getCookieStorageState(fallbackState));
-
-// Subscribe to store changes to update the cookie storage
-store.$sub(setCookieStorageState);
-
-// Subscribe to store changes with additional cookie options
-store.$sub((value) => {
-  setCookieStorageState(value, {
-    expires: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes expiration
-    secure: true, // Secure flag
-    httpOnly: true, // HTTP only flag
-  });
-});
-```
-
-### Custom Storage Adapter
-
-Although the storage adapters provided by the library are a select few, if you need to use a different storage mechanism, such as IndexedDB or a custom API, you can also create your own custom storage adapter. The custom storage adapter should be a function that returns two functions: one to set the state and the other to get the state.
-
-```typescript
-import { createStore, createCustomStorageAdapter } from "@ibnlanre/portal";
-
-// Create an instance of your custom storage
-const storage = new Storage();
-
-// Create custom storage adapter with your storage instance
-const [getStorageState, setStorageState] = createCustomStorageAdapter(
-  "my-key",
-  {
-    getItem: (key: string) => storage.getItem(key),
-    setItem: (key: string, value: string) => storage.setItem(key, value),
-    removeItem: (key: string) => storage.removeItem(key),
-  }
-);
-
-// Create a store with the custom storage adapter
-const store = createStore(getStorageState);
-
-// Subscribe to store changes to update your storage
-store.$sub(setStorageState);
 ```
 
 ## License
