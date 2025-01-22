@@ -59,14 +59,12 @@ If you are working on a project that uses a [package manager][package-manager], 
   </summary>
   <p>
 
-```zsh
-npm i @ibnlanre/portal
-```
+    ```zsh
+    npm i @ibnlanre/portal
+    ```
 
   </p>
 </details>
-
-<br/>
 
 <details id="pnpm">
   <summary>
@@ -80,8 +78,6 @@ pnpm i @ibnlanre/portal
 
   </p>
 </details>
-
-<br/>
 
 <details id="yarn">
   <summary>
@@ -115,8 +111,6 @@ If you are working on a project that uses markup languages like [HTML][html] or 
   </p>
 </details>
 
-<br/>
-
 <details id="unpkg">
   <summary>
     <code>unpkg</code>
@@ -129,8 +123,6 @@ If you are working on a project that uses markup languages like [HTML][html] or 
 
   </p>
 </details>
-
-<br/>
 
 <details id="jsdelivr">
   <summary>
