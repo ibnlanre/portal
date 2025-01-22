@@ -57,27 +57,33 @@ If you are working on a project that uses a [package manager][package-manager], 
   <summary>
     <code>npm</code>
   </summary>
+
 ```bash
 npm i @ibnlanre/portal
 ```
+
 </details>
 
 <details id="pnpm">
   <summary>
     <code>pnpm</code>
   </summary>
+
 ```bash
 pnpm i @ibnlanre/portal
 ```
+
 </details>
 
 <details id="yarn">
   <summary>
     <code>yarn</code>
   </summary>
+
 ```shell
 yarn add @ibnlanre/portal
 ```
+
 </details>
 
 ### Using a CDN
@@ -88,29 +94,35 @@ If you are working on a project that uses markup languages like [HTML][html] or 
   <summary>
     <code>skypack</code>
   </summary>
+
 ```html
 <script type="module">
   import { createStore } from "https://cdn.skypack.dev/@ibnlanre/portal";
 </script>
 ```
+
 </details>
 
 <details id="unpkg">
   <summary>
     <code>unpkg</code>
   </summary>
+
 ```html
 <script src="https://unpkg.com/@ibnlanre/portal"></script>
 ```
+
 </details>
 
 <details id="jsdelivr">
   <summary>
     <code>jsDelivr</code>
   </summary>
+
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@ibnlanre/portal"></script>
 ```
+
 </details>
 
 ## Usage
