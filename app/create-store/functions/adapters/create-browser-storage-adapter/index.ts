@@ -2,7 +2,7 @@ import type {
   BrowserStorageAdapter,
   GetBrowserStorage,
   SetBrowserStorage,
-} from "@/create-store/types/storage-adapter";
+} from "@/create-store/types/browser-storage-adapter";
 
 import { safeStringify } from "@/create-store/functions/utilities/safe-stringify";
 import { tryParse } from "@/create-store/functions/utilities/try-parse";

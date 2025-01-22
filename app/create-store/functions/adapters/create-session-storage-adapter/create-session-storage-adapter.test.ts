@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createSessionStorageAdapter } from ".";
+import { createSessionStorageAdapter } from "./index";
 
 const getItem = vi.spyOn(sessionStorage, "getItem");
 const setItem = vi.spyOn(sessionStorage, "setItem");

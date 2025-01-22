@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createLocalStorageAdapter } from ".";
+import { createLocalStorageAdapter } from "./index";
 
 const getItem = vi.spyOn(localStorage, "getItem");
 const setItem = vi.spyOn(localStorage, "setItem");

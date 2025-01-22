@@ -1,9 +1,9 @@
 import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { Dictionary } from "@/create-store/types/dictionary";
 import type { Factory } from "@/create-store/types/factory";
+import type { Initializer } from "@/create-store/types/initializer";
 import type { Possible } from "@/create-store/types/possible";
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
-import type { Initializer } from "../initializer";
 
 export interface Store {
   <State extends Dictionary>(state: Factory<State>): CompositeStore<State>;

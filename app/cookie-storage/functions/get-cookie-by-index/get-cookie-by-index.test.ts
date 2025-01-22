@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { getCookieByIndex } from ".";
+import { getCookieByIndex } from "./index";
 
 describe("getCookieByIndex", () => {
   beforeEach(() => {

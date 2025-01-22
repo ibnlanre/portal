@@ -109,6 +109,11 @@ describe("createStore", () => {
 
       const updatedStreetValue = store.location.address.street.$get();
       expect(updatedStreetValue).toBe("456 Elm St");
+
+      const updatedStateValue = store.$get();
+      expect(updatedStateValue).toEqual({
+        location: { address: { street: "456 Elm St" } },
+      });
     });
 
     it("should set a nested state value with .$set using a function", () => {

@@ -2,7 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { createCompositeStore } from ".";
+import { createCompositeStore } from "./index";
 
 describe("createCompositeStore", () => {
   it("should create a composite store with initial state", () => {

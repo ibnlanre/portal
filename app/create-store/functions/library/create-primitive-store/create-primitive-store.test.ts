@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { createPrimitiveStore } from ".";
+import { createPrimitiveStore } from "./index";
 
 describe("createPrimitiveStore", () => {
   it("should create a store with initial state", () => {
