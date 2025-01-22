@@ -59,15 +59,11 @@ If you are working on a project that uses a [package manager][package-manager], 
   </summary>
   <br/>
 
-{% highlight bash %}
-{% raw %}
-
-```
+```bash
+# {% highlight bash %}
 npm i @ibnlanre/portal
+# {% endhighlight %}
 ```
-
-{% endraw %}
-{% endhighlight %}
 
 </details>
 
