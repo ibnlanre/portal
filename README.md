@@ -41,6 +41,7 @@ A [TypeScript][typescript] state management library for [React][react] applicati
     - [clear(): void](#clear-void)
     - [key(index: number): string](#keyindex-number-string)
     - [length: number](#length-number)
+- [Contributions](#contributions)
 - [License](#license)
 
 ## Installation
@@ -495,7 +496,7 @@ All functions in the `cookieStorage` module are static and do not require an [in
 
 ## Contributions
 
-All contributions are welcome and appreciated. Thank you for taking the time to contribute to `@ibnlanre/portal`! 💚
+All contributions are welcome and appreciated. Thank you! 💚
 
 ## License
 
