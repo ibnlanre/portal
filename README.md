@@ -57,10 +57,11 @@ If you are working on a project that uses a [package manager][package-manager], 
   <summary>
     <code>npm</code>
   </summary>
+  <br/>
 
-```bash
+{% highlight bash %}
 npm i @ibnlanre/portal
-```
+{% endhighlight %}
 
 </details>
 
@@ -68,10 +69,11 @@ npm i @ibnlanre/portal
   <summary>
     <code>pnpm</code>
   </summary>
+  <br/>
 
-```bash
-pnpm i @ibnlanre/portal
-```
+{% highlight bash %}
+pnpm add @ibnlanre/portal
+{% endhighlight %}
 
 </details>
 
@@ -79,10 +81,11 @@ pnpm i @ibnlanre/portal
   <summary>
     <code>yarn</code>
   </summary>
+  <br/>
 
-```shell
+{% highlight bash %}
 yarn add @ibnlanre/portal
-```
+{% endhighlight %}
 
 </details>
 
@@ -94,6 +97,7 @@ If you are working on a project that uses markup languages like [HTML][html] or 
   <summary>
     <code>skypack</code>
   </summary>
+  <br/>
 
 ```html
 <script type="module">
@@ -107,6 +111,7 @@ If you are working on a project that uses markup languages like [HTML][html] or 
   <summary>
     <code>unpkg</code>
   </summary>
+  <br/>
 
 ```html
 <script src="https://unpkg.com/@ibnlanre/portal"></script>
@@ -118,6 +123,7 @@ If you are working on a project that uses markup languages like [HTML][html] or 
   <summary>
     <code>jsDelivr</code>
   </summary>
+  <br/>
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@ibnlanre/portal"></script>
