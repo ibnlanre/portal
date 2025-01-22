@@ -60,7 +60,13 @@ If you are working on a project that uses a [package manager][package-manager], 
   <br/>
 
 {% highlight bash %}
+{% raw %}
+
+```
 npm i @ibnlanre/portal
+```
+
+{% endraw %}
 {% endhighlight %}
 
 </details>
