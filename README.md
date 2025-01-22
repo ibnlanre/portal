@@ -32,6 +32,7 @@ A [TypeScript][typescript] state management library for [React][react] applicati
     - [Signed Cookies](#signed-cookies)
     - [Updating Cookie Options](#updating-cookie-options)
 - [Cookie Storage](#cookie-storage)
+  - [Motivation](#motivation)
   - [Utility Functions](#utility-functions)
     - [sign(value: string, secret: string): string](#signvalue-string-secret-string-string)
     - [unsign(signedValue: string, secret: string): string](#unsignsignedvalue-string-secret-string-string)
@@ -399,6 +400,8 @@ store.$sub((value) => {
 ## Cookie Storage
 
 One key module provided by the library is the `cookieStorage` module. This module provides a set of functions to manage [cookies][cookies] in a [web application][web-application]. Just like [localStorage][local-storage] and [sessionStorage][session-storage], [cookies][cookies] are a way to store data in the [browser][web-browser].
+
+### Motivation
 
 [Cookies][cookies] are useful for storing small amounts of data that need to be sent with each request to the server. However, most modern [web browsers][web-browser] do not have a means to manage [cookies][cookies], and this is where the `cookieStorage` module comes in. Accessing the `cookieStorage` module is similar to accessing the other modules provided by the library.
 
