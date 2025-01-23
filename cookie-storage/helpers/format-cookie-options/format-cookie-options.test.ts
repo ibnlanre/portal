@@ -1,6 +1,6 @@
 import type { CookieOptions } from "@/cookie-storage/types/cookie-options";
 import { describe, expect, it, vi } from "vitest";
-import { formatCookieOptions } from "./format-cookie-options";
+import { formatCookieOptions } from "./index";
 
 describe("formatCookieOptions", () => {
   it("should return default path when no options are provided", () => {

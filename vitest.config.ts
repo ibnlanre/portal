@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import { defineConfig } from "vitest/config";
 
 import react from "@vitejs/plugin-react";
-const app = resolve(__dirname, "./app");
+const app = resolve(__dirname, "./");
 
 /**
  * @type {import("vitest/config").Config}

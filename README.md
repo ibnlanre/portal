@@ -179,7 +179,9 @@ console.log(street); // "123 Main St"
 
 #### Updating Nested Stores
 
-Updating a nested store works similarly to updating a regular store. You can use the `$set` method to change the value of a nested store. Additionally, you can pass a [callback function][callback] to the `$set` method to modify the value based on the previous state. Since a nested store shares the same state across all levels of the object hierarchy, updating a nested store will also update the parent store. This feature is beneficial when you need to manage state at various levels of the object hierarchy.
+Updating a nested store works similarly to updating a regular store. You can use the `$set` method to change the value of a nested store. Additionally, you can pass a [callback function][callback] to the `$set` method to modify the value based on the previous state.
+
+**Note** that since a nested store shares the same state across all levels of the object hierarchy, updating a nested store will also update the parent store. This behaviour is intentional, and allows you to work with state at any level of the object hierarchy, as if it were a regular store.
 
 ```typescript
 const { street } = store.location.address;
@@ -208,7 +210,9 @@ const state = store.$get(); // { apartment: "123 Main St" }
 
 ### React Integration
 
-`@ibnlanre/portal` has first-class support for [React][react] applications. When a store is created, it creates a [React hook][react-hook], `$use`, that allows you to manage the store's state within functional components. Just like the `useState` hook in [React][react], the `$use` hook returns an array with two elements: the state value and a dispatch function to update the state. The benefit of using the `$use` hook over `$get` and `$set` is that it automatically subscribes to state changes and updates the component when the state changes.
+`@ibnlanre/portal` has first-class support for [React][react] applications. When a store is created, it creates a [React hook][react-hook], `$use`, that allows you to manage the store's state within functional components. Just like the `useState` hook in [React][react], the `$use` hook returns an array with two elements: the **state value** and a **dispatch function** to update the state.
+
+The benefit of using the `$use` hook over `$get` and `$set` is that it automatically subscribes to state changes and updates the component when the state changes. This allows you to manage the state within the component, without having to manually subscribe to state changes. Additionally, the `$use` hook automatically unsubscribes from the store when the component is unmounted.
 
 ```typescript
 import type { ChangeEvent } from "react";
@@ -320,7 +324,9 @@ const [getCookieStorageState, setCookieStorageState] =
 
 #### Signed Cookies
 
-For enhanced security, you can provide a `secret` parameter to sign the cookie value. This adds an extra layer of security to the cookie value, and ensures that the cookie value has not been tampered with. **Note** that you also have to provide the `signed` option to explicitly indicate that the cookie value is signed, or should be signed.
+To enhance security, you can provide a `secret` parameter to [sign][signing] the cookie value. This adds an extra layer of protection, ensuring the cookie value has not been tampered with. To use the `secret` value, set `signed` to `true`.
+
+**Note** that an error will be thrown if `signed` is set to `true` and the `secret` is not provided. To prevent this, ensure that the `secret` is provided or set `signed` to `false` to disable [signing][signing].
 
 ```typescript
 import { createCookieStorageAdapter } from "@ibnlanre/portal";
@@ -335,7 +341,7 @@ const [getCookieStorageState, setCookieStorageState] =
   createCookieStorageAdapter({
     key: "storage",
     sameSite: "strict",
-    signed: true,
+    signed: !!secret,
     secret,
   });
 ```
@@ -489,6 +495,7 @@ This library is [licensed][licensed] under the [BSD-3-Clause][bsd-3-clause]. See
 [react-hook]: https://react.dev/reference/react/hooks
 [session-storage]: https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage
 [side-effects]: https://monsterlessons-academy.com/posts/what-are-side-effects-in-javascript-what-are-pure-functions
+[signing]: https://bloggle.coggle.it/post/190706036692/what-weve-learned-from-moving-to-signed-cookies
 [typeScript]: https://www.typescriptlang.org
 [web-application]: https://aws.amazon.com/what-is/web-application/
 [web-browser]: https://www.ramotion.com/blog/what-is-web-browser/

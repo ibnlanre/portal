@@ -9,7 +9,7 @@ export function getCookieValueByRegex(name: string): string | null {
     if (typeof document === "undefined") return null;
 
     const escapedName = name.replace(/([\W])/g, "\\$1"); // Escape special characters
-    const pattern = new RegExp(`(?<=;?\s*${escapedName}\s*=\s*)([^\s;]+)`);
+    const pattern = new RegExp(`(?:^|;\\s*)${escapedName}\\s*=\\s*([^;]*)`);
     const value = document.cookie.match(pattern);
 
     if (Array.isArray(value)) return value.at(1) ?? null;
