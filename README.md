@@ -162,8 +162,8 @@ const store = createStore({
   },
 });
 
-const street = store.location.address.street.$get();
-console.log(street); // "123 Main St"
+const city = store.location.address.city.$get();
+console.log(city); // "Springfield"
 ```
 
 #### Breaking Off Stores
@@ -340,7 +340,7 @@ if (!secret) {
 const [getCookieStorageState, setCookieStorageState] =
   createCookieStorageAdapter({
     key: "storage",
-    sameSite: "strict",
+    sameSite: "Strict",
     signed: !!secret,
     secret,
   });
