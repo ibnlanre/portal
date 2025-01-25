@@ -110,13 +110,6 @@ export function createCompositeStore<State extends Dictionary>(
     return resolvePath(state, path);
   }
 
-  function resolvePathValue<Path extends Paths<State> = never>(
-    path?: Path
-  ): StatePath<State, Path> {
-    if (!path) return state as any;
-    return resolvePath(state, path);
-  }
-
   function use<
     Value extends StatePath<State, Path>,
     Path extends Paths<State> = never,
