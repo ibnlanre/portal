@@ -20,7 +20,7 @@ A [TypeScript][typescript] state management library for [React][react] applicati
     - [`$sub` Method](#sub-method)
   - [Chained Store](#chained-store)
     - [Breaking Off Stores](#breaking-off-stores)
-    - [Updating Nested Stores](#updating-nested-stores)
+    - [`$tap` Method](#tap-method)
   - [Asynchronous State](#asynchronous-state)
   - [React Integration](#react-integration)
 - [Persistence](#persistence)
@@ -118,13 +118,27 @@ const value = store.$get();
 console.log(value); // "initial value"
 ```
 
+In scenarios where you need to modify the state before accessing it, you can pass a [callback][callback] function to the `$get` method. This function receives the current state and returns the modified state. This allows you to access the state in its modified form without actually updating the state.
+
+```typescript
+const modifiedValue = store.$get((value) => `${value} modified`);
+console.log(modifiedValue); // "initial value modified"
+```
+
 #### `$set` Method
 
-The `$set` [method][method] is used to update the state. It takes a new value as an argument and updates the state with that value. It can also take a [callback function][callback] that is called with the previous value. This allows you to update the state based on the previous value. **Note** that the `$set` [method][method] updates the state immediately.
+The `$set` [method][method] is used to update the state. It takes a new value as an argument and updates the state with that value.
 
 ```typescript
 store.$set("new value");
 const newValue = store.$get(); // "new value"
+```
+
+The `$set` [method][method] can also take a [callback function][callback] as an argument. This function receives the previous state and returns the new state. This allows you to update the state based on the previous state. **Note** that the `$set` [method][method] updates the state immediately.
+
+```typescript
+store.$set((prev) => `${prev} updated`);
+const updatedValue = store.$get(); // "new value updated"
 ```
 
 #### `$sub` Method
@@ -177,17 +191,28 @@ const street = address.street.$get();
 console.log(street); // "123 Main St"
 ```
 
-#### Updating Nested Stores
-
-Updating a nested store works similarly to updating a regular store. You can use the `$set` method to change the value of a nested store. Additionally, you can pass a [callback function][callback] to the `$set` method to modify the value based on the previous state.
-
-**Note** that since a nested store shares the same state across all levels of the object hierarchy, updating a nested store will also update the parent store. This behaviour is intentional, and allows you to work with state at any level of the object hierarchy, as if it were a regular store.
+Updating a nested store is similar to updating a regular store. You can use the `$set` method to change the value of a nested store. **Note** that since a nested store shares the same state across all levels of the object hierarchy, updating a nested store will also update the parent store. This behavior is intentional and allows you to work with state at any level of the object hierarchy as if it were a regular store.
 
 ```typescript
 const { street } = store.location.address;
 
 street.$set("456 Elm St");
 street.$set((prev) => `${prev} Apt 2`);
+```
+
+#### `$tap` Method
+
+To simplify access to nested stores, you can use the `$tap` method. This method allows you to access nested stores using a dot-separated string, rather than chaining multiple stores together. The dot notation is particularly useful for working with deeply nested objects, as it streamlines the process of accessing nested stores and leverages [TypeScript][typeScript]'s intellisense for path suggestions.
+
+```typescript
+const street = store.$tap("location.address.street");
+street.$get(); // 456 Elm St
+```
+
+Calling `$tap` returns a store that represents the nested store. This store has the same [methods][method] as a regular store, and can be used to access and update the nested state. Additionally, the store returned by `$tap` is a reference to the nested store, and updates to the nested store will also update the parent store. It also means you can write cool stuff like this:
+
+```typescript
+store.$tap("location.address.street").$set("789 Oak St");
 ```
 
 ### Asynchronous State
