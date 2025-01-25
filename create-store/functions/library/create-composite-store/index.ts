@@ -94,61 +94,42 @@ export function createCompositeStore<State extends Dictionary>(
     return createSetStatePathAction(path);
   }
 
-  function get(): State;
+  function resolvePathValue(): State;
 
-  function get<Path extends Paths<State> = never>(
+  function resolvePathValue<Path extends Paths<State> = never>(
     path?: Path
   ): ResolvePath<State, Path>;
 
-  function get<
-    Path extends Paths<State>,
-    Value extends ResolvePath<State, Path>
-  >(path: Path): Value;
+  function resolvePathValue<Path extends Paths<State>>(
+    path: Path
+  ): ResolvePath<State, Path>;
 
-  function get<Path extends Paths<State>>(path?: Path) {
+  function resolvePathValue<Path extends Paths<State>>(path?: Path) {
     if (!path) return state;
     return resolvePath(state, path);
   }
 
-  function use<
-    Value extends StatePath<State, Path>,
-    Path extends Paths<State> = never,
-    Result = Value
-  >(
-    path?: Path | undefined,
-    select?: Selector<State, Result>
-  ): StateManager<State, Result>;
-
-  function use<
-    Value extends StatePath<State, Path>,
+  function get<
     Path extends Paths<State>,
-    Result = Value
-  >(path: Path, select?: Selector<Value, Result>): StateManager<Value, Result>;
-
-  function use<
     Value extends StatePath<State, Path>,
-    Path extends Paths<State>,
     Result = Value
   >(path?: Path, select?: Selector<Value, Result>) {
-    const dependencies = splitPath(path);
-    const [value, setValue] = useState(() => {
-      if (!path) return state as any;
-      return resolvePath(state, path);
-    });
-
-    useEffect(() => sub(setValue, path), dependencies);
-    return [resolveSelectorValue(value, select), set(path)];
+    const value = resolvePathValue(path);
+    return resolveSelectorValue(value, select);
   }
 
-  function sub<Path extends Paths<State> = never>(
-    subscriber: Subscriber<State>,
-    path?: Path
-  ): () => void;
-
-  function sub<
+  function use<
+    Value extends StatePath<State, Path>,
     Path extends Paths<State>,
-    Value extends ResolvePath<State, Path>
-  >(subscriber: (value: Value) => void, path: Path): () => void;
+    Result = Value
+  >(
+    path?: Path,
+    select?: Selector<Value, Result>
+  ): StateManager<State, Result> {
+    const [value, setValue] = useState(() => resolvePathValue(path));
+    useEffect(() => sub(setValue, path), [path]);
+    return [resolveSelectorValue(value, select), set(path)];
+  }
 
   function sub<
     Path extends Paths<State>,
@@ -157,17 +138,21 @@ export function createCompositeStore<State extends Dictionary>(
     const subscribers = getSubscribersByPath(path);
 
     subscribers.add(subscriber);
-    subscriber(get(path));
+    subscriber(resolvePathValue(path));
 
     return () => {
       subscribers.delete(subscriber);
     };
   }
 
-  function buildStore<Path extends Paths<State>>(path?: Path) {
+  function buildStore<
+    Path extends Paths<State>,
+    Value extends StatePath<State, Path>,
+    Result = Value
+  >(path?: Path) {
     return {
-      $get(select?: Selector<State, ResolvePath<State, Path>>) {
-        return resolveSelectorValue(get(path), select);
+      $get(select?: Selector<Value, Result>) {
+        return get(path, select);
       },
       $set(value: StatePath<State, Path>) {
         return set(path)(value);
