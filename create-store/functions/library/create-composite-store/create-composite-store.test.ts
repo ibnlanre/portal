@@ -18,6 +18,9 @@ describe("createCompositeStore", () => {
 
       const stateValue = store.$get();
       expect(stateValue).toEqual(initialState);
+
+      const uppercasedValue = store.key.$get((key) => key.toUpperCase());
+      expect(uppercasedValue).toBe("VALUE");
     });
 
     it("should get a nested state value with .$get", () => {
@@ -26,6 +29,9 @@ describe("createCompositeStore", () => {
 
       const streetValue = store.location.address.street.$get();
       expect(streetValue).toBe("123 Main St");
+
+      const addressValue = store.$tap("location.address").$get();
+      expect(addressValue).toEqual({ street: "123 Main St" });
     });
   });
 
@@ -44,8 +50,9 @@ describe("createCompositeStore", () => {
       const initialState = { location: { address: { street: "123 Main St" } } };
       const store = createCompositeStore(initialState);
 
-      store.location.address.street.$set("456 Elm St");
+      // Dot notation
 
+      store.location.address.street.$set("456 Elm St");
       expect(store.$get()).toEqual({
         location: { address: { street: "456 Elm St" } },
       });
@@ -54,6 +61,20 @@ describe("createCompositeStore", () => {
       });
       expect(store.location.address.$get()).toEqual({ street: "456 Elm St" });
       expect(store.location.address.street.$get()).toBe("456 Elm St");
+
+      // Dot path notation
+
+      store.$tap("location.address").$set({ street: "789 Oak St" });
+      expect(store.$get()).toEqual({
+        location: { address: { street: "789 Oak St" } },
+      });
+      expect(store.$tap("location").$get()).toEqual({
+        address: { street: "789 Oak St" },
+      });
+      expect(store.$tap("location.address").$get()).toEqual({
+        street: "789 Oak St",
+      });
+      expect(store.$tap("location.address.street").$get()).toBe("789 Oak St");
     });
 
     it("should set a nested state value with .$set using a function", () => {
@@ -64,6 +85,9 @@ describe("createCompositeStore", () => {
 
       const updatedStreetValue = store.location.address.street.$get();
       expect(updatedStreetValue).toBe("123 Main St Suite 100");
+
+      const updatedAddressValue = store.$tap("location.address").$get();
+      expect(updatedAddressValue).toEqual({ street: "123 Main St Suite 100" });
     });
   });
 
@@ -86,7 +110,7 @@ describe("createCompositeStore", () => {
       const store = createCompositeStore(initialState);
       expect(store).toBeDefined();
 
-      const { result } = renderHook(store.$use);
+      const { result } = renderHook(() => store.$use());
       const [stateValue] = result.current;
 
       expect(stateValue).toEqual(initialState);
@@ -98,7 +122,7 @@ describe("createCompositeStore", () => {
       const initialState = { key: "value" };
       const store = createCompositeStore(initialState);
 
-      const { result } = renderHook(store.$use);
+      const { result } = renderHook(() => store.$use());
       const [, setStateValue] = result.current;
 
       act(() => {

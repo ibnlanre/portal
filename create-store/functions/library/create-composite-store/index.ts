@@ -2,6 +2,7 @@ import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { Dictionary } from "@/create-store/types/dictionary";
 import type { Paths } from "@/create-store/types/paths";
 import type { ResolvePath } from "@/create-store/types/resolve-path";
+import type { Selector } from "@/create-store/types/selector";
 import type { StateManager } from "@/create-store/types/state-manager";
 import type { StatePath } from "@/create-store/types/state-path";
 import type { Subscriber } from "@/create-store/types/subscriber";
@@ -13,6 +14,7 @@ import { createSnapshot } from "@/create-store/functions/helpers/create-snapshot
 import { shallowMerge } from "@/create-store/functions/helpers/shallow-merge";
 import { splitPath } from "@/create-store/functions/helpers/split-path";
 import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
+import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 import { useEffect, useState } from "react";
 
 export function createCompositeStore<State extends Dictionary>(
@@ -39,8 +41,8 @@ export function createCompositeStore<State extends Dictionary>(
 
     if (!path) notifySubscribers(value);
     else {
-      const value = resolvePath(state, path);
-      notifySubscribers(value, path);
+      const resolvedValue = resolvePath(state, path);
+      notifySubscribers(resolvedValue, path);
     }
   }
 
@@ -108,24 +110,41 @@ export function createCompositeStore<State extends Dictionary>(
     return resolvePath(state, path);
   }
 
-  function use<Path extends Paths<State> = never>(
-    path?: Path | undefined
-  ): StateManager<State>;
+  function resolvePathValue<Path extends Paths<State> = never>(
+    path?: Path
+  ): StatePath<State, Path> {
+    if (!path) return state as any;
+    return resolvePath(state, path);
+  }
 
   function use<
-    Path extends Paths<State>,
-    Value extends ResolvePath<State, Path>
-  >(path: Path): StateManager<Value>;
+    Value extends StatePath<State, Path>,
+    Path extends Paths<State> = never,
+    Result = Value
+  >(
+    path?: Path | undefined,
+    select?: Selector<State, Result>
+  ): StateManager<State, Result>;
 
-  function use<Path extends Paths<State>>(path?: Path) {
-    const dependecies = splitPath(path);
-    const [value, setValue] = useState<StatePath<State, Path>>(() => {
-      if (!path) return state;
+  function use<
+    Value extends StatePath<State, Path>,
+    Path extends Paths<State>,
+    Result = Value
+  >(path: Path, select?: Selector<Value, Result>): StateManager<Value, Result>;
+
+  function use<
+    Value extends StatePath<State, Path>,
+    Path extends Paths<State>,
+    Result = Value
+  >(path?: Path, select?: Selector<Value, Result>) {
+    const dependencies = splitPath(path);
+    const [value, setValue] = useState(() => {
+      if (!path) return state as any;
       return resolvePath(state, path);
     });
 
-    useEffect(() => sub(setValue, path), dependecies);
-    return [value, set(path)];
+    useEffect(() => sub(setValue, path), dependencies);
+    return [resolveSelectorValue(value, select), set(path)];
   }
 
   function sub<Path extends Paths<State> = never>(
@@ -154,8 +173,8 @@ export function createCompositeStore<State extends Dictionary>(
 
   function buildStore<Path extends Paths<State>>(path?: Path) {
     return {
-      $get() {
-        return get(path);
+      $get(select?: Selector<State, ResolvePath<State, Path>>) {
+        return resolveSelectorValue(get(path), select);
       },
       $set(value: StatePath<State, Path>) {
         return set(path)(value);
@@ -163,8 +182,11 @@ export function createCompositeStore<State extends Dictionary>(
       $sub(subscriber: Subscriber<State>) {
         return sub(subscriber, path);
       },
-      $use() {
-        return use(path);
+      $use(select?: Selector<State, ResolvePath<State, Path>>) {
+        return use(path, select);
+      },
+      $tap(path: Path) {
+        return buildStore(path);
       },
     };
   }
@@ -195,5 +217,5 @@ export function createCompositeStore<State extends Dictionary>(
     return <any>shallowMerge(clone, store);
   }
 
-  return traverse(state);
+  return traverse(initialState);
 }

@@ -20,6 +20,9 @@ describe("createPrimitiveStore", () => {
 
     const updatedStateValue = store.$get();
     expect(updatedStateValue).toBe("new value");
+
+    const upperCaseValue = store.$get((value) => value.toUpperCase());
+    expect(upperCaseValue).toBe("NEW VALUE");
   });
 
   it("should subscribe to state changes", () => {

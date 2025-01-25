@@ -1,9 +1,11 @@
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
+import type { Selector } from "@/create-store/types/selector";
 import type { StateManager } from "@/create-store/types/state-manager";
 import type { Subscriber } from "@/create-store/types/subscriber";
 import type { SetStateAction } from "react";
 
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
+import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 import { useEffect, useState } from "react";
 
 export function createPrimitiveStore<State>(
@@ -21,8 +23,8 @@ export function createPrimitiveStore<State>(
     subscribers.forEach((subscriber) => subscriber(value));
   }
 
-  function $get() {
-    return state;
+  function $get<Value = State>(select?: Selector<State, Value>) {
+    return resolveSelectorValue(state, select);
   }
 
   function $set(value: SetStateAction<State>) {
@@ -30,10 +32,12 @@ export function createPrimitiveStore<State>(
     else setState(value);
   }
 
-  function $use(): StateManager<State> {
+  function $use<Value = State>(
+    select?: Selector<State, Value>
+  ): StateManager<State, Value> {
     const [value, setValue] = useState(state);
     useEffect(() => $sub(setValue), []);
-    return [value, $set];
+    return [resolveSelectorValue(value, select), $set];
   }
 
   function $sub(subscriber: Subscriber<State>, notify = true) {
