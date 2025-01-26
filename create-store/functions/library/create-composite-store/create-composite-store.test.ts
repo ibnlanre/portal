@@ -1,7 +1,6 @@
 import { renderHook } from "@testing-library/react";
-import { act } from "react";
+import { act, useState } from "react";
 import { describe, expect, it, vi } from "vitest";
-
 import { createCompositeStore } from "./index";
 
 describe("createCompositeStore", () => {
@@ -104,20 +103,30 @@ describe("createCompositeStore", () => {
       expect(subscriber).toHaveBeenCalledWith({ key: "new value" });
     });
 
+    it("should unsubscribe from state changes", () => {
+      const initialState = { key: "value" };
+      const store = createCompositeStore(initialState);
+
+      const subscriber = vi.fn();
+      const unsubscribe = store.$sub(subscriber, false);
+      unsubscribe();
+
+      store.$set({ key: "new value" });
+      expect(subscriber).not.toHaveBeenCalled();
+    });
+  });
+
+  describe(".$use", () => {
     it("should use the state value in a React component", () => {
       const initialState = { key: "value" };
-
       const store = createCompositeStore(initialState);
-      expect(store).toBeDefined();
 
       const { result } = renderHook(() => store.$use());
       const [stateValue] = result.current;
 
       expect(stateValue).toEqual(initialState);
     });
-  });
 
-  describe(".$use", () => {
     it("should update the state value in a React component", () => {
       const initialState = { key: "value" };
       const store = createCompositeStore(initialState);
@@ -159,6 +168,36 @@ describe("createCompositeStore", () => {
 
       const [updatedStreetValue] = result.current;
       expect(updatedStreetValue).toBe("456 Elm St");
+    });
+
+    it("should use a state value with a selector and dependency array", () => {
+      const initialState = { key: "value" };
+      const store = createCompositeStore(initialState);
+
+      const dependencyHook = renderHook(() => useState("previous"));
+      const [, setDependencyValue] = dependencyHook.result.current;
+
+      const storeHook = renderHook(() => {
+        const [dependencyValue] = dependencyHook.result.current;
+        return store.$use(
+          (state) => `${dependencyValue} ${state.key}`,
+          [dependencyValue]
+        );
+      });
+
+      const [stateValue] = storeHook.result.current;
+      expect(stateValue).toBe("previous value");
+
+      act(() => {
+        setDependencyValue("updated");
+        storeHook.rerender();
+      });
+
+      const [newDependencyValue] = dependencyHook.result.current;
+      expect(newDependencyValue).toBe("updated");
+
+      const [newStateValue] = storeHook.result.current;
+      expect(newStateValue).toBe("updated value");
     });
   });
 });

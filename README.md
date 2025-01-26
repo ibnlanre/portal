@@ -15,14 +15,19 @@ A [TypeScript][typescript] state management library for [React][react] applicati
     - [`jsDelivr`](#jsdelivr)
 - [Usage](#usage)
   - [Managing State](#managing-state)
-    - [`$get` Method](#get-method)
-    - [`$set` Method](#set-method)
-    - [`$sub` Method](#sub-method)
-  - [Chained Store](#chained-store)
+  - [Accessing State with `$get`](#accessing-state-with-get)
+  - [Updating State with `$set`](#updating-state-with-set)
+  - [Subscribing to State Changes with `$sub`](#subscribing-to-state-changes-with-sub)
+    - [Unsubscribing from State Changes](#unsubscribing-from-state-changes)
+    - [Preventing Immediate Callback Execution](#preventing-immediate-callback-execution)
+  - [Nested Stores](#nested-stores)
     - [Breaking Off Stores](#breaking-off-stores)
-    - [`$tap` Method](#tap-method)
+    - [Updating Nested Stores](#updating-nested-stores)
+    - [Accessing Nested Stores with `$tap`](#accessing-nested-stores-with-tap)
   - [Asynchronous State](#asynchronous-state)
   - [React Integration](#react-integration)
+    - [Modifying State with a Callback](#modifying-state-with-a-callback)
+    - [Using Dependencies with the `$use` Hook](#using-dependencies-with-the-use-hook)
 - [Persistence](#persistence)
   - [Web Storage Adapter](#web-storage-adapter)
     - [Local Storage Adapter](#local-storage-adapter)
@@ -97,11 +102,13 @@ If you are working on a project that uses markup languages like [HTML][html] or 
 
 ## Usage
 
-`@ibnlanre/portal` helps you manage state using a simple and intuitive [API][api]. Its aim is to provide a flexible and scalable solution for managing state in your [React][react] applications. The library is designed to be easy to use and integrate with existing codebases. Managing application state should not be a complex task, and `@ibnlanre/portal` aims to simplify the process.
+`@ibnlanre/portal` simplifies state management with its intuitive and developer-friendly [API][api]. Built with scalability and flexibility in mind, it integrates seamlessly with [React][react] applications while remaining lightweight and easy to use. Managing application state should not be a complex task, and `@ibnlanre/portal` is designed to make the process effortless, even in existing codebases.
 
 ### Managing State
 
-State management using this library is as simple as calling the `createStore` function with an initial value. The function returns an object with [methods][method] to access and update the state. These [methods][method] are `$get`, `$set`, and `$use`. The `$get` [method][method] returns the current state, the `$set` [method][method] updates the state, and the `$use` [method][method] is a [React hook][react-hook] that allows you to manage the state within functional components.
+State management with `@ibnlanre/portal` begins with the `createStore` function. This function initializes a store with an initial value and returns an object containing [methods][method] to interact with the state: `$get`, `$set`, `$use`, and `$sub`.
+
+Here's an example of creating a store:
 
 ```typescript
 import { createStore } from "@ibnlanre/portal";
@@ -109,61 +116,81 @@ import { createStore } from "@ibnlanre/portal";
 const store = createStore("initial value");
 ```
 
-#### `$get` Method
+Each [method][method] serves a distinct purpose:
 
-The `$get` [method][method] is a synchronous operation that returns the current state. It is useful when you want to access the state without subscribing to state changes.
+- `$get`: Retrieve the current state.
+- `$set`: Update the state with a new value.
+- `$use`: A [React][react] [hook][hook] for managing state within functional components.
+- `$sub`: Subscribe to state changes to react to updates.
+
+### Accessing State with $get
+
+The `$get` [method][method] provides a straightforward way to access the current state synchronously. It’s ideal when you need to read the state without setting up a subscription.
 
 ```typescript
 const value = store.$get();
 console.log(value); // "initial value"
 ```
 
-In scenarios where you need to modify the state before accessing it, you can pass a [callback][callback] function to the `$get` method. This function receives the current state and returns the modified state. This allows you to access the state in its modified form without actually updating the state.
+You can also pass a [callback function][callback] to $get to modify the state before accessing it. The [callback][callback] receives the current state and returns the modified value. This lets you work with a transformed state without altering the actual store.
 
 ```typescript
 const modifiedValue = store.$get((value) => `${value} modified`);
 console.log(modifiedValue); // "initial value modified"
 ```
 
-#### `$set` Method
+### Updating State with `$set`
 
-The `$set` [method][method] is used to update the state. It takes a new value as an argument and updates the state with that value.
+The `$set` [method][method] updates the state with a new value. Simply pass the desired value to this method, and it immediately replaces the current state.
 
 ```typescript
 store.$set("new value");
 const newValue = store.$get(); // "new value"
 ```
 
-The `$set` [method][method] can also take a [callback function][callback] as an argument. This function receives the previous state and returns the new state. This allows you to update the state based on the previous state. **Note** that the `$set` [method][method] updates the state immediately.
+Alternatively, `$set` can accept a [callback function][callback] that takes the previous state as an argument and returns the updated state. This approach is useful for making updates that depend on the previous state.
 
 ```typescript
 store.$set((prev) => `${prev} updated`);
 const updatedValue = store.$get(); // "new value updated"
 ```
 
-#### `$sub` Method
+### Subscribing to State Changes with `$sub`
 
-Asides the aforementioned [methods][method], the store object also has a `$sub` [method][method] to subscribe to state changes. This [method][method] takes a [callback function][callback] that is called whenever the state changes. This allows you to react to state changes and perform [side effects][side-effects] based on the new state.
+In addition to accessing and updating state, `@ibnlanre/portal` provides the `$sub` [method][method] to subscribe to state changes. This allows you to react to updates and perform [side effects][side-effects] when the state changes.
 
 ```typescript
 store.$sub((value) => console.log(value));
 ```
 
-The return value of the `$sub` [method][method] is a function that can be called to unsubscribe from the store. This is useful when you want to stop listening to state changes, such as when a component is unmounted.
+#### Unsubscribing from State Changes
 
-**Note** that the [callback function][callback] is called immediately after subscribing to the store. To opt out of this behavior, you can pass `false` as the second argument to the `$sub` method. This prevents the [callback function][callback] from being called immediately.
+The `$sub` [method][method] returns an `unsubscribe` function that can be called to stop listening for updates. This is particularly useful when a component unmounts or when you no longer need the subscription.
 
 ```typescript
 const unsubscribe = store.$sub((value) => {
   console.log(value);
-}, false);
+});
 
+// Stop listening to state changes
 unsubscribe();
 ```
 
-### Chained Store
+#### Preventing Immediate Callback Execution
 
-Asides regular stores, you can also create chained stores by passing an object to the `createStore` function. The object can contain nested objects, arrays, and primitive values. Each store in the chain has access to its own value, with [methods][method] to update and manage that value. This allows you to work with state at any level of the object hierarchy, with minimal effort.
+By default, the `$sub` [callback][callback] is invoked immediately after subscribing. To disable this behavior, pass `false` as the second argument. This ensures the callback is only executed when the state changes.
+
+```typescript
+store.$sub((value) => {
+  console.log(value);
+}, false);
+```
+
+### Nested Stores
+
+`@ibnlanre/portal` supports the creation of **nested stores**, allowing you to manage deeply structured state with ease. To create a nested store, pass an object containing nested objects, arrays, or primitive values to the `createStore` function. Each node in the nested structure becomes its own store, with access to [methods][method] for updating and managing its state.
+
+This design enables fine-grained control over state at any level of the object hierarchy.
 
 ```typescript
 const store = createStore({
@@ -182,7 +209,7 @@ console.log(city); // "Springfield"
 
 #### Breaking Off Stores
 
-Remember that each point in an object chain is a store, and can be broken off into its own store at any point in the chain. This is useful when you want to work with a nested state independently of the parent store. For example, you can break off the `address` store from the `location` store and work with it independently.
+Remember that each point in an object chain is a store. This means that each member of the chain has access to its own value and can be broken off into its own store at any point in time. This is useful when you want to work with a nested state independently of the parent store. For example, you can break off the `address` store from the `location` store and work with it independently:
 
 ```typescript
 const { address } = store.location;
@@ -191,7 +218,11 @@ const street = address.street.$get();
 console.log(street); // "123 Main St"
 ```
 
-Updating a nested store is similar to updating a regular store. You can use the `$set` method to change the value of a nested store. **Note** that since a nested store shares the same state across all levels of the object hierarchy, updating a nested store will also update the parent store. This behavior is intentional and allows you to work with state at any level of the object hierarchy as if it were a regular store.
+#### Updating Nested Stores
+
+Updating the state of a nested store works the same way as updating a regular store. You can use the $set method to change the value of a nested store. Since all levels in the hierarchy share the same underlying state, updates made to a nested store will propagate to the parent store.
+
+This behavior is by design, allowing you to work with any part of the state seamlessly.
 
 ```typescript
 const { street } = store.location.address;
@@ -200,26 +231,30 @@ street.$set("456 Elm St");
 street.$set((prev) => `${prev} Apt 2`);
 ```
 
-#### `$tap` Method
+#### Accessing Nested Stores with `$tap`
 
-To simplify access to nested stores, you can use the `$tap` method. This method allows you to access nested stores using a dot-separated string, rather than chaining multiple stores together. The dot notation is particularly useful for working with deeply nested objects, as it streamlines the process of accessing nested stores and leverages [TypeScript][typeScript]'s intellisense for path suggestions.
+For convenience, you can use the `$tap` method to access deeply nested stores directly using a dot-separated string. This method streamlines access to nested stores, making it easy to work with complex state structures while leveraging [TypeScript][typeScript]'s IntelliSense for path suggestions.
 
 ```typescript
 const street = store.$tap("location.address.street");
 street.$get(); // 456 Elm St
 ```
 
-Calling `$tap` returns a store that represents the nested store. This store has the same [methods][method] as a regular store, and can be used to access and update the nested state. Additionally, the store returned by `$tap` is a reference to the nested store, and updates to the nested store will also update the parent store. It also means you can write cool stuff like this:
+The $tap method returns a reference to the nested store, which means you can access and update the nested state directly:
 
 ```typescript
 store.$tap("location.address.street").$set("789 Oak St");
 ```
 
+This approach makes working with deeply nested state intuitive and efficient.
+
 ### Asynchronous State
 
-The `createStore` function can also accept an [asynchronous][asynchronous] function that returns a [promise][promise]. This is useful for fetching data asynchronously. The function must return a [promise][promise] that resolves to the initial state.
+The `createStore` function also supports [asynchronous][asynchronous] state initialization. You can pass an async function that returns a [Promise][promise] resolving to the initial state. This is particularly useful for scenarios where the initial state needs to be fetched from an external API.
 
-**Note** that the store will be empty until the [promise][promise] resolves. Additionally, even if the [promise][promise] returns an object, it would be treated as a primitive value. This is because chained stores are created from objects passed to the `createStore` function, during [initialization][initialization].
+**Note** that the store will remain empty until the [Promise][promise] resolves. Also, if the resolved value is an object, it will be treated as a primitive value, not as a nested store. This is because nested stores are only created during [initialization][initialization] from objects directly passed to createStore.
+
+Here’s an example:
 
 ```typescript
 type State = { apartment: string };
@@ -229,15 +264,20 @@ async function fetchData(): Promise<State> {
   return response.json();
 }
 
+// Create a store with an asynchronous initial state
 const store = await createStore(fetchData);
-const state = store.$get(); // { apartment: "123 Main St" }
+
+const state = store.$get();
+console.log(state); // { apartment: "123 Main St" }
 ```
+
+By combining nested stores and asynchronous initialization, @ibnlanre/portal enables you to manage state efficiently in even the most dynamic applications.
 
 ### React Integration
 
-`@ibnlanre/portal` has first-class support for [React][react] applications. When a store is created, it creates a [React hook][react-hook], `$use`, that allows you to manage the store's state within functional components. Just like the `useState` hook in [React][react], the `$use` hook returns an array with two elements: the **state value** and a **dispatch function** to update the state.
+`@ibnlanre/portal` offers first-class support for [React][react] applications, making state management seamless within functional components. When you create a store, it automatically provides a [React][react] [hook][hook] called `$use`. This [hook][hook] is similar to the [useState][use-state] [hook][hook] in [React][react], returning an array with two elements: the **current state value** and a **dispatch function** to update the state.
 
-The benefit of using the `$use` hook over `$get` and `$set` is that it automatically subscribes to state changes and updates the component when the state changes. This allows you to manage the state within the component, without having to manually subscribe to state changes. Additionally, the `$use` hook automatically unsubscribes from the store when the component is unmounted.
+Here's how you can integrate the `$use` [hook][hook] into your [React][react] components:
 
 ```typescript
 import type { ChangeEvent } from "react";
@@ -247,14 +287,41 @@ function Component() {
   const [state, setState] = store.$use();
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    return setState(event.target.value);
+    setState(event.target.value);
   };
 
-  return <input value={value} onChange={handleChange} />;
+  return <input value={state} onChange={handleChange} />;
 }
 
 export default Component;
 ```
+
+The `$use` [hook][hook] eliminates the need for manual subscriptions to state changes. It ensures that the component automatically updates whenever the store's state changes and gracefully unsubscribes when the component unmounts. This simplifies state management within your application.
+
+#### Modifying State with a Callback
+
+Like the `$get` and `$set` methods, the `$use` [hook][hook] can accept a [callback function][callback] as its first argument. This function is called after the state is retrieved from the store but before it is returned to the component. This allows you to transform or modify the state before using it.
+
+```typescript
+const [state, setState] = store.$use((value) => `${value} modified`);
+```
+
+**Note** that the [callback function][callback] does not alter the store's state. Instead, it modifies the value returned for use within the component. Also, the dispatch function (`setState`) expects values of the same type as the store's initial state, ensuring type safety.
+
+#### Using Dependencies with the `$use` Hook
+
+In cases where the result of the callback function depends on other mutable values, you can pass a **dependency array** as the second argument to the `$use` hook. This ensures the [callback function][callback] is only re-evaluated when dependencies change.
+
+```typescript
+const [count, setCount] = useState(0);
+
+const [state, setState] = store.$use(
+  (value) => `Count: ${count} - ${value}`,
+  [count]
+);
+```
+
+**Note** that this **dependency array** works like that in [React][react]'s [useEffect][use-effect] or [useMemo][use-memo] hooks. The [callback function][callback] is memoized and only re-executed when the specified dependencies change. Also, the modified state returned by the callback is independent of the store's internal state. This ensures that the store's state remains unchanged.
 
 ## Persistence
 
@@ -506,6 +573,7 @@ This library is [licensed][licensed] under the [BSD-3-Clause][bsd-3-clause]. See
 [callback]: https://builtin.com/software-engineering-perspectives/callback-function
 [cdn]: https://www.cloudflare.com/en-gb/learning/cdn/what-is-a-cdn/
 [cookies]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
+[hook]: https://react.dev/reference/react/hooks
 [html]: https://developer.mozilla.org/en-US/docs/Web/HTML
 [initialization]: https://web.dev/learn/javascript/data-types/variable
 [instance]: https://www.altcademy.com/blog/what-is-an-instance-in-javascript/
@@ -517,11 +585,13 @@ This library is [licensed][licensed] under the [BSD-3-Clause][bsd-3-clause]. See
 [pnpm]: https://pnpm.io/
 [promise]: https://www.joshwcomeau.com/javascript/promises/
 [react]: https://react.dev/
-[react-hook]: https://react.dev/reference/react/hooks
 [session-storage]: https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage
 [side-effects]: https://monsterlessons-academy.com/posts/what-are-side-effects-in-javascript-what-are-pure-functions
 [signing]: https://bloggle.coggle.it/post/190706036692/what-weve-learned-from-moving-to-signed-cookies
 [typeScript]: https://www.typescriptlang.org
+[use-effect]: https://react.dev/reference/react/useEffect
+[use-memo]: https://react.dev/reference/react/useMemo
+[use-state]: https://react.dev/reference/react/useState
 [web-application]: https://aws.amazon.com/what-is/web-application/
 [web-browser]: https://www.ramotion.com/blog/what-is-web-browser/
 [web-storage]: https://www.ramotion.com/blog/what-is-web-storage/

@@ -40,9 +40,9 @@ export function createPrimitiveStore<State>(
     return [resolveSelectorValue(value, select), $set];
   }
 
-  function $sub(subscriber: Subscriber<State>, notify = true) {
+  function $sub(subscriber: Subscriber<State>, immediate = true) {
     subscribers.add(subscriber);
-    if (notify) subscriber(state);
+    if (immediate) subscriber(state);
 
     return () => {
       subscribers.delete(subscriber);

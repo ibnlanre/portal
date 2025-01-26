@@ -1,0 +1,192 @@
+# @ibnlanre/portal for LLMs
+
+`@ibnlanre/portal` is a TypeScript library designed to help maintain persistent or nested state. LLMs can use this to track data across multiple contexts or calls.
+
+## Basic Setup
+
+You can install `@ibnlanre/portal` using npm, pnpm, yarn, or a CDN.
+
+### Using Package Managers
+
+```bash
+npm i @ibnlanre/portal
+pnpm add @ibnlanre/portal
+yarn add @ibnlanre/portal
+```
+
+### Using a CDN
+
+```html
+<script type="module">
+  import { createStore } from "https://cdn.skypack.dev/@ibnlanre/portal";
+</script>
+<script src="https://unpkg.com/@ibnlanre/portal"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ibnlanre/portal"></script>
+```
+
+## Creating a Store
+
+Create a store with an initial value:
+
+```typescript
+import { createStore } from "@ibnlanre/portal";
+
+const store = createStore("initial value");
+```
+
+- Use `createStore` to establish initial state or async data fetching.
+
+Create a store with an asynchronous function:
+
+```typescript
+async function fetchData() {
+  const response = await fetch("https://api.example.com/data");
+  return response.json();
+}
+
+const store = await createStore(fetchData);
+```
+
+#### `$get` Method
+
+Retrieve the current state:
+
+```typescript
+const value = store.$get();
+console.log(value); // "initial value"
+```
+
+#### `$set` Method
+
+Update the state:
+
+```typescript
+store.$set("new value");
+const newValue = store.$get(); // "new value"
+```
+
+#### `$sub` Method
+
+Subscribe to state changes:
+
+```typescript
+store.$sub((value) => console.log(value));
+```
+
+- `$get` and `$set` manage state retrieval and updates, while `$sub` reacts to changes.
+
+## Nested Store and Dot Notation
+
+Create a store with nested objects:
+
+```typescript
+const store = createStore({
+  location: {
+    unit: "Apt 1",
+    address: {
+      street: "123 Main St",
+      city: "Springfield",
+    },
+  },
+});
+
+const city = store.location.address.city.$get();
+console.log(city); // "Springfield"
+```
+
+- Stores can be nested for more complex structures and accessed with `$tap("path.to.key")`.
+
+#### Breaking Off Stores
+
+Work with nested stores independently:
+
+```typescript
+const { address } = store.location;
+const street = address.street.$get();
+console.log(street); // "123 Main St"
+```
+
+#### `$tap` Method
+
+Access nested stores using dot notation:
+
+```typescript
+const street = store.$tap("location.address.street");
+street.$get(); // "123 Main St"
+```
+
+## React Integration
+
+Use the `$use` hook in React components:
+
+```typescript
+import { store } from "./path-to-your-store";
+
+function Component() {
+  const [state, setState] = store.$use();
+
+  const handleChange = (event) => {
+    setState(event.target.value);
+  };
+
+  return <input value={state} onChange={handleChange} />;
+}
+
+export default Component;
+```
+
+- React users can rely on `$use` for two-way binding with components.
+
+## Persistence
+
+Persist state using storage adapters:
+
+#### Local Storage Adapter
+
+```typescript
+import { createLocalStorageAdapter } from "@ibnlanre/portal";
+
+const [getLocalStorageState, setLocalStorageState] =
+  createLocalStorageAdapter({
+    key: "storage",
+  });
+
+const store = createStore(getLocalStorageState);
+store.$sub(setLocalStorageState);
+```
+
+#### Session Storage Adapter
+
+```typescript
+import { createSessionStorageAdapter } from "@ibnlanre/portal";
+
+const [getSessionStorageState, setSessionStorageState] =
+  createSessionStorageAdapter({
+    key: "storage",
+  });
+
+const store = createStore(getSessionStorageState);
+store.$sub(setSessionStorageState);
+```
+
+#### Cookie Storage Adapter
+
+```typescript
+import { createCookieStorageAdapter } from "@ibnlanre/portal";
+
+const [getCookieStorageState, setCookieStorageState] =
+  createCookieStorageAdapter({
+    key: "storage",
+    domain: "example.com",
+    maxAge: 60 * 60 * 24 * 7, // 1 week
+  });
+
+const store = createStore(getCookieStorageState);
+store.$sub(setCookieStorageState);
+```
+
+- Adapters include local storage, session storage, and cookies to keep state persisted between sessions.
+
+## License
+
+This library is licensed under the BSD-3-Clause.

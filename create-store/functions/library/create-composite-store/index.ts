@@ -15,7 +15,7 @@ import { shallowMerge } from "@/create-store/functions/helpers/shallow-merge";
 import { splitPath } from "@/create-store/functions/helpers/split-path";
 import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export function createCompositeStore<State extends Dictionary>(
   initialState: State
@@ -124,21 +124,29 @@ export function createCompositeStore<State extends Dictionary>(
     Result = Value
   >(
     path?: Path,
-    select?: Selector<Value, Result>
+    select?: Selector<Value, Result>,
+    dependencies: unknown[] = []
   ): StateManager<State, Result> {
     const [value, setValue] = useState(() => resolvePathValue(path));
+
+    const resolvedValue = useMemo(
+      () => resolveSelectorValue(value, select),
+      [value, ...dependencies]
+    );
+
     useEffect(() => sub(setValue, path), [path]);
-    return [resolveSelectorValue(value, select), set(path)];
+    return [resolvedValue, set(path)];
   }
 
   function sub<
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>
-  >(subscriber: (value: Value) => void, path?: Path) {
+  >(subscriber: (value: Value) => void, path?: Path, immediate?: boolean) {
     const subscribers = getSubscribersByPath(path);
+    const value = resolvePathValue(path);
 
     subscribers.add(subscriber);
-    subscriber(resolvePathValue(path));
+    if (immediate) subscriber(value);
 
     return () => {
       subscribers.delete(subscriber);
@@ -157,11 +165,14 @@ export function createCompositeStore<State extends Dictionary>(
       $set(value: StatePath<State, Path>) {
         return set(path)(value);
       },
-      $sub(subscriber: Subscriber<State>) {
-        return sub(subscriber, path);
+      $sub(subscriber: Subscriber<State>, immediate = true) {
+        return sub(subscriber, path, immediate);
       },
-      $use(select?: Selector<State, ResolvePath<State, Path>>) {
-        return use(path, select);
+      $use(
+        select?: Selector<State, ResolvePath<State, Path>>,
+        dependencies?: unknown[]
+      ) {
+        return use(path, select, dependencies);
       },
       $tap(path: Path) {
         return buildStore(path);
