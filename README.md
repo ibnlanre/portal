@@ -213,9 +213,10 @@ Remember that each point in an object chain is a store. This means that each mem
 
 ```typescript
 const { address } = store.location;
+address.street.$get(); // "123 Main St"
 
-const street = address.street.$get();
-console.log(street); // "123 Main St"
+const { street } = address;
+street.$set("456 Elm St");
 ```
 
 #### Updating Nested Stores

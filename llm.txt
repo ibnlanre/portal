@@ -102,8 +102,8 @@ Work with nested stores independently:
 
 ```typescript
 const { address } = store.location;
-const street = address.street.$get();
-console.log(street); // "123 Main St"
+const streetValue = address.street.$get();
+console.log(streetValue); // "123 Main St"
 ```
 
 #### `$tap` Method
