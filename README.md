@@ -106,9 +106,9 @@ If you are working on a project that uses markup languages like [HTML][html] or 
 
 ### Managing State
 
-State management with `@ibnlanre/portal` begins with the `createStore` function. This function initializes a store with an initial value and returns an object containing [methods][method] to interact with the state: `$get`, `$set`, `$use`, and `$sub`.
+State management with `@ibnlanre/portal` begins with the `createStore` function. This function initializes a store with an initial value and returns an object containing [methods][method] to interact with the state: [$get](#accessing-state-with-get), [$set](#updating-state-with-set), [$use](#react-integration), [$sub](#subscribing-to-state-changes-with-sub), and [$tap](#accessing-nested-stores-with-tap).
 
-Here's an example of creating a store:
+These [methods][method] provide a simple and consistent way to access, update, and subscribe to state changes. Here's an example of creating a store:
 
 ```typescript
 import { createStore } from "@ibnlanre/portal";
@@ -122,6 +122,7 @@ Each [method][method] serves a distinct purpose:
 - `$set`: Update the state with a new value.
 - `$use`: A [React][react] [hook][hook] for managing state within functional components.
 - `$sub`: Subscribe to state changes to react to updates.
+- `$tap`: Access deeply nested stores using a dot-separated string.
 
 ### Accessing State with $get
 
@@ -209,7 +210,7 @@ console.log(city); // "Springfield"
 
 #### Breaking Off Stores
 
-Remember that each point in an object chain is a store. This means that each member of the chain has access to its own value and can be broken off into its own store at any point in time. This is useful when you want to work with a nested state independently of the parent store. For example, you can break off the `address` store from the `location` store and work with it independently:
+Remember that each point in an object chain is a store. This means that each member of the chain has access to its own value and can be **broken off** into its own store at any point in time. This is useful when you want to work with a nested state independently of the parent store. For example, you can break off the `address` store from the `location` store and work with it independently:
 
 ```typescript
 const { address } = store.location;
@@ -241,13 +242,14 @@ const street = store.$tap("location.address.street");
 street.$get(); // 456 Elm St
 ```
 
-The $tap method returns a reference to the nested store, which means you can access and update the nested state directly:
+The `$tap` method returns a reference to the nested store, which means you can access and update the nested state directly. You also can **_tap_** at any level of the hierarchy, making it easy to work with deeply nested state.
 
 ```typescript
 store.$tap("location.address.street").$set("789 Oak St");
-```
 
-This approach makes working with deeply nested state intuitive and efficient.
+const { street } = store.location.$tap("address");
+street.$get(); // 789 Oak St
+```
 
 ### Asynchronous State
 
@@ -272,7 +274,7 @@ const state = store.$get();
 console.log(state); // { apartment: "123 Main St" }
 ```
 
-By combining nested stores and asynchronous initialization, @ibnlanre/portal enables you to manage state efficiently in even the most dynamic applications.
+By combining nested stores and asynchronous initialization, `@ibnlanre/portal` enables you to manage state efficiently in even the most dynamic applications.
 
 ### React Integration
 

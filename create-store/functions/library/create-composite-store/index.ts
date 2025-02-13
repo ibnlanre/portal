@@ -157,25 +157,27 @@ export function createCompositeStore<State extends Dictionary>(
     Path extends Paths<State>,
     Value extends StatePath<State, Path>,
     Result = Value
-  >(path?: Path) {
+  >(chain?: Path) {
     return {
       $get(select?: Selector<Value, Result>) {
-        return get(path, select);
+        return get(chain, select);
       },
       $set(value: StatePath<State, Path>) {
-        return set(path)(value);
+        return set(chain)(value);
       },
       $sub(subscriber: Subscriber<State>, immediate = true) {
-        return sub(subscriber, path, immediate);
+        return sub(subscriber, chain, immediate);
       },
       $use(
         select?: Selector<State, ResolvePath<State, Path>>,
         dependencies?: unknown[]
       ) {
-        return use(path, select, dependencies);
+        return use(chain, select, dependencies);
       },
-      $tap(path: Path) {
-        return buildStore(path);
+      $tap(key: Path) {
+        const path = <Path>[chain, key].filter(Boolean).join(".");
+        const value = resolvePathValue(path);
+        return traverse(value, path);
       },
     };
   }
@@ -189,6 +191,7 @@ export function createCompositeStore<State extends Dictionary>(
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>
   >(initialState: Value, chain?: Path): CompositeStore<State> {
+    if (!isDictionary(initialState)) return <any>buildStore(chain);
     const clone = createSnapshot(initialState);
 
     for (const key in clone) {

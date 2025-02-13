@@ -1,6 +1,5 @@
 export type { CookieOptions } from "@/cookie-storage/types/cookie-options";
 export type { CookieStorage } from "@/cookie-storage/types/cookie-storage";
-
 export type {
   BrowserStorageAdapter,
   GetBrowserStorage,

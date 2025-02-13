@@ -2,7 +2,7 @@ import type { Dictionary } from "@/create-store/types/dictionary";
 
 type PathsHelper<Store, Delimiter extends string> = Store extends Dictionary
   ? {
-      [Key in keyof Store]: Key extends Extract<Key, string | number>
+      [Key in keyof Store]: Key extends string | number
         ? Store[Key] extends Dictionary
           ? `${Key}` | `${Key}${Delimiter}${Paths<Store[Key], Delimiter>}`
           : `${Key}`
