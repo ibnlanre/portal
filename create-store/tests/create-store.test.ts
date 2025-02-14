@@ -176,6 +176,50 @@ describe("createStore", () => {
     });
   });
 
+  describe(".$tap", () => {
+    it("should tap into a nested state value", () => {
+      const initialState = { location: { address: { street: "123 Main St" } } };
+      const store = createStore(initialState);
+
+      const { street } = store.$tap("location.address");
+      const streetValue = street.$get();
+
+      expect(streetValue).toBe("123 Main St");
+    });
+
+    it("should tap into a nested state value and update it", () => {
+      const initialState = { location: { address: { street: "123 Main St" } } };
+      const store = createStore(initialState);
+
+      const { street } = store.location.$tap("address");
+      street.$set("456 Elm St");
+
+      const streetValue = street.$get();
+      expect(streetValue).toBe("456 Elm St");
+
+      const updatedStateValue = store.$get();
+      expect(updatedStateValue).toEqual({
+        location: { address: { street: "456 Elm St" } },
+      });
+    });
+
+    it("should tap into a nested state value and update it using a function", () => {
+      const initialState = { location: { address: { street: "123 Main St" } } };
+      const store = createStore(initialState);
+
+      const street = store.$tap("location.address.street");
+      street.$set((previous) => `${previous} Suite 100`);
+
+      const streetValue = street.$get();
+      expect(streetValue).toBe("123 Main St Suite 100");
+
+      const updatedStateValue = store.$get();
+      expect(updatedStateValue).toEqual({
+        location: { address: { street: "123 Main St Suite 100" } },
+      });
+    });
+  });
+
   describe(".$use", () => {
     it("should use the state value in a React component", () => {
       const initialState = { key: "value" };
@@ -246,50 +290,6 @@ describe("createStore", () => {
 
       const [resetStreetValue] = result.current;
       expect(resetStreetValue).toBe("123 Main St");
-    });
-  });
-
-  describe(".$tap", () => {
-    it("should tap into a nested state value", () => {
-      const initialState = { location: { address: { street: "123 Main St" } } };
-      const store = createStore(initialState);
-
-      const { street } = store.$tap("location.address");
-      const streetValue = street.$get();
-
-      expect(streetValue).toBe("123 Main St");
-    });
-
-    it("should tap into a nested state value and update it", () => {
-      const initialState = { location: { address: { street: "123 Main St" } } };
-      const store = createStore(initialState);
-
-      const { street } = store.location.$tap("address");
-      street.$set("456 Elm St");
-
-      const streetValue = street.$get();
-      expect(streetValue).toBe("456 Elm St");
-
-      const updatedStateValue = store.$get();
-      expect(updatedStateValue).toEqual({
-        location: { address: { street: "456 Elm St" } },
-      });
-    });
-
-    it("should tap into a nested state value and update it using a function", () => {
-      const initialState = { location: { address: { street: "123 Main St" } } };
-      const store = createStore(initialState);
-
-      const street = store.$tap("location.address.street");
-      street.$set((previous) => `${previous} Suite 100`);
-
-      const streetValue = street.$get();
-      expect(streetValue).toBe("123 Main St Suite 100");
-
-      const updatedStateValue = store.$get();
-      expect(updatedStateValue).toEqual({
-        location: { address: { street: "123 Main St Suite 100" } },
-      });
     });
   });
 });

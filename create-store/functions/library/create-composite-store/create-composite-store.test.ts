@@ -116,6 +116,31 @@ describe("createCompositeStore", () => {
     });
   });
 
+  describe(".$tap", () => {
+    it("should tap into a nested state value", () => {
+      const initialState = { location: { address: { street: "123 Main St" } } };
+      const store = createCompositeStore(initialState);
+
+      expect(store.$tap("location.address.street")).toBeDefined();
+      expect(store.location.$tap("address")).toBeDefined();
+      expect(store.location.address.$tap("street")).toBeDefined();
+    });
+
+    it("should tap into a nested state value with a function", () => {
+      const initialState = { location: { address: { street: "123 Main St" } } };
+      const store = createCompositeStore(initialState);
+
+      const street = store.$tap("location.address.street");
+      street.$set("456 Elm St");
+
+      expect(street.$get()).toBe("456 Elm St");
+      expect(store.$get()).not.equal(initialState);
+      expect(store.$get()).toMatchObject({
+        location: { address: { street: "456 Elm St" } },
+      });
+    });
+  });
+
   describe(".$use", () => {
     it("should use the state value in a React component", () => {
       const initialState = { key: "value" };
