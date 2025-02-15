@@ -13,10 +13,10 @@ export function formatCookieOptions({
   ...options
 }: CookieOptions = {}): string {
   let cookieOptions = `; path=${path}`;
-  if (!options) return cookieOptions;
 
-  const { domain, secure, httpOnly, sameSite, maxAge, partitioned, expires } =
-    options;
+  const { domain, secure, httpOnly, sameSite, maxAge, partitioned, expires } = {
+    ...options,
+  };
 
   if (isEnabled(domain)) cookieOptions += `; domain=${domain}`;
   if (isEnabled(secure)) cookieOptions += "; secure";

@@ -80,4 +80,29 @@ describe("createSessionStorageAdapter", () => {
     expect(customParse).toHaveBeenCalledWith(JSON.stringify(newState));
     expect(state).toEqual(newState);
   });
+
+  it("should return undefined if sessionStorage is not available", () => {
+    const originalSessionStorage = sessionStorage;
+
+    Object.defineProperty(window, "sessionStorage", {
+      value: undefined,
+      writable: true,
+      configurable: true,
+    });
+
+    const [getSessionStorageState, setSessionStorageState] =
+      createSessionStorageAdapter({ key });
+
+    const state = getSessionStorageState();
+    expect(state).toBeUndefined();
+
+    setSessionStorageState({ state: "value" });
+    expect(sessionStorage).toBeUndefined();
+
+    Object.defineProperty(window, "sessionStorage", {
+      value: originalSessionStorage,
+      writable: true,
+      configurable: true,
+    });
+  });
 });

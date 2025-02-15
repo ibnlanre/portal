@@ -50,8 +50,9 @@ describe("setCookieValue", () => {
     const originalDocument = global.document;
 
     Object.defineProperty(global, "document", {
-      writable: true,
       value: undefined,
+      writable: true,
+      configurable: true,
     });
 
     const name = "testCookie";

@@ -13,6 +13,19 @@ export default defineConfig({
     setupFiles: "vitest.setup.ts",
     environment: "happy-dom",
     globals: true,
+    coverage: {
+      include: ["**/*.ts"],
+      exclude: [
+        "./dist/**",
+        "./index.ts",
+        "**/types/**",
+        "**/*.config.*",
+        "**/*.d.ts",
+        "**/*.json",
+        "**/*.test.*",
+      ],
+      clean: true,
+    },
   },
   resolve: {
     alias: [{ find: "@", replacement: app }],

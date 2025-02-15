@@ -1,12 +1,7 @@
-import { cookieStorage } from "@/cookie-storage";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { getCookieValue } from "./index";
 
 describe("getCookieValue", () => {
-  afterEach(() => {
-    cookieStorage.clear();
-  });
-
   it("should return the value of the cookie if it exists", () => {
     document.cookie = "testCookie=testValue";
 
@@ -23,8 +18,8 @@ describe("getCookieValue", () => {
     const originalDocument = global.document;
 
     Object.defineProperty(global, "document", {
-      writable: true,
       value: undefined,
+      writable: true,
     });
 
     const result = getCookieValue("testCookie");
@@ -52,5 +47,26 @@ describe("getCookieValue", () => {
 
     const result2 = getCookieValue("testCookie");
     expect(result2).toBe("testCookieValue");
+  });
+
+  it("should return null if an error occurs", () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementationOnce(() => {});
+
+    Object.defineProperty(document, "cookie", {
+      get() {
+        throw new Error("Test error");
+      },
+    });
+
+    expect(getCookieValue("test")).toBeNull();
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Error occurred while retrieving cookie:",
+      expect.any(Error)
+    );
+
+    consoleErrorSpy.mockRestore();
   });
 });

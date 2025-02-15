@@ -32,8 +32,9 @@ describe("removeCookieValue", () => {
     const originalDocument = global.document;
 
     Object.defineProperty(global, "document", {
-      writable: true,
       value: undefined,
+      writable: true,
+      configurable: true,
     });
 
     removeCookieValue("testCookie");
@@ -55,7 +56,7 @@ describe("removeCookieValue", () => {
     removeCookieValue("testCookie");
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      "Error occurred while removing testCookie from document.cookie",
+      "Error occurred while removing cookie",
       error
     );
 

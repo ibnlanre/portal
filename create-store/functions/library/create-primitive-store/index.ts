@@ -28,8 +28,10 @@ export function createPrimitiveStore<State>(
   }
 
   function $set(value: SetStateAction<State>) {
-    if (isSetStateActionFunction<State>(value)) setState(value(state));
-    else setState(value);
+    if (isSetStateActionFunction<State>(value)) {
+      const resolvedValue = value(state);
+      setState(resolvedValue);
+    } else setState(value);
   }
 
   function $use<Value = State>(

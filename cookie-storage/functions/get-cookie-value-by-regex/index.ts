@@ -12,9 +12,13 @@ export function getCookieValueByRegex(name: string): string | null {
     const pattern = new RegExp(`(?:^|;\\s*)${escapedName}\\s*=\\s*([^;]*)`);
     const value = document.cookie.match(pattern);
 
-    if (Array.isArray(value)) return value.at(1) ?? null;
+    if (Array.isArray(value)) {
+      const [, cookieValue = null] = value;
+      return cookieValue;
+    }
   } catch (error) {
-    console.error("Error retrieving Document Cookie", error);
+    console.error("Error occurred while retrieving cookie:", error);
   }
+
   return null;
 }

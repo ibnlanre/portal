@@ -14,9 +14,6 @@ export function removeCookieValue(name: string, path: string = "/") {
 
     setCookieValue(name, "", { path, expires: 0 });
   } catch (error) {
-    console.error(
-      `Error occurred while removing ${name} from document.cookie`,
-      error
-    );
+    console.error("Error occurred while removing cookie", error);
   }
 }

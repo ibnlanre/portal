@@ -8,11 +8,19 @@ import { createHmac } from "crypto";
  *
  * @returns The signed cookie.
  */
-export function signCookie(cookie: string, secret: string): string {
-  const signature = createHmac("sha256", secret)
-    .update(cookie)
-    .digest("base64")
-    .replace(/=+$/, "");
+export function signCookie(cookie: string, secret?: string): string {
+  if (!secret) return cookie;
 
-  return [cookie, signature].join(".");
+  try {
+    const signature = createHmac("sha256", secret)
+      .update(cookie)
+      .digest("base64")
+      .replace(/=+$/, "");
+
+    return [cookie, signature].join(".");
+  } catch (error) {
+    console.error("Error occurred while signing cookie:", error);
+  }
+
+  return cookie;
 }

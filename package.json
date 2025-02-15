@@ -4,6 +4,7 @@
   "description": "React state management library",
   "scripts": {
     "test": "vitest --typecheck",
+    "coverage": "vitest --coverage  --typecheck",
     "ts-lint": "tsc --pretty --noEmit --project tsconfig.json",
     "lint": "biome lint --write .",
     "bundle": "tsup --config tsup.config.ts",
@@ -52,6 +53,7 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "2.1.8",
     "happy-dom": "^16.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

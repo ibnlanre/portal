@@ -80,4 +80,29 @@ describe("createLocalStorageAdapter", () => {
     expect(customParse).toHaveBeenCalledWith(JSON.stringify(newState));
     expect(state).toEqual(newState);
   });
+
+  it("should return undefined if localStorage is not available", () => {
+    const originalLocalStorage = localStorage;
+
+    Object.defineProperty(window, "localStorage", {
+      value: undefined,
+      writable: true,
+      configurable: true,
+    });
+
+    const [getLocalStorageState, setLocalStorageState] =
+      createLocalStorageAdapter({ key });
+
+    const state = getLocalStorageState();
+    expect(state).toBeUndefined();
+
+    setLocalStorageState({ state: "value" });
+    expect(localStorage).toBeUndefined();
+
+    Object.defineProperty(window, "localStorage", {
+      value: originalLocalStorage,
+      writable: true,
+      configurable: true,
+    });
+  });
 });

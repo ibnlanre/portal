@@ -4,8 +4,11 @@ import { formatCookieOptions } from "./index";
 
 describe("formatCookieOptions", () => {
   it("should return default path when no options are provided", () => {
-    const result = formatCookieOptions();
-    expect(result).toBe("; path=/");
+    const withoutPath = formatCookieOptions();
+    expect(withoutPath).toBe("; path=/");
+
+    const withPath = formatCookieOptions({ path: "/test" });
+    expect(withPath).toBe("; path=/test");
   });
 
   it("should format domain option correctly", () => {

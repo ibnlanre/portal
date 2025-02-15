@@ -7,8 +7,8 @@ vi.mock("@/cookie-storage/functions/remove-cookie-value");
 describe("clearCookieStorage", () => {
   it("should clear all cookies", () => {
     Object.defineProperty(document, "cookie", {
-      writable: true,
       value: "cookie1=value1; cookie2=value2; cookie3=value3",
+      writable: true,
       configurable: true,
     });
 
@@ -24,8 +24,8 @@ describe("clearCookieStorage", () => {
     const originalDocument = global.document;
 
     Object.defineProperty(global, "document", {
-      writable: true,
       value: undefined,
+      writable: true,
     });
 
     expect(() => clearCookieStorage()).not.toThrow();

@@ -14,10 +14,9 @@ export function getCookieByIndex(index: number): string | null {
       const [name] = cookie.split("=");
       if (name) return name.trim();
     }
-
-    return null;
   } catch (error) {
     console.error("Error occurred while getting cookie by index:", error);
-    return null;
   }
+
+  return null;
 }

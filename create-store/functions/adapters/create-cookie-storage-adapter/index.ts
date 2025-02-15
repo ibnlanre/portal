@@ -21,12 +21,6 @@ export function createCookieStorageAdapter<State>({
   getCookieStorageState: GetCookieStorage<State>,
   setCookieStorageState: SetCookieStorage<State>
 ] {
-  const hasSecret = typeof secret !== "undefined";
-
-  if (signed && !hasSecret) {
-    throw new Error(`A secret must be provided to sign the cookie: "${key}".`);
-  }
-
   const cookieOptionsMap = new Map<string, CookieOptions>();
 
   const retrieveCookieOptions = (key: string): CookieOptions => {
@@ -39,8 +33,6 @@ export function createCookieStorageAdapter<State>({
   function getCookieStorageState(fallback: State): State;
 
   function getCookieStorageState(fallback?: State) {
-    if (typeof cookieStorage === "undefined") return fallback;
-
     const value = cookieStorage.getItem(key);
     if (!value) return <State>fallback;
 
@@ -56,7 +48,6 @@ export function createCookieStorageAdapter<State>({
     value?: State,
     options: CookieOptions = {}
   ) => {
-    if (typeof cookieStorage === "undefined") return;
     if (value === undefined) return cookieStorage.removeItem(key);
 
     const previousOptions = retrieveCookieOptions(key);

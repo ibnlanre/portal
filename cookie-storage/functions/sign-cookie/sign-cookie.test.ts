@@ -1,5 +1,7 @@
 import { signCookie } from "@/cookie-storage/functions/sign-cookie";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+import * as crypto from "crypto";
 
 describe("signCookie", () => {
   it("should sign the cookie with the given secret", () => {
@@ -39,5 +41,12 @@ describe("signCookie", () => {
     const signedCookie2 = signCookie(cookie, secret);
 
     expect(signedCookie1).toEqual(signedCookie2);
+  });
+
+  it("should return the cookie if the secret is empty", () => {
+    const cookie = "testCookie";
+    const signedCookie = signCookie(cookie);
+
+    expect(signedCookie).toEqual(cookie);
   });
 });

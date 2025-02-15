@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { getCookieValueByRegex } from ".";
 
 describe("getCookieValueByRegex", () => {
@@ -6,6 +6,7 @@ describe("getCookieValueByRegex", () => {
     Object.defineProperty(document, "cookie", {
       value: "testCookie=testValue",
       writable: true,
+      configurable: true,
     });
 
     const result = getCookieValueByRegex("testCookie");
@@ -16,6 +17,7 @@ describe("getCookieValueByRegex", () => {
     Object.defineProperty(document, "cookie", {
       value: "anotherCookie=anotherValue",
       writable: true,
+      configurable: true,
     });
 
     const result = getCookieValueByRegex("testCookie");
@@ -26,8 +28,8 @@ describe("getCookieValueByRegex", () => {
     const originalDocument = global.document;
 
     Object.defineProperty(global, "document", {
-      writable: true,
       value: undefined,
+      writable: true,
     });
 
     const result = getCookieValueByRegex("testCookie");
@@ -40,6 +42,7 @@ describe("getCookieValueByRegex", () => {
     Object.defineProperty(document, "cookie", {
       value: "special*Cookie=specialValue",
       writable: true,
+      configurable: true,
     });
 
     const result = getCookieValueByRegex("special*Cookie");
@@ -50,6 +53,7 @@ describe("getCookieValueByRegex", () => {
     Object.defineProperty(document, "cookie", {
       value: "spacedCookie = spacedValue",
       writable: true,
+      configurable: true,
     });
 
     const result = getCookieValueByRegex("spacedCookie");
@@ -59,5 +63,26 @@ describe("getCookieValueByRegex", () => {
   it("should return null if there is an error in the regex", () => {
     const result = getCookieValueByRegex("invalid(regex");
     expect(result).toBeNull();
+  });
+
+  it("should return null if an error occurs", () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementationOnce(() => {});
+
+    Object.defineProperty(document, "cookie", {
+      get() {
+        throw new Error("Test error");
+      },
+    });
+
+    expect(getCookieValueByRegex("test")).toBeNull();
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "Error occurred while retrieving cookie:",
+      expect.any(Error)
+    );
+
+    consoleErrorSpy.mockRestore();
   });
 });

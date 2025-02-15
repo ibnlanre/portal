@@ -10,6 +10,7 @@ export function getCookieStorageLength() {
     return cookies.filter((cookie) => cookie.trim()).length;
   } catch (error) {
     console.error("Error occurred while getting cookieStorage length:", error);
-    return 0;
   }
+
+  return 0;
 }

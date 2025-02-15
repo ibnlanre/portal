@@ -19,7 +19,7 @@ export function getCookieValue(name: string): string | null {
       }
     }
   } catch (error) {
-    console.error("Error retrieving Document Cookie", error);
+    console.error("Error occurred while retrieving cookie:", error);
   }
 
   return null;

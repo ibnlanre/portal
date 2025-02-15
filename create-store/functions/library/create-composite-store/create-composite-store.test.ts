@@ -40,9 +40,10 @@ describe("createCompositeStore", () => {
       const store = createCompositeStore(initialState);
 
       store.$set({ key: "new value" });
+      expect(store.$get()).toEqual({ key: "new value" });
 
-      const updatedStateValue = store.$get();
-      expect(updatedStateValue).toEqual({ key: "new value" });
+      store.$set((state) => ({ key: state.key.toUpperCase() }));
+      expect(store.$get()).toEqual({ key: "NEW VALUE" });
     });
 
     it("should set a nested state value with .$set", () => {

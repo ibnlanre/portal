@@ -50,9 +50,7 @@ export function createCompositeStore<State extends Dictionary>(
   function setProperty<
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>
-  >(value: Value, path?: Path) {
-    if (!path) return setState(value);
-
+  >(value: Value, path: Path) {
     const keys = splitPath(path);
     const snapshot = <any>createSnapshot(state);
     const pivot = keys.pop()!;
@@ -101,8 +99,10 @@ export function createCompositeStore<State extends Dictionary>(
   }
 
   function setStateAction(value: SetStateAction<State>) {
-    if (isSetStateActionFunction<State>(value)) setState(value(state));
-    else setState(value);
+    if (isSetStateActionFunction<State>(value)) {
+      const resolvedValue = value(state);
+      setState(resolvedValue);
+    } else setState(value);
   }
 
   function set<
