@@ -1,9 +1,7 @@
 import type { Dictionary } from "@/create-store/types/dictionary";
 import type { KeyStore } from "@/create-store/types/key-store";
-import type { PrimitiveStore } from "@/create-store/types/primitive-store";
+import type { StoreValueResolver } from "@/create-store/types/store-value-resolver";
 
 export type CompositeStore<Value extends Dictionary> = KeyStore<Value> & {
-  [Key in keyof Value]: Value[Key] extends Dictionary
-    ? CompositeStore<Value[Key]>
-    : PrimitiveStore<Value[Key]>;
+  readonly [Key in keyof Value]: StoreValueResolver<Value[Key]>;
 };

@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createStore } from "../index";
 
 type Placeholder = {
@@ -290,6 +290,78 @@ describe("createStore", () => {
 
       const [resetStreetValue] = result.current;
       expect(resetStreetValue).toBe("123 Main St");
+    });
+  });
+
+  describe("reducers", () => {
+    const count = createStore({
+      value: 0,
+      set(value: number) {
+        count.value.$set(value);
+      },
+      increase(value: number = 1) {
+        count.value.$set((state) => state + value);
+      },
+      decrease(value: number = 1) {
+        count.value.$set((state) => state - value);
+      },
+      reset() {
+        count.value.$set(0);
+      },
+    });
+
+    beforeEach(() => {
+      count.reset();
+    });
+
+    it("should initialize the store with the correct state", () => {
+      expect(count.value.$get()).toBe(0);
+    });
+
+    it("should set the count to the specified value when set is called", () => {
+      count.set(5);
+      expect(count.value.$get()).toBe(5);
+    });
+
+    it("should increase the count by 1 when increase is called without a value", () => {
+      count.increase();
+      expect(count.value.$get()).toBe(1);
+
+      count.$tap("increase")();
+      expect(count.value.$get()).toBe(2);
+    });
+
+    it("should increase the count to the specified value when increase is called with a value", () => {
+      count.set(2);
+
+      count.increase(5);
+      expect(count.value.$get()).toBe(7);
+
+      count.$tap("increase")(3);
+      expect(count.value.$get()).toBe(10);
+    });
+
+    it("should decrease the count by 1 when decrease is called without a value", () => {
+      count.decrease();
+      expect(count.value.$get()).toBe(-1);
+
+      count.$tap("decrease")();
+      expect(count.value.$get()).toBe(-2);
+    });
+
+    it("should decrease the count to the specified value when decrease is called with a value", () => {
+      count.decrease(3);
+      expect(count.value.$get()).toBe(-3);
+
+      count.$tap("decrease")(5);
+      expect(count.value.$get()).toBe(-8);
+    });
+
+    it("should reset the count to 0 when reset is called", () => {
+      count.set(5);
+
+      count.reset();
+      expect(count.value.$get()).toBe(0);
     });
   });
 });

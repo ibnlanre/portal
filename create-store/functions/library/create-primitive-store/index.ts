@@ -49,10 +49,23 @@ export function createPrimitiveStore<State>(
     };
   }
 
-  return {
+  const context = {
     $get,
     $set,
     $sub,
     $use,
   };
+
+  const propertyDescriptor = {
+    enumerable: false,
+    configurable: false,
+    writable: false,
+  } satisfies PropertyDescriptor;
+
+  return Object.defineProperties(context, {
+    $get: propertyDescriptor,
+    $set: propertyDescriptor,
+    $sub: propertyDescriptor,
+    $use: propertyDescriptor,
+  });
 }
