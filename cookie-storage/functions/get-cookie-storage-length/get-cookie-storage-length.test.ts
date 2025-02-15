@@ -21,6 +21,7 @@ describe("getCookieStorageLength", () => {
       value: "",
       writable: true,
     });
+
     expect(getCookieStorageLength()).toBe(0);
   });
 

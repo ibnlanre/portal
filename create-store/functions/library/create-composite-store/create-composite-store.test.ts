@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { act, useState } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCompositeStore } from "./index";
 
 describe("createCompositeStore", () => {
@@ -94,8 +94,8 @@ describe("createCompositeStore", () => {
     it("should subscribe to state changes", () => {
       const initialState = { key: "value" };
       const store = createCompositeStore(initialState);
-
       const subscriber = vi.fn();
+
       store.$sub(subscriber);
       expect(subscriber).toHaveBeenCalledWith(initialState);
 
@@ -126,15 +126,29 @@ describe("createCompositeStore", () => {
       expect(store.location.address.$tap("street")).toBeDefined();
     });
 
-    it("should tap into a nested state value with a function", () => {
+    it("should tap into a nested state value and update it", () => {
       const initialState = { location: { address: { street: "123 Main St" } } };
       const store = createCompositeStore(initialState);
 
-      const street = store.$tap("location.address.street");
-      street.$set("456 Elm St");
+      const address = store.$tap("location.address");
 
-      expect(street.$get()).toBe("456 Elm St");
-      expect(store.$get()).not.equal(initialState);
+      expect(address.street.$get()).toBe("123 Main St");
+      expect(store.$get()).toMatchObject({
+        location: { address: { street: "123 Main St" } },
+      });
+
+      const street = store.$tap("location.address.street");
+      street.$set((previous) => `${previous} Suite 100`);
+
+      expect(street.$get()).toBe("123 Main St Suite 100");
+      expect(store.$get()).toMatchObject({
+        location: { address: { street: "123 Main St Suite 100" } },
+      });
+
+      const location = store.$tap("location");
+      location.address.street.$set("456 Elm St");
+
+      expect(location.address.street.$get()).toBe("456 Elm St");
       expect(store.$get()).toMatchObject({
         location: { address: { street: "456 Elm St" } },
       });
@@ -181,14 +195,11 @@ describe("createCompositeStore", () => {
       const initialState = { location: { address: { street: "123 Main St" } } };
       const store = createCompositeStore(initialState);
 
-      const { result, rerender } = renderHook(() =>
-        store.location.address.street.$use()
-      );
+      const { result } = renderHook(() => store.location.address.street.$use());
       const [, setStreetValue] = result.current;
 
       act(() => {
         setStreetValue("456 Elm St");
-        rerender();
       });
 
       const [updatedStreetValue] = result.current;
@@ -223,6 +234,78 @@ describe("createCompositeStore", () => {
 
       const [newStateValue] = storeHook.result.current;
       expect(newStateValue).toBe("updated value");
+    });
+  });
+
+  describe("reducers", () => {
+    const count = createCompositeStore({
+      value: 0,
+      set(value: number) {
+        count.value.$set(value);
+      },
+      increase(value: number = 1) {
+        count.value.$set((state) => state + value);
+      },
+      decrease(value: number = 1) {
+        count.value.$set((state) => state - value);
+      },
+      reset() {
+        count.value.$set(0);
+      },
+    });
+
+    beforeEach(() => {
+      count.reset();
+    });
+
+    it("should initialize the store with the correct state", () => {
+      expect(count.value.$get()).toBe(0);
+    });
+
+    it("should set the count to the specified value when set is called", () => {
+      count.set(5);
+      expect(count.value.$get()).toBe(5);
+    });
+
+    it("should increase the count by 1 when increase is called without a value", () => {
+      count.increase();
+      expect(count.value.$get()).toBe(1);
+
+      count.$tap("increase")();
+      expect(count.value.$get()).toBe(2);
+    });
+
+    it("should increase the count to the specified value when increase is called with a value", () => {
+      count.set(2);
+
+      count.increase(5);
+      expect(count.value.$get()).toBe(7);
+
+      count.$tap("increase")(3);
+      expect(count.value.$get()).toBe(10);
+    });
+
+    it("should decrease the count by 1 when decrease is called without a value", () => {
+      count.decrease();
+      expect(count.value.$get()).toBe(-1);
+
+      count.$tap("decrease")();
+      expect(count.value.$get()).toBe(-2);
+    });
+
+    it("should decrease the count to the specified value when decrease is called with a value", () => {
+      count.decrease(3);
+      expect(count.value.$get()).toBe(-3);
+
+      count.$tap("decrease")(5);
+      expect(count.value.$get()).toBe(-8);
+    });
+
+    it("should reset the count to 0 when reset is called", () => {
+      count.set(5);
+
+      count.reset();
+      expect(count.value.$get()).toBe(0);
     });
   });
 });

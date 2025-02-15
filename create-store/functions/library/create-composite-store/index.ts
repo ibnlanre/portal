@@ -168,7 +168,7 @@ export function createCompositeStore<State extends Dictionary>(
     Value extends StatePath<State, Path>,
     Result = Value
   >(chain?: Path) {
-    const context = {
+    return {
       $get(select?: Selector<Value, Result>) {
         return get(chain, select);
       },
@@ -188,20 +188,6 @@ export function createCompositeStore<State extends Dictionary>(
         return use(chain, select, dependencies);
       },
     };
-
-    const propertyDescriptor = {
-      enumerable: false,
-      configurable: false,
-      writable: false,
-    } as PropertyDescriptor;
-
-    return Object.defineProperties(context, {
-      $get: propertyDescriptor,
-      $set: propertyDescriptor,
-      $sub: propertyDescriptor,
-      $tap: propertyDescriptor,
-      $use: propertyDescriptor,
-    });
   }
 
   function traverse<Path extends Paths<State> = never>(

@@ -10,7 +10,6 @@ afterEach(() => {
   vi.clearAllMocks();
   Object.defineProperty(document, "cookie", {
     writable: true,
-    configurable: true,
     value: "",
   });
 });
@@ -29,6 +28,11 @@ describe("createCookieStorageAdapter", () => {
 
     expect(state).toEqual(initialState);
     expect(getItem).toHaveBeenCalledWith(key);
+    expect(cookieStorage.getItem(key)).toBe(JSON.stringify(initialState));
+
+    cookieStorage.removeItem(key);
+    const stateWithFallback = getCookieStorageState({ state: "fallback" });
+    expect(stateWithFallback).toEqual({ state: "fallback" });
   });
 
   it("should return fallback state if cookieStorage is empty", () => {
@@ -49,10 +53,52 @@ describe("createCookieStorageAdapter", () => {
     const [, setCookieStorageState] = createCookieStorageAdapter<
       typeof newState
     >({ key });
-    setCookieStorageState(newState);
 
+    setCookieStorageState(newState);
     expect(setItem).toHaveBeenCalledWith(key, JSON.stringify(newState), {});
     expect(cookieStorage.getItem(key)).toBe(JSON.stringify(newState));
+
+    setCookieStorageState(newState, {
+      expires: new Date().getTime() + 1000,
+      domain: "localhost",
+    });
+
+    const newStateValue = JSON.stringify({ state: "new value" });
+    expect(setItem).toHaveBeenCalledWith(
+      key,
+      newStateValue,
+      expect.objectContaining({
+        expires: expect.any(Number),
+        domain: "localhost",
+      })
+    );
+  });
+
+  it("should unsign a signed cookie upon retrieval", () => {
+    const initialState = { state: "value" };
+
+    const [getCookieStorageState, setCookieStorageState] =
+      createCookieStorageAdapter<typeof initialState>({
+        key,
+        signed: true,
+        secret: "signature",
+      });
+    expect(setItem).not.toHaveBeenCalled();
+
+    const stringifiedState = JSON.stringify(initialState);
+    const signedState = cookieStorage.sign(stringifiedState, "signature");
+
+    setCookieStorageState(initialState, { maxAge: 5000 });
+    expect(setItem).toHaveBeenCalledWith(
+      key,
+      signedState,
+      expect.objectContaining({
+        maxAge: expect.any(Number),
+      })
+    );
+
+    const state = getCookieStorageState();
+    expect(state).toEqual(initialState);
   });
 
   it("should remove state from cookieStorage when value is undefined", () => {

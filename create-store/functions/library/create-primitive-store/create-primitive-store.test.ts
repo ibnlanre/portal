@@ -4,6 +4,14 @@ import { describe, expect, it, vi } from "vitest";
 import { createPrimitiveStore } from "./index";
 
 describe("createPrimitiveStore", () => {
+  it("should create a store with no initial state", () => {
+    const store = createPrimitiveStore(undefined);
+    expect(store).toBeDefined();
+
+    const stateValue = store.$get();
+    expect(stateValue).toBeUndefined();
+  });
+
   it("should create a store with initial state", () => {
     const initialState = "value";
     const store = createPrimitiveStore(initialState);

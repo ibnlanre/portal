@@ -66,9 +66,8 @@ export function createCookieStorageAdapter<State>({
     if (secret) {
       const hashedCookieData = cookieStorage.sign(serializedValue, secret);
       cookieStorage.setItem(key, hashedCookieData, mergedOptions);
-    }
+    } else cookieStorage.setItem(key, serializedValue, mergedOptions);
 
-    cookieStorage.setItem(key, serializedValue, mergedOptions);
     cookieOptionsMap.set(key, mergedOptions);
   };
 

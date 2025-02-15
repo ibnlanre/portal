@@ -58,7 +58,9 @@ export function createStore<State>(
 
 export function createStore<State>(initialState?: State) {
   const state = resolveValue(initialState);
+
   if (isPromise<State>(state)) return state.then(createPrimitiveStore);
   if (isDictionary(state)) return createCompositeStore(state);
+
   return createPrimitiveStore(state);
 }
