@@ -9,9 +9,8 @@ const removeItem = vi.spyOn(cookieStorage, "removeItem");
 afterEach(() => {
   vi.clearAllMocks();
   Object.defineProperty(document, "cookie", {
-    value: "",
     writable: true,
-    configurable: true,
+    value: "",
   });
 });
 

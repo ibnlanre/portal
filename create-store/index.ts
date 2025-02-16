@@ -16,13 +16,15 @@ import { resolveValue } from "@/create-store/functions/utilities/resolve-value";
  *
  * const count = createStore({
  *   value: 0,
- *   increase(value: number = 1) {
- *     count.value.$set((state) => state + value);
+ *   increase(amount: number = 1) {
+ *     count.value.$set((state) => state + amount);
  *   },
- *   decrease(value: number = 1) {
- *     count.value.$set((state) => state - value);
+ *   decrease(amount: number = 1) {
+ *     count.value.$set((state) => state - amount);
  *   },
  * });
+ *
+ * count.increase(4);
  */
 export function createStore<State extends Dictionary>(
   state: Factory<State>
@@ -31,8 +33,15 @@ export function createStore<State extends Dictionary>(
 /**
  * @example
  *
- * const fetchCount = () => fetch("https://api.example.com/count");
- * const count = createStore(fetchCount);
+ * const fetchCount = async () {
+ *  const result = await fetch("https://api.example.com/count");
+ *  const data = await result.json();
+ *  return data.count;
+ * };
+ *
+ * const count = await createStore(fetchCount);
+ * count.$sub((state) => console.log(state));
+ * count.$set(78);
  */
 export function createStore<State>(
   state: Initializer<Promise<State>>
@@ -42,6 +51,7 @@ export function createStore<State>(
  * @example
  *
  * const count = createStore(0);
+ * count.$get(); // 0
  */
 export function createStore<State>(
   state: Factory<State>

@@ -238,7 +238,7 @@ describe("createCompositeStore", () => {
     });
   });
 
-  describe("reducers", () => {
+  describe("reducer pattern", () => {
     const count = createCompositeStore({
       value: 0,
       set(value: number) {

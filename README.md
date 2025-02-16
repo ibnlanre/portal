@@ -24,6 +24,7 @@ A [TypeScript][typescript] state management library for [React][react] applicati
     - [Breaking Off Stores](#breaking-off-stores)
     - [Updating Nested Stores](#updating-nested-stores)
   - [Accessing Nested Stores with `$tap`](#accessing-nested-stores-with-tap)
+  - [Reducer Pattern](#reducer-pattern)
   - [Asynchronous State](#asynchronous-state)
   - [React Integration](#react-integration)
     - [Modifying State with a Callback](#modifying-state-with-a-callback)
@@ -251,6 +252,57 @@ store.$tap("location.address.street").$set("789 Oak St");
 
 const { street } = store.location.$tap("address");
 street.$get(); // 789 Oak St
+```
+
+### Reducer Pattern
+
+`@ibnlanre/portal` allows you to store plain functions alongside primitives and objects. When the initial state is an object, functions within it are not converted into nested stores but remain callable as [methods][method]. This approach simplifies managing complex state transitions, [co-locates][colocation] logic with state, and reduces [boilerplate][boilerplate] in larger applications.
+
+```typescript
+const count = createStore({
+  value: 0,
+  increase(amount: number = 1) {
+    count.value.$set((prev) => prev + amount);
+  },
+  decrease(amount: number = 1) {
+    count.value.$set((prev) => prev - amount);
+  },
+  reset() {
+    count.value.$set(0);
+  },
+});
+
+count.increase(5);
+count.reset();
+```
+
+**Note** that you have full control over how the function is defined, named, and structured, including its interaction with the store, the format of its arguments and whether it is nested. This flexibility allows you to implement a [reducer][reducer] pattern that aligns with your judgment and preferences.
+
+```typescript
+type CountControlAction = {
+  type: "increase" | "decrease" | "reset";
+  amount?: number;
+};
+
+const count = createStore({
+  value: 0,
+  dispatch({ type, amount = 1 }: CountControlAction) {
+    switch (type) {
+      case "increase":
+        count.value.$set((prev) => prev + amount);
+        break;
+      case "decrease":
+        count.value.$set((prev) => prev - amount);
+        break;
+      case "reset":
+        count.value.$set(0);
+        break;
+    }
+  },
+});
+
+count.dispatch({ type: "increase", amount: 5 });
+count.dispatch({ type: "reset" });
 ```
 
 ### Asynchronous State
@@ -573,10 +625,12 @@ This library is [licensed][licensed] under the [BSD-3-Clause][bsd-3-clause]. See
 [adapter]: https://blog.stackademic.com/mastering-the-adapter-design-pattern-c118e90f696b
 [api]: https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Client-side_APIs/Introduction
 [asynchronous]: https://www.pluralsight.com/resources/blog/guides/introduction-to-asynchronous-javascript
+[boilerplate]: https://medium.com/theymakedesign/what-is-boilerplate-in-web-code-6062abace58e
 [browser-storage]: https://javascript-conference.com/blog/web-browser-storage/
 [bsd-3-clause]: https://opensource.org/licenses/BSD-3-Clause
 [callback]: https://builtin.com/software-engineering-perspectives/callback-function
 [cdn]: https://www.cloudflare.com/en-gb/learning/cdn/what-is-a-cdn/
+[colocation]: https://kentcdodds.com/blog/colocation
 [cookies]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
 [hook]: https://react.dev/reference/react/hooks
 [html]: https://developer.mozilla.org/en-US/docs/Web/HTML
@@ -590,6 +644,7 @@ This library is [licensed][licensed] under the [BSD-3-Clause][bsd-3-clause]. See
 [pnpm]: https://pnpm.io/
 [promise]: https://www.joshwcomeau.com/javascript/promises/
 [react]: https://react.dev/
+[reducer]: https://www.mitchellhanberg.com/post/2018/10/24/reducers-exploring-state-management-in-react/
 [session-storage]: https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage
 [side-effects]: https://monsterlessons-academy.com/posts/what-are-side-effects-in-javascript-what-are-pure-functions
 [signing]: https://bloggle.coggle.it/post/190706036692/what-weve-learned-from-moving-to-signed-cookies
