@@ -99,10 +99,6 @@ describe("createSessionStorageAdapter", () => {
     setSessionStorageState({ state: "value" });
     expect(sessionStorage).toBeUndefined();
 
-    Object.defineProperty(window, "sessionStorage", {
-      value: originalSessionStorage,
-      writable: true,
-      configurable: true,
-    });
+    global.sessionStorage = originalSessionStorage;
   });
 });

@@ -99,10 +99,6 @@ describe("createLocalStorageAdapter", () => {
     setLocalStorageState({ state: "value" });
     expect(localStorage).toBeUndefined();
 
-    Object.defineProperty(window, "localStorage", {
-      value: originalLocalStorage,
-      writable: true,
-      configurable: true,
-    });
+    global.localStorage = originalLocalStorage;
   });
 });

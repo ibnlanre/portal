@@ -23,7 +23,7 @@ A [TypeScript][typescript] state management library for [React][react] applicati
   - [Nested Stores](#nested-stores)
     - [Breaking Off Stores](#breaking-off-stores)
     - [Updating Nested Stores](#updating-nested-stores)
-    - [Accessing Nested Stores with `$tap`](#accessing-nested-stores-with-tap)
+  - [Accessing Nested Stores with `$tap`](#accessing-nested-stores-with-tap)
   - [Asynchronous State](#asynchronous-state)
   - [React Integration](#react-integration)
     - [Modifying State with a Callback](#modifying-state-with-a-callback)
@@ -210,7 +210,9 @@ console.log(city); // "Springfield"
 
 #### Breaking Off Stores
 
-Remember that each point in an object chain is a store. This means that each member of the chain has access to its own value and can be **broken off** into its own store at any point in time. This is useful when you want to work with a nested state independently of the parent store. For example, you can break off the `address` store from the `location` store and work with it independently:
+Remember that each point in an object chain is a store. This means that each member of the chain has access to its own value and can be **broken off** into its own store at any point in time. This is useful when you want to work with a nested state independently of the parent store.
+
+For example, you can break off the `address` store from the `location` store and work with it independently:
 
 ```typescript
 const { address } = store.location;
@@ -233,16 +235,16 @@ street.$set("456 Elm St");
 street.$set((prev) => `${prev} Apt 2`);
 ```
 
-#### Accessing Nested Stores with `$tap`
+### Accessing Nested Stores with `$tap`
 
-For convenience, you can use the `$tap` method to access deeply nested stores directly using a dot-separated string. This method streamlines access to nested stores, making it easy to work with complex state structures while leveraging [TypeScript][typeScript]'s IntelliSense for path suggestions.
+To conveniently access deeply nested stores, you can use the `$tap` method with a dot-separated string. This method leverages [TypeScript][typescript]'s IntelliSense for path suggestions, providing an overview of the available nested stores. This makes managing complex state structures more intuitive and efficient.
 
 ```typescript
 const street = store.$tap("location.address.street");
 street.$get(); // 456 Elm St
 ```
 
-The `$tap` method returns a reference to the nested store, which means you can access and update the nested state directly. You also can **_tap_** at any level of the hierarchy, making it easy to work with deeply nested state.
+The `$tap` method returns a reference to the nested store, which means you can access and update the nested state directly. You also can **_tap_** at any level of the hierarchy, allowing you to work with deeply nested stores without the need for manual traversal.
 
 ```typescript
 store.$tap("location.address.street").$set("789 Oak St");
