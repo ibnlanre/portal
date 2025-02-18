@@ -1,32 +1,32 @@
-import { createCustomWordPattern } from "../create-custom-word-pattern";
+import { createCustomWordPattern } from "@/cookie-storage/helpers/create-custom-word-pattern";
+import type { GenerateCookieKeyOptions } from "@/cookie-storage/types/generate-cookie-key-options";
 
-type Segments<T> = T extends `${string} ${infer Tail}`
-  ? [number, ...Segments<Tail>]
-  : [number];
-
-interface GenerateCookieKey<Description extends string> {
-  description: Description;
-  mapping: Segments<Description> | (number & {})[];
-  prefix?: "" | "_" | "__" | (string & {});
-  scope?: "" | "app" | "host" | "secure" | "session" | (string & {});
-  coupler?: "_" | "-" | (string & {});
-  separator?: "" | "_" | "-" | "." | (string & {});
-}
-
-export function generateCookieKey<Description extends string>({
-  description,
-  mapping = [],
-  prefix = "__",
-  scope = "app",
-  coupler = "_",
-  separator = "",
-}: GenerateCookieKey<Description>): string {
-  const words = description.toLowerCase().split(" ");
+export function generateCookieKey<CookieDescription extends string>({
+  cookieDescription,
+  wordLengths = [],
+  cookieKeyPrefix = "__",
+  cookieKeyScope = "app",
+  scopeCase = "lower",
+  scopeConnector = "_",
+  fragmentSeparator = "",
+}: GenerateCookieKeyOptions<CookieDescription>): string {
+  const words = cookieDescription.toLowerCase().split(" ");
 
   const fragments = words.map((word, index) => {
-    const length = mapping[index] || 1;
+    const length = wordLengths[index] || 1;
     return createCustomWordPattern(word, length);
   });
 
-  return [[prefix, scope].join(""), fragments.join(separator)].join(coupler);
+  if (scopeCase === "title") {
+    cookieKeyScope = cookieKeyScope.replace(/\b\w/g, (char) => {
+      return char.toUpperCase();
+    });
+  } else if (scopeCase === "upper") {
+    cookieKeyScope = cookieKeyScope.toUpperCase();
+  } else cookieKeyScope = cookieKeyScope.toLowerCase();
+
+  return [
+    [cookieKeyPrefix, cookieKeyScope].join(""),
+    fragments.join(fragmentSeparator),
+  ].join(scopeConnector);
 }

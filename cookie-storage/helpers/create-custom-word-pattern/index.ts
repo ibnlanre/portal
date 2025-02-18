@@ -24,15 +24,6 @@ export function createCustomWordPattern(word: string, length: number): string {
     if (letters.filter(Boolean).length === length) break;
     const character = words[index]!;
 
-    console.log("\n==", {
-      consonants,
-      iterator,
-      index,
-      character,
-      letters,
-      words,
-    });
-
     if (vowelsLookup.has(character)) {
       if (index + 1 < word.length) index++;
       else index = ++iterator;
@@ -54,15 +45,6 @@ export function createCustomWordPattern(word: string, length: number): string {
   while (vowels.length) {
     if (letters.filter(Boolean).length === length) break;
     const character = words[index]!;
-
-    console.log("\n==", {
-      vowels,
-      iterator,
-      index,
-      character,
-      letters,
-      words,
-    });
 
     if (!vowelsLookup.has(character)) {
       if (index - 1 >= 0) index--;
