@@ -14,21 +14,21 @@ export interface GenerateCookieKeyOptions<CookieDescription extends string> {
    *
    * @example [2, 3]
    */
-  wordLengths?: WordMappingSegments<CookieDescription> | number[];
+  cookieFragmentSizes?: WordMappingSegments<CookieDescription> | number[];
 
   /**
    * A prefix to add to the generated cookie key.
    *
    * @default "__"
    */
-  cookieKeyPrefix?: string;
+  cookieKeyPrefix?: "" | "_" | "__" | (string & {});
 
   /**
    * The designated scope of the cookie (e.g., "app", "secure").
    *
    * @default "app"
    */
-  cookieKeyScope?: string;
+  cookieKeyScope?: "" | "app" | "host" | "secure" | "session" | (string & {});
 
   /**
    * Defines the case convention for the scope.
@@ -43,12 +43,19 @@ export interface GenerateCookieKeyOptions<CookieDescription extends string> {
    *
    * @default "_"
    */
-  scopeConnector?: string;
+  scopeFragmentConnector?: "_" | "-" | (string & {});
 
   /**
    * Character(s) used to join the word fragments.
    *
    * @default ""
    */
-  fragmentSeparator?: string;
+  fragmentSeparator?: "" | "_" | "-" | "." | (string & {});
+
+  /**
+   * A suffix to add to the generated cookie key.
+   *
+   * @default ""
+   */
+  cookieKeySuffix?: "" | "_" | "__" | (string & {});
 }

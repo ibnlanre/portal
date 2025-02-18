@@ -12,11 +12,11 @@ describe("generateCookieKey", () => {
   it("should generate a cookie key with custom options", () => {
     const result = generateCookieKey({
       cookieDescription: "Verification Signature",
-      wordLengths: [2, 3],
+      cookieFragmentSizes: [2, 3],
       cookieKeyPrefix: "__",
       cookieKeyScope: "secure",
       scopeCase: "upper",
-      scopeConnector: "_",
+      scopeFragmentConnector: "_",
       fragmentSeparator: "-",
     });
     expect(result).toBe("__SECURE_vr-sgt");
@@ -53,7 +53,7 @@ describe("generateCookieKey", () => {
     const result = generateCookieKey({
       cookieDescription: "Test Cookie",
       cookieKeyScope: "myScope",
-      scopeConnector: "-",
+      scopeFragmentConnector: "-",
     });
     expect(result).toBe("__myscope-tc");
   });
@@ -69,7 +69,7 @@ describe("generateCookieKey", () => {
   it("should handle different word lengths", () => {
     const result = generateCookieKey({
       cookieDescription: "Very Long Cookie Description",
-      wordLengths: [1, 2, 3, 4],
+      cookieFragmentSizes: [1, 2, 3, 4],
     });
     expect(result).toBe("__app_vlnckedsrp");
   });
