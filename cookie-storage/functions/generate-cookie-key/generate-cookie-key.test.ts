@@ -4,80 +4,80 @@ import { generateCookieKey } from "./index";
 describe("generateCookieKey", () => {
   it("should generate a cookie key with default options", () => {
     const result = generateCookieKey({
-      cookieDescription: "Test Cookie",
+      cookieFragmentDescription: "Test Cookie",
     });
-    expect(result).toBe("__app_tc");
+    expect(result).toBe("__Host_tc");
   });
 
   it("should generate a cookie key with custom options", () => {
     const result = generateCookieKey({
-      cookieDescription: "Verification Signature",
+      cookieFragmentDescription: "Verification Signature",
       cookieFragmentSizes: [2, 3],
-      cookieKeyPrefix: "__",
-      cookieKeyScope: "secure",
-      scopeCase: "upper",
-      scopeFragmentConnector: "_",
-      fragmentSeparator: "-",
+      cookiePrefix: "__",
+      cookieScope: "secure",
+      cookieScopeCase: "upper",
+      cookieScopeFragmentConnector: "_",
+      cookieFragmentsConnector: "-",
     });
     expect(result).toBe("__SECURE_vr-sgt");
   });
 
   it("should handle title case scope", () => {
     const result = generateCookieKey({
-      cookieDescription: "Test Cookie",
-      cookieKeyScope: "myScope",
-      scopeCase: "title",
+      cookieFragmentDescription: "Test Cookie",
+      cookieScope: "myScope",
+      cookieScopeCase: "title",
     });
     expect(result).toBe("__MyScope_tc");
   });
 
   it("should handle lower case scope", () => {
     const result = generateCookieKey({
-      cookieDescription: "Test Cookie",
-      cookieKeyScope: "MyScope",
-      scopeCase: "lower",
+      cookieFragmentDescription: "Test Cookie",
+      cookieScope: "MyScope",
+      cookieScopeCase: "lower",
     });
     expect(result).toBe("__myscope_tc");
   });
 
   it("should handle upper case scope", () => {
     const result = generateCookieKey({
-      cookieDescription: "Test Cookie",
-      cookieKeyScope: "myScope",
-      scopeCase: "upper",
+      cookieFragmentDescription: "Test Cookie",
+      cookieScope: "myScope",
+      cookieScopeCase: "upper",
     });
     expect(result).toBe("__MYSCOPE_tc");
   });
 
   it("should handle custom scope connector", () => {
     const result = generateCookieKey({
-      cookieDescription: "Test Cookie",
-      cookieKeyScope: "myScope",
-      scopeFragmentConnector: "-",
+      cookieFragmentDescription: "Test Cookie",
+      cookieScope: "myScope",
+      cookieScopeFragmentConnector: "-",
     });
-    expect(result).toBe("__myscope-tc");
+    expect(result).toBe("__MyScope-tc");
   });
 
   it("should handle custom fragment separator", () => {
     const result = generateCookieKey({
-      cookieDescription: "Test Cookie",
-      fragmentSeparator: "-",
+      cookieFragmentDescription: "Test Cookie",
+      cookieFragmentsConnector: "-",
     });
-    expect(result).toBe("__app_t-c");
+    expect(result).toBe("__Host_t-c");
   });
 
   it("should handle different word lengths", () => {
     const result = generateCookieKey({
-      cookieDescription: "Very Long Cookie Description",
+      cookieFragmentDescription: "Very Long Cookie Description",
       cookieFragmentSizes: [1, 2, 3, 4],
     });
-    expect(result).toBe("__app_vlnckedsrp");
+    expect(result).toBe("__Host_vlnckedsrp");
   });
 
   it("should handle empty cookie description", () => {
     const result = generateCookieKey({
-      cookieDescription: "",
+      cookieFragmentDescription: "",
     });
-    expect(result).toBe("__app_");
+    expect(result).toBe("__Host");
   });
 });

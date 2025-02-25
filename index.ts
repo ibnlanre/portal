@@ -30,7 +30,7 @@ export type { StorageAdapter } from "@/create-store/types/storage-adapter";
 export type { Subscriber } from "@/create-store/types/subscriber";
 
 export { cookieStorage } from "@/cookie-storage";
-export { generateCookieKey } from "@/cookie-storage/helpers/generate-cookie-key";
+export { generateCookieKey } from "@/cookie-storage/functions/generate-cookie-key";
 export { createStore } from "@/create-store";
 export { createBrowserStorageAdapter } from "@/create-store/functions/adapters/create-browser-storage-adapter";
 export { createCookieStorageAdapter } from "@/create-store/functions/adapters/create-cookie-storage-adapter";

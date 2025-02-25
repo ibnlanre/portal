@@ -1,5 +1,6 @@
 /**
  * Get a cookie by index from cookieStorage.
+ *
  * @param {number} index The index of the cookie to retrieve.
  * @returns {string | null} The cookie value if found, or null if not found.
  */

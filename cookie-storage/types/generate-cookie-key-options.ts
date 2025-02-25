@@ -1,61 +1,107 @@
 import type { WordMappingSegments } from "./word-mapping-segments";
 
-export interface GenerateCookieKeyOptions<CookieDescription extends string> {
+export interface GenerateCookieKeyOptions<
+  CookieFragmentDescription extends string
+> {
   /**
-   * A descriptive phrase used to generate the cookie key fragments.
-   * Typically includes words that should be shortened.
+   * A descriptive phrase used to generate one or more fragments for the cookie key.
+   * Often includes words to be shortened.
    *
    * @example "Verification Signature"
    */
-  cookieDescription: CookieDescription;
+  cookieFragmentDescription: CookieFragmentDescription;
 
   /**
-   * A list of numbers indicating how many letters to extract from each word.
+   * Array of numbers specifying how many letters to extract from each word in the description.
+   * Defaults to extracting only one letter for each word if not provided.
    *
    * @example [2, 3]
    */
-  cookieFragmentSizes?: WordMappingSegments<CookieDescription> | number[];
+  cookieFragmentSizes?:
+    | WordMappingSegments<CookieFragmentDescription>
+    | number[];
 
   /**
-   * A prefix to add to the generated cookie key.
+   * Prefix added to the generated cookie key, e.g. for internal or system cookies.
+   *
+   * By convention, the prefix is usually one or two underscores.
+   * The prefix is used to differentiate between regular and special cookies.
+   *
+   * @see {@link https://check-your-website.server-daten.de/prefix-cookies.html Why should you only use Prefix - Cookies?}
+   *
+   * @description
+   *
+   * - `""` (empty string) indicates no prefix.
+   * - `"_"` is a common prefix for internal purposes (such as tracking user sessions).
+   * - `"__"` is a common prefix for system-level operations (such as storing user preferences).
    *
    * @default "__"
    */
-  cookieKeyPrefix?: "" | "_" | "__" | (string & {});
+  cookiePrefix?: "" | "_" | "__" | (string & {});
 
   /**
-   * The designated scope of the cookie (e.g., "app", "secure").
+   * Logical scope indicating cookie usage context such as "host" or "secure".
+   * Helps in classifying cookies based on their function.
    *
-   * @default "app"
+   * @default "host"
    */
-  cookieKeyScope?: "" | "app" | "host" | "secure" | "session" | (string & {});
+  cookieScope?:
+    | ""
+    | "app"
+    | "global"
+    | "host"
+    | "secure"
+    | "session"
+    | "user"
+    | (string & {});
 
   /**
-   * Defines the case convention for the scope.
-   * Accepts "title", "lower", or "upper".
+   * Identifies the service or subsystem setting the cookie, like "auth" or "data".
    *
-   * @default "lower"
+   * @default ""
    */
-  scopeCase?: "title" | "lower" | "upper";
+  cookieService?:
+    | ""
+    | "auth"
+    | "cache"
+    | "config"
+    | "data"
+    | "log"
+    | "store"
+    | (string & {});
 
   /**
-   * Character(s) used to join the scope and the fragments.
+   * Specifies the casing format applied to the cookie scope.
+   *
+   * @default "title"
+   */
+  cookieScopeCase?: "title" | "lower" | "upper" | "camel" | "pascal";
+
+  /**
+   * Character(s) used to connect the scope and service strings, enhancing readability.
    *
    * @default "_"
    */
-  scopeFragmentConnector?: "_" | "-" | (string & {});
+  cookieScopeServiceConnector?: "-" | "_" | (string & {});
 
   /**
-   * Character(s) used to join the word fragments.
+   * Symbol that separates the scope from the fragments in the final cookie key.
+   *
+   * @default "_"
+   */
+  cookieScopeFragmentConnector?: "_" | "-" | "." | (string & {});
+
+  /**
+   * Character(s) used to join the extracted word fragments.
    *
    * @default ""
    */
-  fragmentSeparator?: "" | "_" | "-" | "." | (string & {});
+  cookieFragmentsConnector?: "" | "_" | "-" | "." | (string & {});
 
   /**
-   * A suffix to add to the generated cookie key.
+   * A suffix appended at the end of the cookie key, if required for differentiation.
    *
    * @default ""
    */
-  cookieKeySuffix?: "" | "_" | "__" | (string & {});
+  cookieSuffix?: "" | "_" | "__" | (string & {});
 }
