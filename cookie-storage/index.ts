@@ -1,7 +1,7 @@
 import type { CookieStorage } from "@/cookie-storage/types/cookie-storage";
 
 import { clearCookieStorage } from "@/cookie-storage/functions/clear-cookie-storage";
-import { generateCookieKey } from "@/cookie-storage/functions/generate-cookie-key";
+import { createCookieKey } from "@/cookie-storage/functions/create-cookie-key";
 import { getCookieByIndex } from "@/cookie-storage/functions/get-cookie-by-index";
 import { getCookieStorageLength } from "@/cookie-storage/functions/get-cookie-storage-length";
 import { getCookieValue } from "@/cookie-storage/functions/get-cookie-value";
@@ -20,7 +20,7 @@ export const cookieStorage = <CookieStorage>{
   setItem: setCookieValue,
   removeItem: removeCookieValue,
   clear: clearCookieStorage,
-  makeKey: generateCookieKey,
+  makeKey: createCookieKey,
   key: getCookieByIndex,
   get length() {
     return getCookieStorageLength();

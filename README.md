@@ -46,6 +46,7 @@ A [TypeScript][typescript] state management library for [React][react] applicati
     - [setItem(key: string, value: string): void](#setitemkey-string-value-string-void)
     - [removeItem(key: string): void](#removeitemkey-string-void)
     - [clear(): void](#clear-void)
+    - [makeKey<CookieFragmentDescription extends string>(options: GenerateCookieKeyOptions<CookieFragmentDescription>): string](#makekeycookiefragmentdescription-extends-stringoptions-generatecookiekeyoptionscookiefragmentdescription-string)
     - [key(index: number): string](#keyindex-number-string)
     - [length: number](#length-number)
 - [Contributions](#contributions)
@@ -537,10 +538,10 @@ All functions in the `cookieStorage` module are static and do not require an [in
     - `value`: The cookie value to be signed.
     - `secret`: The secret key used to sign the cookie.
   - Returns: The signed cookie value.
-
-  ```typescript
-  const signedValue = cookieStorage.sign("value", "secret");
-  ```
+  - Example:
+    ```typescript
+    const signedValue = cookieStorage.sign("value", "secret");
+    ```
 
 - **unsign(signedValue: string, secret: string): string**
 
@@ -549,10 +550,10 @@ All functions in the `cookieStorage` module are static and do not require an [in
     - `signedValue`: The signed cookie value to be unsigned.
     - `secret`: The secret key used to unsign the cookie.
   - Returns: The original cookie value.
-
-  ```typescript
-  const originalValue = cookieStorage.unsign(signedValue, "secret");
-  ```
+  - Example:
+    ```typescript
+    const originalValue = cookieStorage.unsign(signedValue, "secret");
+    ```
 
 - **getItem(key: string): string**
 
@@ -560,10 +561,10 @@ All functions in the `cookieStorage` module are static and do not require an [in
   - Parameters:
     - `key`: The key of the cookie to retrieve.
   - Returns: The value of the cookie.
-
-  ```typescript
-  const value = cookieStorage.getItem("key");
-  ```
+  - Example:
+    ```typescript
+    const value = cookieStorage.getItem("key");
+    ```
 
 - **setItem(key: string, value: string): void**
 
@@ -571,28 +572,53 @@ All functions in the `cookieStorage` module are static and do not require an [in
   - Parameters:
     - `key`: The key of the cookie to set.
     - `value`: The value to set for the cookie.
-
-  ```typescript
-  cookieStorage.setItem("key", "value");
-  ```
+  - Example:
+    ```typescript
+    cookieStorage.setItem("key", "value");
+    ```
 
 - **removeItem(key: string): void**
 
   - Removes a cookie by its key.
   - Parameters:
     - `key`: The key of the cookie to remove.
-
-  ```typescript
-  cookieStorage.removeItem("key");
-  ```
+  - Example:
+    ```typescript
+    cookieStorage.removeItem("key");
+    ```
 
 - **clear(): void**
 
   - Clears all cookies.
+  - Example:
+    ```typescript
+    cookieStorage.clear();
+    ```
 
-  ```typescript
-  cookieStorage.clear();
-  ```
+- **createKey(options: Object): string**
+
+  - Creates a cookie key based on the provided options.
+  - Parameters:
+    - `options.cookieFragmentDescription`: The description of the cookie fragment.
+    - `options.cookiePrefix`: The prefix to use for the cookie key. Default is `"__"`.
+    - `options.cookieFragmentSizes`: The sizes of the cookie fragments. Default is `[]`.
+    - `options.cookieScope`: The scope of the cookie. Default is `"host"`.
+    - `options.cookieScopeCase`: The case of the cookie scope. Default is `"title"`.
+    - `options.cookieService`: The service to use for the cookie. Default is `""`.
+    - `options.cookieScopeServiceConnector`: The connector to use for the cookie scope and service. Default is `"-"`.
+    - `options.cookieScopeFragmentConnector`: The connector to use for the cookie scope and fragment. Default is `"_"`.
+    - `options.cookieFragmentsConnector`: The connector to use for the cookie fragments. Default is `""`.
+    - `options.cookieSuffix`: The suffix to use for the cookie key. Default is `""`.
+  - Returns: The generated cookie key.
+  - Example:
+    ```typescript
+    const key = cookieStorage.createKey({
+      cookieFragmentDescription: "auth",
+      cookiePrefix: "__",
+      cookieFragmentSizes: [2, 3],
+      cookieScopeCase: "title",
+    });
+    ```
 
 - **key(index: number): string**
 

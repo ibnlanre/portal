@@ -1,5 +1,7 @@
+import type { CreateCookieKeyOptions } from "@/cookie-storage/types/create-cookie-key-options";
+
 import { createCustomWordPattern } from "@/cookie-storage/helpers/create-custom-word-pattern";
-import type { GenerateCookieKeyOptions } from "@/cookie-storage/types/generate-cookie-key-options";
+import { join } from "@/cookie-storage/helpers/join";
 
 /**
  * Generates a cookie key based on the provided options.
@@ -12,7 +14,7 @@ import type { GenerateCookieKeyOptions } from "@/cookie-storage/types/generate-c
  * ```ts
  * // __Secure-auth_vr-sgt
  *
- * generateCookieKey({
+ * createCookieKey({
  *  cookieFragmentDescription: "Verification Signature",
  *  cookiePrefix: "__",
  *  cookieFragmentSizes: [2, 3],
@@ -25,7 +27,7 @@ import type { GenerateCookieKeyOptions } from "@/cookie-storage/types/generate-c
  *  cookieSuffix: "",
  * });
  */
-export function generateCookieKey<CookieFragmentDescription extends string>({
+export function createCookieKey<CookieFragmentDescription extends string>({
   cookieFragmentDescription,
   cookiePrefix = "__",
   cookieFragmentSizes = [],
@@ -36,7 +38,7 @@ export function generateCookieKey<CookieFragmentDescription extends string>({
   cookieScopeFragmentConnector = "_",
   cookieFragmentsConnector = "",
   cookieSuffix = "",
-}: GenerateCookieKeyOptions<CookieFragmentDescription>): string {
+}: CreateCookieKeyOptions<CookieFragmentDescription>): string {
   const words = cookieFragmentDescription.toLowerCase().split(" ");
 
   if (cookieFragmentSizes.some((size) => size < 1)) {
@@ -50,12 +52,12 @@ export function generateCookieKey<CookieFragmentDescription extends string>({
 
   cookieScope = transformCase(cookieScope, cookieScopeCase);
 
-  const scope = join([cookiePrefix, cookieScope], "");
+  const scope = join([cookiePrefix, cookieScope]);
   const service = join([scope, cookieService], cookieScopeServiceConnector);
   const description = join(fragments, cookieFragmentsConnector);
   const name = join([service, description], cookieScopeFragmentConnector);
 
-  return [name, cookieSuffix].join("");
+  return join([name, cookieSuffix]);
 }
 
 function transformCase(
@@ -77,8 +79,4 @@ function transformCase(
     default:
       return text.toLowerCase();
   }
-}
-
-function join(segments: string[], connector: string): string {
-  return segments.filter(Boolean).join(connector);
 }

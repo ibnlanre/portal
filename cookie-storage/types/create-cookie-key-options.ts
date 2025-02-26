@@ -1,6 +1,6 @@
 import type { WordMappingSegments } from "./word-mapping-segments";
 
-export interface GenerateCookieKeyOptions<
+export interface CreateCookieKeyOptions<
   CookieFragmentDescription extends string
 > {
   /**

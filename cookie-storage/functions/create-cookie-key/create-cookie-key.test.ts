@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { generateCookieKey } from "./index";
+import { createCookieKey } from "./index";
 
-describe("generateCookieKey", () => {
-  it("should generate a cookie key with default options", () => {
-    const result = generateCookieKey({
+describe("createCookieKey", () => {
+  it("should create a cookie key with default options", () => {
+    const result = createCookieKey({
       cookieFragmentDescription: "Test Cookie",
     });
     expect(result).toBe("__Host_tc");
   });
 
-  it("should generate a cookie key with custom options", () => {
-    const result = generateCookieKey({
+  it("should create a cookie key with custom options", () => {
+    const result = createCookieKey({
       cookieFragmentDescription: "Verification Signature",
       cookieFragmentSizes: [2, 3],
       cookiePrefix: "__",
@@ -23,7 +23,7 @@ describe("generateCookieKey", () => {
   });
 
   it("should handle title case scope", () => {
-    const result = generateCookieKey({
+    const result = createCookieKey({
       cookieFragmentDescription: "Test Cookie",
       cookieScope: "myScope",
       cookieScopeCase: "title",
@@ -32,7 +32,7 @@ describe("generateCookieKey", () => {
   });
 
   it("should handle lower case scope", () => {
-    const result = generateCookieKey({
+    const result = createCookieKey({
       cookieFragmentDescription: "Test Cookie",
       cookieScope: "MyScope",
       cookieScopeCase: "lower",
@@ -41,7 +41,7 @@ describe("generateCookieKey", () => {
   });
 
   it("should handle upper case scope", () => {
-    const result = generateCookieKey({
+    const result = createCookieKey({
       cookieFragmentDescription: "Test Cookie",
       cookieScope: "myScope",
       cookieScopeCase: "upper",
@@ -50,7 +50,7 @@ describe("generateCookieKey", () => {
   });
 
   it("should handle custom scope connector", () => {
-    const result = generateCookieKey({
+    const result = createCookieKey({
       cookieFragmentDescription: "Test Cookie",
       cookieScope: "myScope",
       cookieScopeFragmentConnector: "-",
@@ -59,7 +59,7 @@ describe("generateCookieKey", () => {
   });
 
   it("should handle custom fragment separator", () => {
-    const result = generateCookieKey({
+    const result = createCookieKey({
       cookieFragmentDescription: "Test Cookie",
       cookieFragmentsConnector: "-",
     });
@@ -67,7 +67,7 @@ describe("generateCookieKey", () => {
   });
 
   it("should handle different word lengths", () => {
-    const result = generateCookieKey({
+    const result = createCookieKey({
       cookieFragmentDescription: "Very Long Cookie Description",
       cookieFragmentSizes: [1, 2, 3, 4],
     });
@@ -75,7 +75,7 @@ describe("generateCookieKey", () => {
   });
 
   it("should handle empty cookie description", () => {
-    const result = generateCookieKey({
+    const result = createCookieKey({
       cookieFragmentDescription: "",
     });
     expect(result).toBe("__Host");

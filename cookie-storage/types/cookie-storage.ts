@@ -1,5 +1,5 @@
 import type { CookieOptions } from "./cookie-options";
-import type { GenerateCookieKeyOptions } from "./generate-cookie-key-options";
+import type { CreateCookieKeyOptions } from "./create-cookie-key-options";
 
 /**
  * Represents the cookie storage.
@@ -100,7 +100,7 @@ export interface CookieStorage extends Storage {
   /**
    * Generate a cookie key based on the provided options.
    *
-   * @param {GenerateCookieKeyOptions} options The options to use when generating the cookie key.
+   * @param {CreateCookieKeyOptions} options The options to use when generating the cookie key.
    * @returns {string} The generated cookie key.
    *
    * @example
@@ -122,7 +122,7 @@ export interface CookieStorage extends Storage {
    * });
    */
   makeKey: <CookieFragmentDescription extends string>(
-    options: GenerateCookieKeyOptions<CookieFragmentDescription>
+    options: CreateCookieKeyOptions<CookieFragmentDescription>
   ) => string;
 
   /**
