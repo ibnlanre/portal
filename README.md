@@ -46,7 +46,7 @@ A [TypeScript][typescript] state management library for [React][react] applicati
     - [setItem(key: string, value: string): void](#setitemkey-string-value-string-void)
     - [removeItem(key: string): void](#removeitemkey-string-void)
     - [clear(): void](#clear-void)
-    - [makeKey<CookieFragmentDescription extends string>(options: GenerateCookieKeyOptions<CookieFragmentDescription>): string](#makekeycookiefragmentdescription-extends-stringoptions-generatecookiekeyoptionscookiefragmentdescription-string)
+    - [createKey(options: Object): string](#createkeyoptions-object-string)
     - [key(index: number): string](#keyindex-number-string)
     - [length: number](#length-number)
 - [Contributions](#contributions)

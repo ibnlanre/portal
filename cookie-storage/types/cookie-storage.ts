@@ -98,7 +98,7 @@ export interface CookieStorage extends Storage {
   clear: () => void;
 
   /**
-   * Generate a cookie key based on the provided options.
+   * Creates a cookie key based on the provided options.
    *
    * @param {CreateCookieKeyOptions} options The options to use when generating the cookie key.
    * @returns {string} The generated cookie key.
@@ -108,7 +108,7 @@ export interface CookieStorage extends Storage {
    * ```ts
    * // __Secure-auth_vr-sgt
    *
-   * cookieStorage.makeKey({
+   * cookieStorage.createKey({
    *  cookieFragmentDescription: "Verification Signature",
    *  cookiePrefix: "__",
    *  cookieFragmentSizes: [2, 3],
@@ -121,7 +121,7 @@ export interface CookieStorage extends Storage {
    *  cookieSuffix: "",
    * });
    */
-  makeKey: <CookieFragmentDescription extends string>(
+  createKey: <CookieFragmentDescription extends string>(
     options: CreateCookieKeyOptions<CookieFragmentDescription>
   ) => string;
 

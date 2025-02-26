@@ -2,9 +2,10 @@ import type { CreateCookieKeyOptions } from "@/cookie-storage/types/create-cooki
 
 import { createCustomWordPattern } from "@/cookie-storage/helpers/create-custom-word-pattern";
 import { join } from "@/cookie-storage/helpers/join";
+import { transformCase } from "@/cookie-storage/helpers/transform-case";
 
 /**
- * Generates a cookie key based on the provided options.
+ * Creates a cookie key based on the provided options.
  *
  * @param options The options to use when generating the cookie key.
  * @returns The generated cookie key.
@@ -58,25 +59,4 @@ export function createCookieKey<CookieFragmentDescription extends string>({
   const name = join([service, description], cookieScopeFragmentConnector);
 
   return join([name, cookieSuffix]);
-}
-
-function transformCase(
-  text: string,
-  caseType: "title" | "lower" | "upper" | "camel" | "pascal"
-): string {
-  switch (caseType) {
-    case "title":
-      return text.replace(/\b\w/g, (char) => char.toUpperCase());
-    case "upper":
-      return text.toUpperCase();
-    case "camel":
-      return text.replace(
-        /([-_ ]\w)/g,
-        (match) => match?.at(1)?.toUpperCase() ?? ""
-      );
-    case "pascal":
-      return text.replace(/(^\w|[-_ ]\w)/g, (match) => match.toUpperCase());
-    default:
-      return text.toLowerCase();
-  }
 }
