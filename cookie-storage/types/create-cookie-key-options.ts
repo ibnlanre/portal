@@ -1,3 +1,4 @@
+import type { CaseType } from "./case-type";
 import type { WordMappingSegments } from "./word-mapping-segments";
 
 export interface CreateCookieKeyOptions<
@@ -75,7 +76,7 @@ export interface CreateCookieKeyOptions<
    *
    * @default "title"
    */
-  cookieScopeCase?: "title" | "lower" | "upper" | "camel" | "pascal";
+  cookieScopeCase?: CaseType;
 
   /**
    * Character(s) used to connect the scope and service strings, enhancing readability.
