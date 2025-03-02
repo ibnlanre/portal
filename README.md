@@ -24,7 +24,9 @@ A [TypeScript][typescript] state management library for [React][react] applicati
     - [Breaking Off Stores](#breaking-off-stores)
     - [Updating Nested Stores](#updating-nested-stores)
   - [Accessing Nested Stores with `$tap`](#accessing-nested-stores-with-tap)
-  - [Reducer Pattern](#reducer-pattern)
+  - [Actions](#actions)
+    - [Reducer Pattern](#reducer-pattern)
+    - [Internal Actions](#internal-actions)
   - [Asynchronous State](#asynchronous-state)
   - [React Integration](#react-integration)
     - [Modifying State with a Callback](#modifying-state-with-a-callback)
@@ -255,7 +257,7 @@ const { street } = store.location.$tap("address");
 street.$get(); // 789 Oak St
 ```
 
-### Reducer Pattern
+### Actions
 
 `@ibnlanre/portal` allows you to store plain functions alongside primitives and objects. When the initial state is an object, functions within it are not converted into nested stores but remain callable as [methods][method]. This approach simplifies managing complex state transitions, [co-locates][colocation] logic with state, and reduces [boilerplate][boilerplate] in larger applications.
 
@@ -277,7 +279,9 @@ count.increase(5);
 count.reset();
 ```
 
-**Note** that you have full control over how the function is defined, named, and structured, including its interaction with the store, the format of its arguments and whether it is nested. This flexibility allows you to implement a [reducer][reducer] pattern that aligns with your judgment and preferences.
+#### Reducer Pattern
+
+One thing to note is that you have full control over how the function is defined, named, and structured, including its interaction with the store, the format of its arguments and whether it is nested. This flexibility allows you to implement a [reducer][reducer] pattern that aligns with your judgment and preferences.
 
 ```typescript
 type CountControlAction = {
@@ -304,6 +308,32 @@ const count = createStore({
 
 count.dispatch({ type: "increase", amount: 5 });
 count.dispatch({ type: "reset" });
+```
+
+#### Internal Actions
+
+In scenarios, where you do not want the actions to be exposed as [methods][method] through the store, you can create regular functions that interacts with the store. These functions can then be called directly or used as a callback in other functions.
+
+```typescript
+export const count = createStore({
+  value: 0,
+});
+
+function increase(amount: number = 1) {
+  count.value.$set((prev) => prev + amount);
+}
+
+function decrease(amount: number = 1) {
+  count.value.$set((prev) => prev - amount);
+}
+
+function reset() {
+  count.value.$set(0);
+}
+
+externalService.on("connect", increase);
+externalService.on("disconnect", decrease);
+externalService.on("error", reset);
 ```
 
 ### Asynchronous State

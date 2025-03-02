@@ -130,4 +130,49 @@ describe("createCookieStorageAdapter", () => {
     expect(customParse).toHaveBeenCalledWith(JSON.stringify(newState));
     expect(state).toEqual(newState);
   });
+
+  it("should update cookieStorage with options when state changes", () => {
+    const initialState = { state: "value" };
+    const [, setCookieStorageState] = createCookieStorageAdapter<
+      typeof initialState
+    >({ key });
+
+    setCookieStorageState(
+      { state: "new value" },
+      {
+        expires: new Date().getTime() + 1000,
+        domain: "localhost",
+      }
+    );
+
+    const newStateValue = JSON.stringify({ state: "new value" });
+    expect(setItem).toHaveBeenCalledWith(
+      key,
+      newStateValue,
+      expect.objectContaining({
+        expires: expect.any(Number),
+        domain: "localhost",
+      })
+    );
+
+    expect(cookieStorage.getItem(key)).toBe(newStateValue);
+  });
+
+  it("can be signed with an empty secret", () => {
+    const initialState = { state: "value" };
+
+    const [, setCookieStorageState] = createCookieStorageAdapter<
+      typeof initialState
+    >({
+      key,
+      signed: true,
+      secret: "",
+    });
+
+    setCookieStorageState({ state: "new value" });
+
+    const newStateValue = JSON.stringify({ state: "new value" });
+    expect(setItem).toHaveBeenCalledWith(key, newStateValue, {});
+    expect(cookieStorage.getItem(key)).toBe(newStateValue);
+  });
 });

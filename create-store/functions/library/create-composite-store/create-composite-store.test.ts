@@ -309,4 +309,64 @@ describe("createCompositeStore", () => {
       expect(count.value.$get()).toBe(0);
     });
   });
+
+  describe("Reducer pattern with nested state", () => {
+    const store = createCompositeStore({
+      bears: 0,
+      fish: 0,
+      increasePopulation: (by: number = 1) => {
+        store.bears.$set((state) => state + by);
+      },
+      eatFish: () => {
+        store.fish.$set((state) => state - 1);
+      },
+      removeAllBears: () => {
+        store.bears.$set(0);
+      },
+      reset: () => {
+        store.bears.$set(0);
+        store.fish.$set(0);
+      },
+    });
+
+    beforeEach(() => {
+      store.reset();
+    });
+
+    it("should initialize with correct default values", () => {
+      expect(store.bears.$get()).toBe(0);
+      expect(store.fish.$get()).toBe(0);
+    });
+
+    it("should increase bear population", () => {
+      store.increasePopulation(5);
+      expect(store.bears.$get()).toBe(5);
+    });
+
+    it("should decrease fish population", () => {
+      store.eatFish();
+      expect(store.fish.$get()).toBe(-1);
+    });
+
+    it("should remove all bears", () => {
+      store.increasePopulation(5);
+      store.removeAllBears();
+      expect(store.bears.$get()).toBe(0);
+    });
+
+    it("should handle increasePopulation with default value", () => {
+      store.increasePopulation();
+      expect(store.bears.$get()).toBe(1);
+    });
+
+    it("should not affect fish population when increasing bear population", () => {
+      store.increasePopulation(3);
+      expect(store.fish.$get()).toBe(0);
+    });
+
+    it("should not affect bear population when eating fish", () => {
+      store.eatFish();
+      expect(store.bears.$get()).toBe(0);
+    });
+  });
 });
