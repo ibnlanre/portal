@@ -315,7 +315,11 @@ describe("createCompositeStore", () => {
       bears: 0,
       fish: 0,
       increasePopulation: (by: number = 1) => {
-        store.bears.$set((state) => state + by);
+        store.$set((state) => {
+          return {
+            bears: state.bears + by,
+          };
+        });
       },
       eatFish: () => {
         store.fish.$set((state) => state - 1);
@@ -331,6 +335,11 @@ describe("createCompositeStore", () => {
 
     beforeEach(() => {
       store.reset();
+    });
+
+    it("should initialize with correct default values", () => {
+      expect(store).toBeDefined();
+      expect(store.bears.$get()).toBe(0);
     });
 
     it("should initialize with correct default values", () => {
@@ -367,6 +376,48 @@ describe("createCompositeStore", () => {
     it("should not affect bear population when eating fish", () => {
       store.eatFish();
       expect(store.bears.$get()).toBe(0);
+    });
+
+    it("should take partial state updates", () => {
+      store.$set({ bears: 5 });
+      expect(store.bears.$get()).toBe(5);
+
+      store.increasePopulation(3);
+      expect(store.bears.$get()).toBe(8);
+    });
+
+    it("should take partial state updates with a function", () => {
+      store.$set((state) => ({ bears: state.bears + 5 }));
+      expect(store.bears.$get()).toBe(5);
+
+      store.increasePopulation(3);
+      expect(store.bears.$get()).toBe(8);
+    });
+
+    it("should handle React component state updates", () => {
+      const { result, rerender } = renderHook(() => store.$use());
+
+      const [state, setState] = result.current;
+      expect(state).toEqual(store.$get());
+
+      act(() => {
+        store.increasePopulation(2);
+        setState({ fish: 3 });
+      });
+
+      expect(store.bears.$get()).toBe(2);
+      const [updatedState] = result.current;
+
+      expect(updatedState.fish).toEqual(3);
+      expect(updatedState.bears).toEqual(2);
+
+      act(() => {
+        state.eatFish();
+        rerender();
+      });
+
+      const [newState] = result.current;
+      expect(newState.fish).toEqual(2);
     });
   });
 });

@@ -8,7 +8,5 @@ import type { Dictionary } from "@/create-store/types/dictionary";
  * @returns A boolean indicating whether the value is a dictionary.
  */
 export function isDictionary(value: unknown): value is Dictionary {
-  if (value === null) return false;
-  if (Array.isArray(value)) return false;
-  return typeof value === "object";
+  return Object.prototype.toString.call(value) === "[object Object]";
 }

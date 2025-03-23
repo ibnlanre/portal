@@ -3,14 +3,17 @@ import type { Dictionary } from "@/create-store/types/dictionary";
 import type { Paths } from "@/create-store/types/paths";
 import type { ResolvePath } from "@/create-store/types/resolve-path";
 import type { Selector } from "@/create-store/types/selector";
+import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
 import type { StateManager } from "@/create-store/types/state-manager";
 import type { StatePath } from "@/create-store/types/state-path";
 import type { Subscriber } from "@/create-store/types/subscriber";
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch } from "react";
 
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
+import { combine } from "@/create-store/functions/helpers/combine";
+import { createPaths } from "@/create-store/functions/helpers/create-paths";
 import { createSnapshot } from "@/create-store/functions/helpers/create-snapshot";
 import { shallowMerge } from "@/create-store/functions/helpers/shallow-merge";
 import { splitPath } from "@/create-store/functions/helpers/split-path";
@@ -22,29 +25,32 @@ export function createCompositeStore<State extends Dictionary>(
   initialState: State
 ): CompositeStore<State> {
   let state = initialState;
-  const subscribers = new Map<string, Set<(value: any) => void>>();
+  const subscribers = new Map<
+    Paths<State>,
+    Set<(value: ResolvePath<State, Paths<State>>) => void>
+  >();
 
-  function getSubscribersByPath(path: string = "") {
+  function getSubscribersByPath<Path extends Paths<State>>(
+    path: Path = "" as Path
+  ) {
     if (!subscribers.has(path)) subscribers.set(path, new Set());
     return subscribers.get(path)!;
   }
 
-  function notifySubscribers<Value, Path extends string>(
-    value: Value,
-    path?: Path
-  ) {
-    const subscribers = getSubscribersByPath(path);
-    subscribers.forEach((subscriber) => subscriber(value));
+  function notifySubscribers(state: State) {
+    const valuePath = createPaths(state);
+
+    subscribers.forEach((set, path) => {
+      if (valuePath.includes(path)) {
+        const resolvedValue = resolvePath(state, path);
+        set.forEach((subscriber) => subscriber(resolvedValue));
+      } else set.forEach((subscriber) => subscriber(<any>state));
+    });
   }
 
-  function setState<Path extends Paths<State>>(value: State, path?: Path) {
+  function setState(value: State) {
     state = value;
-
-    if (!path) notifySubscribers(value);
-    else {
-      const resolvedValue = resolvePath(state, path);
-      notifySubscribers(resolvedValue, path);
-    }
+    notifySubscribers(value);
   }
 
   function setProperty<
@@ -54,24 +60,34 @@ export function createCompositeStore<State extends Dictionary>(
     const keys = splitPath(path);
     const snapshot = <any>createSnapshot(state);
     const pivot = keys.pop()!;
-    const current = keys.reduce((acc, key) => acc[key], snapshot);
+
+    const current = keys.reduce((accumulator, key) => {
+      return accumulator[key];
+    }, snapshot);
 
     current[pivot] = value;
-    setState(snapshot, path);
+    setState(snapshot);
   }
 
   function createSetStatePathAction<
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>
   >(path: Path) {
-    return (value: SetStateAction<Value>) => {
-      if (isSetStateActionFunction(value)) {
-        const current = resolvePath(state, path);
-        return setProperty(value(current), path);
-      }
+    return (value: SetPartialStateAction<Value>) => {
+      const current = resolvePath(state, path);
 
-      setProperty(<ResolvePath<State, Path>>value, path);
+      if (isSetStateActionFunction(value)) {
+        const resolvedValue = value(current);
+        setProperty(combine(current, resolvedValue), path);
+      } else setProperty(combine(current, value), path);
     };
+  }
+
+  function setStateAction(value: SetPartialStateAction<State>) {
+    if (isSetStateActionFunction<State>(value)) {
+      const resolvedValue = value(state);
+      setState(combine(state, resolvedValue));
+    } else setState(combine(state, value));
   }
 
   function resolvePathValue(): State;
@@ -98,21 +114,14 @@ export function createCompositeStore<State extends Dictionary>(
     return resolveSelectorValue(value, select);
   }
 
-  function setStateAction(value: SetStateAction<State>) {
-    if (isSetStateActionFunction<State>(value)) {
-      const resolvedValue = value(state);
-      setState(resolvedValue);
-    } else setState(value);
-  }
-
   function set<
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>
-  >(path: Path): Dispatch<SetStateAction<Value>>;
+  >(path: Path): Dispatch<SetPartialStateAction<Value>>;
 
   function set<Path extends Paths<State> = never>(
     path?: Path
-  ): Dispatch<SetStateAction<State>>;
+  ): Dispatch<SetPartialStateAction<State>>;
 
   function set<Path extends Paths<State>>(path?: Path) {
     if (!path) return setStateAction;

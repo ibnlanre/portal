@@ -74,21 +74,3 @@ export function createStore<State>(initialState?: State) {
 
   return createPrimitiveStore(state);
 }
-
-const store = createStore({
-  bears: 0,
-  fish: 0,
-  increasePopulation: (by: number = 1) => {
-    store.bears.$set((state) => state + by);
-  },
-  eatFish: () => {
-    store.fish.$set((state) => state - 1);
-  },
-  removeAllBears: () => {
-    store.bears.$set(0);
-  },
-});
-
-store.increasePopulation(5);
-store.eatFish();
-store.removeAllBears();
