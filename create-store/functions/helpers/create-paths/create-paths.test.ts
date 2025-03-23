@@ -11,7 +11,6 @@ describe("createPaths", () => {
     };
 
     const result = createPaths(store);
-
     expect(result).toEqual(["key1", "key2"]);
   });
 
@@ -36,9 +35,7 @@ describe("createPaths", () => {
 
   it("should handle an empty dictionary", () => {
     const store: Dictionary = {};
-
     const result = createPaths(store);
-
     expect(result).toEqual([]);
   });
 
@@ -50,7 +47,6 @@ describe("createPaths", () => {
     };
 
     const result = createPaths(store, ["prefix"]);
-
     expect(result).toEqual(["prefix.key1", "prefix.key1.nestedKey1"]);
   });
 

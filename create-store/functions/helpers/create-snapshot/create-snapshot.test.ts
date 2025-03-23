@@ -38,4 +38,17 @@ describe("createSnapshot", () => {
       false
     );
   });
+
+  it("should deep clone nested objects, not maintain references", () => {
+    const nested = { x: 10, y: 20 };
+    const state = { a: 1, nested };
+
+    const snapshot = createSnapshot(state);
+
+    expect(snapshot.nested).toEqual(nested);
+    expect(snapshot.nested).not.toBe(nested);
+
+    nested.x = 99;
+    expect(snapshot.nested.x).toBe(10);
+  });
 });

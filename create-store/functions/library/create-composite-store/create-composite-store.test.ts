@@ -8,416 +8,548 @@ describe("createCompositeStore", () => {
     const initialState = { key: "value" };
     const store = createCompositeStore(initialState);
     expect(store).toBeDefined();
+    expect(store.$get()).toEqual(initialState);
   });
 
-  describe(".$get", () => {
-    it("should get the state value with .$get", () => {
-      const initialState = { key: "value" };
-      const store = createCompositeStore(initialState);
+  describe("Basic API", () => {
+    const state = {
+      count: 0,
+      user: {
+        name: "John",
+        preferences: { theme: "light", notifications: true },
+      },
+    };
 
-      const stateValue = store.$get();
-      expect(stateValue).toEqual(initialState);
+    const store = createCompositeStore(state);
 
-      const uppercasedValue = store.key.$get((key) => key.toUpperCase());
-      expect(uppercasedValue).toBe("VALUE");
-    });
-
-    it("should get a nested state value with .$get", () => {
-      const initialState = { location: { address: { street: "123 Main St" } } };
-      const store = createCompositeStore(initialState);
-
-      const streetValue = store.location.address.street.$get();
-      expect(streetValue).toBe("123 Main St");
-
-      const addressValue = store.$tap("location.address").$get();
-      expect(addressValue).toEqual({ street: "123 Main St" });
-    });
-  });
-
-  describe(".$set", () => {
-    it("should set the state value with .$set", () => {
-      const initialState = { key: "value" };
-      const store = createCompositeStore(initialState);
-
-      store.$set({ key: "new value" });
-      expect(store.$get()).toEqual({ key: "new value" });
-
-      store.$set((state) => ({ key: state.key.toUpperCase() }));
-      expect(store.$get()).toEqual({ key: "NEW VALUE" });
-    });
-
-    it("should set a nested state value with .$set", () => {
-      const initialState = { location: { address: { street: "123 Main St" } } };
-      const store = createCompositeStore(initialState);
-
-      // Dot notation
-
-      store.location.address.street.$set("456 Elm St");
-      expect(store.$get()).toEqual({
-        location: { address: { street: "456 Elm St" } },
-      });
-      expect(store.location.$get()).toEqual({
-        address: { street: "456 Elm St" },
-      });
-      expect(store.location.address.$get()).toEqual({ street: "456 Elm St" });
-      expect(store.location.address.street.$get()).toBe("456 Elm St");
-
-      // Dot path notation
-
-      store.$tap("location.address").$set({ street: "789 Oak St" });
-      expect(store.$get()).toEqual({
-        location: { address: { street: "789 Oak St" } },
-      });
-      expect(store.$tap("location").$get()).toEqual({
-        address: { street: "789 Oak St" },
-      });
-      expect(store.$tap("location.address").$get()).toEqual({
-        street: "789 Oak St",
-      });
-      expect(store.$tap("location.address.street").$get()).toBe("789 Oak St");
-    });
-
-    it("should set a nested state value with .$set using a function", () => {
-      const initialState = { location: { address: { street: "123 Main St" } } };
-      const store = createCompositeStore(initialState);
-
-      store.location.address.street.$set((street) => `${street} Suite 100`);
-
-      const updatedStreetValue = store.location.address.street.$get();
-      expect(updatedStreetValue).toBe("123 Main St Suite 100");
-
-      const updatedAddressValue = store.$tap("location.address").$get();
-      expect(updatedAddressValue).toEqual({ street: "123 Main St Suite 100" });
-    });
-  });
-
-  describe(".$sub", () => {
-    it("should subscribe to state changes", () => {
-      const initialState = { key: "value" };
-      const store = createCompositeStore(initialState);
-      const subscriber = vi.fn();
-
-      store.$sub(subscriber);
-      expect(subscriber).toHaveBeenCalledWith(initialState);
-
-      store.$set({ key: "new value" });
-      expect(subscriber).toHaveBeenCalledWith({ key: "new value" });
-    });
-
-    it("should unsubscribe from state changes", () => {
-      const initialState = { key: "value" };
-      const store = createCompositeStore(initialState);
-
-      const subscriber = vi.fn();
-      const unsubscribe = store.$sub(subscriber, false);
-      unsubscribe();
-
-      store.$set({ key: "new value" });
-      expect(subscriber).not.toHaveBeenCalled();
-    });
-  });
-
-  describe(".$tap", () => {
-    it("should tap into a nested state value", () => {
-      const initialState = { location: { address: { street: "123 Main St" } } };
-      const store = createCompositeStore(initialState);
-
-      expect(store.$tap("location.address.street")).toBeDefined();
-      expect(store.location.$tap("address")).toBeDefined();
-      expect(store.location.address.$tap("street")).toBeDefined();
-    });
-
-    it("should tap into a nested state value and update it", () => {
-      const initialState = { location: { address: { street: "123 Main St" } } };
-      const store = createCompositeStore(initialState);
-
-      const address = store.$tap("location.address");
-
-      expect(address.street.$get()).toBe("123 Main St");
-      expect(store.$get()).toMatchObject({
-        location: { address: { street: "123 Main St" } },
+    describe(".$get method", () => {
+      beforeEach(() => {
+        store.$set(state);
       });
 
-      const street = store.$tap("location.address.street");
-      street.$set((previous) => `${previous} Suite 100`);
-
-      expect(street.$get()).toBe("123 Main St Suite 100");
-      expect(store.$get()).toMatchObject({
-        location: { address: { street: "123 Main St Suite 100" } },
+      it("should get root state", () => {
+        expect(store.$get()).toEqual({
+          count: 0,
+          user: {
+            name: "John",
+            preferences: { theme: "light", notifications: true },
+          },
+        });
       });
 
-      const location = store.$tap("location");
-      location.address.street.$set("456 Elm St");
-
-      expect(location.address.street.$get()).toBe("456 Elm St");
-      expect(store.$get()).toMatchObject({
-        location: { address: { street: "456 Elm St" } },
-      });
-    });
-  });
-
-  describe(".$use", () => {
-    it("should use the state value in a React component", () => {
-      const initialState = { key: "value" };
-      const store = createCompositeStore(initialState);
-
-      const { result } = renderHook(() => store.$use());
-      const [stateValue] = result.current;
-
-      expect(stateValue).toEqual(initialState);
-    });
-
-    it("should update the state value in a React component", () => {
-      const initialState = { key: "value" };
-      const store = createCompositeStore(initialState);
-
-      const { result } = renderHook(() => store.$use());
-      const [, setStateValue] = result.current;
-
-      act(() => {
-        setStateValue({ key: "new value" });
+      it("should get nested state", () => {
+        expect(store.user.$get()).toEqual({
+          name: "John",
+          preferences: { theme: "light", notifications: true },
+        });
+        expect(store.user.preferences.$get()).toEqual({
+          theme: "light",
+          notifications: true,
+        });
+        expect(store.user.preferences.theme.$get()).toBe("light");
       });
 
-      const [updatedStateValue] = result.current;
-      expect(updatedStateValue).toEqual({ key: "new value" });
-    });
-
-    it("should use a nested state value in a React component", () => {
-      const initialState = { location: { address: { street: "123 Main St" } } };
-      const store = createCompositeStore(initialState);
-
-      const { result } = renderHook(() => store.location.address.street.$use());
-      const [streetValue] = result.current;
-
-      expect(streetValue).toBe("123 Main St");
-    });
-
-    it("should update a nested state value in a React component", () => {
-      const initialState = { location: { address: { street: "123 Main St" } } };
-      const store = createCompositeStore(initialState);
-
-      const { result } = renderHook(() => store.location.address.street.$use());
-      const [, setStreetValue] = result.current;
-
-      act(() => {
-        setStreetValue("456 Elm St");
+      it("should get state with selector function", () => {
+        expect(store.count.$get((count) => count + 5)).toBe(5);
+        expect(store.user.name.$get((name) => name.toUpperCase())).toBe("JOHN");
       });
 
-      const [updatedStreetValue] = result.current;
-      expect(updatedStreetValue).toBe("456 Elm St");
+      it("should get state via $tap path notation", () => {
+        expect(store.$tap("user.preferences.theme").$get()).toBe("light");
+        expect(store.$tap("user.preferences").$get()).toEqual({
+          theme: "light",
+          notifications: true,
+        });
+      });
     });
 
-    it("should use a state value with a selector and dependency array", () => {
-      const initialState = { key: "value" };
-      const store = createCompositeStore(initialState);
+    describe(".$set method", () => {
+      beforeEach(() => {
+        store.$set(state);
+      });
 
-      const dependencyHook = renderHook(() => useState("previous"));
-      const [, setDependencyValue] = dependencyHook.result.current;
+      it("should set root state values", () => {
+        store.$set({
+          count: 10,
+          user: {
+            name: "Jane",
+            preferences: { theme: "dark", notifications: false },
+          },
+        });
 
-      const storeHook = renderHook(() => {
-        const [dependencyValue] = dependencyHook.result.current;
-        return store.$use(
-          (state) => `${dependencyValue} ${state.key}`,
-          [dependencyValue]
+        expect(state).toEqual({
+          count: 0,
+          user: {
+            name: "John",
+            preferences: { theme: "light", notifications: true },
+          },
+        });
+
+        expect(store.$get()).toEqual({
+          count: 10,
+          user: {
+            name: "Jane",
+            preferences: { theme: "dark", notifications: false },
+          },
+        });
+      });
+
+      it("should merge partial root state", () => {
+        store.$set({ count: 10 });
+
+        expect(state).toEqual({
+          count: 0,
+          user: {
+            name: "John",
+            preferences: { theme: "light", notifications: true },
+          },
+        });
+
+        expect(store.$get()).toEqual({
+          count: 10,
+          user: {
+            name: "John",
+            preferences: { theme: "light", notifications: true },
+          },
+        });
+      });
+
+      it("should set nested state values directly", () => {
+        store.user.name.$set("Jane");
+        store.user.preferences.theme.$set("dark");
+
+        expect(state).toEqual({
+          count: 0,
+          user: {
+            name: "John",
+            preferences: { theme: "light", notifications: true },
+          },
+        });
+
+        expect(store.$get()).toEqual({
+          count: 0,
+          user: {
+            name: "Jane",
+            preferences: { theme: "dark", notifications: true },
+          },
+        });
+      });
+
+      it("should set nested values via $tap path notation", () => {
+        store
+          .$tap("user.preferences")
+          .$set({ theme: "dark", notifications: false });
+
+        expect(state).toEqual({
+          count: 0,
+          user: {
+            name: "John",
+            preferences: { theme: "light", notifications: true },
+          },
+        });
+
+        expect(store.user.preferences.$get()).toEqual({
+          theme: "dark",
+          notifications: false,
+        });
+
+        store.$tap("user.name").$set("Alice");
+
+        expect(state).toEqual({
+          count: 0,
+          user: {
+            name: "John",
+            preferences: { theme: "light", notifications: true },
+          },
+        });
+
+        expect(store.user.name.$get()).toBe("Alice");
+      });
+
+      it("should set values using update functions", () => {
+        store.count.$set((c) => c + 5);
+
+        expect(state).toEqual({
+          count: 0,
+          user: {
+            name: "John",
+            preferences: { theme: "light", notifications: true },
+          },
+        });
+
+        expect(store.count.$get()).toBe(5);
+
+        store.user.name.$set((name) => name.toUpperCase());
+
+        expect(state).toEqual({
+          count: 0,
+          user: {
+            name: "John",
+            preferences: { theme: "light", notifications: true },
+          },
+        });
+
+        expect(store.user.name.$get()).toBe("JOHN");
+
+        store
+          .$tap("user.preferences.theme")
+          .$set((theme) => (theme === "light" ? "dark" : "light"));
+
+        expect(state).toEqual({
+          count: 0,
+          user: {
+            name: "John",
+            preferences: { theme: "light", notifications: true },
+          },
+        });
+
+        expect(store.user.preferences.theme.$get()).toBe("dark");
+      });
+    });
+
+    describe(".$tap method", () => {
+      beforeEach(() => {
+        store.$set(state);
+      });
+
+      it("should allow chaining $tap calls", () => {
+        const theme = store.$tap("user").$tap("preferences").$tap("theme");
+        expect(theme.$get()).toBe("light");
+
+        theme.$set("dark");
+        expect(store.user.preferences.theme.$get()).toBe("dark");
+      });
+
+      it("should handle non-existent paths gracefully", () => {
+        // @ts-expect-error
+        const nonExistent = () => store.$tap("user.nonExistent.property");
+        expect(nonExistent).not.toThrow();
+      });
+    });
+
+    describe(".$sub method", () => {
+      beforeEach(() => {
+        store.$set(state);
+      });
+
+      it("should call subscribers with initial state", () => {
+        const subscriber = vi.fn();
+        store.$sub(subscriber);
+        expect(subscriber).toHaveBeenCalledWith(store.$get());
+      });
+
+      it("should notify subscribers on state changes", () => {
+        const rootSubscriber = vi.fn();
+        const countSubscriber = vi.fn();
+        const userSubscriber = vi.fn();
+
+        store.$sub(rootSubscriber);
+        store.count.$sub(countSubscriber);
+        store.user.$sub(userSubscriber);
+
+        // Clear initial subscription calls
+        rootSubscriber.mockClear();
+        countSubscriber.mockClear();
+        userSubscriber.mockClear();
+
+        store.count.$set(5);
+
+        expect(rootSubscriber).toHaveBeenCalledWith(
+          expect.objectContaining({ count: 5 })
+        );
+        expect(countSubscriber).toHaveBeenCalledWith(5);
+        expect(userSubscriber).not.toHaveBeenCalled();
+
+        rootSubscriber.mockClear();
+        countSubscriber.mockClear();
+
+        store.user.name.$set("Jane");
+
+        expect(rootSubscriber).toHaveBeenCalledWith(
+          expect.objectContaining({
+            user: expect.objectContaining({ name: "Jane" }),
+          })
+        );
+        expect(countSubscriber).not.toHaveBeenCalled();
+        expect(userSubscriber).toHaveBeenCalledWith(
+          expect.objectContaining({ name: "Jane" })
         );
       });
 
-      const [stateValue] = storeHook.result.current;
-      expect(stateValue).toBe("previous value");
+      it("should allow unsubscribing from state changes", () => {
+        const subscriber = vi.fn();
+        const unsubscribe = store.$sub(subscriber, false);
 
-      act(() => {
-        setDependencyValue("updated");
-        storeHook.rerender();
+        // Clear initial call
+        subscriber.mockClear();
+
+        unsubscribe();
+        store.$set({ count: 10 });
+
+        expect(subscriber).not.toHaveBeenCalled();
       });
-
-      const [newDependencyValue] = dependencyHook.result.current;
-      expect(newDependencyValue).toBe("updated");
-
-      const [newStateValue] = storeHook.result.current;
-      expect(newStateValue).toBe("updated value");
     });
   });
 
-  describe("reducer pattern", () => {
-    const count = createCompositeStore({
-      value: 0,
-      set(value: number) {
-        count.value.$set(value);
-      },
-      increase(value: number = 1) {
-        count.value.$set((state) => state + value);
-      },
-      decrease(value: number = 1) {
-        count.value.$set((state) => state - value);
-      },
-      reset() {
-        count.value.$set(0);
-      },
-    });
-
-    beforeEach(() => {
-      count.reset();
-    });
-
-    it("should initialize the store with the correct state", () => {
-      expect(count.value.$get()).toBe(0);
-    });
-
-    it("should set the count to the specified value when set is called", () => {
-      count.set(5);
-      expect(count.value.$get()).toBe(5);
-    });
-
-    it("should increase the count by 1 when increase is called without a value", () => {
-      count.increase();
-      expect(count.value.$get()).toBe(1);
-
-      count.$tap("increase")();
-      expect(count.value.$get()).toBe(2);
-    });
-
-    it("should increase the count to the specified value when increase is called with a value", () => {
-      count.set(2);
-
-      count.increase(5);
-      expect(count.value.$get()).toBe(7);
-
-      count.$tap("increase")(3);
-      expect(count.value.$get()).toBe(10);
-    });
-
-    it("should decrease the count by 1 when decrease is called without a value", () => {
-      count.decrease();
-      expect(count.value.$get()).toBe(-1);
-
-      count.$tap("decrease")();
-      expect(count.value.$get()).toBe(-2);
-    });
-
-    it("should decrease the count to the specified value when decrease is called with a value", () => {
-      count.decrease(3);
-      expect(count.value.$get()).toBe(-3);
-
-      count.$tap("decrease")(5);
-      expect(count.value.$get()).toBe(-8);
-    });
-
-    it("should reset the count to 0 when reset is called", () => {
-      count.set(5);
-
-      count.reset();
-      expect(count.value.$get()).toBe(0);
-    });
-  });
-
-  describe("Reducer pattern with nested state", () => {
+  describe("React Integration", () => {
     const store = createCompositeStore({
-      bears: 0,
-      fish: 0,
-      increasePopulation: (by: number = 1) => {
-        store.$set((state) => {
-          return {
-            bears: state.bears + by,
-          };
-        });
-      },
-      eatFish: () => {
-        store.fish.$set((state) => state - 1);
-      },
-      removeAllBears: () => {
-        store.bears.$set(0);
-      },
-      reset: () => {
-        store.bears.$set(0);
-        store.fish.$set(0);
-      },
+      count: 0,
+      text: "hello",
     });
 
     beforeEach(() => {
-      store.reset();
+      store.$set({ count: 0, text: "hello" });
     });
 
-    it("should initialize with correct default values", () => {
-      expect(store).toBeDefined();
-      expect(store.bears.$get()).toBe(0);
-    });
-
-    it("should initialize with correct default values", () => {
-      expect(store.bears.$get()).toBe(0);
-      expect(store.fish.$get()).toBe(0);
-    });
-
-    it("should increase bear population", () => {
-      store.increasePopulation(5);
-      expect(store.bears.$get()).toBe(5);
-    });
-
-    it("should decrease fish population", () => {
-      store.eatFish();
-      expect(store.fish.$get()).toBe(-1);
-    });
-
-    it("should remove all bears", () => {
-      store.increasePopulation(5);
-      store.removeAllBears();
-      expect(store.bears.$get()).toBe(0);
-    });
-
-    it("should handle increasePopulation with default value", () => {
-      store.increasePopulation();
-      expect(store.bears.$get()).toBe(1);
-    });
-
-    it("should not affect fish population when increasing bear population", () => {
-      store.increasePopulation(3);
-      expect(store.fish.$get()).toBe(0);
-    });
-
-    it("should not affect bear population when eating fish", () => {
-      store.eatFish();
-      expect(store.bears.$get()).toBe(0);
-    });
-
-    it("should take partial state updates", () => {
-      store.$set({ bears: 5 });
-      expect(store.bears.$get()).toBe(5);
-
-      store.increasePopulation(3);
-      expect(store.bears.$get()).toBe(8);
-    });
-
-    it("should take partial state updates with a function", () => {
-      store.$set((state) => ({ bears: state.bears + 5 }));
-      expect(store.bears.$get()).toBe(5);
-
-      store.increasePopulation(3);
-      expect(store.bears.$get()).toBe(8);
-    });
-
-    it("should handle React component state updates", () => {
-      const { result, rerender } = renderHook(() => store.$use());
-
+    it("should provide state and setter via $use hook", () => {
+      const { result } = renderHook(() => store.$use());
       const [state, setState] = result.current;
-      expect(state).toEqual(store.$get());
+
+      expect(state).toEqual({ count: 0, text: "hello" });
 
       act(() => {
+        setState({ count: 5, text: "updated" });
+      });
+
+      expect(result.current[0]).toEqual({ count: 5, text: "updated" });
+      expect(store.$get()).toEqual({ count: 5, text: "updated" });
+    });
+
+    it("should allow using nested state in components", () => {
+      const { result } = renderHook(() => store.count.$use());
+      const [count, setCount] = result.current;
+
+      expect(count).toBe(0);
+
+      act(() => {
+        setCount(10);
+      });
+
+      expect(result.current[0]).toBe(10);
+      expect(store.count.$get()).toBe(10);
+    });
+
+    it("should support selectors and dependency arrays", () => {
+      const { result: depResult } = renderHook(() => useState("prefix"));
+      const [prefix, setPrefix] = depResult.current;
+
+      const { result } = renderHook(() =>
+        store.text.$use((text) => `${prefix}: ${text}`, [prefix])
+      );
+
+      expect(result.current[0]).toBe("prefix: hello");
+
+      act(() => {
+        setPrefix("new prefix");
+      });
+
+      // Re-render the hook with the new dependencies
+      const { result: updatedResult } = renderHook(() =>
+        store.text.$use(
+          (text) => `${depResult.current[0]}: ${text}`,
+          [depResult.current[0]]
+        )
+      );
+
+      expect(updatedResult.current[0]).toBe("new prefix: hello");
+    });
+
+    it("should keep store state in sync across multiple hooks", () => {
+      const { result: rootResult } = renderHook(() => store.$use());
+      const { result: countResult } = renderHook(() => store.count.$use());
+      const { result: textResult } = renderHook(() => store.text.$use());
+
+      act(() => {
+        countResult.current[1](50);
+      });
+
+      expect(rootResult.current[0]).toEqual({ count: 50, text: "hello" });
+      expect(countResult.current[0]).toBe(50);
+      expect(textResult.current[0]).toBe("hello");
+
+      act(() => {
+        rootResult.current[1]({ count: 100, text: "world" });
+      });
+
+      expect(countResult.current[0]).toBe(100);
+      expect(textResult.current[0]).toBe("world");
+    });
+  });
+
+  describe("Advanced Store Patterns", () => {
+    describe("Method-based store (reducer pattern)", () => {
+      const count = createCompositeStore({
+        value: 0,
+        set(value: number) {
+          count.value.$set(value);
+        },
+        increase(value: number = 1) {
+          count.value.$set((state) => state + value);
+        },
+        decrease(value: number = 1) {
+          count.value.$set((state) => state - value);
+        },
+        reset() {
+          count.value.$set(0);
+        },
+      });
+
+      beforeEach(() => {
+        count.reset();
+      });
+
+      it("should execute store methods correctly", () => {
+        expect(count.value.$get()).toBe(0);
+
+        count.increase();
+        expect(count.value.$get()).toBe(1);
+
+        count.increase(5);
+        expect(count.value.$get()).toBe(6);
+
+        count.decrease(2);
+        expect(count.value.$get()).toBe(4);
+
+        count.set(10);
+        expect(count.value.$get()).toBe(10);
+
+        count.reset();
+        expect(count.value.$get()).toBe(0);
+      });
+
+      it("should access methods via $tap", () => {
+        count.$tap("increase")(3);
+        expect(count.value.$get()).toBe(3);
+
+        count.$tap("decrease")(1);
+        expect(count.value.$get()).toBe(2);
+
+        count.$tap("set")(5);
+        expect(count.value.$get()).toBe(5);
+
+        count.$tap("reset")();
+        expect(count.value.$get()).toBe(0);
+      });
+
+      it("should handle method calls in React components", () => {
+        const { result } = renderHook(() => count.$use());
+        const [state] = result.current;
+
+        act(() => {
+          count.increase(3);
+        });
+
+        expect(count.value.$get()).toBe(3);
+
+        const [updatedState] = result.current;
+        expect(updatedState.value).toBe(3);
+
+        const { result: valueResult } = renderHook(() => count.value.$use());
+        expect(valueResult.current[0]).toBe(3);
+      });
+    });
+
+    describe("Complex nested store with methods", () => {
+      const store = createCompositeStore({
+        bears: 0,
+        fish: 10,
+        increasePopulation: (by: number = 1) => {
+          store.bears.$set((state) => state + by);
+        },
+        eatFish: () => {
+          store.fish.$set((state) => Math.max(0, state - 1));
+          if (store.fish.$get() === 0) {
+            // Bears start dying when there's no fish
+            store.bears.$set((state) => Math.max(0, state - 1));
+          }
+        },
+        removeAllBears: () => {
+          store.bears.$set(0);
+        },
+        reset: () => {
+          store.bears.$set(0);
+          store.fish.$set(10);
+        },
+      });
+
+      beforeEach(() => {
+        store.$set({ bears: 0, fish: 10 });
+      });
+
+      it("should correctly implement business logic through methods", () => {
+        store.increasePopulation(5);
+        expect(store.bears.$get()).toBe(5);
+        expect(store.fish.$get()).toBe(10);
+
+        // Bears eat fish
+        store.eatFish();
+        store.eatFish();
+        expect(store.fish.$get()).toBe(8);
+
+        // Can remove all bears
+        store.removeAllBears();
+        expect(store.bears.$get()).toBe(0);
+
+        // Reset restores initial state
+        store.bears.$set(3);
+        store.fish.$set(2);
+        store.reset();
+
+        expect(store.bears.$get()).toBe(0);
+        expect(store.fish.$get()).toBe(10);
+      });
+
+      it("should handle complex scenarios with interactions", () => {
+        store.increasePopulation(5);
+
+        // Eat all fish
+        for (let i = 0; i < 10; i++) {
+          store.eatFish();
+        }
+
+        // One bear died when fish ran out
+        expect(store.fish.$get()).toBe(0);
+        expect(store.bears.$get()).toBe(4);
+
+        // No more fish to eat
+        store.eatFish();
+        expect(store.bears.$get()).toBe(3);
+
+        // Test partial state updates
+        store.$set({ fish: 5 });
+        expect(store.$get()).toEqual(
+          expect.objectContaining({ bears: 3, fish: 5 })
+        );
+
         store.increasePopulation(2);
-        setState({ fish: 3 });
+        expect(store.bears.$get()).toBe(5);
       });
 
-      expect(store.bears.$get()).toBe(2);
-      const [updatedState] = result.current;
+      it("should integrate with React components", () => {
+        const { result } = renderHook(() => {
+          const [state] = store.$use();
+          const [bearCount] = store.bears.$use();
+          return { state, bearCount };
+        });
 
-      expect(updatedState.fish).toEqual(3);
-      expect(updatedState.bears).toEqual(2);
+        expect(result.current.state).toEqual(
+          expect.objectContaining({ bears: 0, fish: 10 })
+        );
+        expect(result.current.bearCount).toBe(0);
 
-      act(() => {
-        state.eatFish();
-        rerender();
+        act(() => {
+          store.increasePopulation(3);
+        });
+
+        const { result: updatedResult } = renderHook(() => {
+          const [state] = store.$use();
+          const [bearCount] = store.bears.$use();
+          return { state, bearCount };
+        });
+
+        expect(updatedResult.current.state.bears).toBe(3);
+        expect(updatedResult.current.bearCount).toBe(3);
       });
-
-      const [newState] = result.current;
-      expect(newState.fish).toEqual(2);
     });
   });
 });

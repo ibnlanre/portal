@@ -13,6 +13,7 @@ import { isDictionary } from "@/create-store/functions/assertions/is-dictionary"
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { combine } from "@/create-store/functions/helpers/combine";
+import { createPathComponents } from "@/create-store/functions/helpers/create-path-components";
 import { createPaths } from "@/create-store/functions/helpers/create-paths";
 import { createSnapshot } from "@/create-store/functions/helpers/create-snapshot";
 import { shallowMerge } from "@/create-store/functions/helpers/shallow-merge";
@@ -25,6 +26,7 @@ export function createCompositeStore<State extends Dictionary>(
   initialState: State
 ): CompositeStore<State> {
   let state = initialState;
+
   const subscribers = new Map<
     Paths<State>,
     Set<(value: ResolvePath<State, Paths<State>>) => void>
@@ -37,20 +39,26 @@ export function createCompositeStore<State extends Dictionary>(
     return subscribers.get(path)!;
   }
 
-  function notifySubscribers(state: State) {
-    const valuePath = createPaths(state);
+  function notifySubscribers(state: State, path?: Paths<State>) {
+    const resolvedValue = resolvePath(state, path);
 
-    subscribers.forEach((set, path) => {
-      if (valuePath.includes(path)) {
-        const resolvedValue = resolvePath(state, path);
+    const valuePaths = createPaths(resolvedValue);
+    const pathComponents = createPathComponents(path);
+    const paths = new Set([...pathComponents, ...valuePaths]);
+
+    subscribers.forEach((set, pathKey) => {
+      if (pathKey === "") {
+        set.forEach((subscriber) => subscriber(<any>state));
+      } else if (paths.has(pathKey)) {
+        const resolvedValue = resolvePath(state, pathKey);
         set.forEach((subscriber) => subscriber(resolvedValue));
-      } else set.forEach((subscriber) => subscriber(<any>state));
+      }
     });
   }
 
-  function setState(value: State) {
+  function setState<Path extends Paths<State>>(value: State, path?: Path) {
     state = value;
-    notifySubscribers(value);
+    notifySubscribers(value, path);
   }
 
   function setProperty<
@@ -66,7 +74,7 @@ export function createCompositeStore<State extends Dictionary>(
     }, snapshot);
 
     current[pivot] = value;
-    setState(snapshot);
+    setState(snapshot, path);
   }
 
   function createSetStatePathAction<
@@ -90,27 +98,12 @@ export function createCompositeStore<State extends Dictionary>(
     } else setState(combine(state, value));
   }
 
-  function resolvePathValue(): State;
-
-  function resolvePathValue<Path extends Paths<State> = never>(
-    path?: Path
-  ): ResolvePath<State, Path>;
-
-  function resolvePathValue<Path extends Paths<State>>(
-    path: Path
-  ): ResolvePath<State, Path>;
-
-  function resolvePathValue<Path extends Paths<State>>(path?: Path) {
-    if (!path) return state;
-    return resolvePath(state, path);
-  }
-
   function get<
     Path extends Paths<State>,
     Value extends StatePath<State, Path>,
     Result = Value
   >(path?: Path, select?: Selector<Value, Result>) {
-    const value = resolvePathValue(path);
+    const value = resolvePath(state, path);
     return resolveSelectorValue(value, select);
   }
 
@@ -133,7 +126,7 @@ export function createCompositeStore<State extends Dictionary>(
     Value extends ResolvePath<State, Path>
   >(subscriber: (value: Value) => void, path?: Path, immediate?: boolean) {
     const subscribers = getSubscribersByPath(path);
-    const value = resolvePathValue(path);
+    const value = resolvePath(state, path);
 
     subscribers.add(subscriber);
     if (immediate) subscriber(value);
@@ -145,7 +138,7 @@ export function createCompositeStore<State extends Dictionary>(
 
   function tap<Path extends Paths<State>>(key: Path, chain?: Path) {
     const path = <Path>[chain, key].filter(Boolean).join(".");
-    const value = resolvePathValue(path);
+    const value = resolvePath(state, path);
 
     if (isDictionary(value)) return traverse(value, path);
     if (isFunction(value)) return <any>value;
@@ -161,7 +154,9 @@ export function createCompositeStore<State extends Dictionary>(
     select?: Selector<Value, Result>,
     dependencies: unknown[] = []
   ): StateManager<State, Result> {
-    const [value, setValue] = useState(() => resolvePathValue(path));
+    const [value, setValue] = useState(() => {
+      return resolvePath(state, path);
+    });
 
     const resolvedValue = useMemo(
       () => resolveSelectorValue(value, select),
@@ -200,15 +195,15 @@ export function createCompositeStore<State extends Dictionary>(
   }
 
   function traverse<Path extends Paths<State> = never>(
-    initialState: State,
+    state: State,
     chain?: Path
   ): CompositeStore<State>;
 
   function traverse<
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>
-  >(initialState: Value, chain?: Path): CompositeStore<State> {
-    const clone = createSnapshot(initialState);
+  >(state: Value, chain?: Path): CompositeStore<State> {
+    const clone = createSnapshot(state);
 
     for (const key in clone) {
       const property = <Value>clone[key];

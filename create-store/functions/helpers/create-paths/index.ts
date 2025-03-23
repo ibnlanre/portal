@@ -1,5 +1,5 @@
-import type { Paths } from "@/create-store/types/paths";
 import type { Dictionary } from "@/create-store/types/dictionary";
+import type { Paths } from "@/create-store/types/paths";
 
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 
