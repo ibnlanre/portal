@@ -160,6 +160,17 @@ store.$set((prev) => `${prev} updated`);
 const updatedValue = store.$get(); // "new value updated"
 ```
 
+#### Partial State Updates
+
+The `$set` method also supports partial state updates when the state is an object. You can pass an object containing the properties to update, and `$set` will merge the new properties with the existing state.
+
+```typescript
+const store = createStore({ name: "John", age: 30 });
+
+store.$set({ age: 31 });
+const updatedState = store.$get(); // { name: "John", age: 31 }
+```
+
 ### Subscribing to State Changes with `$sub`
 
 In addition to accessing and updating state, `@ibnlanre/portal` provides the `$sub` [method][method] to subscribe to state changes. This allows you to react to updates and perform [side effects][side-effects] when the state changes.
@@ -410,6 +421,32 @@ const [state, setState] = store.$use(
 ```
 
 **Note** that this **dependency array** works like that in [React][react]'s [useEffect][use-effect] or [useMemo][use-memo] hooks. The [callback function][callback] is memoized and only re-executed when the specified dependencies change. Also, the modified state returned by the callback is independent of the store's internal state. This ensures that the store's state remains unchanged.
+
+#### Partial State Updates
+
+The `setState` function in the `$use` hook also supports partial state updates when the state is an object. You can pass an object containing the properties to update, and `setState` will merge the new properties with the existing state.
+
+```typescript
+const store = createStore({ name: "John", age: 30 });
+
+function Component() {
+  const [state, setState] = store.$use();
+
+  const updateAge = () => {
+    setState({ age: 31 });
+  };
+
+  return (
+    <div>
+      <p>{state.name}</p>
+      <p>{state.age}</p>
+      <button onClick={updateAge}>Update Age</button>
+    </div>
+  );
+}
+
+export default Component;
+```
 
 ## Persistence
 

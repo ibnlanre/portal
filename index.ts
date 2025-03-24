@@ -7,6 +7,7 @@ export type {
   GetBrowserStorage,
   SetBrowserStorage,
 } from "@/create-store/types//browser-storage-adapter";
+export type { BasicStore } from "@/create-store/types/basic-store";
 export type { CompositeStore } from "@/create-store/types/composite-store";
 export type {
   CookieStorageAdapter,
@@ -25,7 +26,11 @@ export type {
   GetSessionStorage,
   SetSessionStorage,
 } from "@/create-store/types/session-storage";
-export type { StateManager } from "@/create-store/types/state-manager";
+export type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
+export type {
+  PartialStateManager,
+  StateManager,
+} from "@/create-store/types/state-manager";
 export type { StorageAdapter } from "@/create-store/types/storage-adapter";
 export type { Subscriber } from "@/create-store/types/subscriber";
 

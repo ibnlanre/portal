@@ -4,7 +4,7 @@ import type { Paths } from "@/create-store/types/paths";
 import type { ResolvePath } from "@/create-store/types/resolve-path";
 import type { Selector } from "@/create-store/types/selector";
 import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
-import type { StateManager } from "@/create-store/types/state-manager";
+import type { PartialStateManager } from "@/create-store/types/state-manager";
 import type { StatePath } from "@/create-store/types/state-path";
 import type { Subscriber } from "@/create-store/types/subscriber";
 import type { Dispatch } from "react";
@@ -153,7 +153,7 @@ export function createCompositeStore<State extends Dictionary>(
     path?: Path,
     select?: Selector<Value, Result>,
     dependencies: unknown[] = []
-  ): StateManager<State, Result> {
+  ): PartialStateManager<State, Result> {
     const [value, setValue] = useState(() => {
       return resolvePath(state, path);
     });

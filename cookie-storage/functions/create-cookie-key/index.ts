@@ -42,8 +42,12 @@ export function createCookieKey<CookieFragmentDescription extends string>({
 }: CreateCookieKeyOptions<CookieFragmentDescription>): string {
   const words = cookieFragmentDescription.toLowerCase().split(" ");
 
-  if (cookieFragmentSizes.some((size) => size < 1)) {
-    throw new Error("All chunk sizes must be at least 1.");
+  if (cookieFragmentSizes.length > words.length) {
+    throw new Error("The number of fragments must be less than or equal to the number of words");
+  }
+
+  if (cookieFragmentSizes.some((size) => size < 0)) {
+    throw new Error("Each fragment must be a positive number");
   }
 
   const fragments = words.map((word, index) => {

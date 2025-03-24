@@ -20,7 +20,7 @@ export const cookieStorage = <CookieStorage>{
   setItem: setCookieValue,
   removeItem: removeCookieValue,
   clear: clearCookieStorage,
-  makeKey: createCookieKey,
+  createKey: createCookieKey,
   key: getCookieByIndex,
   get length() {
     return getCookieStorageLength();

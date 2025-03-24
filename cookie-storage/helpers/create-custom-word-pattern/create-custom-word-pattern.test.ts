@@ -61,15 +61,27 @@ describe("createCustomWordPattern", () => {
   });
 
   it("should work correctly with repeated characters", () => {
+    expect(createCustomWordPattern("aabbcc", 1)).toBe("a");
     expect(createCustomWordPattern("aabbcc", 4)).toBe("abcc");
+    expect(createCustomWordPattern("aabbcc", 5)).toBe("abbcc");
   });
 
   it("should prioritize consonants", () => {
     expect(createCustomWordPattern("alphabet", 5)).toBe("alhbt");
+    expect(createCustomWordPattern("abcde", 3)).toBe("abd");
+    expect(createCustomWordPattern("xyzabc", 4)).toBe("xzbc");
+    expect(createCustomWordPattern("rtkpoe", 3)).toBe("rtk");
+    expect(createCustomWordPattern("mnkaei", 4)).toBe("mnki");
   });
 
   it("should handle empty string correctly", () => {
     expect(createCustomWordPattern("", 1)).toBe("");
     expect(createCustomWordPattern("", 0)).toBe("");
+  });
+
+  it("should throw an error if length is negative", () => {
+    expect(() => createCustomWordPattern("hello", -1)).toThrowError(
+      "Length must be a positive number"
+    );
   });
 });

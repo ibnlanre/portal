@@ -92,6 +92,24 @@ describe("createCompositeStore", () => {
             preferences: { theme: "dark", notifications: false },
           },
         });
+
+        store.$set((state) => ({ count: state.count + 10 }));
+
+        expect(state).toEqual({
+          count: 0,
+          user: {
+            name: "John",
+            preferences: { theme: "light", notifications: true },
+          },
+        });
+
+        expect(store.$get()).toEqual({
+          count: 20,
+          user: {
+            name: "Jane",
+            preferences: { theme: "dark", notifications: false },
+          },
+        });
       });
 
       it("should merge partial root state", () => {
@@ -176,11 +194,9 @@ describe("createCompositeStore", () => {
             preferences: { theme: "light", notifications: true },
           },
         });
-
         expect(store.count.$get()).toBe(5);
 
         store.user.name.$set((name) => name.toUpperCase());
-
         expect(state).toEqual({
           count: 0,
           user: {
@@ -188,7 +204,6 @@ describe("createCompositeStore", () => {
             preferences: { theme: "light", notifications: true },
           },
         });
-
         expect(store.user.name.$get()).toBe("JOHN");
 
         store
@@ -202,7 +217,7 @@ describe("createCompositeStore", () => {
             preferences: { theme: "light", notifications: true },
           },
         });
-
+        expect(store.user.preferences.$tap("theme").$get()).toBe("dark");
         expect(store.user.preferences.theme.$get()).toBe("dark");
       });
     });
@@ -210,6 +225,12 @@ describe("createCompositeStore", () => {
     describe(".$tap method", () => {
       beforeEach(() => {
         store.$set(state);
+      });
+
+      it("should be defined", () => {
+        expect(store.$tap("user.preferences.notifications")).toBeDefined();
+        expect(store.user.$tap("preferences.notifications")).toBeDefined();
+        expect(store.user.preferences.$tap("notifications")).toBeDefined();
       });
 
       it("should allow chaining $tap calls", () => {

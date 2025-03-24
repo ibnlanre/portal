@@ -1,17 +1,18 @@
 import type { Selector } from "@/create-store/types/selector";
-import type { StateManager } from "@/create-store/types/state-manager";
+import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
+import type { PartialStateManager } from "@/create-store/types/state-manager";
 import type { Subscriber } from "@/create-store/types/subscriber";
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch } from "react";
 
-export interface PrimitiveStore<State> {
+export interface BasicStore<State> {
   readonly $get: <Value = State>(select?: Selector<State, Value>) => Value;
-  readonly $set: Dispatch<SetStateAction<State>>;
   readonly $sub: (
     subscriber: Subscriber<State>,
     immediate?: boolean
   ) => () => void;
+  readonly $set: Dispatch<SetPartialStateAction<State>>;
   readonly $use: <Value = State>(
     select?: Selector<State, Value>,
     dependencies?: unknown[]
-  ) => StateManager<State, Value>;
+  ) => PartialStateManager<State, Value>;
 }

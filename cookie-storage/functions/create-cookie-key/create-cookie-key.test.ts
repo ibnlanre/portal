@@ -9,6 +9,24 @@ describe("createCookieKey", () => {
     expect(result).toBe("__Host_tc");
   });
 
+  it("should throw an error if the cookie fragment sizes are invalid", () => {
+    expect(() =>
+      createCookieKey({
+        cookieFragmentDescription: "Test Cookie",
+        cookieFragmentSizes: [1, 2, 3, 4, 5],
+      })
+    ).toThrow(
+      "The number of fragments must be less than or equal to the number of words"
+    );
+
+    expect(() =>
+      createCookieKey({
+        cookieFragmentDescription: "Test Cookie",
+        cookieFragmentSizes: [-3, 2],
+      })
+    ).toThrow("Each fragment must be a positive number");
+  });
+
   it("should create a cookie key with custom options", () => {
     const result = createCookieKey({
       cookieFragmentDescription: "Verification Signature",

@@ -1,12 +1,13 @@
 export function createCustomWordPattern(word: string, length: number): string {
-  const vowelsLookup = new Set(["a", "e", "i", "o", "u"]);
-
+  if (!word) return "";
+  if (length < 0) throw new Error("Length must be a positive number");
   if (length >= word.length) return word;
   if (length === 1) return word[0]!;
 
   let consonants: number[] = [];
   let vowels: number[] = [];
 
+  const vowelsLookup = new Set(["a", "e", "i", "o", "u"]);
   const letters = Array.from({ length: word.length }, () => "");
   const words = word.split("");
 
@@ -45,12 +46,6 @@ export function createCustomWordPattern(word: string, length: number): string {
   while (vowels.length) {
     if (letters.filter(Boolean).length === length) break;
     const character = words[index]!;
-
-    if (!vowelsLookup.has(character)) {
-      if (index - 1 >= 0) index--;
-      else index = --iterator;
-      continue;
-    }
 
     letters[index] = character;
     vowels = vowels.filter((idx) => idx !== index);
