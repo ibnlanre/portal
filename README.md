@@ -477,7 +477,7 @@ const [getLocalStorageState, setLocalStorageState] = createLocalStorageAdapter({
 Through the `stringify` and `parse` functions, you can customize how the state is serialized and deserialized. This is useful when working with non-JSON serializable values or when you want to encrypt the state before storing it in the [web storage][web-storage].
 
 ```typescript
-import { createLocalStorageAdapter } from "@ibnlanre/portal";
+import { createStore, createLocalStorageAdapter } from "@ibnlanre/portal";
 
 const [getLocalStorageState, setLocalStorageState] = createLocalStorageAdapter({
   key: "storage",
@@ -486,29 +486,44 @@ const [getLocalStorageState, setLocalStorageState] = createLocalStorageAdapter({
 });
 ```
 
-#### Session Storage Adapter
-
-The benefit of using the storage [adapters][adapter] is that they automatically load the state from the storage when the store is created. This allows you to initialize the store with the persisted state. Additionally, the storage [adapters][adapter] provide a way to update the storage when the store changes. This is done by subscribing to the store changes and updating the storage with the new state.
+The benefit of using the storage [adapters][adapter] is that they can be used to automatically load the state from the storage when the store is being created. This allows you to initialize the store with the persisted state.
 
 ```typescript
-import { createStore } from "@ibnlanre/portal";
+const store = createStore(getLocalStorageState);
+```
+
+To persist the state in the [local storage][local-storage], you can subscribe to the store changes and update the storage with the new state. This ensures that the state is always in sync with the [local storage][local-storage].
+
+```typescript
+store.$sub(setLocalStorageState);
+```
+
+#### Session Storage Adapter
+
+The `sessionStorage` adapter works similarly to the `localStorage` adapter. The only difference is that the state is stored in the [session storage][session-storage] instead of the [local storage][local-storage]. This is useful when you want the state to persist only for the duration of the session.
+
+```typescript
+import { createStore, createSessionStorageAdapter } from "@ibnlanre/portal";
+
+const [getSessionStorageState, setSessionStorageState] =
+  createSessionStorageAdapter({
+    key: "storage",
+  });
 
 const store = createStore(getSessionStorageState);
 store.$sub(setSessionStorageState);
 ```
 
-In situations where the store requires an initial value of some sort, you can pass the fallback state to the `getLocalStorageState` or `getSessionStorageState` functions. This allows you to initialize the store with the fallback state if the state is not found in the storage.
+**Note** that both `getLocalStorageState` and `getSessionStorageState` are functions that can take an optional fallback state as an argument. This allows you to provide a default state when the state is not found in the storage.
 
 ```typescript
-import { createStore, getSessionStorageState } from "@ibnlanre/portal";
-
-const fallbackState = "initial value";
-const store = createStore(() => getSessionStorageState(fallbackState));
+const store = createStore(() => getLocalStorageState("initial value"));
+store.$sub(setLocalStorageState);
 ```
 
 ### Browser Storage Adapter
 
-Although the storage [adapters][adapter] provided by the library are a select few, if you need to use a different storage mechanism, such as IndexedDB or a custom API, you can also create your own custom [browser storage][browser-storage] adapter. The [browser storage][browser-storage] adapter only requires a key, and functions to **get** the item, **set** the item, and **remove** the item from the storage. Other options like `stringify` and `parse` are optional.
+Although the storage [adapters][adapter] provided by the library are a select few, if you need to use a different storage mechanism, such as [IndexedDB][indexed-db] or a [custom API][storage], you can create your own [browser storage][browser-storage] adapter. The [browser storage][browser-storage] adapter only requires a **key**, and functions to **get** the item, **set** the item, and **remove** the item from the storage. Other options like `stringify` and `parse` are optional.
 
 ```typescript
 import { createStore, createBrowserStorageAdapter } from "@ibnlanre/portal";
@@ -525,7 +540,7 @@ const [getStorageState, setStorageState] = createBrowserStorageAdapter({
 
 ### Cookie Storage Adapter
 
-The last of the storage [adapters][adapter] provided by the library is the cookie storage adapter. It is created using the `createCookieStorageAdapter` function, which takes a key and an optional configuration object with cookie options. These options are similar to those provided by the `document.cookie` API.
+The last of the storage [adapters][adapter] provided by the library is the `cookie storage` adapter. It is created using the `createCookieStorageAdapter` function, which takes a key and an optional configuration object with cookie options. These options are similar to those provided by the `document.cookie` API.
 
 ```typescript
 import { createCookieStorageAdapter } from "@ibnlanre/portal";
@@ -727,6 +742,7 @@ This library is [licensed][licensed] under the [BSD-3-Clause][bsd-3-clause]. See
 [cookies]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
 [hook]: https://react.dev/reference/react/hooks
 [html]: https://developer.mozilla.org/en-US/docs/Web/HTML
+[indexed-db]: https://web.dev/articles/indexeddb/
 [initialization]: https://web.dev/learn/javascript/data-types/variable
 [instance]: https://www.altcademy.com/blog/what-is-an-instance-in-javascript/
 [licensed]: https://choosealicense.com/licenses/bsd-3-clause/
@@ -741,6 +757,7 @@ This library is [licensed][licensed] under the [BSD-3-Clause][bsd-3-clause]. See
 [session-storage]: https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage
 [side-effects]: https://monsterlessons-academy.com/posts/what-are-side-effects-in-javascript-what-are-pure-functions
 [signing]: https://bloggle.coggle.it/post/190706036692/what-weve-learned-from-moving-to-signed-cookies
+[storage]: https://developer.mozilla.org/en-US/docs/Web/API/Storage
 [typeScript]: https://www.typescriptlang.org
 [use-effect]: https://react.dev/reference/react/useEffect
 [use-memo]: https://react.dev/reference/react/useMemo
