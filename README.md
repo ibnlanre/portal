@@ -481,8 +481,8 @@ import { createStore, createLocalStorageAdapter } from "@ibnlanre/portal";
 
 const [getLocalStorageState, setLocalStorageState] = createLocalStorageAdapter({
   key: "storage",
-  stringify: (state) => btoa(state),
-  parse: (state) => atob(state),
+  stringify: (state) => btoa(JSON.stringify(state)),
+  parse: (state) => JSON.parse(atob(state)),
 });
 ```
 
@@ -695,10 +695,11 @@ All functions in the `cookieStorage` module are static and do not require an [in
   - Example:
     ```typescript
     const key = cookieStorage.createKey({
-      cookieFragmentDescription: "auth",
+      cookieFragmentDescription: "Authentication Token",
       cookiePrefix: "__",
       cookieFragmentSizes: [2, 3],
       cookieScopeCase: "title",
+      cookieScope: "host",
     });
     ```
 
