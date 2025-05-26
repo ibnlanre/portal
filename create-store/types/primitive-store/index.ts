@@ -4,14 +4,14 @@ import type { Subscriber } from "@/create-store/types/subscriber";
 import type { Dispatch, SetStateAction } from "react";
 
 export interface PrimitiveStore<State> {
-  readonly $get: <Value = State>(select?: Selector<State, Value>) => Value;
+  readonly $get: <Value = State>(selector?: Selector<State, Value>) => Value;
   readonly $set: Dispatch<SetStateAction<State>>;
-  readonly $sub: (
+  readonly $act: (
     subscriber: Subscriber<State>,
     immediate?: boolean
   ) => () => void;
   readonly $use: <Value = State>(
-    select?: Selector<State, Value>,
+    selector?: Selector<State, Value>,
     dependencies?: unknown[]
   ) => StateManager<State, Value>;
 }

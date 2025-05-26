@@ -65,15 +65,15 @@ store.$set("new value");
 const newValue = store.$get(); // "new value"
 ```
 
-#### `$sub` Method
+#### `$act` Method
 
 Subscribe to state changes:
 
 ```typescript
-store.$sub((value) => console.log(value));
+store.$act((value) => console.log(value));
 ```
 
-- `$get` and `$set` manage state retrieval and updates, while `$sub` reacts to changes.
+- `$get` and `$set` manage state retrieval and updates, while `$act` reacts to changes.
 
 ## Nested Store and Dot Notation
 
@@ -152,7 +152,7 @@ const [getLocalStorageState, setLocalStorageState] =
   });
 
 const store = createStore(getLocalStorageState);
-store.$sub(setLocalStorageState);
+store.$act(setLocalStorageState);
 ```
 
 #### Session Storage Adapter
@@ -166,7 +166,7 @@ const [getSessionStorageState, setSessionStorageState] =
   });
 
 const store = createStore(getSessionStorageState);
-store.$sub(setSessionStorageState);
+store.$act(setSessionStorageState);
 ```
 
 #### Cookie Storage Adapter
@@ -182,7 +182,7 @@ const [getCookieStorageState, setCookieStorageState] =
   });
 
 const store = createStore(getCookieStorageState);
-store.$sub(setCookieStorageState);
+store.$act(setCookieStorageState);
 ```
 
 - Adapters include local storage, session storage, and cookies to keep state persisted between sessions.

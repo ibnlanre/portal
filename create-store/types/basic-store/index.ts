@@ -5,14 +5,14 @@ import type { Subscriber } from "@/create-store/types/subscriber";
 import type { Dispatch } from "react";
 
 export interface BasicStore<State> {
-  readonly $get: <Value = State>(select?: Selector<State, Value>) => Value;
-  readonly $sub: (
+  readonly $get: <Value = State>(selector?: Selector<State, Value>) => Value;
+  readonly $act: (
     subscriber: Subscriber<State>,
     immediate?: boolean
   ) => () => void;
   readonly $set: Dispatch<SetPartialStateAction<State>>;
   readonly $use: <Value = State>(
-    select?: Selector<State, Value>,
+    selector?: Selector<State, Value>,
     dependencies?: unknown[]
   ) => PartialStateManager<State, Value>;
 }

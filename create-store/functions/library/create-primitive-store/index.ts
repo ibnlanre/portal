@@ -23,8 +23,8 @@ export function createPrimitiveStore<State>(
     subscribers.forEach((subscriber) => subscriber(value));
   }
 
-  function $get<Value = State>(select?: Selector<State, Value>) {
-    return resolveSelectorValue(state, select);
+  function $get<Value = State>(selector?: Selector<State, Value>) {
+    return resolveSelectorValue(state, selector);
   }
 
   function $set(value: SetStateAction<State>) {
@@ -35,14 +35,14 @@ export function createPrimitiveStore<State>(
   }
 
   function $use<Value = State>(
-    select?: Selector<State, Value>
+    selector?: Selector<State, Value>
   ): StateManager<State, Value> {
     const [value, setValue] = useState(state);
-    useEffect(() => $sub(setValue), []);
-    return [resolveSelectorValue(value, select), $set];
+    useEffect(() => $act(setValue), []);
+    return [resolveSelectorValue(value, selector), $set];
   }
 
-  function $sub(subscriber: Subscriber<State>, immediate = true) {
+  function $act(subscriber: Subscriber<State>, immediate = true) {
     subscribers.add(subscriber);
     if (immediate) subscriber(state);
 
@@ -54,7 +54,7 @@ export function createPrimitiveStore<State>(
   return {
     $get,
     $set,
-    $sub,
+    $act,
     $use,
   };
 }

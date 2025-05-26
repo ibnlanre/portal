@@ -40,7 +40,7 @@ export function createStore<State extends Dictionary>(
  * };
  *
  * const count = await createStore(fetchCount);
- * count.$sub((state) => console.log(state));
+ * count.$act((state) => console.log(state));
  * count.$set(78);
  */
 export function createStore<State>(

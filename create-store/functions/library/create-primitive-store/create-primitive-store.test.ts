@@ -36,7 +36,7 @@ describe("createPrimitiveStore", () => {
     const store = createPrimitiveStore(initialState);
 
     const subscriber = vi.fn();
-    store.$sub(subscriber);
+    store.$act(subscriber);
     expect(subscriber).toHaveBeenCalledWith(initialState);
 
     store.$set("new value");
@@ -48,7 +48,7 @@ describe("createPrimitiveStore", () => {
     const store = createPrimitiveStore(initialState);
 
     const subscriber = vi.fn();
-    const unsubscribe = store.$sub(subscriber);
+    const unsubscribe = store.$act(subscriber);
 
     unsubscribe();
     store.$set("new value");

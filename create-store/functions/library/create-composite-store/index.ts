@@ -102,9 +102,9 @@ export function createCompositeStore<State extends Dictionary>(
     Path extends Paths<State>,
     Value extends StatePath<State, Path>,
     Result = Value
-  >(path?: Path, select?: Selector<Value, Result>) {
+  >(path?: Path, selector?: Selector<Value, Result>) {
     const value = resolvePath(state, path);
-    return resolveSelectorValue(value, select);
+    return resolveSelectorValue(value, selector);
   }
 
   function set<
@@ -121,7 +121,7 @@ export function createCompositeStore<State extends Dictionary>(
     return createSetStatePathAction(path);
   }
 
-  function sub<
+  function act<
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>
   >(subscriber: (value: Value) => void, path?: Path, immediate?: boolean) {
@@ -151,7 +151,7 @@ export function createCompositeStore<State extends Dictionary>(
     Result = Value
   >(
     path?: Path,
-    select?: Selector<Value, Result>,
+    selector?: Selector<Value, Result>,
     dependencies: unknown[] = []
   ): PartialStateManager<State, Result> {
     const [value, setValue] = useState(() => {
@@ -159,11 +159,11 @@ export function createCompositeStore<State extends Dictionary>(
     });
 
     const resolvedValue = useMemo(
-      () => resolveSelectorValue(value, select),
+      () => resolveSelectorValue(value, selector),
       [value, ...dependencies]
     );
 
-    useEffect(() => sub(setValue, path), [path]);
+    useEffect(() => act(setValue, path), [path]);
     return [resolvedValue, set(path)];
   }
 
@@ -173,23 +173,23 @@ export function createCompositeStore<State extends Dictionary>(
     Result = Value
   >(chain?: Path) {
     return {
-      $get(select?: Selector<Value, Result>) {
-        return get(chain, select);
+      $get(selector?: Selector<Value, Result>) {
+        return get(chain, selector);
       },
       $set(value: StatePath<State, Path>) {
         return set(chain)(value);
       },
-      $sub(subscriber: Subscriber<State>, immediate = true) {
-        return sub(subscriber, chain, immediate);
+      $act(subscriber: Subscriber<State>, immediate = true) {
+        return act(subscriber, chain, immediate);
       },
       $key(path: Path) {
         return key(path, chain);
       },
       $use(
-        select?: Selector<State, ResolvePath<State, Path>>,
+        selector?: Selector<State, ResolvePath<State, Path>>,
         dependencies?: unknown[]
       ) {
-        return use(chain, select, dependencies);
+        return use(chain, selector, dependencies);
       },
     };
   }

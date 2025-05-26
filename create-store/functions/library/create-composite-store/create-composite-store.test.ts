@@ -248,14 +248,14 @@ describe("createCompositeStore", () => {
       });
     });
 
-    describe(".$sub method", () => {
+    describe(".$act method", () => {
       beforeEach(() => {
         store.$set(state);
       });
 
       it("should call subscribers with initial state", () => {
         const subscriber = vi.fn();
-        store.$sub(subscriber);
+        store.$act(subscriber);
         expect(subscriber).toHaveBeenCalledWith(store.$get());
       });
 
@@ -264,9 +264,9 @@ describe("createCompositeStore", () => {
         const countSubscriber = vi.fn();
         const userSubscriber = vi.fn();
 
-        store.$sub(rootSubscriber);
-        store.count.$sub(countSubscriber);
-        store.user.$sub(userSubscriber);
+        store.$act(rootSubscriber);
+        store.count.$act(countSubscriber);
+        store.user.$act(userSubscriber);
 
         // Clear initial subscription calls
         rootSubscriber.mockClear();
@@ -299,7 +299,7 @@ describe("createCompositeStore", () => {
 
       it("should allow unsubscribing from state changes", () => {
         const subscriber = vi.fn();
-        const unsubscribe = store.$sub(subscriber, false);
+        const unsubscribe = store.$act(subscriber, false);
 
         // Clear initial call
         subscriber.mockClear();

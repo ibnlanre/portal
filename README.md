@@ -17,7 +17,7 @@ A [TypeScript][typescript] state management library for [React][react] applicati
   - [Managing State](#managing-state)
   - [Accessing State with `$get`](#accessing-state-with-get)
   - [Updating State with `$set`](#updating-state-with-set)
-  - [Subscribing to State Changes with `$sub`](#subscribing-to-state-changes-with-sub)
+  - [Subscribing to State Changes with `$act`](#subscribing-to-state-changes-with-act)
     - [Unsubscribing from State Changes](#unsubscribing-from-state-changes)
     - [Preventing Immediate Callback Execution](#preventing-immediate-callback-execution)
   - [Nested Stores](#nested-stores)
@@ -110,7 +110,7 @@ If you are working on a project that uses markup languages like [HTML][html] or 
 
 ### Managing State
 
-State management with `@ibnlanre/portal` begins with the `createStore` function. This function initializes a store with an initial value and returns an object containing [methods][method] to interact with the state: [$get](#accessing-state-with-get), [$set](#updating-state-with-set), [$use](#react-integration), [$sub](#subscribing-to-state-changes-with-sub), and [$key](#accessing-nested-stores-with-key).
+State management with `@ibnlanre/portal` begins with the `createStore` function. This function initializes a store with an initial value and returns an object containing [methods][method] to interact with the state: [$get](#accessing-state-with-get), [$set](#updating-state-with-set), [$use](#react-integration), [$act](#subscribing-to-state-changes-with-act), and [$key](#accessing-nested-stores-with-key).
 
 These [methods][method] provide a simple and consistent way to access, update, and subscribe to state changes. Here's an example of creating a store:
 
@@ -125,7 +125,7 @@ Each [method][method] serves a distinct purpose:
 - `$get`: Retrieve the current state.
 - `$set`: Update the state with a new value.
 - `$use`: A [React][react] [hook][hook] for managing state within functional components.
-- `$sub`: Subscribe to state changes to react to updates.
+- `$act`: Subscribe to state changes to react to updates.
 - `$key`: Access deeply nested stores using a dot-separated string.
 
 ### Accessing State with $get
@@ -171,20 +171,20 @@ store.$set({ age: 31 });
 const updatedState = store.$get(); // { name: "John", age: 31 }
 ```
 
-### Subscribing to State Changes with `$sub`
+### Subscribing to State Changes with `$act`
 
-In addition to accessing and updating state, `@ibnlanre/portal` provides the `$sub` [method][method] to subscribe to state changes. This allows you to react to updates and perform [side effects][side-effects] when the state changes.
+In addition to accessing and updating state, `@ibnlanre/portal` provides the `$act` [method][method] to subscribe to state changes. This allows you to react to updates and perform [side effects][side-effects] when the state changes.
 
 ```typescript
-store.$sub((value) => console.log(value));
+store.$act((value) => console.log(value));
 ```
 
 #### Unsubscribing from State Changes
 
-The `$sub` [method][method] returns an `unsubscribe` function that can be called to stop listening for updates. This is particularly useful when a component unmounts or when you no longer need the subscription.
+The `$act` [method][method] returns an `unsubscribe` function that can be called to stop listening for updates. This is particularly useful when a component unmounts or when you no longer need the subscription.
 
 ```typescript
-const unsubscribe = store.$sub((value) => {
+const unsubscribe = store.$act((value) => {
   console.log(value);
 });
 
@@ -194,10 +194,10 @@ unsubscribe();
 
 #### Preventing Immediate Callback Execution
 
-By default, the `$sub` [callback][callback] is invoked immediately after subscribing. To disable this behavior, pass `false` as the second argument. This ensures the callback is only executed when the state changes.
+By default, the `$act` [callback][callback] is invoked immediately after subscribing. To disable this behavior, pass `false` as the second argument. This ensures the callback is only executed when the state changes.
 
 ```typescript
-store.$sub((value) => {
+store.$act((value) => {
   console.log(value);
 }, false);
 ```
@@ -495,7 +495,7 @@ const store = createStore(getLocalStorageState);
 To persist the state in the [local storage][local-storage], you can subscribe to the store changes and update the storage with the new state. This ensures that the state is always in sync with the [local storage][local-storage].
 
 ```typescript
-store.$sub(setLocalStorageState);
+store.$act(setLocalStorageState);
 ```
 
 #### Session Storage Adapter
@@ -511,14 +511,14 @@ const [getSessionStorageState, setSessionStorageState] =
   });
 
 const store = createStore(getSessionStorageState);
-store.$sub(setSessionStorageState);
+store.$act(setSessionStorageState);
 ```
 
 **Note** that both `getLocalStorageState` and `getSessionStorageState` are functions that can take an optional fallback state as an argument. This allows you to provide a default state when the state is not found in the storage.
 
 ```typescript
 const store = createStore(() => getLocalStorageState("initial value"));
-store.$sub(setLocalStorageState);
+store.$act(setLocalStorageState);
 ```
 
 ### Browser Storage Adapter
@@ -585,7 +585,7 @@ One key difference between the `createCookieStorageAdapter` function and the oth
 ```typescript
 const store = createStore(getCookieStorageState);
 
-store.$sub((value) => {
+store.$act((value) => {
   const expires = new Date(Date.now() + 15 * 60 * 1000);
 
   setCookieStorageState(value, {
