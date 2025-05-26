@@ -54,9 +54,9 @@ describe("createCompositeStore", () => {
         expect(store.user.name.$get((name) => name.toUpperCase())).toBe("JOHN");
       });
 
-      it("should get state via $tap path notation", () => {
-        expect(store.$tap("user.preferences.theme").$get()).toBe("light");
-        expect(store.$tap("user.preferences").$get()).toEqual({
+      it("should get state via $key path notation", () => {
+        expect(store.$key("user.preferences.theme").$get()).toBe("light");
+        expect(store.$key("user.preferences").$get()).toEqual({
           theme: "light",
           notifications: true,
         });
@@ -153,9 +153,9 @@ describe("createCompositeStore", () => {
         });
       });
 
-      it("should set nested values via $tap path notation", () => {
+      it("should set nested values via $key path notation", () => {
         store
-          .$tap("user.preferences")
+          .$key("user.preferences")
           .$set({ theme: "dark", notifications: false });
 
         expect(state).toEqual({
@@ -171,7 +171,7 @@ describe("createCompositeStore", () => {
           notifications: false,
         });
 
-        store.$tap("user.name").$set("Alice");
+        store.$key("user.name").$set("Alice");
 
         expect(state).toEqual({
           count: 0,
@@ -207,7 +207,7 @@ describe("createCompositeStore", () => {
         expect(store.user.name.$get()).toBe("JOHN");
 
         store
-          .$tap("user.preferences.theme")
+          .$key("user.preferences.theme")
           .$set((theme) => (theme === "light" ? "dark" : "light"));
 
         expect(state).toEqual({
@@ -217,24 +217,24 @@ describe("createCompositeStore", () => {
             preferences: { theme: "light", notifications: true },
           },
         });
-        expect(store.user.preferences.$tap("theme").$get()).toBe("dark");
+        expect(store.user.preferences.$key("theme").$get()).toBe("dark");
         expect(store.user.preferences.theme.$get()).toBe("dark");
       });
     });
 
-    describe(".$tap method", () => {
+    describe(".$key method", () => {
       beforeEach(() => {
         store.$set(state);
       });
 
       it("should be defined", () => {
-        expect(store.$tap("user.preferences.notifications")).toBeDefined();
-        expect(store.user.$tap("preferences.notifications")).toBeDefined();
-        expect(store.user.preferences.$tap("notifications")).toBeDefined();
+        expect(store.$key("user.preferences.notifications")).toBeDefined();
+        expect(store.user.$key("preferences.notifications")).toBeDefined();
+        expect(store.user.preferences.$key("notifications")).toBeDefined();
       });
 
-      it("should allow chaining $tap calls", () => {
-        const theme = store.$tap("user").$tap("preferences").$tap("theme");
+      it("should allow chaining $key calls", () => {
+        const theme = store.$key("user").$key("preferences").$key("theme");
         expect(theme.$get()).toBe("light");
 
         theme.$set("dark");
@@ -243,7 +243,7 @@ describe("createCompositeStore", () => {
 
       it("should handle non-existent paths gracefully", () => {
         // @ts-expect-error
-        const nonExistent = () => store.$tap("user.nonExistent.property");
+        const nonExistent = () => store.$key("user.nonExistent.property");
         expect(nonExistent).not.toThrow();
       });
     });
@@ -438,17 +438,17 @@ describe("createCompositeStore", () => {
         expect(count.value.$get()).toBe(0);
       });
 
-      it("should access methods via $tap", () => {
-        count.$tap("increase")(3);
+      it("should access methods via $key", () => {
+        count.$key("increase")(3);
         expect(count.value.$get()).toBe(3);
 
-        count.$tap("decrease")(1);
+        count.$key("decrease")(1);
         expect(count.value.$get()).toBe(2);
 
-        count.$tap("set")(5);
+        count.$key("set")(5);
         expect(count.value.$get()).toBe(5);
 
-        count.$tap("reset")();
+        count.$key("reset")();
         expect(count.value.$get()).toBe(0);
       });
 

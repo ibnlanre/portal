@@ -23,7 +23,7 @@ A [TypeScript][typescript] state management library for [React][react] applicati
   - [Nested Stores](#nested-stores)
     - [Breaking Off Stores](#breaking-off-stores)
     - [Updating Nested Stores](#updating-nested-stores)
-  - [Accessing Nested Stores with `$tap`](#accessing-nested-stores-with-tap)
+  - [Accessing Nested Stores with `$key`](#accessing-nested-stores-with-key)
   - [Actions](#actions)
     - [Reducer Pattern](#reducer-pattern)
     - [Internal Actions](#internal-actions)
@@ -110,7 +110,7 @@ If you are working on a project that uses markup languages like [HTML][html] or 
 
 ### Managing State
 
-State management with `@ibnlanre/portal` begins with the `createStore` function. This function initializes a store with an initial value and returns an object containing [methods][method] to interact with the state: [$get](#accessing-state-with-get), [$set](#updating-state-with-set), [$use](#react-integration), [$sub](#subscribing-to-state-changes-with-sub), and [$tap](#accessing-nested-stores-with-tap).
+State management with `@ibnlanre/portal` begins with the `createStore` function. This function initializes a store with an initial value and returns an object containing [methods][method] to interact with the state: [$get](#accessing-state-with-get), [$set](#updating-state-with-set), [$use](#react-integration), [$sub](#subscribing-to-state-changes-with-sub), and [$key](#accessing-nested-stores-with-key).
 
 These [methods][method] provide a simple and consistent way to access, update, and subscribe to state changes. Here's an example of creating a store:
 
@@ -126,7 +126,7 @@ Each [method][method] serves a distinct purpose:
 - `$set`: Update the state with a new value.
 - `$use`: A [React][react] [hook][hook] for managing state within functional components.
 - `$sub`: Subscribe to state changes to react to updates.
-- `$tap`: Access deeply nested stores using a dot-separated string.
+- `$key`: Access deeply nested stores using a dot-separated string.
 
 ### Accessing State with $get
 
@@ -250,21 +250,21 @@ street.$set("456 Elm St");
 street.$set((prev) => `${prev} Apt 2`);
 ```
 
-### Accessing Nested Stores with `$tap`
+### Accessing Nested Stores with `$key`
 
-To conveniently access deeply nested stores, you can use the `$tap` method with a dot-separated string. This method leverages [TypeScript][typescript]'s IntelliSense for path suggestions, providing an overview of the available nested stores. This makes managing complex state structures more intuitive and efficient.
+To conveniently access deeply nested stores, you can use the `$key` method with a dot-separated string. This method leverages [TypeScript][typescript]'s IntelliSense for path suggestions, providing an overview of the available nested stores. This makes managing complex state structures more intuitive and efficient.
 
 ```typescript
-const street = store.$tap("location.address.street");
+const street = store.$key("location.address.street");
 street.$get(); // 456 Elm St
 ```
 
-The `$tap` method returns a reference to the nested store, which means you can access and update the nested state directly. You also can **_tap_** at any level of the hierarchy, allowing you to work with deeply nested stores without the need for manual traversal.
+The `$key` method returns a reference to the nested store, which means you can access and update the nested state directly. It can be used at any level of the hierarchy, allowing you to work with deeply nested stores without the need for manual traversal.
 
 ```typescript
-store.$tap("location.address.street").$set("789 Oak St");
+store.$key("location.address.street").$set("789 Oak St");
 
-const { street } = store.location.$tap("address");
+const { street } = store.location.$key("address");
 street.$get(); // 789 Oak St
 ```
 

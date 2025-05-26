@@ -94,7 +94,7 @@ const city = store.location.address.city.$get();
 console.log(city); // "Springfield"
 ```
 
-- Stores can be nested for more complex structures and accessed with `$tap("path.to.key")`.
+- Stores can be nested for more complex structures and accessed with `$key("path.to.key")`.
 
 #### Breaking Off Stores
 
@@ -106,12 +106,12 @@ const streetValue = address.street.$get();
 console.log(streetValue); // "123 Main St"
 ```
 
-#### `$tap` Method
+#### `$key` Method
 
 Access nested stores using dot notation:
 
 ```typescript
-const street = store.$tap("location.address.street");
+const street = store.$key("location.address.street");
 street.$get(); // "123 Main St"
 ```
 

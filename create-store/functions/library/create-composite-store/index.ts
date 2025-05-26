@@ -136,13 +136,13 @@ export function createCompositeStore<State extends Dictionary>(
     };
   }
 
-  function tap<Path extends Paths<State>>(key: Path, chain?: Path) {
-    const path = <Path>[chain, key].filter(Boolean).join(".");
+  function key<Path extends Paths<State>>(path: Path, parent?: Path) {
+    const chain = <Path>[parent, path].filter(Boolean).join(".");
     const value = resolvePath(state, path);
 
-    if (isDictionary(value)) return traverse(value, path);
+    if (isDictionary(value)) return traverse(value, chain);
     if (isFunction(value)) return <any>value;
-    return buildStore(path);
+    return buildStore(chain);
   }
 
   function use<
@@ -182,8 +182,8 @@ export function createCompositeStore<State extends Dictionary>(
       $sub(subscriber: Subscriber<State>, immediate = true) {
         return sub(subscriber, chain, immediate);
       },
-      $tap(key: Path) {
-        return tap(key, chain);
+      $key(path: Path) {
+        return key(path, chain);
       },
       $use(
         select?: Selector<State, ResolvePath<State, Path>>,
