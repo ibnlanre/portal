@@ -3,47 +3,55 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
 import { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
 import { createStore } from "./index";
+import { DEFAULT_COMPOSITE_HANDLES } from "@/create-store/constants/composite-handles";
 
 vi.mock("@/create-store/functions/library/create-composite-store");
 vi.mock("@/create-store/functions/library/create-primitive-store");
 
-describe("Smoke test for createStore", () => {
+describe("createStore", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it("should create a primitive store when initial state is undefined", () => {
-    createStore();
-    expect(createPrimitiveStore).toHaveBeenCalledWith(undefined);
+    createStore(undefined);
+    expect(createPrimitiveStore).toHaveBeenCalledWith(undefined, DEFAULT_COMPOSITE_HANDLES);
     expect(createCompositeStore).not.toHaveBeenCalled();
   });
 
   it("should create a composite store when initial state is a dictionary", () => {
     const initialState = { key: "value" };
-
     createStore(initialState);
-    expect(createCompositeStore).toHaveBeenCalledWith(initialState);
+    expect(createCompositeStore).toHaveBeenCalledWith(
+      initialState,
+      DEFAULT_COMPOSITE_HANDLES
+    );
     expect(createPrimitiveStore).not.toHaveBeenCalled();
   });
 
   it("should create a primitive store when initial state is a primitive", () => {
     const initialState = "not a dictionary";
     createStore(initialState);
-    expect(createPrimitiveStore).toHaveBeenCalledWith(initialState);
+    expect(createPrimitiveStore).toHaveBeenCalledWith(
+      initialState,
+      DEFAULT_COMPOSITE_HANDLES
+    );
     expect(createCompositeStore).not.toHaveBeenCalled();
   });
 
   it("should handle initial state as a function", () => {
     const initialState = vi.fn(() => ({ key: "value" }));
-
     createStore(initialState);
     expect(initialState).toHaveBeenCalled();
-    expect(createCompositeStore).toHaveBeenCalledWith({ key: "value" });
+    expect(createCompositeStore).toHaveBeenCalledWith(
+      { key: "value" },
+      DEFAULT_COMPOSITE_HANDLES
+    );
+    expect(createPrimitiveStore).not.toHaveBeenCalled();
   });
 
   it("should handle initial state as a promise", async () => {
     const originalFetch = global.fetch;
-
     Object.defineProperty(global, "fetch", {
       value: vi.fn(async () => ({
         json: vi.fn(async () => {
@@ -59,9 +67,28 @@ describe("Smoke test for createStore", () => {
       return data;
     });
 
-    expect(createPrimitiveStore).toHaveBeenCalledWith({ completed: true });
+    expect(createPrimitiveStore).toHaveBeenCalledWith(
+      { completed: true },
+      DEFAULT_COMPOSITE_HANDLES
+    );
     expect(createCompositeStore).not.toHaveBeenCalled();
-
     global.fetch = originalFetch;
+  });
+
+  it("should pass custom handles to primitive store", () => {
+    createStore("value", ["$get", "$set"]);
+    expect(createPrimitiveStore).toHaveBeenCalledWith("value", [
+      "$get",
+      "$set",
+    ]);
+  });
+
+  it("should pass custom handles to composite store", () => {
+    createStore({ key: "value" }, ["$get", "$set", "$key"]);
+    expect(createCompositeStore).toHaveBeenCalledWith({ key: "value" }, [
+      "$get",
+      "$set",
+      "$key",
+    ]);
   });
 });

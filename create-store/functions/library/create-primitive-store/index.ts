@@ -1,16 +1,22 @@
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
 import type { Selector } from "@/create-store/types/selector";
 import type { StateManager } from "@/create-store/types/state-manager";
+import type { StoreHandles } from "@/create-store/types/store-handles";
 import type { Subscriber } from "@/create-store/types/subscriber";
 import type { SetStateAction } from "react";
 
+import { DEFAULT_PRIMITIVE_HANDLES } from "@/create-store/constants/primitive-handles";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 import { useEffect, useState } from "react";
 
-export function createPrimitiveStore<State>(
-  initialState: State
-): PrimitiveStore<State> {
+export function createPrimitiveStore<
+  State,
+  const Handles extends StoreHandles = DEFAULT_PRIMITIVE_HANDLES
+>(
+  initialState: State,
+  handles: Handles = DEFAULT_PRIMITIVE_HANDLES as Handles
+): PrimitiveStore<State, Handles> {
   let state = initialState;
   const subscribers = new Set<Subscriber<State>>();
 
@@ -51,10 +57,16 @@ export function createPrimitiveStore<State>(
     };
   }
 
-  return {
+  const methods = {
     $get,
     $set,
     $act,
     $use,
   };
+
+  return Object.fromEntries(
+    Object.entries(methods).filter(([key]) => {
+      return handles.includes(key as Handles[number]);
+    })
+  ) as PrimitiveStore<State, Handles>;
 }

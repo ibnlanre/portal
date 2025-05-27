@@ -6,9 +6,11 @@ import type { Selector } from "@/create-store/types/selector";
 import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
 import type { PartialStateManager } from "@/create-store/types/state-manager";
 import type { StatePath } from "@/create-store/types/state-path";
+import type { StoreHandles } from "@/create-store/types/store-handles";
 import type { Subscriber } from "@/create-store/types/subscriber";
 import type { Dispatch } from "react";
 
+import { DEFAULT_COMPOSITE_HANDLES } from "@/create-store/constants/composite-handles";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
@@ -22,9 +24,13 @@ import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 import { useEffect, useMemo, useState } from "react";
 
-export function createCompositeStore<State extends Dictionary>(
-  initialState: State
-): CompositeStore<State> {
+export function createCompositeStore<
+  State extends Dictionary,
+  const Handles extends StoreHandles = DEFAULT_COMPOSITE_HANDLES
+>(
+  initialState: State,
+  handles: Handles = DEFAULT_COMPOSITE_HANDLES as Handles
+): CompositeStore<State, Handles> {
   let state = initialState;
 
   const subscribers = new Map<
@@ -102,7 +108,7 @@ export function createCompositeStore<State extends Dictionary>(
     Path extends Paths<State>,
     Value extends StatePath<State, Path>,
     Result = Value
-  >(path?: Path, selector?: Selector<Value, Result>) {
+  >(path?: Path, selector?: Selector<Value, Result>): Result {
     const value = resolvePath(state, path);
     return resolveSelectorValue(value, selector);
   }
@@ -136,7 +142,7 @@ export function createCompositeStore<State extends Dictionary>(
     };
   }
 
-  function key<Path extends Paths<State>>(path: Path, parent?: Path) {
+  function key<Path extends Paths<State>>(path: Path, parent?: Path): any {
     const chain = <Path>[parent, path].filter(Boolean).join(".");
     const value = resolvePath(state, path);
 
@@ -172,7 +178,7 @@ export function createCompositeStore<State extends Dictionary>(
     Value extends StatePath<State, Path>,
     Result = Value
   >(chain?: Path) {
-    return {
+    const methods = {
       $get(selector?: Selector<Value, Result>) {
         return get(chain, selector);
       },
@@ -192,17 +198,28 @@ export function createCompositeStore<State extends Dictionary>(
         return use(chain, selector, dependencies);
       },
     };
+
+    return Object.fromEntries(
+      Object.entries(methods).filter(([key]) => {
+        return handles.includes(key as Handles[number]);
+      })
+    );
   }
 
   function traverse<Path extends Paths<State> = never>(
     state: State,
     chain?: Path
-  ): CompositeStore<State>;
+  ): CompositeStore<State, Handles>;
 
   function traverse<
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>
-  >(state: Value, chain?: Path): CompositeStore<State> {
+  >(state: Value, chain?: Path): CompositeStore<State, Handles>;
+
+  function traverse<
+    Path extends Paths<State>,
+    Value extends ResolvePath<State, Path>
+  >(state: Value, chain?: Path): CompositeStore<State, Handles> {
     const clone = createSnapshot(state);
 
     for (const key in clone) {

@@ -29,8 +29,11 @@ A [TypeScript][typescript] state management library for [React][react] applicati
     - [Internal Actions](#internal-actions)
   - [Asynchronous State](#asynchronous-state)
   - [React Integration](#react-integration)
-    - [Modifying State with a Callback](#modifying-state-with-a-callback)
+    - [Basic Usage](#basic-usage)
+    - [Modifying State with a Selector](#modifying-state-with-a-selector)
     - [Using Dependencies with the `$use` Hook](#using-dependencies-with-the-use-hook)
+    - [Partial State Updates](#partial-state-updates)
+    - [Advanced Usage Patterns](#advanced-usage-patterns)
 - [Persistence](#persistence)
   - [Web Storage Adapter](#web-storage-adapter)
     - [Local Storage Adapter](#local-storage-adapter)
@@ -108,25 +111,151 @@ If you are working on a project that uses markup languages like [HTML][html] or 
 
 `@ibnlanre/portal` simplifies state management with its intuitive and developer-friendly [API][api]. Built with scalability and flexibility in mind, it integrates seamlessly with [React][react] applications while remaining lightweight and easy to use. Managing application state should not be a complex task, and `@ibnlanre/portal` is designed to make the process effortless, even in existing codebases.
 
-### Managing State
+### State Management Methods
 
-State management with `@ibnlanre/portal` begins with the `createStore` function. This function initializes a store with an initial value and returns an object containing [methods][method] to interact with the state: [$get](#accessing-state-with-get), [$set](#updating-state-with-set), [$use](#react-integration), [$act](#subscribing-to-state-changes-with-act), and [$key](#accessing-nested-stores-with-key).
+`@ibnlanre/portal` provides a consistent API across both primitive and composite stores. Each store comes with a set of core methods for state management:
 
-These [methods][method] provide a simple and consistent way to access, update, and subscribe to state changes. Here's an example of creating a store:
+#### The $get Method
+
+Retrieves the current state or computes a derived value using an optional selector function:
 
 ```typescript
-import { createStore } from "@ibnlanre/portal";
+const store = createStore({
+  count: 0,
+  user: { name: "John" },
+});
 
-const store = createStore("initial value");
+// Basic state retrieval
+store.$get(); // { count: 0, user: { name: "John" } }
+store.count.$get(); // 0
+store.user.name.$get(); // "John"
+
+// Using selectors
+store.count.$get((count) => count + 5); // 5
+store.user.name.$get((name) => name.toUpperCase()); // "JOHN"
 ```
 
-Each [method][method] serves a distinct purpose:
+#### The $set Method
 
-- `$get`: Retrieve the current state.
-- `$set`: Update the state with a new value.
-- `$use`: A [React][react] [hook][hook] for managing state within functional components.
+Updates state using direct values or update functions:
+
+```typescript
+// Direct value updates
+store.count.$set(5);
+store.user.$set({ name: "Jane" });
+
+// Functional updates using previous state
+store.count.$set((prev) => prev + 1);
+store.user.name.$set((name) => name.toUpperCase());
+
+// Partial state updates (merging)
+store.$set({ count: 10 });
+store.$set((prev) => ({ count: prev.count + 1 }));
+```
+
+#### The $act Method
+
+Subscribes to state changes with optional immediate notification:
+
+```typescript
+// Subscribe to root state changes
+const unsubscribe = store.$act((state) => {
+  console.log("State changed:", state);
+}, true); // true for immediate notification
+
+// Subscribe to specific value changes
+store.count.$act((count) => {
+  console.log("Count changed:", count);
+});
+
+// Unsubscribe when needed
+unsubscribe();
+```
+
 - `$act`: Subscribe to state changes to react to updates.
 - `$key`: Access deeply nested stores using a dot-separated string.
+
+### Store Types
+
+`@ibnlanre/portal` provides two types of stores:
+
+1. **Primitive Store**: For managing primitive values (strings, numbers, booleans, etc.)
+2. **Composite Store**: For managing objects and nested state structures
+
+The `createStore` function automatically determines which type of store to create based on your initial state:
+
+```typescript
+// Creates a primitive store
+const numberStore = createStore(42);
+const stringStore = createStore("hello");
+
+// Creates a composite store
+const objectStore = createStore({
+  count: 0,
+  user: {
+    name: "John",
+    preferences: { theme: "light" },
+  },
+});
+```
+
+#### Store Methods
+
+Both primitive and composite stores provide the following core methods:
+
+- `$get`: Retrieve the current state or a derived value using a selector
+- `$set`: Update the state with a new value or using an update function
+- `$act`: Subscribe to state changes with optional immediate notification
+- `$use`: React hook for integrating state with components
+
+Composite stores additionally provide:
+
+- `$key`: Access nested state using dot notation paths
+
+Example usage:
+
+```typescript
+// With a primitive store
+const counter = createStore(0);
+counter.$get(); // 0
+counter.$set(5); // directly set value
+counter.$set((prev) => prev + 1); // update using function
+
+// With a composite store
+const settings = createStore({
+  theme: "light",
+  notifications: true,
+  user: { name: "John" },
+});
+
+settings.$get(); // gets full state object
+settings.theme.$get(); // "light"
+settings.$key("user.name").$get(); // "John"
+
+// Subscribe to changes
+settings.$act((state) => console.log(state));
+settings.theme.$act((theme) => console.log(theme));
+
+// Use in React components
+function ThemeDisplay() {
+  const [theme, setTheme] = settings.theme.$use();
+  return <div>{theme}</div>;
+}
+```
+
+#### Custom Store Handles
+
+You can customize which methods are available on a store by passing an array of handles as the second argument to `createStore`:
+
+```typescript
+// Only include $get and $set methods
+const readWriteStore = createStore("value", ["$get", "$set"]);
+
+// Create a read-only store
+const readOnlyStore = createStore({ data: "test" }, ["$get", "$act"]);
+```
+
+This allows you to create stores with restricted capabilities based on your needs.
 
 ### Accessing State with $get
 
@@ -202,11 +331,9 @@ store.$act((value) => {
 }, false);
 ```
 
-### Nested Stores
+### Nested State Management
 
-`@ibnlanre/portal` supports the creation of **nested stores**, allowing you to manage deeply structured state with ease. To create a nested store, pass an object containing nested objects, arrays, or primitive values to the `createStore` function. Each node in the nested structure becomes its own store, with access to [methods][method] for updating and managing its state.
-
-This design enables fine-grained control over state at any level of the object hierarchy.
+`@ibnlanre/portal` excels at managing deeply nested state through its composite store capabilities. When you create a store with an object, each nested property becomes its own store instance, providing seamless access to state management methods at every level.
 
 ```typescript
 const store = createStore({
@@ -219,36 +346,85 @@ const store = createStore({
   },
 });
 
+// Access nested state directly
 const city = store.location.address.city.$get();
 console.log(city); // "Springfield"
+
+// Use selectors for derived values
+store.location.address.street.$get((street) => street.toUpperCase());
+// "123 MAIN ST"
+
+// Access nested state using $key
+store.$key("location.address.city").$get(); // "Springfield"
+store.location.$key("address.city").$get(); // "Springfield"
 ```
 
-#### Breaking Off Stores
+#### Independent Nested Store Operations
 
-Remember that each point in an object chain is a store. This means that each member of the chain has access to its own value and can be **broken off** into its own store at any point in time. This is useful when you want to work with a nested state independently of the parent store.
-
-For example, you can break off the `address` store from the `location` store and work with it independently:
+Every node in the state tree is a fully functional store that can be used independently. You can extract any part of the nested structure and work with it as a separate store, while maintaining the connection to the root state.
 
 ```typescript
+// Extract nested stores
 const { address } = store.location;
-address.street.$get(); // "123 Main St"
-
 const { street } = address;
-street.$set("456 Elm St");
-```
 
-#### Updating Nested Stores
+// Each level maintains full store functionality
+address.street.$get(); // "123 Main St"
+address.city.$set("New City");
 
-Updating the state of a nested store works the same way as updating a regular store. You can use the $set method to change the value of a nested store. Since all levels in the hierarchy share the same underlying state, updates made to a nested store will propagate to the parent store.
-
-This behavior is by design, allowing you to work with any part of the state seamlessly.
-
-```typescript
-const { street } = store.location.address;
-
+// Update state through any reference
 street.$set("456 Elm St");
 street.$set((prev) => `${prev} Apt 2`);
+
+// Subscribers work at any level
+address.$act((state) => {
+  console.log(state); // { street: "456 Elm St Apt 2", city: "New City" }
+});
+street.$act((value) => {
+  console.log(value); // "456 Elm St Apt 2"
+});
 ```
+
+#### State Updates and Immutability
+
+`@ibnlanre/portal` handles state updates immutably, allowing you to work with state at any level while maintaining consistency throughout the state tree. You can:
+
+- Update individual values
+- Merge partial state
+- Update multiple nested values
+- Use update functions for computed changes
+
+```typescript
+// Update complete state
+store.$set({
+  location: {
+    unit: "Unit 2B",
+    address: {
+      street: "789 Oak Rd",
+      city: "New City",
+    },
+  },
+});
+
+// Merge partial state
+store.$set({ location: { unit: "Unit 3C" } });
+
+// Update nested values directly
+store.location.unit.$set("Unit 4D");
+store.location.address.$set({
+  street: "321 Pine St",
+  city: "Another City",
+});
+
+// Use update functions
+store.location.address.street.$set((street) => street.toUpperCase());
+```
+
+The state is updated immutably at all levels, ensuring that:
+
+1. Original state is preserved
+2. All subscribers receive appropriate updates
+3. React components re-render efficiently
 
 ### Accessing Nested Stores with `$key`
 
@@ -351,7 +527,7 @@ externalService.on("error", reset);
 
 The `createStore` function also supports [asynchronous][asynchronous] state initialization. You can pass an async function that returns a [Promise][promise] resolving to the initial state. This is particularly useful for scenarios where the initial state needs to be fetched from an external API.
 
-**Note** that the store will remain empty until the [Promise][promise] resolves. Also, if the resolved value is an object, it will be treated as a primitive value, not as a nested store. This is because nested stores are only created during [initialization][initialization] from objects directly passed to createStore.
+**Note** that the store will remain empty until the [Promise][promise] resolves. Also, if the resolved value is an object, it will be treated as a primitive value, not as a nested store. This is because nested stores are only created during [initialization][initialization] from objects directly passed to the `createStore` function.
 
 Here’s an example:
 
@@ -374,67 +550,55 @@ By combining nested stores and asynchronous initialization, `@ibnlanre/portal` e
 
 ### React Integration
 
-`@ibnlanre/portal` offers first-class support for [React][react] applications, making state management seamless within functional components. When you create a store, it automatically provides a [React][react] [hook][hook] called `$use`. This [hook][hook] is similar to the [useState][use-state] [hook][hook] in [React][react], returning an array with two elements: the **current state value** and a **dispatch function** to update the state.
+`@ibnlanre/portal` offers seamless, first-class support for [React][react] applications. Each store instance provides a `$use` [hook][hook], which works similarly to React’s built-in [useState][use-state] hook. This hook returns a tuple: the **current state value** and a **dispatch function** to update the state.
 
-Here's how you can integrate the `$use` [hook][hook] into your [React][react] components:
+#### Basic Usage
 
-```typescript
-import type { ChangeEvent } from "react";
+To use a store in a React component, simply call the `$use` hook on your store:
+
+```jsx
 import { store } from "./path-to-your-store";
 
 function Component() {
   const [state, setState] = store.$use();
-
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setState(event.target.value);
-  };
-
-  return <input value={state} onChange={handleChange} />;
+  return <input value={state} onChange={(e) => setState(e.target.value)} />;
 }
-
-export default Component;
 ```
 
-The `$use` [hook][hook] eliminates the need for manual subscriptions to state changes. It ensures that the component automatically updates whenever the store's state changes and gracefully unsubscribes when the component unmounts. This simplifies state management within your application.
+The `$use` hook automatically subscribes your component to state changes and unsubscribes when the component unmounts. This means your UI will always reflect the latest state, with no manual subscription management required.
 
-#### Modifying State with a Callback
+#### Modifying State with a Selector
 
-Like the `$get` and `$set` methods, the `$use` [hook][hook] can accept a [callback function][callback] as its first argument. This function is called after the state is retrieved from the store but before it is returned to the component. This allows you to transform or modify the state before using it.
+Like `$get` and `$set`, the `$use` hook can accept a selector (callback function) as its first argument. This allows you to transform the state before it’s returned to your component, without mutating the store itself.
 
 ```typescript
 const [state, setState] = store.$use((value) => `${value} modified`);
 ```
 
-**Note** that the [callback function][callback] does not alter the store's state. Instead, it modifies the value returned for use within the component. Also, the dispatch function (`setState`) expects values of the same type as the store's initial state, ensuring type safety.
+> **Note:** The selector only affects the value returned to the component, not the store’s internal state. The `setState` function always expects the original state type.
 
 #### Using Dependencies with the `$use` Hook
 
-In cases where the result of the callback function depends on other mutable values, you can pass a **dependency array** as the second argument to the `$use` hook. This ensures the [callback function][callback] is only re-evaluated when dependencies change.
+If your selector depends on external values, you can pass a dependency array as the second argument. This works just like the dependency array in [useEffect][use-effect] or [useMemo][use-memo], ensuring the selector is only recomputed when dependencies change.
 
 ```typescript
 const [count, setCount] = useState(0);
-
 const [state, setState] = store.$use(
   (value) => `Count: ${count} - ${value}`,
   [count]
 );
 ```
 
-**Note** that this **dependency array** works like that in [React][react]'s [useEffect][use-effect] or [useMemo][use-memo] hooks. The [callback function][callback] is memoized and only re-executed when the specified dependencies change. Also, the modified state returned by the callback is independent of the store's internal state. This ensures that the store's state remains unchanged.
-
 #### Partial State Updates
 
-The `setState` function in the `$use` hook also supports partial state updates when the state is an object. You can pass an object containing the properties to update, and `setState` will merge the new properties with the existing state.
+When your store holds an object, the `setState` function supports partial updates. Pass an object with only the properties you want to update, and the store will merge them with the existing state.
 
-```typescript
+```tsx
 const store = createStore({ name: "John", age: 30 });
 
 function Component() {
   const [state, setState] = store.$use();
-
-  const updateAge = () => {
-    setState({ age: 31 });
-  };
+  const updateAge = () => setState({ age: 31 });
 
   return (
     <div>
@@ -444,9 +608,100 @@ function Component() {
     </div>
   );
 }
-
-export default Component;
 ```
+
+#### Advanced Usage Patterns
+
+The `$use` hook is highly flexible and supports a variety of advanced patterns:
+
+1. **Selectors for Derived State**
+
+   Transform state before rendering:
+
+   ```tsx
+   function UppercaseName() {
+     const [name] = store.user.name.$use((name) => name.toUpperCase());
+
+     return <div>{name}</div>;
+   }
+   ```
+
+2. **Dependency Arrays for Memoization**
+
+   Control when selectors are recomputed:
+
+   ```tsx
+   function FormattedUser({ formatter }) {
+     const [user] = store.user.$use((user) => formatter(user), [formatter]);
+     return <div>{user}</div>;
+   }
+   ```
+
+3. **Nested State Access**
+
+   Work with any level of state granularity:
+
+   ```tsx
+   function UserPreferences() {
+     const [prefs] = store.user.preferences.$use();
+     const [theme] = store.user.preferences.theme.$use();
+
+     return (
+       <>
+         <div>All preferences: {JSON.stringify(prefs)}</div>
+         <div>Theme: {theme}</div>
+       </>
+     );
+   }
+   ```
+
+4. **Synchronized Updates Across Components**
+
+   All components using the same store (or its nested stores) stay in sync:
+
+   ```tsx
+   function UserDashboard() {
+     const [user] = store.$use();
+     const [name] = store.user.name.$use();
+     const [prefs] = store.user.preferences.$use();
+
+     return (
+       <>
+         <UserInfo user={user} />
+         <UserName name={name} />
+         <PreferencesPanel prefs={prefs} />
+       </>
+     );
+   }
+   ```
+
+5. **Efficient Partial Updates**
+
+   Update nested state efficiently with functional updates:
+
+   ```tsx
+   function ThemeToggle() {
+     const [, setUser] = store.user.$use();
+     const toggleTheme = () => {
+       setUser((prev) => ({
+         ...prev,
+         preferences: {
+           ...prev.preferences,
+           theme: prev.preferences.theme === "light" ? "dark" : "light",
+         },
+       }));
+     };
+
+     return <button onClick={toggleTheme}>Toggle Theme</button>;
+   }
+   ```
+
+#### How `$use` Works
+
+- Subscribes to state changes when the component mounts
+- Unsubscribes automatically on unmount
+- Triggers efficient, targeted re-renders
+- Preserves TypeScript type safety for state and updates
 
 ## Persistence
 
@@ -725,7 +980,11 @@ All functions in the `cookieStorage` module are static and do not require an [in
 
 ## Contributions
 
-All contributions are welcome and appreciated. Thank you! 💚
+All contributions are welcome and appreciated. You can reach me on [Twitter](https://twitter.com/ibnlanre) or [GitHub](https://github.com/ibnlanre) to discuss ideas, report issues, or contribute code. If you find a bug or have a feature request, please open an issue on the [GitHub repository](https://github.com/ibnlanre/portal/issues).
+
+If you want to contribute code, please fork the repository, make your changes, and submit a pull request. Make sure to follow the [contribution guidelines](CONTRIBUTING.md) and include tests for any new features or bug fixes.
+
+Your contributions help make `@ibnlanre/portal` a better state management library for everyone. Whether it's fixing bugs, improving documentation, or adding new features, your efforts are greatly appreciated. Thank you! 💚
 
 ## License
 

@@ -1,6 +1,8 @@
 import { renderHook } from "@testing-library/react";
-import { act, useState } from "react";
+import { act } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { DEFAULT_COMPOSITE_HANDLES } from "@/create-store/constants/composite-handles";
 import { createCompositeStore } from "./index";
 
 describe("createCompositeStore", () => {
@@ -351,28 +353,19 @@ describe("createCompositeStore", () => {
     });
 
     it("should support selectors and dependency arrays", () => {
-      const { result: depResult } = renderHook(() => useState("prefix"));
-      const [prefix, setPrefix] = depResult.current;
-
-      const { result } = renderHook(() =>
-        store.text.$use((text) => `${prefix}: ${text}`, [prefix])
+      const { result, rerender } = renderHook(
+        (prefix) => store.text.$use((text) => `${prefix}: ${text}`, [prefix]),
+        { initialProps: "prefix" }
       );
 
       expect(result.current[0]).toBe("prefix: hello");
 
       act(() => {
-        setPrefix("new prefix");
+        rerender("new prefix");
       });
 
-      // Re-render the hook with the new dependencies
-      const { result: updatedResult } = renderHook(() =>
-        store.text.$use(
-          (text) => `${depResult.current[0]}: ${text}`,
-          [depResult.current[0]]
-        )
-      );
-
-      expect(updatedResult.current[0]).toBe("new prefix: hello");
+      expect(result.current[0]).toBe("new prefix: hello");
+      expect(store.text.$get()).toBe("hello");
     });
 
     it("should keep store state in sync across multiple hooks", () => {
@@ -571,6 +564,80 @@ describe("createCompositeStore", () => {
         expect(updatedResult.current.state.bears).toBe(3);
         expect(updatedResult.current.bearCount).toBe(3);
       });
+    });
+  });
+
+  describe("handles customization", () => {
+    const state = { count: 0 };
+
+    it("should only include specified handles", () => {
+      const store = createCompositeStore(state, ["$get", "$set"]);
+      expect(store).toHaveProperty("$get");
+      expect(store).toHaveProperty("$set");
+      expect(store).not.toHaveProperty("$act");
+      expect(store).not.toHaveProperty("$use");
+      expect(store).not.toHaveProperty("$key");
+      expect(store.count).toHaveProperty("$get");
+      expect(store.count).toHaveProperty("$set");
+      expect(store.count).not.toHaveProperty("$act");
+      expect(store.count).not.toHaveProperty("$use");
+      expect(store.count).not.toHaveProperty("$key");
+    });
+
+    it("should include all default handles when not specified", () => {
+      const store = createCompositeStore(state);
+      DEFAULT_COMPOSITE_HANDLES.forEach((handle) => {
+        expect(store).toHaveProperty(handle);
+        expect(store.count).toHaveProperty(handle);
+      });
+    });
+
+    it("should support single handle configuration", () => {
+      const store = createCompositeStore(state, ["$get"]);
+      expect(store).toHaveProperty("$get");
+      expect(store).not.toHaveProperty("$set");
+      expect(store).not.toHaveProperty("$act");
+      expect(store).not.toHaveProperty("$use");
+      expect(store).not.toHaveProperty("$key");
+      expect(store.count).toHaveProperty("$get");
+      expect(store.count).not.toHaveProperty("$set");
+      expect(store.count).not.toHaveProperty("$act");
+      expect(store.count).not.toHaveProperty("$use");
+      expect(store.count).not.toHaveProperty("$key");
+    });
+
+    it("should correctly handle nested state with restricted handles", () => {
+      const nestedState = {
+        user: {
+          profile: {
+            name: "John",
+            age: 30,
+          },
+        },
+      };
+
+      const store = createCompositeStore(nestedState, ["$get", "$key"]);
+      expect(store).toHaveProperty("$get");
+      expect(store).toHaveProperty("$key");
+      expect(store).not.toHaveProperty("$set");
+      expect(store.user.profile).toHaveProperty("$get");
+      expect(store.user.profile).toHaveProperty("$key");
+      expect(store.user.profile).not.toHaveProperty("$set");
+      expect(store.user.profile.name).toHaveProperty("$get");
+      expect(store.user.profile.name).not.toHaveProperty("$set");
+    });
+
+    it("should prevent operations with missing handles", () => {
+      const store = createCompositeStore(state, ["$get"]);
+      expect(() => store.$get()).not.toThrow();
+
+      // @ts-expect-error - $set should not be available
+      expect(() => store.$set(5)).toThrow();
+
+      expect(() => {
+        // @ts-expect-error - $act should not be available
+        store.$act((state) => console.log(state));
+      }).toThrow();
     });
   });
 });
