@@ -937,9 +937,9 @@ All functions in the `cookieStorage` module are static and do not require an [in
   - Creates a cookie key based on the provided options.
   - Parameters:
     - `options.cookieFragmentDescription`: The description of the cookie fragment.
-    - `options.cookiePrefix`: The prefix to use for the cookie key. Default is `"__"`.
+    - `options.cookiePrefix`: The prefix to use for the cookie key. Default is `""`.
     - `options.cookieFragmentSizes`: The sizes of the cookie fragments. Default is `[]`.
-    - `options.cookieScope`: The scope of the cookie. Default is `"host"`.
+    - `options.cookieScope`: The scope of the cookie. Default is `""`.
     - `options.cookieScopeCase`: The case of the cookie scope. Default is `"title"`.
     - `options.cookieService`: The service to use for the cookie. Default is `""`.
     - `options.cookieScopeServiceConnector`: The connector to use for the cookie scope and service. Default is `"-"`.
@@ -954,7 +954,7 @@ All functions in the `cookieStorage` module are static and do not require an [in
       cookiePrefix: "__",
       cookieFragmentSizes: [2, 3],
       cookieScopeCase: "title",
-      cookieScope: "host",
+      cookieScope: "session",
     });
     ```
 

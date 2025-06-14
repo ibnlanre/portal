@@ -36,7 +36,7 @@ export interface CreateCookieKeyOptions<
    * - `"_"` is a common prefix for internal purposes (such as tracking user sessions).
    * - `"__"` is a common prefix for system-level operations (such as storing user preferences).
    *
-   * @default "__"
+   * @default ""
    */
   cookiePrefix?: "" | "_" | "__" | (string & {});
 
@@ -44,7 +44,7 @@ export interface CreateCookieKeyOptions<
    * Logical scope indicating cookie usage context such as "host" or "secure".
    * Helps in classifying cookies based on their function.
    *
-   * @default "host"
+   * @default ""
    */
   cookieScope?:
     | ""

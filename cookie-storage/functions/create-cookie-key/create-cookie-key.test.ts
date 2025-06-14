@@ -6,7 +6,7 @@ describe("createCookieKey", () => {
     const result = createCookieKey({
       cookieFragmentDescription: "Test Cookie",
     });
-    expect(result).toBe("__Host_tc");
+    expect(result).toBe("tc");
   });
 
   it("should throw an error if the cookie fragment sizes are invalid", () => {
@@ -46,7 +46,7 @@ describe("createCookieKey", () => {
       cookieScope: "myScope",
       cookieScopeCase: "title",
     });
-    expect(result).toBe("__MyScope_tc");
+    expect(result).toBe("MyScope_tc");
   });
 
   it("should handle lower case scope", () => {
@@ -55,7 +55,7 @@ describe("createCookieKey", () => {
       cookieScope: "MyScope",
       cookieScopeCase: "lower",
     });
-    expect(result).toBe("__myscope_tc");
+    expect(result).toBe("myscope_tc");
   });
 
   it("should handle upper case scope", () => {
@@ -64,7 +64,7 @@ describe("createCookieKey", () => {
       cookieScope: "myScope",
       cookieScopeCase: "upper",
     });
-    expect(result).toBe("__MYSCOPE_tc");
+    expect(result).toBe("MYSCOPE_tc");
   });
 
   it("should handle custom scope connector", () => {
@@ -73,7 +73,7 @@ describe("createCookieKey", () => {
       cookieScope: "myScope",
       cookieScopeFragmentConnector: "-",
     });
-    expect(result).toBe("__MyScope-tc");
+    expect(result).toBe("MyScope-tc");
   });
 
   it("should handle custom fragment separator", () => {
@@ -81,7 +81,7 @@ describe("createCookieKey", () => {
       cookieFragmentDescription: "Test Cookie",
       cookieFragmentsConnector: "-",
     });
-    expect(result).toBe("__Host_t-c");
+    expect(result).toBe("t-c");
   });
 
   it("should handle different word lengths", () => {
@@ -89,13 +89,13 @@ describe("createCookieKey", () => {
       cookieFragmentDescription: "Very Long Cookie Description",
       cookieFragmentSizes: [1, 2, 3, 4],
     });
-    expect(result).toBe("__Host_vlnckedsrp");
+    expect(result).toBe("vlnckedsrp");
   });
 
   it("should handle empty cookie description", () => {
     const result = createCookieKey({
       cookieFragmentDescription: "",
     });
-    expect(result).toBe("__Host");
+    expect(result).toBe("");
   });
 });

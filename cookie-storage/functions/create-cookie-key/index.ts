@@ -30,9 +30,9 @@ import { transformCase } from "@/cookie-storage/helpers/transform-case";
  */
 export function createCookieKey<CookieFragmentDescription extends string>({
   cookieFragmentDescription,
-  cookiePrefix = "__",
+  cookiePrefix = "",
   cookieFragmentSizes = [],
-  cookieScope = "host",
+  cookieScope = "",
   cookieScopeCase = "title",
   cookieService = "",
   cookieScopeServiceConnector = "-",
@@ -43,7 +43,9 @@ export function createCookieKey<CookieFragmentDescription extends string>({
   const words = cookieFragmentDescription.toLowerCase().split(" ");
 
   if (cookieFragmentSizes.length > words.length) {
-    throw new Error("The number of fragments must be less than or equal to the number of words");
+    throw new Error(
+      "The number of fragments must be less than or equal to the number of words"
+    );
   }
 
   if (cookieFragmentSizes.some((size) => size < 0)) {
