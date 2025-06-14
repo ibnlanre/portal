@@ -1,10 +1,11 @@
-import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
-import type { Dictionary } from "@/create-store/types/dictionary";
+import type { DeepPartial } from "@/create-store/types/deep-partial";
 
-export function isDictionarySlice<Target extends Dictionary>(
-  source: unknown,
-  target: Target
-): source is Partial<Target> {
+import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
+
+export function isDictionarySlice<T extends Record<string, unknown>>(
+  target: T,
+  source: unknown
+): source is DeepPartial<T> {
   if (!isDictionary(source)) return false;
   return Object.keys(source).every((key) => key in target);
 }

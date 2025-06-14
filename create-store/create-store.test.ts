@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
 import { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
 import { createStore } from "./index";
-import { DEFAULT_COMPOSITE_HANDLES } from "@/create-store/constants/composite-handles";
 
 vi.mock("@/create-store/functions/library/create-composite-store");
 vi.mock("@/create-store/functions/library/create-primitive-store");
@@ -15,27 +14,21 @@ describe("createStore", () => {
 
   it("should create a primitive store when initial state is undefined", () => {
     createStore(undefined);
-    expect(createPrimitiveStore).toHaveBeenCalledWith(undefined, DEFAULT_COMPOSITE_HANDLES);
+    expect(createPrimitiveStore).toHaveBeenCalledWith(undefined);
     expect(createCompositeStore).not.toHaveBeenCalled();
   });
 
   it("should create a composite store when initial state is a dictionary", () => {
     const initialState = { key: "value" };
     createStore(initialState);
-    expect(createCompositeStore).toHaveBeenCalledWith(
-      initialState,
-      DEFAULT_COMPOSITE_HANDLES
-    );
+    expect(createCompositeStore).toHaveBeenCalledWith(initialState);
     expect(createPrimitiveStore).not.toHaveBeenCalled();
   });
 
   it("should create a primitive store when initial state is a primitive", () => {
     const initialState = "not a dictionary";
     createStore(initialState);
-    expect(createPrimitiveStore).toHaveBeenCalledWith(
-      initialState,
-      DEFAULT_COMPOSITE_HANDLES
-    );
+    expect(createPrimitiveStore).toHaveBeenCalledWith(initialState);
     expect(createCompositeStore).not.toHaveBeenCalled();
   });
 
@@ -43,10 +36,7 @@ describe("createStore", () => {
     const initialState = vi.fn(() => ({ key: "value" }));
     createStore(initialState);
     expect(initialState).toHaveBeenCalled();
-    expect(createCompositeStore).toHaveBeenCalledWith(
-      { key: "value" },
-      DEFAULT_COMPOSITE_HANDLES
-    );
+    expect(createCompositeStore).toHaveBeenCalledWith({ key: "value" });
     expect(createPrimitiveStore).not.toHaveBeenCalled();
   });
 
@@ -67,28 +57,8 @@ describe("createStore", () => {
       return data;
     });
 
-    expect(createPrimitiveStore).toHaveBeenCalledWith(
-      { completed: true },
-      DEFAULT_COMPOSITE_HANDLES
-    );
+    expect(createPrimitiveStore).toHaveBeenCalledWith({ completed: true });
     expect(createCompositeStore).not.toHaveBeenCalled();
     global.fetch = originalFetch;
-  });
-
-  it("should pass custom handles to primitive store", () => {
-    createStore("value", ["$get", "$set"]);
-    expect(createPrimitiveStore).toHaveBeenCalledWith("value", [
-      "$get",
-      "$set",
-    ]);
-  });
-
-  it("should pass custom handles to composite store", () => {
-    createStore({ key: "value" }, ["$get", "$set", "$key"]);
-    expect(createCompositeStore).toHaveBeenCalledWith({ key: "value" }, [
-      "$get",
-      "$set",
-      "$key",
-    ]);
   });
 });

@@ -2,7 +2,6 @@ import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_PRIMITIVE_HANDLES } from "@/create-store/constants/primitive-handles";
 import { createPrimitiveStore } from "./index";
 
 describe("createPrimitiveStore", () => {
@@ -77,30 +76,5 @@ describe("createPrimitiveStore", () => {
 
     const [updatedStateValue] = result.current;
     expect(updatedStateValue).toBe("new value");
-  });
-
-  describe("handles customization", () => {
-    it("should only include specified handles", () => {
-      const store = createPrimitiveStore("value", ["$get", "$set"]);
-      expect(store).toHaveProperty("$get");
-      expect(store).toHaveProperty("$set");
-      expect(store).not.toHaveProperty("$act");
-      expect(store).not.toHaveProperty("$use");
-    });
-
-    it("should include all default handles when not specified", () => {
-      const store = createPrimitiveStore("value");
-      DEFAULT_PRIMITIVE_HANDLES.forEach((handle) => {
-        expect(store).toHaveProperty(handle);
-      });
-    });
-
-    it("should support single handle configuration", () => {
-      const store = createPrimitiveStore("value", ["$get"]);
-      expect(store).toHaveProperty("$get");
-      expect(store).not.toHaveProperty("$set");
-      expect(store).not.toHaveProperty("$act");
-      expect(store).not.toHaveProperty("$use");
-    });
   });
 });

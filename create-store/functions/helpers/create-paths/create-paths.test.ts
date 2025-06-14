@@ -67,4 +67,20 @@ describe("createPaths", () => {
       "key1.nestedKey1.deepKey1",
     ]);
   });
+
+  it("should handle circular references without infinite recursion", () => {
+    const circularObj: any = { ref: null };
+    circularObj.ref = circularObj;
+
+    const store: Dictionary = {
+      data: { value: circularObj },
+      normal: "test",
+    };
+    expect(() => createPaths(store)).not.toThrow();
+
+    const result = createPaths(store);
+    expect(result).toContain("data");
+    expect(result).toContain("data.value");
+    expect(result).toContain("normal");
+  });
 });

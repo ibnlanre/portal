@@ -2,7 +2,6 @@ import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_COMPOSITE_HANDLES } from "@/create-store/constants/composite-handles";
 import { createCompositeStore } from "./index";
 
 describe("createCompositeStore", () => {
@@ -222,6 +221,63 @@ describe("createCompositeStore", () => {
         expect(store.user.preferences.$key("theme").$get()).toBe("dark");
         expect(store.user.preferences.theme.$get()).toBe("dark");
       });
+
+      it("should preserve other branches when updating a nested value with a partial input from the root", () => {
+        store.$set({
+          count: 0,
+          user: {
+            name: "John",
+            preferences: { theme: "light", notifications: true },
+          },
+        });
+
+        store.$set({ user: { name: "Jane" } });
+
+        expect(store.$get()).toEqual({
+          count: 0,
+          user: {
+            name: "Jane",
+            preferences: { theme: "light", notifications: true },
+          },
+        });
+      });
+
+      it("should preserve nested branches when updating from root with partial input", () => {
+        store.$set(state);
+
+        store.$set({
+          user: {
+            name: "Jane",
+          } as any,
+        });
+
+        expect(store.$get()).toEqual({
+          count: 0,
+          user: {
+            name: "Jane",
+            preferences: { theme: "light", notifications: true },
+          },
+        });
+
+        store.$set({
+          user: {
+            preferences: {
+              theme: "dark",
+            },
+          } as any,
+        });
+
+        expect(store.$get()).toEqual({
+          count: 0,
+          user: {
+            name: "Jane",
+            preferences: {
+              theme: "dark",
+              notifications: true,
+            },
+          },
+        });
+      });
     });
 
     describe(".$key method", () => {
@@ -270,7 +326,6 @@ describe("createCompositeStore", () => {
         store.count.$act(countSubscriber);
         store.user.$act(userSubscriber);
 
-        // Clear initial subscription calls
         rootSubscriber.mockClear();
         countSubscriber.mockClear();
         userSubscriber.mockClear();
@@ -303,7 +358,6 @@ describe("createCompositeStore", () => {
         const subscriber = vi.fn();
         const unsubscribe = store.$act(subscriber, false);
 
-        // Clear initial call
         subscriber.mockClear();
 
         unsubscribe();
@@ -473,7 +527,6 @@ describe("createCompositeStore", () => {
         eatFish: () => {
           store.fish.$set((state) => Math.max(0, state - 1));
           if (store.fish.$get() === 0) {
-            // Bears start dying when there's no fish
             store.bears.$set((state) => Math.max(0, state - 1));
           }
         },
@@ -495,16 +548,13 @@ describe("createCompositeStore", () => {
         expect(store.bears.$get()).toBe(5);
         expect(store.fish.$get()).toBe(10);
 
-        // Bears eat fish
         store.eatFish();
         store.eatFish();
         expect(store.fish.$get()).toBe(8);
 
-        // Can remove all bears
         store.removeAllBears();
         expect(store.bears.$get()).toBe(0);
 
-        // Reset restores initial state
         store.bears.$set(3);
         store.fish.$set(2);
         store.reset();
@@ -516,20 +566,16 @@ describe("createCompositeStore", () => {
       it("should handle complex scenarios with interactions", () => {
         store.increasePopulation(5);
 
-        // Eat all fish
         for (let i = 0; i < 10; i++) {
           store.eatFish();
         }
 
-        // One bear died when fish ran out
         expect(store.fish.$get()).toBe(0);
         expect(store.bears.$get()).toBe(4);
 
-        // No more fish to eat
         store.eatFish();
         expect(store.bears.$get()).toBe(3);
 
-        // Test partial state updates
         store.$set({ fish: 5 });
         expect(store.$get()).toEqual(
           expect.objectContaining({ bears: 3, fish: 5 })
@@ -567,77 +613,306 @@ describe("createCompositeStore", () => {
     });
   });
 
-  describe("handles customization", () => {
-    const state = { count: 0 };
+  describe("Circular References", () => {
+    it("should handle circular references in selectors", () => {
+      const circularObj: any = { ref: null };
+      circularObj.ref = circularObj;
 
-    it("should only include specified handles", () => {
-      const store = createCompositeStore(state, ["$get", "$set"]);
-      expect(store).toHaveProperty("$get");
-      expect(store).toHaveProperty("$set");
-      expect(store).not.toHaveProperty("$act");
-      expect(store).not.toHaveProperty("$use");
-      expect(store).not.toHaveProperty("$key");
-      expect(store.count).toHaveProperty("$get");
-      expect(store.count).toHaveProperty("$set");
-      expect(store.count).not.toHaveProperty("$act");
-      expect(store.count).not.toHaveProperty("$use");
-      expect(store.count).not.toHaveProperty("$key");
-    });
-
-    it("should include all default handles when not specified", () => {
-      const store = createCompositeStore(state);
-      DEFAULT_COMPOSITE_HANDLES.forEach((handle) => {
-        expect(store).toHaveProperty(handle);
-        expect(store.count).toHaveProperty(handle);
+      const store = createCompositeStore({
+        data: { value: circularObj },
       });
+
+      expect(() => store.data.value.$get()).not.toThrow();
     });
 
-    it("should support single handle configuration", () => {
-      const store = createCompositeStore(state, ["$get"]);
-      expect(store).toHaveProperty("$get");
-      expect(store).not.toHaveProperty("$set");
-      expect(store).not.toHaveProperty("$act");
-      expect(store).not.toHaveProperty("$use");
-      expect(store).not.toHaveProperty("$key");
-      expect(store.count).toHaveProperty("$get");
-      expect(store.count).not.toHaveProperty("$set");
-      expect(store.count).not.toHaveProperty("$act");
-      expect(store.count).not.toHaveProperty("$use");
-      expect(store.count).not.toHaveProperty("$key");
+    it("should handle creating store with circular reference", () => {
+      const circularObj: any = { ref: null };
+      circularObj.ref = circularObj;
+
+      expect(() => {
+        const store = createCompositeStore({
+          data: { value: circularObj },
+        });
+      }).not.toThrow();
     });
 
-    it("should correctly handle nested state with restricted handles", () => {
-      const nestedState = {
-        user: {
-          profile: {
-            name: "John",
-            age: 30,
+    it("should handle accessing value with circular reference", () => {
+      const circularObj: any = { ref: null };
+      circularObj.ref = circularObj;
+
+      const store = createCompositeStore({
+        data: { value: circularObj },
+      });
+
+      expect(() => store.data.value.$get()).not.toThrow();
+    });
+
+    it("should reuse augmented objects for circular references", () => {
+      const circularObj: any = { value: 42 };
+      circularObj.ref = circularObj;
+
+      const store = createCompositeStore({
+        data: circularObj,
+        other: circularObj,
+      });
+
+      expect(store.data).toBe(store.other);
+
+      expect(store.data.$get).toBeDefined();
+      expect(store.data.value.$get).toBeDefined();
+      expect(store.data.value.$get()).toBe(42);
+
+      expect(() => store.data.ref.$get()).not.toThrow();
+      expect(store.data.ref.$get()).toEqual(circularObj);
+      expect(store.data.ref).toEqual(store.data);
+      expect(store.other.ref.ref).toEqual(store.other);
+    });
+
+    it("should handle deeply nested circular references", () => {
+      const objA: any = { name: "A" };
+      const objB: any = { name: "B", ref: objA };
+      objA.ref = objB;
+
+      const store = createCompositeStore({
+        container: {
+          a: objA,
+          b: objB,
+        },
+      });
+
+      expect(() => store.container.a.$get()).not.toThrow();
+      expect(() => store.container.b.$get()).not.toThrow();
+
+      expect(store.container.a.ref).toEqual(store.container.b);
+      expect(store.container.b.ref).toEqual(store.container.a);
+
+      expect(store.container.a.name.$get()).toBe("A");
+      expect(store.container.b.name.$get()).toBe("B");
+    });
+  });
+
+  describe("Edge Cases and Error Handling", () => {
+    it("should handle undefined and null values", () => {
+      const store = createCompositeStore({
+        data: { value: 42 as number | null | undefined },
+      });
+
+      store.data.$set({ value: undefined });
+      expect(store.data.value.$get()).toBeUndefined();
+
+      store.data.$set({ value: null });
+      expect(store.data.value.$get()).toBeNull();
+    });
+
+    it("should handle deep path navigation", () => {
+      const store = createCompositeStore({
+        nested: { deep: { value: "test" } },
+      });
+
+      const deepPath = store.$key("nested.deep.value");
+      expect(deepPath.$get()).toBe("test");
+
+      deepPath.$set("updated");
+      expect(store.nested.deep.value.$get()).toBe("updated");
+    });
+
+    it("should handle array-like objects", () => {
+      const store = createCompositeStore({
+        data: { items: [1, 2, 3] },
+      });
+
+      expect(store.data.items.$get()).toEqual([1, 2, 3]);
+
+      store.data.items.$set([4, 5, 6]);
+      expect(store.data.items.$get()).toEqual([4, 5, 6]);
+    });
+
+    it("should handle numeric keys", () => {
+      const store = createCompositeStore({
+        data: { "0": "first", "1": "second" } as Record<string, string>,
+      });
+
+      expect(store.data["0"]?.$get()).toBe("first");
+      expect(store.data["1"]?.$get()).toBe("second");
+    });
+
+    it("should handle symbol keys", () => {
+      const sym = Symbol("test");
+      const objWithSymbol = { [sym]: "symbol value", regular: "regular" };
+
+      const store = createCompositeStore({
+        data: objWithSymbol,
+      });
+
+      expect(store.data.regular.$get()).toBe("regular");
+
+      expect(store.data.$get()[sym]).toBe("symbol value");
+    });
+  });
+
+  describe("Performance and Memory Management", () => {
+    it("should handle large state objects efficiently", () => {
+      const largeState: Record<string, any> = {};
+      for (let i = 0; i < 1000; i++) {
+        largeState[`key${i}`] = { value: i, nested: { data: i * 2 } };
+      }
+
+      const store = createCompositeStore(largeState);
+
+      const start = performance.now();
+      for (let i = 0; i < 100; i++) {
+        store[`key${i}`].value.$set(i + 1000);
+      }
+      const end = performance.now();
+
+      expect(end - start).toBeLessThan(1000);
+      expect(store.key99.value.$get()).toBe(1099);
+    });
+
+    it("should properly clean up subscribers on unsubscribe", () => {
+      const store = createCompositeStore({ count: 0 });
+      const subscribers = [];
+
+      for (let i = 0; i < 10; i++) {
+        const unsubscribe = store.count.$act(() => {});
+        subscribers.push(unsubscribe);
+      }
+
+      subscribers.forEach((unsub) => unsub());
+
+      store.count.$set(42);
+      expect(store.count.$get()).toBe(42);
+    });
+  });
+
+  describe("Type Safety and TypeScript Integration", () => {
+    it("should maintain type safety with nested objects", () => {
+      const userState = {
+        profile: {
+          name: "John",
+          age: 30,
+          settings: {
+            theme: "light" as "light" | "dark",
+            notifications: true,
           },
         },
       };
 
-      const store = createCompositeStore(nestedState, ["$get", "$key"]);
-      expect(store).toHaveProperty("$get");
-      expect(store).toHaveProperty("$key");
-      expect(store).not.toHaveProperty("$set");
-      expect(store.user.profile).toHaveProperty("$get");
-      expect(store.user.profile).toHaveProperty("$key");
-      expect(store.user.profile).not.toHaveProperty("$set");
-      expect(store.user.profile.name).toHaveProperty("$get");
-      expect(store.user.profile.name).not.toHaveProperty("$set");
+      const store = createCompositeStore(userState);
+
+      expect(store.profile.name.$get()).toBe("John");
+      expect(store.profile.age.$get()).toBe(30);
+      expect(store.profile.settings.theme.$get()).toBe("light");
+
+      store.profile.settings.theme.$set("dark" as any);
+      expect(store.profile.settings.theme.$get()).toBe("dark");
     });
 
-    it("should prevent operations with missing handles", () => {
-      const store = createCompositeStore(state, ["$get"]);
-      expect(() => store.$get()).not.toThrow();
+    it("should handle optional properties correctly", () => {
+      const store = createCompositeStore({
+        user: {
+          name: "John",
+          email: undefined as string | undefined,
+        },
+      });
 
-      // @ts-expect-error - $set should not be available
-      expect(() => store.$set(5)).toThrow();
+      expect(store.user.name.$get()).toBe("John");
+      expect(store.user.email.$get()).toBeUndefined();
 
-      expect(() => {
-        // @ts-expect-error - $act should not be available
-        store.$act((state) => console.log(state));
-      }).toThrow();
+      store.user.email.$set("john@example.com" as any);
+      expect(store.user.email.$get()).toBe("john@example.com");
+    });
+  });
+
+  describe("Selector Functions Advanced Cases", () => {
+    const store = createCompositeStore({
+      users: [
+        { id: 1, name: "John", active: true },
+        { id: 2, name: "Jane", active: false },
+        { id: 3, name: "Bob", active: true },
+      ],
+      filters: { showActive: true },
+    });
+
+    beforeEach(() => {
+      store.$set({
+        users: [
+          { id: 1, name: "John", active: true },
+          { id: 2, name: "Jane", active: false },
+          { id: 3, name: "Bob", active: true },
+        ],
+        filters: { showActive: true },
+      });
+    });
+
+    it("should handle complex selector transformations", () => {
+      const activeUsers = store.users.$get((users: any[]) =>
+        users.filter((user: any) => user.active)
+      );
+
+      expect(activeUsers).toHaveLength(2);
+      expect(activeUsers.map((u: any) => u.name)).toEqual(["John", "Bob"]);
+    });
+
+    it("should handle selectors with multiple dependencies", () => {
+      const filteredUsers = store.$get((state: any) => {
+        const { users, filters } = state;
+        return filters.showActive ? users.filter((u: any) => u.active) : users;
+      });
+
+      expect(filteredUsers).toHaveLength(2);
+
+      store.filters.showActive.$set(false as any);
+      const allUsers = store.$get((state: any) => {
+        const { users, filters } = state;
+        return filters.showActive ? users.filter((u: any) => u.active) : users;
+      });
+
+      expect(allUsers).toHaveLength(3);
+    });
+
+    it("should handle async selector scenarios", async () => {
+      const asyncSelector = async (users: any[]) => {
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        return users.filter((u: any) => u.active).length;
+      };
+
+      const activeCount = await asyncSelector(store.users.$get());
+      expect(activeCount).toBe(2);
+    });
+  });
+
+  describe("Integration with External Libraries", () => {
+    it("should work with immutability libraries", () => {
+      const store = createCompositeStore({
+        todos: [
+          { id: 1, text: "Learn React", completed: false },
+          { id: 2, text: "Build App", completed: false },
+        ],
+      });
+
+      store.todos.$set((todos) => [
+        ...todos,
+        { id: 3, text: "Deploy", completed: false },
+      ]);
+
+      expect(store.todos.$get()).toHaveLength(3);
+      expect(store.todos.$get()[2]?.text).toBe("Deploy");
+    });
+
+    it("should handle state serialization and deserialization", () => {
+      const initialState = {
+        user: { name: "John", age: 30 },
+        settings: { theme: "dark" },
+      };
+
+      const store = createCompositeStore(initialState);
+
+      const serialized = JSON.stringify(store.$get());
+      const deserialized = JSON.parse(serialized);
+
+      const newStore = createCompositeStore(deserialized);
+      expect(newStore.$get()).toEqual(initialState);
     });
   });
 });

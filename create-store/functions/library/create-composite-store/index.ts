@@ -1,16 +1,15 @@
 import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { Dictionary } from "@/create-store/types/dictionary";
+import type { PartialStatePath } from "@/create-store/types/partial-state-path";
 import type { Paths } from "@/create-store/types/paths";
 import type { ResolvePath } from "@/create-store/types/resolve-path";
 import type { Selector } from "@/create-store/types/selector";
 import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
 import type { PartialStateManager } from "@/create-store/types/state-manager";
 import type { StatePath } from "@/create-store/types/state-path";
-import type { StoreHandles } from "@/create-store/types/store-handles";
 import type { Subscriber } from "@/create-store/types/subscriber";
 import type { Dispatch } from "react";
 
-import { DEFAULT_COMPOSITE_HANDLES } from "@/create-store/constants/composite-handles";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
@@ -24,13 +23,9 @@ import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 import { useEffect, useMemo, useState } from "react";
 
-export function createCompositeStore<
-  State extends Dictionary,
-  const Handles extends StoreHandles = DEFAULT_COMPOSITE_HANDLES
->(
-  initialState: State,
-  handles: Handles = DEFAULT_COMPOSITE_HANDLES as Handles
-): CompositeStore<State, Handles> {
+export function createCompositeStore<State extends Dictionary>(
+  initialState: State
+): CompositeStore<State> {
   let state = initialState;
 
   const subscribers = new Map<
@@ -146,8 +141,12 @@ export function createCompositeStore<
     const chain = <Path>[parent, path].filter(Boolean).join(".");
     const value = resolvePath(state, path);
 
-    if (isDictionary(value)) return traverse(value, chain);
     if (isFunction(value)) return <any>value;
+    if (isDictionary(value)) {
+      const valueSnapshot = createSnapshot(value);
+      return traverse(valueSnapshot, chain);
+    }
+
     return buildStore(chain);
   }
 
@@ -173,16 +172,12 @@ export function createCompositeStore<
     return [resolvedValue, set(path)];
   }
 
-  function buildStore<
-    Path extends Paths<State>,
-    Value extends StatePath<State, Path>,
-    Result = Value
-  >(chain?: Path) {
-    const methods = {
-      $get(selector?: Selector<Value, Result>) {
+  function buildStore<Path extends Paths<State>>(chain?: Path) {
+    return {
+      $get(selector?: Selector<StatePath<State, Path>>) {
         return get(chain, selector);
       },
-      $set(value: StatePath<State, Path>) {
+      $set(value: PartialStatePath<State, Path>) {
         return set(chain)(value);
       },
       $act(subscriber: Subscriber<State>, immediate = true) {
@@ -198,46 +193,78 @@ export function createCompositeStore<
         return use(chain, selector, dependencies);
       },
     };
+  }
 
-    return Object.fromEntries(
-      Object.entries(methods).filter(([key]) => {
-        return handles.includes(key as Handles[number]);
-      })
-    );
+  function connect<
+    Path extends Paths<State>,
+    Value extends ResolvePath<State, Path>
+  >(state: Value, path?: Path) {
+    const store = buildStore(path);
+    return <any>shallowMerge(state, store);
   }
 
   function traverse<Path extends Paths<State> = never>(
     state: State,
-    chain?: Path
-  ): CompositeStore<State, Handles>;
+    chain?: Path,
+    visited?: WeakMap<object, any>,
+    seen?: WeakSet<object>
+  ): CompositeStore<State>;
 
   function traverse<
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>
-  >(state: Value, chain?: Path): CompositeStore<State, Handles>;
+  >(
+    state: Value,
+    chain?: Path,
+    visited?: WeakMap<object, any>,
+    seen?: WeakSet<object>
+  ): CompositeStore<State>;
 
   function traverse<
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>
-  >(state: Value, chain?: Path): CompositeStore<State, Handles> {
-    const clone = createSnapshot(state);
+  >(
+    state: Value,
+    chain?: Path,
+    visited = new WeakMap(),
+    seen = new WeakSet()
+  ): CompositeStore<State> {
+    if (visited.has(state)) return visited.get(state);
 
-    for (const key in clone) {
-      const property = <Value>clone[key];
+    const result = connect(state, chain);
+    visited.set(state, result);
+
+    for (const key in state) {
+      const property = <Value>state[key];
       const path = <Path>[chain, key].filter(Boolean).join(".");
 
+      if (seen.has(property)) {
+        if (visited.has(property)) {
+          result[key] = visited.get(property);
+        } else {
+          result[key] = <any>buildStore(path);
+        }
+
+        continue;
+      }
+
       if (isFunction(property)) {
-        clone[key] = <any>property;
+        result[key] = <any>property;
       } else if (isDictionary(property)) {
-        clone[key] = <any>traverse(property, path);
+        seen.add(property);
+
+        const value = <any>traverse(property, path, visited, seen);
+        result[key] = value;
       } else {
-        clone[key] = <any>buildStore(path);
+        result[key] = <any>buildStore(path);
       }
     }
 
-    const store = buildStore(chain);
-    return <any>shallowMerge(clone, store);
+    return result;
   }
 
-  return traverse(initialState);
+  const structureSnapshot = createSnapshot(initialState);
+  const result = traverse(structureSnapshot);
+
+  return result;
 }

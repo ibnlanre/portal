@@ -1,3 +1,5 @@
+import type { DeepPartial } from "../deep-partial";
+
 export type SetPartialStateAction<State> =
-  | Partial<State>
-  | ((prevState: State) => Partial<State>);
+  | DeepPartial<State>
+  | ((prevState: State) => DeepPartial<State>);

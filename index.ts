@@ -40,3 +40,5 @@ export { createBrowserStorageAdapter } from "@/create-store/functions/adapters/c
 export { createCookieStorageAdapter } from "@/create-store/functions/adapters/create-cookie-storage-adapter";
 export { createLocalStorageAdapter } from "@/create-store/functions/adapters/create-local-storage-adapter";
 export { createSessionStorageAdapter } from "@/create-store/functions/adapters/create-session-storage-adapter";
+export { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
+export { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";

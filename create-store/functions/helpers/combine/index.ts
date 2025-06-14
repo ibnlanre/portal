@@ -1,10 +1,13 @@
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isDictionarySlice } from "@/create-store/functions/assertions/is-dictionary-slice";
-import { shallowMerge } from "@/create-store/functions/helpers/shallow-merge";
+import { createSnapshot } from "@/create-store/functions/helpers/create-snapshot";
+import { deepMerge } from "@/create-store/functions/helpers/deep-merge";
 
 export function combine<Target>(target: Target, source: unknown): Target {
-  if (isDictionary(target) && isDictionarySlice(source, target)) {
-    return shallowMerge(target, source);
+  const clone = createSnapshot(target);
+
+  if (isDictionary(clone) && isDictionarySlice(clone, source)) {
+    return deepMerge(clone, source);
   }
 
   return source as Target;

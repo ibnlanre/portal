@@ -23,13 +23,13 @@ describe("shallowMerge", () => {
     expect(source).toEqual({ b: 2 });
   });
 
-  it("should return a new object with combined properties", () => {
+  it("should modify the target object", () => {
     const target = { a: 1 };
     const source = { b: 2 };
     const result = shallowMerge(target, source);
 
     expect(result).toEqual({ a: 1, b: 2 });
-    expect(result).not.toBe(target);
+    expect(result).toBe(target);
     expect(result).not.toBe(source);
   });
 

@@ -10,9 +10,11 @@ const app = resolve(__dirname, "./");
 export default defineConfig({
   plugins: [react()],
   test: {
+    logHeapUsage: true,
     setupFiles: "vitest.setup.ts",
     environment: "happy-dom",
     globals: true,
+    reporters: [],
     coverage: {
       include: ["**/*.ts"],
       exclude: [

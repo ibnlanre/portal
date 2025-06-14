@@ -1,12 +1,10 @@
-import type { Dictionary } from "@/create-store/types/dictionary";
-import type { Paths } from "@/create-store/types/paths";
-
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 
-export function createPaths<Store extends Dictionary>(
+export function createPaths<Store>(
   store: Store,
-  prefix: string[] = []
-): Paths<Store> {
+  prefix: string[] = [],
+  visited = new WeakSet()
+): string[] {
   const paths: string[] = [];
 
   for (const key in store) {
@@ -14,10 +12,16 @@ export function createPaths<Store extends Dictionary>(
     const value = store[key];
 
     if (isDictionary(value)) {
-      const nestedPaths = createPaths(value, [...prefix, key]);
+      if (visited.has(value)) {
+        paths.push(nextPrefix);
+        continue;
+      }
+
+      visited.add(value);
+      const nestedPaths = createPaths(value, [...prefix, key], visited);
       paths.push(nextPrefix, ...nestedPaths);
     } else paths.push(nextPrefix);
   }
 
-  return paths as unknown as Paths<Store>;
+  return paths;
 }
