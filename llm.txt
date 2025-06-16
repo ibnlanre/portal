@@ -147,9 +147,7 @@ Persist state using storage adapters:
 import { createLocalStorageAdapter } from "@ibnlanre/portal";
 
 const [getLocalStorageState, setLocalStorageState] =
-  createLocalStorageAdapter({
-    key: "storage",
-  });
+  createLocalStorageAdapter("storage");
 
 const store = createStore(getLocalStorageState);
 store.$act(setLocalStorageState);
@@ -175,8 +173,7 @@ store.$act(setSessionStorageState);
 import { createCookieStorageAdapter } from "@ibnlanre/portal";
 
 const [getCookieStorageState, setCookieStorageState] =
-  createCookieStorageAdapter({
-    key: "storage",
+  createCookieStorageAdapter("storage", {
     domain: "example.com",
     maxAge: 60 * 60 * 24 * 7, // 1 week
   });

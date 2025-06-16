@@ -1,6 +1,6 @@
 import type { CookieOptions } from "@/cookie-storage/types/cookie-options";
 import type {
-  CookieStorageAdapter,
+  CookieStorageAdapterOptions,
   GetCookieStorage,
   SetCookieStorage,
 } from "@/create-store/types/cookie-storage";
@@ -10,14 +10,16 @@ import { shallowMerge } from "@/create-store/functions/helpers/shallow-merge";
 import { safeStringify } from "@/create-store/functions/utilities/safe-stringify";
 import { tryParse } from "@/create-store/functions/utilities/try-parse";
 
-export function createCookieStorageAdapter<State>({
-  key,
-  parse = tryParse,
-  stringify = safeStringify,
-  signed = false,
-  secret,
-  ...cookieOptions
-}: CookieStorageAdapter<State>): [
+export function createCookieStorageAdapter<State>(
+  key: string,
+  {
+    parse = tryParse,
+    stringify = safeStringify,
+    signed = false,
+    secret,
+    ...cookieOptions
+  }: CookieStorageAdapterOptions<State> = {} as CookieStorageAdapterOptions<State>
+): [
   getCookieStorageState: GetCookieStorage<State>,
   setCookieStorageState: SetCookieStorage<State>
 ] {

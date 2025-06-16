@@ -2,16 +2,18 @@ import type {
   GetSessionStorage,
   SetSessionStorage,
 } from "@/create-store/types/session-storage";
-import type { StorageAdapter } from "@/create-store/types/storage-adapter";
+import type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 
 import { safeStringify } from "@/create-store/functions/utilities/safe-stringify";
 import { tryParse } from "@/create-store/functions/utilities/try-parse";
 
-export function createSessionStorageAdapter<State>({
-  key,
-  stringify = safeStringify,
-  parse = tryParse,
-}: StorageAdapter<State>): [
+export function createSessionStorageAdapter<State>(
+  key: string,
+  {
+    stringify = safeStringify,
+    parse = tryParse,
+  }: StorageAdapterOptions<State> = {}
+): [
   getSessionStorageState: GetSessionStorage<State>,
   setSessionStorageState: SetSessionStorage<State>
 ] {

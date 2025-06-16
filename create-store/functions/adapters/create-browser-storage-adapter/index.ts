@@ -1,5 +1,5 @@
 import type {
-  BrowserStorageAdapter,
+  BrowserStorageAdapterOptions,
   GetBrowserStorage,
   SetBrowserStorage,
 } from "@/create-store/types/browser-storage-adapter";
@@ -7,12 +7,14 @@ import type {
 import { safeStringify } from "@/create-store/functions/utilities/safe-stringify";
 import { tryParse } from "@/create-store/functions/utilities/try-parse";
 
-export function createBrowserStorageAdapter<State>({
-  key,
-  stringify = safeStringify,
-  parse = tryParse,
-  ...storage
-}: BrowserStorageAdapter<State>): [
+export function createBrowserStorageAdapter<State>(
+  key: string,
+  {
+    stringify = safeStringify,
+    parse = tryParse,
+    ...storage
+  }: BrowserStorageAdapterOptions<State>
+): [
   getStorageState: GetBrowserStorage<State>,
   setStorageState: SetBrowserStorage<State>
 ] {

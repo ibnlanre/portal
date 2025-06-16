@@ -17,9 +17,8 @@ describe("createLocalStorageAdapter", () => {
     const initialState = { state: "value" };
     localStorage.setItem(key, JSON.stringify(initialState));
 
-    const [getLocalStorageState] = createLocalStorageAdapter<
-      typeof initialState
-    >({ key });
+    const [getLocalStorageState] =
+      createLocalStorageAdapter<typeof initialState>(key);
     const state = getLocalStorageState();
 
     expect(state).toEqual(initialState);
@@ -29,9 +28,8 @@ describe("createLocalStorageAdapter", () => {
   it("should return fallback state if localStorage is empty", () => {
     const fallbackState = { state: "fallback" };
 
-    const [getLocalStorageState] = createLocalStorageAdapter<
-      typeof fallbackState
-    >({ key });
+    const [getLocalStorageState] =
+      createLocalStorageAdapter<typeof fallbackState>(key);
     const state = getLocalStorageState(fallbackState);
 
     expect(state).toEqual(fallbackState);
@@ -41,9 +39,8 @@ describe("createLocalStorageAdapter", () => {
   it("should set state to localStorage", () => {
     const newState = { state: "new value" };
 
-    const [, setLocalStorageState] = createLocalStorageAdapter<typeof newState>(
-      { key }
-    );
+    const [, setLocalStorageState] =
+      createLocalStorageAdapter<typeof newState>(key);
     setLocalStorageState(newState);
 
     expect(setItem).toHaveBeenCalledWith(key, JSON.stringify(newState));
@@ -53,7 +50,7 @@ describe("createLocalStorageAdapter", () => {
   it("should remove state from localStorage when value is undefined", () => {
     localStorage.setItem(key, JSON.stringify({ state: "value" }));
 
-    const [, setLocalStorageState] = createLocalStorageAdapter({ key });
+    const [, setLocalStorageState] = createLocalStorageAdapter(key);
     setLocalStorageState(undefined);
 
     expect(removeItem).toHaveBeenCalledWith(key);
@@ -66,8 +63,7 @@ describe("createLocalStorageAdapter", () => {
     const customParse = vi.fn(JSON.parse);
 
     const [getLocalStorageState, setLocalStorageState] =
-      createLocalStorageAdapter<typeof newState>({
-        key,
+      createLocalStorageAdapter<typeof newState>(key, {
         stringify: customStringify,
         parse: customParse,
       });
@@ -91,7 +87,7 @@ describe("createLocalStorageAdapter", () => {
     });
 
     const [getLocalStorageState, setLocalStorageState] =
-      createLocalStorageAdapter({ key });
+      createLocalStorageAdapter(key);
 
     const state = getLocalStorageState();
     expect(state).toBeUndefined();

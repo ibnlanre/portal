@@ -1,9 +1,4 @@
-export interface StorageAdapter<State> {
-  /**
-   * The key to use in storage.
-   */
-  key: string;
-
+export interface StorageAdapterOptions<State> {
   /**
    * A function to serialize the state to a string.
    *

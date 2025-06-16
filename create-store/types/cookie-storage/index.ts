@@ -1,5 +1,5 @@
 import type { CookieOptions } from "@/cookie-storage/types/cookie-options";
-import type { StorageAdapter } from "@/create-store/types/storage-adapter";
+import type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 
 type CookieSignature =
   | {
@@ -26,9 +26,12 @@ type CookieSignature =
       secret: string | undefined;
     };
 
-interface CookieData<State> extends StorageAdapter<State>, CookieOptions {}
+interface CookieDataOptions<State>
+  extends StorageAdapterOptions<State>,
+    CookieOptions {}
 
-export type CookieStorageAdapter<State> = CookieData<State> & CookieSignature;
+export type CookieStorageAdapterOptions<State> = CookieDataOptions<State> &
+  CookieSignature;
 
 export interface GetCookieStorage<State> {
   /**

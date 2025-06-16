@@ -200,12 +200,14 @@ For example, to configure a Local Storage adapter:
 ```typescript
 import { createLocalStorageAdapter } from "@ibnlanre/portal";
 
-const [getPersistentState, setPersistentState] = createLocalStorageAdapter({
-  key: "myAppUniqueStorageKey", // Required: A unique key for this store in Local Storage
-  // Optional: Custom serialization/deserialization
-  stringify: (state) => JSON.stringify(state),
-  parse: (storedString) => JSON.parse(storedString),
-});
+const [getPersistentState, setPersistentState] = createLocalStorageAdapter(
+  "myAppUniqueStorageKey", // Required: A unique key for this store in Local Storage
+  {
+    // Optional: Custom serialization/deserialization
+    stringify: (state) => JSON.stringify(state),
+    parse: (storedString) => JSON.parse(storedString),
+  }
+);
 ```
 
 Refer to the [Persist state](#persist-state) section for detailed configuration of each adapter.
@@ -1070,11 +1072,19 @@ normalizeObject<T extends object>(obj: T): Record<PropertyKey, unknown> // Simpl
 
 Use `createLocalStorageAdapter` or `createSessionStorageAdapter` to persist state in the browser's Local Storage or Session Storage.
 
-**Common Options:**
+**Function Signature:**
+
+```typescript
+createLocalStorageAdapter<State>(key: string, options?: StorageAdapterOptions<State>)
+createSessionStorageAdapter<State>(key: string, options?: StorageAdapterOptions<State>)
+```
+
+**Parameters:**
 
 - `key: string`: **Required**. A unique string identifying this store's data in web storage.
-- `stringify?: (state: any) => string`: Optional. A function to serialize the state before saving. Defaults to `JSON.stringify`.
-- `parse?: (storedString: string) => any`: Optional. A function to deserialize the state after loading. Defaults to `JSON.parse`.
+- `options?: StorageAdapterOptions<State>`: Optional configuration object with:
+  - `stringify?: (state: State) => string`: Function to serialize the state before saving. Defaults to `JSON.stringify`.
+  - `parse?: (storedString: string) => State`: Function to deserialize the state after loading. Defaults to `JSON.parse`.
 
 **Return Value:**
 Both adapters return a tuple: `[getStateFunction, setStateFunction]`.
@@ -1090,8 +1100,7 @@ Persists state in `localStorage`. Data remains until explicitly cleared or remov
 ```typescript
 import { createStore, createLocalStorageAdapter } from "@ibnlanre/portal";
 
-const localStorageAdapter = createLocalStorageAdapter({
-  key: "myAppCounter",
+const localStorageAdapter = createLocalStorageAdapter("myAppCounter", {
   // Example with custom serialization (e.g., simple obfuscation)
   // stringify: (state) => btoa(JSON.stringify(state)),
   // parse: (storedString) => JSON.parse(atob(storedString)),
@@ -1122,9 +1131,7 @@ Persists state in `sessionStorage`. Data remains for the duration of the page se
 import { createStore, createSessionStorageAdapter } from "@ibnlanre/portal";
 
 const [getStoredSessionData, setStoredSessionData] =
-  createSessionStorageAdapter({
-    key: "userSessionData",
-  });
+  createSessionStorageAdapter("userSessionData");
 
 const initialSessionData = getStoredSessionData() ?? {
   guestId: null,
@@ -1143,11 +1150,20 @@ sessionDataStore.$set({ guestId: "guest-123", lastPage: "/products" });
 
 Use `createCookieStorageAdapter` for persisting state in browser cookies.
 
-**Options:**
+**Function Signature:**
+
+```typescript
+createCookieStorageAdapter<State>(key: string, options?: CookieStorageAdapterOptions<State>)
+```
+
+**Parameters:**
 
 - `key: string`: **Required**. The name of the cookie.
-- `secret?: string`: Optional. A secret string for signing and verifying cookies. If provided, cookies are tamper-proofed.
-- `options?: CookieOptions`: Optional. An object for cookie attributes:
+- `options?: CookieStorageAdapterOptions<State>`: Optional configuration object with:
+  - `secret?: string`: Secret string for signing and verifying cookies. If provided, cookies are tamper-proofed.
+  - `stringify?: (state: State) => string`: Function to serialize the state. Defaults to `JSON.stringify`.
+  - `parse?: (storedString: string) => State`: Function to deserialize the state. Defaults to `JSON.parse`.
+  - Cookie attributes (`path`, `domain`, `secure`, `sameSite`, `maxAge`, etc.)
   - `path?: string`: Cookie path (e.g., `/`).
   - `domain?: string`: Cookie domain.
   - `maxAge?: number`: Max age in seconds (e.g., `3600 * 24 * 7` for 7 days).
@@ -1167,10 +1183,12 @@ Use `createCookieStorageAdapter` for persisting state in browser cookies.
 ```typescript
 import { createStore, createCookieStorageAdapter } from "@ibnlanre/portal";
 
-const cookieAdapter = createCookieStorageAdapter({
-  key: "appPreferences",
+const cookieAdapter = createCookieStorageAdapter("appPreferences", {
   secret: "your-very-strong-secret-key-for-signing", // Recommended for security
-  options: { path: "/", secure: true, sameSite: "lax", maxAge: 3600 * 24 * 30 }, // 30 days
+  path: "/",
+  secure: true,
+  sameSite: "lax",
+  maxAge: 3600 * 24 * 30, // 30 days
 });
 
 const [getCookiePrefs, setCookiePrefs] = cookieAdapter;
@@ -1198,13 +1216,21 @@ prefsStore.$set({ theme: "dark" }); // State saved to a signed cookie
 
 For custom storage mechanisms (e.g., IndexedDB, a remote API, `chrome.storage`), use `createBrowserStorageAdapter`.
 
-**Options:**
+**Function Signature:**
+
+```typescript
+createBrowserStorageAdapter<State>(key: string, options: BrowserStorageAdapterOptions<State>)
+```
+
+**Parameters:**
 
 - `key: string`: **Required**. A key for your custom storage.
-- `getItem: (key: string) => Promise<string | null> | string | null`: **Required**. Function to retrieve an item.
-- `setItem: (key: string, value: string) => Promise<void> | void`: **Required**. Function to save an item.
-- `removeItem: (key: string) => Promise<void> | void`: **Required**. Function to remove an item.
-- `stringify?` / `parse?`: Same as web storage adapters.
+- `options: BrowserStorageAdapterOptions<State>`: **Required** configuration object with:
+  - `getItem: (key: string) => Promise<string | null> | string | null`: Function to retrieve an item.
+  - `setItem: (key: string, value: string) => Promise<void> | void`: Function to save an item.
+  - `removeItem: (key: string) => Promise<void> | void`: Function to remove an item.
+  - `stringify?: (state: State) => string`: Function to serialize the state. Defaults to `JSON.stringify`.
+  - `parse?: (storedString: string) => State`: Function to deserialize the state. Defaults to `JSON.parse`.
 
 **Return Value:**
 `[getCustomStateFunction, setCustomStateFunction, removeCustomStateFunction]`
@@ -1233,8 +1259,7 @@ const myCustomStorage = (() => {
 })();
 
 const [getCustomState, setCustomState, removeCustomState] =
-  createBrowserStorageAdapter({
-    key: "myCustomDataKey",
+  createBrowserStorageAdapter("myCustomDataKey", {
     getItem: myCustomStorage.getItem,
     setItem: myCustomStorage.setItem,
     removeItem: myCustomStorage.removeItem,

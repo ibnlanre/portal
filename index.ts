@@ -2,15 +2,15 @@ export type { CookieOptions } from "@/cookie-storage/types/cookie-options";
 export type { CookieStorage } from "@/cookie-storage/types/cookie-storage";
 export type { CreateCookieKeyOptions } from "@/cookie-storage/types/create-cookie-key-options";
 export type { WordMappingSegments } from "@/cookie-storage/types/word-mapping-segments";
+export type { BasicStore } from "@/create-store/types/basic-store";
 export type {
-  BrowserStorageAdapter,
+  BrowserStorageAdapterOptions,
   GetBrowserStorage,
   SetBrowserStorage,
-} from "@/create-store/types//browser-storage-adapter";
-export type { BasicStore } from "@/create-store/types/basic-store";
+} from "@/create-store/types/browser-storage-adapter";
 export type { CompositeStore } from "@/create-store/types/composite-store";
 export type {
-  CookieStorageAdapter,
+  CookieStorageAdapterOptions,
   GetCookieStorage,
   SetCookieStorage,
 } from "@/create-store/types/cookie-storage";
@@ -36,7 +36,7 @@ export type {
   StateManager,
 } from "@/create-store/types/state-manager";
 export type { StatePath } from "@/create-store/types/state-path";
-export type { StorageAdapter } from "@/create-store/types/storage-adapter";
+export type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 export type { StoreValueResolver } from "@/create-store/types/store-value-resolver";
 export type { Subscriber } from "@/create-store/types/subscriber";
 

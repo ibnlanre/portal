@@ -1,4 +1,4 @@
-import type { StorageAdapter } from "@/create-store/types/storage-adapter";
+import type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 
 /**
  * An interface for a storage object.
@@ -28,8 +28,8 @@ export interface StorageInterface {
   removeItem(key: string): void;
 }
 
-export interface BrowserStorageAdapter<State>
-  extends StorageAdapter<State>,
+export interface BrowserStorageAdapterOptions<State>
+  extends StorageAdapterOptions<State>,
     StorageInterface {}
 
 export interface GetBrowserStorage<State> {

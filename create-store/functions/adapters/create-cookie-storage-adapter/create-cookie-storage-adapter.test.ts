@@ -21,9 +21,8 @@ describe("createCookieStorageAdapter", () => {
     const initialState = { state: "value" };
     cookieStorage.setItem(key, JSON.stringify(initialState));
 
-    const [getCookieStorageState] = createCookieStorageAdapter<
-      typeof initialState
-    >({ key });
+    const [getCookieStorageState] =
+      createCookieStorageAdapter<typeof initialState>(key);
     const state = getCookieStorageState();
 
     expect(state).toEqual(initialState);
@@ -38,9 +37,8 @@ describe("createCookieStorageAdapter", () => {
   it("should return fallback state if cookieStorage is empty", () => {
     const fallbackState = { state: "fallback" };
 
-    const [getCookieStorageState] = createCookieStorageAdapter<
-      typeof fallbackState
-    >({ key });
+    const [getCookieStorageState] =
+      createCookieStorageAdapter<typeof fallbackState>(key);
     const state = getCookieStorageState(fallbackState);
 
     expect(state).toEqual(fallbackState);
@@ -50,9 +48,8 @@ describe("createCookieStorageAdapter", () => {
   it("should set state to cookieStorage", () => {
     const newState = { state: "new value" };
 
-    const [, setCookieStorageState] = createCookieStorageAdapter<
-      typeof newState
-    >({ key });
+    const [, setCookieStorageState] =
+      createCookieStorageAdapter<typeof newState>(key);
 
     setCookieStorageState(newState);
     expect(setItem).toHaveBeenCalledWith(key, JSON.stringify(newState), {});
@@ -78,8 +75,7 @@ describe("createCookieStorageAdapter", () => {
     const initialState = { state: "value" };
 
     const [getCookieStorageState, setCookieStorageState] =
-      createCookieStorageAdapter<typeof initialState>({
-        key,
+      createCookieStorageAdapter<typeof initialState>(key, {
         signed: true,
         secret: "signature",
       });
@@ -104,7 +100,7 @@ describe("createCookieStorageAdapter", () => {
   it("should remove state from cookieStorage when value is undefined", () => {
     cookieStorage.setItem(key, JSON.stringify({ state: "value" }));
 
-    const [, setCookieStorageState] = createCookieStorageAdapter({ key });
+    const [, setCookieStorageState] = createCookieStorageAdapter(key);
     setCookieStorageState(undefined);
 
     expect(removeItem).toHaveBeenCalledWith(key);
@@ -116,8 +112,7 @@ describe("createCookieStorageAdapter", () => {
     const customParse = vi.fn(JSON.parse);
 
     const [getCookieStorageState, setCookieStorageState] =
-      createCookieStorageAdapter<typeof newState>({
-        key,
+      createCookieStorageAdapter<typeof newState>(key, {
         stringify: customStringify,
         parse: customParse,
       });
@@ -133,9 +128,8 @@ describe("createCookieStorageAdapter", () => {
 
   it("should update cookieStorage with options when state changes", () => {
     const initialState = { state: "value" };
-    const [, setCookieStorageState] = createCookieStorageAdapter<
-      typeof initialState
-    >({ key });
+    const [, setCookieStorageState] =
+      createCookieStorageAdapter<typeof initialState>(key);
 
     setCookieStorageState(
       { state: "new value" },
@@ -163,8 +157,7 @@ describe("createCookieStorageAdapter", () => {
 
     const [, setCookieStorageState] = createCookieStorageAdapter<
       typeof initialState
-    >({
-      key,
+    >(key, {
       signed: true,
       secret: "",
     });

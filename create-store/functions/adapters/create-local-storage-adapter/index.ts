@@ -2,16 +2,18 @@ import type {
   GetLocalStorage,
   SetLocalStorage,
 } from "@/create-store/types/local-storage";
-import type { StorageAdapter } from "@/create-store/types/storage-adapter";
+import type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 
 import { safeStringify } from "@/create-store/functions/utilities/safe-stringify";
 import { tryParse } from "@/create-store/functions/utilities/try-parse";
 
-export function createLocalStorageAdapter<State>({
-  key,
-  stringify = safeStringify,
-  parse = tryParse,
-}: StorageAdapter<State>): [
+export function createLocalStorageAdapter<State>(
+  key: string,
+  {
+    stringify = safeStringify,
+    parse = tryParse,
+  }: StorageAdapterOptions<State> = {}
+): [
   getLocalStorageState: GetLocalStorage<State>,
   setLocalStorageState: SetLocalStorage<State>
 ] {

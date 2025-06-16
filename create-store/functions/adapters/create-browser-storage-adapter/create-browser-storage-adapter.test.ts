@@ -21,9 +21,8 @@ describe("createBrowserStorageAdapter", () => {
       removeItem: vi.fn(),
     };
 
-    [getStorageState, setStorageState] = createBrowserStorageAdapter({
+    [getStorageState, setStorageState] = createBrowserStorageAdapter(key, {
       ...storage,
-      key,
     });
   });
 
