@@ -53,7 +53,7 @@ describe("createSnapshot", () => {
   });
 
   it("should handle simple circular references", () => {
-    const obj: any = { name: "circular" };
+    const obj: { name: string; self?: typeof obj } = { name: "circular" };
     obj.self = obj;
 
     const snapshot = createSnapshot(obj);
@@ -61,12 +61,12 @@ describe("createSnapshot", () => {
     expect(snapshot).not.toBe(obj);
     expect(snapshot.name).toBe("circular");
     expect(snapshot.self).toBe(snapshot);
-    expect(snapshot.self.name).toBe("circular");
+    expect(snapshot.self?.name).toBe("circular");
   });
 
   it("should handle mutual circular references", () => {
-    const objA: any = { name: "A" };
-    const objB: any = { name: "B" };
+    const objA: { name: string; ref?: typeof objB } = { name: "A" };
+    const objB: { name: string; ref?: typeof objA } = { name: "B" };
     objA.ref = objB;
     objB.ref = objA;
 
@@ -98,7 +98,16 @@ describe("createSnapshot", () => {
   });
 
   it("should handle deep circular references", () => {
-    const root: any = {
+    const root: {
+      level1: {
+        level2: {
+          level3: {
+            value: string;
+            backToRoot?: typeof root;
+          };
+        };
+      };
+    } = {
       level1: {
         level2: {
           level3: {
@@ -115,7 +124,7 @@ describe("createSnapshot", () => {
     expect(snapshot.level1.level2.level3.value).toBe("deep");
     expect(snapshot.level1.level2.level3.backToRoot).toBe(snapshot);
     expect(
-      snapshot.level1.level2.level3.backToRoot.level1.level2.level3.value
+      snapshot.level1.level2.level3.backToRoot?.level1.level2.level3.value
     ).toBe("deep");
   });
 
@@ -141,7 +150,11 @@ describe("createSnapshot", () => {
 
   it("should handle circular references with Date objects", () => {
     const date = new Date("2023-01-01");
-    const obj: any = {
+    const obj: {
+      timestamp: Date;
+      value: string;
+      self?: typeof obj;
+    } = {
       timestamp: date,
       value: "test",
     };
@@ -153,12 +166,16 @@ describe("createSnapshot", () => {
     expect(snapshot.timestamp).toEqual(date);
     expect(snapshot.timestamp instanceof Date).toBe(true);
     expect(snapshot.self).toBe(snapshot);
-    expect(snapshot.self.value).toBe("test");
+    expect(snapshot.self?.value).toBe("test");
   });
 
   it("should handle circular references with RegExp objects", () => {
     const regex = /test/gi;
-    const obj: any = {
+    const obj: {
+      pattern: RegExp;
+      value: string;
+      self?: typeof obj;
+    } = {
       pattern: regex,
       value: "test",
     };
@@ -170,11 +187,29 @@ describe("createSnapshot", () => {
     expect(snapshot.pattern).toEqual(regex);
     expect(snapshot.pattern instanceof RegExp).toBe(true);
     expect(snapshot.self).toBe(snapshot);
-    expect(snapshot.self.value).toBe("test");
+    expect(snapshot.self?.value).toBe("test");
   });
 
   it("should handle circular references with mixed data types", () => {
-    const complex: any = {
+    type Complex = {
+      string: string;
+      number: number;
+      boolean: boolean;
+      null: null;
+      undefined: undefined;
+      date: Date;
+      regex: RegExp;
+      array: (number | Complex)[];
+      nested: {
+        deep: {
+          value: string;
+        };
+        backToRoot?: typeof complex;
+      };
+      self?: typeof complex;
+    };
+
+    const complex: Complex = {
       string: "hello",
       number: 42,
       boolean: true,
@@ -219,7 +254,7 @@ describe("createSnapshot", () => {
   });
 
   it("should not create infinite loops when accessing circular properties", () => {
-    const obj: any = { value: 1 };
+    const obj: { value: number; circular?: typeof obj } = { value: 1 };
     obj.circular = obj;
 
     const snapshot = createSnapshot(obj);
@@ -252,5 +287,17 @@ describe("createSnapshot", () => {
     snapshot.user.preferences.theme = "MUTATED";
 
     expect(original.user.preferences.theme).toBe("light");
+  });
+
+  it("should handle non-dictionary objects by returning them as-is", () => {
+    const customFunction = function customFn() {
+      return "test";
+    };
+    customFunction.customProp = "value";
+
+    const snapshot = createSnapshot(customFunction);
+
+    expect(snapshot).not.toBe(customFunction);
+    expect(snapshot.customProp).toBe("value");
   });
 });

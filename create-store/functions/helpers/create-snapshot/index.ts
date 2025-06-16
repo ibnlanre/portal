@@ -1,6 +1,9 @@
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isObject } from "@/create-store/functions/assertions/is-object";
-import { isValidKey } from "@/create-store/functions/assertions/is-valid-key";
+
+const cloneFunction = (fn: Function) => {
+  return Object.assign(fn.bind(null), fn);
+};
 
 /**
  * Create a deep clone of any value
@@ -19,6 +22,12 @@ import { isValidKey } from "@/create-store/functions/assertions/is-valid-key";
  * @returns A new cloned value
  */
 export function createSnapshot<T>(value: T, visited = new WeakMap()): T {
+  if (typeof value === "function") {
+    const clone = cloneFunction(value);
+    visited.set(value, clone);
+    return clone as T;
+  }
+
   if (!isObject(value)) return value;
 
   if (visited.has(value)) return visited.get(value);
@@ -52,8 +61,6 @@ export function createSnapshot<T>(value: T, visited = new WeakMap()): T {
     visited.set(value, result);
 
     for (const key of Reflect.ownKeys(value)) {
-      if (!isValidKey(key)) continue;
-
       const originalValue = Reflect.get(value, key);
 
       if (!isObject(originalValue)) {

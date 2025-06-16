@@ -321,8 +321,10 @@ describe("deepMerge", () => {
         newFunc: () => string;
       };
 
-      expect(result.func).toBe(fn2);
-      expect(result.newFunc).toBe(fn1);
+      expect(result.func).not.toBe(fn2);
+      expect(result.newFunc).not.toBe(fn1);
+      expect(result.func()).toBe("source");
+      expect(result.newFunc()).toBe("target");
     });
   });
 

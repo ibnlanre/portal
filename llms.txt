@@ -1,189 +1,234 @@
 # @ibnlanre/portal for LLMs
 
-`@ibnlanre/portal` is a TypeScript library designed to help maintain persistent or nested state. LLMs can use this to track data across multiple contexts or calls.
+`@ibnlanre/portal` is a TypeScript state management library. LLMs can use this library to manage and persist state across multiple interactions or contexts. This guide focuses on core functionalities relevant for LLM applications.
 
-## Basic Setup
+## Core Concepts
 
-You can install `@ibnlanre/portal` using npm, pnpm, yarn, or a CDN.
+- **Store**: An object holding your application state. It can be a simple value (primitive) or a nested object (composite).
+- **Reactivity**: Stores notify subscribers of state changes.
+- **Immutability**: State updates produce new state objects, ensuring predictability.
 
-### Using Package Managers
+## Installation
 
+For Node.js environments:
 ```bash
-npm i @ibnlanre/portal
+npm install @ibnlanre/portal
+# or
 pnpm add @ibnlanre/portal
+# or
 yarn add @ibnlanre/portal
 ```
 
-### Using a CDN
+For direct browser/CDN usage, refer to the main `README.md`.
 
-```html
-<script type="module">
-  import { createStore } from "https://cdn.skypack.dev/@ibnlanre/portal";
-</script>
-<script src="https://unpkg.com/@ibnlanre/portal"></script>
-<script src="https://cdn.jsdelivr.net/npm/@ibnlanre/portal"></script>
-```
+## Creating and Using a Store
 
-## Creating a Store
-
-Create a store with an initial value:
+The `createStore` function initializes your state.
 
 ```typescript
 import { createStore } from "@ibnlanre/portal";
 
-const store = createStore("initial value");
-```
+// Create a store with an initial value
+const simpleStore = createStore("initial value");
 
-- Use `createStore` to establish initial state or async data fetching.
-
-Create a store with an asynchronous function:
-
-```typescript
-async function fetchData() {
-  const response = await fetch("https://api.example.com/data");
-  return response.json();
-}
-
-const store = await createStore(fetchData);
-```
-
-#### `$get` Method
-
-Retrieve the current state:
-
-```typescript
-const value = store.$get();
-console.log(value); // "initial value"
-```
-
-#### `$set` Method
-
-Update the state:
-
-```typescript
-store.$set("new value");
-const newValue = store.$get(); // "new value"
-```
-
-#### `$act` Method
-
-Subscribe to state changes:
-
-```typescript
-store.$act((value) => console.log(value));
-```
-
-- `$get` and `$set` manage state retrieval and updates, while `$act` reacts to changes.
-
-## Nested Store and Dot Notation
-
-Create a store with nested objects:
-
-```typescript
-const store = createStore({
-  location: {
-    unit: "Apt 1",
-    address: {
-      street: "123 Main St",
-      city: "Springfield",
-    },
+// Create a store with an object
+const userStore = createStore({
+  id: "123",
+  preferences: {
+    theme: "dark",
   },
 });
-
-const city = store.location.address.city.$get();
-console.log(city); // "Springfield"
 ```
 
-- Stores can be nested for more complex structures and accessed with `$key("path.to.key")`.
+### Interacting with the Store
 
-#### Breaking Off Stores
+- **`$get()`**: Retrieves the current state.
+  ```typescript
+  console.log(simpleStore.$get()); // "initial value"
+  console.log(userStore.preferences.theme.$get()); // "dark"
+  ```
 
-Work with nested stores independently:
+- **`$set()`**: Updates the state. For objects, it performs a deep partial update.
+  ```typescript
+  simpleStore.$set("new value");
+  userStore.preferences.$set({ theme: "light" });
+  // userStore state is now { id: "123", preferences: { theme: "light" } }
+  ```
+
+- **`$act()`**: Subscribes to state changes. Returns an `unsubscribe` function.
+  ```typescript
+  const unsubscribe = simpleStore.$act((newState, oldState) => {
+    console.log(`State changed from "${oldState}" to "${newState}"`);
+  });
+
+  simpleStore.$set("another value"); // Triggers the subscriber
+  unsubscribe(); // Stop listening to changes
+  ```
+
+- **`$key()`**: Accesses nested stores using a dot-separated path (for composite stores).
+  ```typescript
+  const themeStore = userStore.$key("preferences.theme");
+  console.log(themeStore.$get()); // "light"
+  themeStore.$set("blue");
+  console.log(userStore.preferences.theme.$get()); // "blue"
+  ```
+
+## State Persistence
+
+Persist store state across sessions using storage adapters. This is crucial for LLMs to remember context or data over time.
+
+**General Pattern:**
+1. Create an adapter (e.g., `createLocalStorageAdapter`).
+2. Initialize your store with the adapter's getter.
+3. Subscribe to store changes with the adapter's setter.
+
+### Local Storage Adapter
+
+Persists state in the browser's Local Storage.
 
 ```typescript
-const { address } = store.location;
-const streetValue = address.street.$get();
-console.log(streetValue); // "123 Main St"
+import { createStore, createLocalStorageAdapter } from "@ibnlanre/portal";
+
+const storageKey = "myApp.userPreferences";
+const [getStoredState, setStoredState] = createLocalStorageAdapter(storageKey);
+
+const persistentUserStore = createStore(getStoredState() || { theme: "default" });
+persistentUserStore.$act(setStoredState);
+
+// Example usage:
+persistentUserStore.theme.$set("dark"); // State is saved to Local Storage
+```
+*Use a unique `storageKey` for each distinct piece of state you want to persist.*
+
+### Session Storage Adapter
+
+Persists state for the duration of the browser session.
+
+```typescript
+import { createStore, createSessionStorageAdapter } from "@ibnlanre/portal";
+
+const storageKey = "myApp.sessionData";
+const [getStoredState, setStoredState] = createSessionStorageAdapter(storageKey);
+
+const sessionStore = createStore(getStoredState() || { isActive: false });
+sessionStore.$act(setStoredState);
+
+sessionStore.isActive.$set(true); // State is saved to Session Storage
 ```
 
-#### `$key` Method
+### Cookie Storage Adapter
 
-Access nested stores using dot notation:
+Persists state in browser cookies. Useful for sharing state between client and server or across subdomains.
 
 ```typescript
-const street = store.$key("location.address.street");
-street.$get(); // "123 Main St"
+import { createStore, createCookieStorageAdapter } from "@ibnlanre/portal";
+
+const cookieName = "user_session";
+const [getStoredState, setStoredState] = createCookieStorageAdapter(
+  cookieName,
+  {
+    // Optional: Configure cookie options like domain, path, maxAge, etc.
+    maxAge: 60 * 60 * 24 * 7, // 1 week
+    path: "/",
+  }
+);
+
+const cookieBackedStore = createStore(getStoredState() || { userId: null });
+cookieBackedStore.$act(setStoredState);
+
+cookieBackedStore.userId.$set("user-abc-123"); // State is saved as a cookie
 ```
 
-## React Integration
+## Direct Cookie Manipulation with `cookieStorage`
 
-Use the `$use` hook in React components:
+Beyond state persistence adapters, `@ibnlanre/portal` also exports a `cookieStorage` object. This utility provides a direct, synchronous API for interacting with browser cookies, similar to `localStorage` and `sessionStorage`. It can be useful for scenarios where you need to read, write, or manage cookies outside the context of a portal store.
 
 ```typescript
-import { store } from "./path-to-your-store";
+import { cookieStorage } from "@ibnlanre/portal";
 
-function Component() {
-  const [state, setState] = store.$use();
+// Set a cookie
+cookieStorage.setItem("myKey", "myValue");
+cookieStorage.setItem("anotherKey", "anotherValue", { path: "/", maxAge: 3600 }); // With options
 
-  const handleChange = (event) => {
-    setState(event.target.value);
-  };
+// Get a cookie
+const value = cookieStorage.getItem("myKey");
+console.log(value); // "myValue"
 
-  return <input value={state} onChange={handleChange} />;
+// Remove a cookie
+cookieStorage.removeItem("anotherKey");
+
+// Get the number of cookies
+console.log(cookieStorage.length);
+
+// Get a cookie key by index
+const firstKey = cookieStorage.key(0);
+console.log(firstKey); // e.g., "myKey" (order may vary)
+
+// Clear all cookies (be cautious with this in a shared environment)
+// cookieStorage.clear();
+
+// Sign and unsign cookie values (if you need to verify integrity)
+const secret = "your-secret-key";
+const originalValue = "sensitive-data";
+
+const signedValue = cookieStorage.sign(originalValue, secret);
+cookieStorage.setItem("signedData", signedValue);
+
+const retrievedSignedValue = cookieStorage.getItem("signedData");
+if (retrievedSignedValue) {
+  const unsignedValue = cookieStorage.unsign(retrievedSignedValue, secret);
+  if (unsignedValue === originalValue) {
+    console.log("Cookie integrity verified:", unsignedValue);
+  } else {
+    console.error("Cookie tampering detected or invalid secret!");
+  }
+}
+```
+
+**Methods and Properties of `cookieStorage`:**
+
+- **`getItem(key: string): string | null`**: Retrieves the value of a cookie by its key.
+- **`setItem(key: string, value: string, options?: CookieOptions): void`**: Sets a cookie with a key, value, and optional `CookieOptions` (e.g., `path`, `domain`, `maxAge`, `expires`, `secure`, `sameSite`).
+- **`removeItem(key: string, options?: CookieOptions): void`**: Removes a cookie by its key.
+- **`clear(): void`**: Removes all cookies accessible by the current domain/path. **Use with caution.**
+- **`key(index: number): string | null`**: Retrieves the key of a cookie at a specific index.
+- **`length: number`**: Returns the number of cookies.
+- **`sign(value: string, secret: string): string`**: Signs a string value using a secret. Useful for ensuring cookie integrity.
+- **`unsign(signedValue: string, secret: string): string | false`**: Verifies and unsigns a previously signed string. Returns the original value if valid, `false` otherwise.
+
+This `cookieStorage` utility is helpful for lower-level cookie operations when you don\'t need the full reactivity and structure of a portal store.
+
+## Asynchronous Initialization
+
+Initialize stores with data fetched asynchronously.
+
+```typescript
+import { createStore } from "@ibnlanre/portal";
+
+async function fetchInitialData() {
+  // Simulate API call
+  return new Promise((resolve) =>
+    setTimeout(() => resolve({ username: "Guest" }), 100)
+  );
 }
 
-export default Component;
+// The store will be initialized once the promise resolves.
+const asyncStore = createStore(fetchInitialData());
+
+asyncStore.$act((state) => {
+  if (state) { // Check if state is resolved
+    console.log("Async data loaded:", state.username.$get());
+  }
+});
 ```
+*Until the promise resolves, `$get()` on the root of `asyncStore` might return the promise itself or an interim loading state. Access nested properties once resolved.*
 
-- React users can rely on `$use` for two-way binding with components.
+## Best Practices for LLMs
 
-## Persistence
+- **Granular Stores**: Break down complex state into smaller, manageable stores.
+- **Persistence**: Use storage adapters for long-term memory or session continuity. Choose the adapter (Local Storage, Session Storage, Cookie) that best fits the data's lifecycle and security requirements.
+- **Clear Naming**: Use descriptive names for stores and keys for easier debugging and maintenance.
+- **Error Handling**: When using asynchronous initialization or persistence, implement appropriate error handling (e.g., for failed API calls or storage access issues).
+- **Selective Subscription**: Use `$key()` to subscribe to specific parts of a larger store to avoid unnecessary re-evaluations if only a small piece of data changes.
 
-Persist state using storage adapters:
-
-#### Local Storage Adapter
-
-```typescript
-import { createLocalStorageAdapter } from "@ibnlanre/portal";
-
-const [getLocalStorageState, setLocalStorageState] =
-  createLocalStorageAdapter("storage");
-
-const store = createStore(getLocalStorageState);
-store.$act(setLocalStorageState);
-```
-
-#### Session Storage Adapter
-
-```typescript
-import { createSessionStorageAdapter } from "@ibnlanre/portal";
-
-const [getSessionStorageState, setSessionStorageState] =
-  createSessionStorageAdapter({
-    key: "storage",
-  });
-
-const store = createStore(getSessionStorageState);
-store.$act(setSessionStorageState);
-```
-
-#### Cookie Storage Adapter
-
-```typescript
-import { createCookieStorageAdapter } from "@ibnlanre/portal";
-
-const [getCookieStorageState, setCookieStorageState] =
-  createCookieStorageAdapter("storage", {
-    domain: "example.com",
-    maxAge: 60 * 60 * 24 * 7, // 1 week
-  });
-
-const store = createStore(getCookieStorageState);
-store.$act(setCookieStorageState);
-```
-
-- Adapters include local storage, session storage, and cookies to keep state persisted between sessions.
-
-## License
-
-This library is licensed under the BSD-3-Clause.
+This revised guide provides a focused overview for LLMs using `@ibnlanre/portal`. For more advanced features like React integration (`$use` hook) or detailed API options, refer to the main `README.md`.
