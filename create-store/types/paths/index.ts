@@ -1,21 +1,34 @@
+import type { Contains } from "@/create-store/types/contains";
 import type { Dictionary } from "@/create-store/types/dictionary";
 
-type PathsHelper<Store, Delimiter extends string> = Store extends Dictionary
-  ? {
-      [Key in keyof Store]: Key extends string | number
-        ? Store[Key] extends Dictionary
-          ? `${Key}` | `${Key}${Delimiter}${Paths<Store[Key], Delimiter>}`
-          : `${Key}`
-        : never;
-    }[keyof Store]
+type PathsHelper<
+  Store,
+  Delimiter extends string,
+  Visited extends readonly Dictionary[] = []
+> = Store extends Dictionary
+  ? Contains<Store, Visited> extends 1
+    ? never
+    : Exclude<
+        {
+          [Key in keyof Store]: Key extends string | number
+            ? Store[Key] extends infer Value
+              ? NonNullable<Value> extends Dictionary
+                ?
+                    | `${Key}`
+                    | `${Key}${Delimiter}${PathsHelper<
+                        NonNullable<Value>,
+                        Delimiter,
+                        readonly [...Visited, Store]
+                      >}`
+                : `${Key}`
+              : never
+            : never;
+        }[keyof Store],
+        undefined
+      >
   : never;
 
-/**
- * Represents the union of all the possible paths in a store.
- */
 export type Paths<
   Store extends Dictionary,
   Delimiter extends string = "."
-> = Store extends Partial<infer Impartial>
-  ? PathsHelper<Impartial, Delimiter>
-  : PathsHelper<Store, Delimiter>;
+> = PathsHelper<NonNullable<Store>, Delimiter>;

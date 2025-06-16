@@ -10,5 +10,6 @@
     "source.addMissingImports.ts": "always",
     "source.removeUnusedImports": "explicit"
   },
-  "css.customData": [".vscode/tailwind.json"]
+  "css.customData": [".vscode/tailwind.json"],
+  "typescript.experimental.useTsgo": false
 }

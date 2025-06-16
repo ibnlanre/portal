@@ -21,7 +21,11 @@ export type {
   GetLocalStorage,
   SetLocalStorage,
 } from "@/create-store/types/local-storage";
+export type { Normalize } from "@/create-store/types/normalize";
+export type { Paths } from "@/create-store/types/paths";
 export type { PrimitiveStore } from "@/create-store/types/primitive-store";
+export type { ResolvePath } from "@/create-store/types/resolve-path";
+export type { Selector } from "@/create-store/types/selector";
 export type {
   GetSessionStorage,
   SetSessionStorage,
@@ -31,7 +35,9 @@ export type {
   PartialStateManager,
   StateManager,
 } from "@/create-store/types/state-manager";
+export type { StatePath } from "@/create-store/types/state-path";
 export type { StorageAdapter } from "@/create-store/types/storage-adapter";
+export type { StoreValueResolver } from "@/create-store/types/store-value-resolver";
 export type { Subscriber } from "@/create-store/types/subscriber";
 
 export { cookieStorage } from "@/cookie-storage";
@@ -42,3 +48,4 @@ export { createLocalStorageAdapter } from "@/create-store/functions/adapters/cre
 export { createSessionStorageAdapter } from "@/create-store/functions/adapters/create-session-storage-adapter";
 export { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
 export { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
+export { normalizeObject } from "@/create-store/functions/library/normalize-object";

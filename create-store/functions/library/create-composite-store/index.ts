@@ -137,11 +137,14 @@ export function createCompositeStore<State extends Dictionary>(
     };
   }
 
-  function key<Path extends Paths<State>>(path: Path, parent?: Path): any {
+  function key<Path extends Paths<State>>(path: Path, parent?: Path) {
     const chain = <Path>[parent, path].filter(Boolean).join(".");
     const value = resolvePath(state, path);
 
-    if (isFunction(value)) return <any>value;
+    if (isFunction(value)) {
+      return value as CompositeStore<State>;
+    }
+
     if (isDictionary(value)) {
       const valueSnapshot = createSnapshot(value);
       return traverse(valueSnapshot, chain);
@@ -264,7 +267,5 @@ export function createCompositeStore<State extends Dictionary>(
   }
 
   const structureSnapshot = createSnapshot(initialState);
-  const result = traverse(structureSnapshot);
-
-  return result;
+  return traverse(structureSnapshot);
 }

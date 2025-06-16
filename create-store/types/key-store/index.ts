@@ -4,8 +4,8 @@ import type { Paths } from "@/create-store/types/paths";
 import type { ResolvePath } from "@/create-store/types/resolve-path";
 import type { StoreValueResolver } from "@/create-store/types/store-value-resolver";
 
-export interface KeyStore<State extends Dictionary> extends BasicStore<State> {
+export type KeyStore<State extends Dictionary> = BasicStore<State> & {
   readonly $key: <Path extends Paths<State>>(
     path: Path
   ) => StoreValueResolver<ResolvePath<State, Path>>;
-}
+};

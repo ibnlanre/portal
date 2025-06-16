@@ -1,1029 +1,1693 @@
 # @ibnlanre/portal
 
-A [TypeScript][typescript] state management library for [React][react] applications.
+[![npm version](https://badge.fury.io/js/%40ibnlanre%2Fportal.svg)](https://badge.fury.io/js/%40ibnlanre%2Fportal)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/ibnlanre/portal/ci.yml?branch=main)](https://github.com/ibnlanre/portal/actions)
+[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD--3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
-## Table of Contents
+`@ibnlanre/portal` is a TypeScript state management library designed to help you manage complex application state with an intuitive API. It focuses on developer experience, robust type safety, and comprehensive features. This document is your complete guide to understanding, installing, and effectively using the library.
 
-- [Installation](#installation)
-  - [Using Package Managers](#using-package-managers)
-    - [`npm`](#npm)
-    - [`pnpm`](#pnpm)
-    - [`yarn`](#yarn)
-  - [Using a CDN](#using-a-cdn)
-    - [`skypack`](#skypack)
-    - [`unpkg`](#unpkg)
-    - [`jsDelivr`](#jsdelivr)
-- [Usage](#usage)
-  - [Managing State](#managing-state)
-  - [Accessing State with `$get`](#accessing-state-with-get)
-  - [Updating State with `$set`](#updating-state-with-set)
-  - [Subscribing to State Changes with `$act`](#subscribing-to-state-changes-with-act)
-    - [Unsubscribing from State Changes](#unsubscribing-from-state-changes)
-    - [Preventing Immediate Callback Execution](#preventing-immediate-callback-execution)
-  - [Nested Stores](#nested-stores)
-    - [Breaking Off Stores](#breaking-off-stores)
-    - [Updating Nested Stores](#updating-nested-stores)
-  - [Accessing Nested Stores with `$key`](#accessing-nested-stores-with-key)
-  - [Actions](#actions)
-    - [Reducer Pattern](#reducer-pattern)
-    - [Internal Actions](#internal-actions)
-  - [Asynchronous State](#asynchronous-state)
-  - [React Integration](#react-integration)
-    - [Basic Usage](#basic-usage)
-    - [Modifying State with a Selector](#modifying-state-with-a-selector)
-    - [Using Dependencies with the `$use` Hook](#using-dependencies-with-the-use-hook)
-    - [Partial State Updates](#partial-state-updates)
-    - [Advanced Usage Patterns](#advanced-usage-patterns)
-- [Persistence](#persistence)
-  - [Web Storage Adapter](#web-storage-adapter)
-    - [Local Storage Adapter](#local-storage-adapter)
-    - [Session Storage Adapter](#session-storage-adapter)
-  - [Browser Storage Adapter](#browser-storage-adapter)
-  - [Cookie Storage Adapter](#cookie-storage-adapter)
-    - [Signed Cookies](#signed-cookies)
-    - [Updating Cookie Options](#updating-cookie-options)
-- [Cookie Storage](#cookie-storage)
-  - [Motivation](#motivation)
-  - [Utility Functions](#utility-functions)
-    - [sign(value: string, secret: string): string](#signvalue-string-secret-string-string)
-    - [unsign(signedValue: string, secret: string): string](#unsignsignedvalue-string-secret-string-string)
-    - [getItem(key: string): string](#getitemkey-string-string)
-    - [setItem(key: string, value: string): void](#setitemkey-string-value-string-void)
-    - [removeItem(key: string): void](#removeitemkey-string-void)
-    - [clear(): void](#clear-void)
-    - [createKey(options: Object): string](#createkeyoptions-object-string)
-    - [key(index: number): string](#keyindex-number-string)
-    - [length: number](#length-number)
-- [Contributions](#contributions)
+## Table of contents
+
+- [Features](#features)
+- [Get started](#get-started)
+  - [Prerequisites](#prerequisites)
+  - [Install the library](#install-the-library)
+- [Understand core concepts](#understand-core-concepts)
+  - [What is a store?](#what-is-a-store)
+  - [Store types: Primitive and Composite](#store-types-primitive-and-composite)
+  - [Immutability and reactivity](#immutability-and-reactivity)
+- [Configure your stores](#configure-your-stores)
+- [Use the API: Reference and examples](#use-the-api-reference-and-examples)
+  - [Create stores: `createStore()`](#create-stores-createstore)
+  - [Use store instance methods](#use-store-instance-methods)
+    - [`$get()`](#get)
+    - [`$set()`](#set)
+    - [`$act()`](#act)
+    - [`$key()`](#key)
+    - [`$use()` (React Hook)](#use-react-hook)
+  - [Define actions: Functions in stores](#define-actions-functions-in-stores)
+  - [Initialize state asynchronously](#initialize-state-asynchronously)
+  - [Handle circular references](#handle-circular-references)
+  - [Handle arrays in stores](#handle-arrays-in-stores)
+  - [Normalize objects: `normalizeObject()`](#normalize-objects-normalizeobject)
+  - [Persist state](#persist-state)
+    - [Web Storage adapters](#web-storage-adapters)
+    - [Cookie Storage adapter](#cookie-storage-adapter)
+    - [Browser Storage adapter](#browser-storage-adapter)
+  - [Cookie Storage](#cookie-storage)
+    - [`sign()`](#sign)
+    - [`unsign()`](#unsign)
+    - [`getItem()`](#getitem)
+    - [`setItem()`](#setitem)
+    - [`removeItem()`](#removeitem)
+    - [`clear()`](#clear)
+    - [`createKey()`](#createkey)
+    - [`key()`](#key)
+    - [`length`](#length)
+- [Explore advanced usage](#explore-advanced-usage)
+  - [Use direct store creation functions](#use-direct-store-creation-functions)
+    - [`createPrimitiveStore()`](#createprimitivestore)
+    - [`createCompositeStore()`](#createcompositestore)
+- [Optimize performance](#optimize-performance)
+- [Understand limitations](#understand-limitations)
+- [Follow best practices](#follow-best-practices)
+- [Troubleshoot common issues](#troubleshoot-common-issues)
+- [Contribute to the project](#contribute-to-the-project)
+- [Get help and support](#get-help-and-support)
 - [License](#license)
 
-## Installation
+## Features
 
-To install `@ibnlanre/portal`, you can use either a [CDN][cdn], or a [package manager][package-manager]. Run the following command within your project directory. The library is written in [TypeScript][typescript] and ships with its own type definitions, so you don't need to install any type definitions.
+`@ibnlanre/portal` offers a robust set of features to streamline state management:
 
-### Using Package Managers
+- **Intuitive API**: Interact with state using simple and consistent methods: `$get`, `$set`, and `$act`.
+- **Deep partial updates**: Intelligently merge updates into nested state structures without boilerplate.
+- **Circular reference support**: Safely manage complex objects, including browser objects after normalization.
+- **Object normalization**: Convert interface-typed objects (e.g., `window`, API responses) for store compatibility using `normalizeObject`.
+- **Comprehensive type safety**: Leverage full TypeScript support with robust type inference for a reliable development experience.
+- **Seamless React integration**: Connect stores to React components effortlessly using the `$use` hook, with automatic subscription management.
+- **Flexible store types**: Manage both primitive values (strings, numbers, booleans) and complex, nested objects within a unified system.
+- **State persistence**: Persist state across sessions with built-in adapters for Local Storage, Session Storage, and Cookie Storage.
+- **Action management**: Define and use actions (functions) directly within your stores to co-locate state logic.
+- **Asynchronous initialization**: Initialize stores with data fetched from APIs or other asynchronous sources.
 
-If you are working on a project that uses a [package manager][package-manager], you can copy one of the following commands to install `@ibnlanre/portal` using your preferred [package manager][package-manager], whether it's [npm][npm], [pnpm][pnpm], or [yarn][yarn].
+## Get started
 
-#### `npm`
+This section guides you through setting up `@ibnlanre/portal` in your project.
 
-```bash
-npm i @ibnlanre/portal
-```
+### Prerequisites
 
-#### `pnpm`
+Before you begin, ensure your development environment includes:
 
-```bash
-pnpm add @ibnlanre/portal
-```
+- Node.js (version 16.x or later recommended)
+- A package manager: npm, pnpm, or yarn
+- TypeScript (version 4.5 or later, if you are using TypeScript in your project)
 
-#### `yarn`
+### Install the library
 
-```bash
-yarn add @ibnlanre/portal
-```
+You can add `@ibnlanre/portal` to your project using a package manager or by including it from a CDN.
 
-### Using a CDN
+#### Using a package manager
 
-If you are working on a project that uses markup languages like [HTML][html] or [XML][xml], you can copy one of the following script tags to install `@ibnlanre/portal` using your preferred [CDN][cdn]:
+1.  Navigate to your project directory in the terminal.
+2.  Run one of the following commands, depending on your package manager:
 
-#### `skypack`
+    **npm**
+
+    ```bash
+    npm install @ibnlanre/portal
+    ```
+
+    **pnpm**
+
+    ```bash
+    pnpm add @ibnlanre/portal
+    ```
+
+    **yarn**
+
+    ```bash
+    yarn add @ibnlanre/portal
+    ```
+
+    The library includes TypeScript definitions, so no separate `@types` package is needed.
+
+#### Using a CDN
+
+For projects that don't use a package manager (e.g., simple HTML pages or online playgrounds), you can include `@ibnlanre/portal` from a CDN:
+
+**Skypack**
 
 ```html
 <script type="module">
   import { createStore } from "https://cdn.skypack.dev/@ibnlanre/portal";
+  // Use createStore and other exports here
 </script>
 ```
 
-#### `unpkg`
+**unpkg**
 
 ```html
 <script src="https://unpkg.com/@ibnlanre/portal"></script>
+<!-- The library will be available globally, e.g., window.Portal.createStore -->
 ```
 
-#### `jsDelivr`
+**jsDelivr**
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@ibnlanre/portal"></script>
+<!-- The library will be available globally, e.g., window.Portal.createStore -->
 ```
 
-## Usage
+## Understand core concepts
 
-`@ibnlanre/portal` simplifies state management with its intuitive and developer-friendly [API][api]. Built with scalability and flexibility in mind, it integrates seamlessly with [React][react] applications while remaining lightweight and easy to use. Managing application state should not be a complex task, and `@ibnlanre/portal` is designed to make the process effortless, even in existing codebases.
+Understanding these core concepts will help you use `@ibnlanre/portal` effectively.
 
-### State Management Methods
+### What is a store?
 
-`@ibnlanre/portal` provides a consistent API across both primitive and composite stores. Each store comes with a set of core methods for state management:
+A store is an object that holds your application's state. It allows you to read the state, update it, and subscribe to changes. `@ibnlanre/portal` stores can hold any kind of data, from simple primitive values to complex, nested objects.
 
-#### The $get Method
+### Store types: Primitive and Composite
 
-Retrieves the current state or computes a derived value using an optional selector function:
+`@ibnlanre/portal` distinguishes between two main types of stores, created automatically based on the initial state you provide:
 
-```typescript
-const store = createStore({
-  count: 0,
-  user: { name: "John" },
-});
+1.  **Primitive Store**: Manages a single, primitive value (e.g., a string, number, boolean, null, or undefined).
 
-// Basic state retrieval
-store.$get(); // { count: 0, user: { name: "John" } }
-store.count.$get(); // 0
-store.user.name.$get(); // "John"
+    ```typescript
+    import { createStore } from "@ibnlanre/portal";
 
-// Using selectors
-store.count.$get((count) => count + 5); // 5
-store.user.name.$get((name) => name.toUpperCase()); // "JOHN"
-```
+    const countStore = createStore(0); // A primitive store for a number
+    const nameStore = createStore("Alex"); // A primitive store for a string
+    ```
 
-#### The $set Method
+2.  **Composite Store**: Manages an object and enables nested state structures. Each property in a composite store's initial object can itself become a store instance (either primitive or composite), allowing for granular state management and access.
 
-Updates state using direct values or update functions:
+    ```typescript
+    import { createStore } from "@ibnlanre/portal";
 
-```typescript
-// Direct value updates
-store.count.$set(5);
-store.user.$set({ name: "Jane" });
+    const userSettingsStore = createStore({
+      profile: {
+        name: "Alex",
+        age: 30,
+      },
+      preferences: {
+        theme: "dark",
+        notificationsEnabled: true,
+      },
+    });
+    // userSettingsStore is a composite store.
+    // userSettingsStore.profile is also a composite store.
+    // userSettingsStore.profile.name is a primitive store.
+    ```
 
-// Functional updates using previous state
-store.count.$set((prev) => prev + 1);
-store.user.name.$set((name) => name.toUpperCase());
+Both store types share a consistent API for getting, setting, and subscribing to state.
 
-// Partial state updates (merging)
-store.$set({ count: 10 });
-store.$set((prev) => ({ count: prev.count + 1 }));
-```
+### Immutability and reactivity
 
-#### The $act Method
+`@ibnlanre/portal` embraces immutability. When you update the state, the library creates a new state object instead of modifying the existing one. This helps prevent bugs and makes state changes predictable.
 
-Subscribes to state changes with optional immediate notification:
+Stores are reactive. When a store's state changes, any components or subscribers listening to that store (or its parts) are notified, allowing your UI to update automatically.
 
-```typescript
-// Subscribe to root state changes
-const unsubscribe = store.$act((state) => {
-  console.log("State changed:", state);
-}, true); // true for immediate notification
+## Configure your stores
 
-// Subscribe to specific value changes
-store.count.$act((count) => {
-  console.log("Count changed:", count);
-});
+`@ibnlanre/portal` is designed to work with minimal configuration. The primary configuration points are:
 
-// Unsubscribe when needed
-unsubscribe();
-```
+1.  **Store Initialization**: When you call `createStore()`, you provide the initial state. This is the main configuration for a store's structure and default values.
+2.  **Persistence Adapters**: If you use state persistence, you configure adapters with options like storage keys and serialization functions.
 
-- `$act`: Subscribe to state changes to react to updates.
-- `$key`: Access deeply nested stores using a dot-separated string.
-
-### Store Types
-
-`@ibnlanre/portal` provides two types of stores:
-
-1. **Primitive Store**: For managing primitive values (strings, numbers, booleans, etc.)
-2. **Composite Store**: For managing objects and nested state structures
-
-The `createStore` function automatically determines which type of store to create based on your initial state:
-
-```typescript
-// Creates a primitive store
-const numberStore = createStore(42);
-const stringStore = createStore("hello");
-
-// Creates a composite store
-const objectStore = createStore({
-  count: 0,
-  user: {
-    name: "John",
-    preferences: { theme: "light" },
-  },
-});
-```
-
-#### Store Methods
-
-Both primitive and composite stores provide the following core methods:
-
-- `$get`: Retrieve the current state or a derived value using a selector
-- `$set`: Update the state with a new value or using an update function
-- `$act`: Subscribe to state changes with optional immediate notification
-- `$use`: React hook for integrating state with components
-
-Composite stores additionally provide:
-
-- `$key`: Access nested state using dot notation paths
-
-Example usage:
-
-```typescript
-// With a primitive store
-const counter = createStore(0);
-counter.$get(); // 0
-counter.$set(5); // directly set value
-counter.$set((prev) => prev + 1); // update using function
-
-// With a composite store
-const settings = createStore({
-  theme: "light",
-  notifications: true,
-  user: { name: "John" },
-});
-
-settings.$get(); // gets full state object
-settings.theme.$get(); // "light"
-settings.$key("user.name").$get(); // "John"
-
-// Subscribe to changes
-settings.$act((state) => console.log(state));
-settings.theme.$act((theme) => console.log(theme));
-
-// Use in React components
-function ThemeDisplay() {
-  const [theme, setTheme] = settings.theme.$use();
-  return <div>{theme}</div>;
-}
-```
-
-#### Custom Store Handles
-
-You can customize which methods are available on a store by passing an array of handles as the second argument to `createStore`:
-
-```typescript
-// Only include $get and $set methods
-const readWriteStore = createStore("value", ["$get", "$set"]);
-
-// Create a read-only store
-const readOnlyStore = createStore({ data: "test" }, ["$get", "$act"]);
-```
-
-This allows you to create stores with restricted capabilities based on your needs.
-
-### Accessing State with $get
-
-The `$get` [method][method] provides a straightforward way to access the current state synchronously. It’s ideal when you need to read the state without setting up a subscription.
-
-```typescript
-const value = store.$get();
-console.log(value); // "initial value"
-```
-
-You can also pass a [callback function][callback] to $get to modify the state before accessing it. The [callback][callback] receives the current state and returns the modified value. This lets you work with a transformed state without altering the actual store.
-
-```typescript
-const modifiedValue = store.$get((value) => `${value} modified`);
-console.log(modifiedValue); // "initial value modified"
-```
-
-### Updating State with `$set`
-
-The `$set` [method][method] updates the state with a new value. Simply pass the desired value to this method, and it immediately replaces the current state.
-
-```typescript
-store.$set("new value");
-const newValue = store.$get(); // "new value"
-```
-
-Alternatively, `$set` can accept a [callback function][callback] that takes the previous state as an argument and returns the updated state. This approach is useful for making updates that depend on the previous state.
-
-```typescript
-store.$set((prev) => `${prev} updated`);
-const updatedValue = store.$get(); // "new value updated"
-```
-
-#### Partial State Updates
-
-The `$set` method also supports partial state updates when the state is an object. You can pass an object containing the properties to update, and `$set` will merge the new properties with the existing state.
-
-```typescript
-const store = createStore({ name: "John", age: 30 });
-
-store.$set({ age: 31 });
-const updatedState = store.$get(); // { name: "John", age: 31 }
-```
-
-### Subscribing to State Changes with `$act`
-
-In addition to accessing and updating state, `@ibnlanre/portal` provides the `$act` [method][method] to subscribe to state changes. This allows you to react to updates and perform [side effects][side-effects] when the state changes.
-
-```typescript
-store.$act((value) => console.log(value));
-```
-
-#### Unsubscribing from State Changes
-
-The `$act` [method][method] returns an `unsubscribe` function that can be called to stop listening for updates. This is particularly useful when a component unmounts or when you no longer need the subscription.
-
-```typescript
-const unsubscribe = store.$act((value) => {
-  console.log(value);
-});
-
-// Stop listening to state changes
-unsubscribe();
-```
-
-#### Preventing Immediate Callback Execution
-
-By default, the `$act` [callback][callback] is invoked immediately after subscribing. To disable this behavior, pass `false` as the second argument. This ensures the callback is only executed when the state changes.
-
-```typescript
-store.$act((value) => {
-  console.log(value);
-}, false);
-```
-
-### Nested State Management
-
-`@ibnlanre/portal` excels at managing deeply nested state through its composite store capabilities. When you create a store with an object, each nested property becomes its own store instance, providing seamless access to state management methods at every level.
-
-```typescript
-const store = createStore({
-  location: {
-    unit: "Apt 1",
-    address: {
-      street: "123 Main St",
-      city: "Springfield",
-    },
-  },
-});
-
-// Access nested state directly
-const city = store.location.address.city.$get();
-console.log(city); // "Springfield"
-
-// Use selectors for derived values
-store.location.address.street.$get((street) => street.toUpperCase());
-// "123 MAIN ST"
-
-// Access nested state using $key
-store.$key("location.address.city").$get(); // "Springfield"
-store.location.$key("address.city").$get(); // "Springfield"
-```
-
-#### Independent Nested Store Operations
-
-Every node in the state tree is a fully functional store that can be used independently. You can extract any part of the nested structure and work with it as a separate store, while maintaining the connection to the root state.
-
-```typescript
-// Extract nested stores
-const { address } = store.location;
-const { street } = address;
-
-// Each level maintains full store functionality
-address.street.$get(); // "123 Main St"
-address.city.$set("New City");
-
-// Update state through any reference
-street.$set("456 Elm St");
-street.$set((prev) => `${prev} Apt 2`);
-
-// Subscribers work at any level
-address.$act((state) => {
-  console.log(state); // { street: "456 Elm St Apt 2", city: "New City" }
-});
-street.$act((value) => {
-  console.log(value); // "456 Elm St Apt 2"
-});
-```
-
-#### State Updates and Immutability
-
-`@ibnlanre/portal` handles state updates immutably, allowing you to work with state at any level while maintaining consistency throughout the state tree. You can:
-
-- Update individual values
-- Merge partial state
-- Update multiple nested values
-- Use update functions for computed changes
-
-```typescript
-// Update complete state
-store.$set({
-  location: {
-    unit: "Unit 2B",
-    address: {
-      street: "789 Oak Rd",
-      city: "New City",
-    },
-  },
-});
-
-// Merge partial state
-store.$set({ location: { unit: "Unit 3C" } });
-
-// Update nested values directly
-store.location.unit.$set("Unit 4D");
-store.location.address.$set({
-  street: "321 Pine St",
-  city: "Another City",
-});
-
-// Use update functions
-store.location.address.street.$set((street) => street.toUpperCase());
-```
-
-The state is updated immutably at all levels, ensuring that:
-
-1. Original state is preserved
-2. All subscribers receive appropriate updates
-3. React components re-render efficiently
-
-### Accessing Nested Stores with `$key`
-
-To conveniently access deeply nested stores, you can use the `$key` method with a dot-separated string. This method leverages [TypeScript][typescript]'s IntelliSense for path suggestions, providing an overview of the available nested stores. This makes managing complex state structures more intuitive and efficient.
-
-```typescript
-const street = store.$key("location.address.street");
-street.$get(); // 456 Elm St
-```
-
-The `$key` method returns a reference to the nested store, which means you can access and update the nested state directly. It can be used at any level of the hierarchy, allowing you to work with deeply nested stores without the need for manual traversal.
-
-```typescript
-store.$key("location.address.street").$set("789 Oak St");
-
-const { street } = store.location.$key("address");
-street.$get(); // 789 Oak St
-```
-
-### Actions
-
-`@ibnlanre/portal` allows you to store plain functions alongside primitives and objects. When the initial state is an object, functions within it are not converted into nested stores but remain callable as [methods][method]. This approach simplifies managing complex state transitions, [co-locates][colocation] logic with state, and reduces [boilerplate][boilerplate] in larger applications.
-
-```typescript
-const count = createStore({
-  value: 0,
-  increase(amount: number = 1) {
-    count.value.$set((prev) => prev + amount);
-  },
-  decrease(amount: number = 1) {
-    count.value.$set((prev) => prev - amount);
-  },
-  reset() {
-    count.value.$set(0);
-  },
-});
-
-count.increase(5);
-count.reset();
-```
-
-#### Reducer Pattern
-
-One thing to note is that you have full control over how the function is defined, named, and structured, including its interaction with the store, the format of its arguments and whether it is nested. This flexibility allows you to implement a [reducer][reducer] pattern that aligns with your judgment and preferences.
-
-```typescript
-type CountControlAction = {
-  type: "increase" | "decrease" | "reset";
-  amount?: number;
-};
-
-const count = createStore({
-  value: 0,
-  dispatch({ type, amount = 1 }: CountControlAction) {
-    switch (type) {
-      case "increase":
-        count.value.$set((prev) => prev + amount);
-        break;
-      case "decrease":
-        count.value.$set((prev) => prev - amount);
-        break;
-      case "reset":
-        count.value.$set(0);
-        break;
-    }
-  },
-});
-
-count.dispatch({ type: "increase", amount: 5 });
-count.dispatch({ type: "reset" });
-```
-
-#### Internal Actions
-
-In scenarios, where you do not want the actions to be exposed as [methods][method] through the store, you can create regular functions that interacts with the store. These functions can then be called directly or used as a callback in other functions.
-
-```typescript
-export const count = createStore({
-  value: 0,
-});
-
-function increase(amount: number = 1) {
-  count.value.$set((prev) => prev + amount);
-}
-
-function decrease(amount: number = 1) {
-  count.value.$set((prev) => prev - amount);
-}
-
-function reset() {
-  count.value.$set(0);
-}
-
-externalService.on("connect", increase);
-externalService.on("disconnect", decrease);
-externalService.on("error", reset);
-```
-
-### Asynchronous State
-
-The `createStore` function also supports [asynchronous][asynchronous] state initialization. You can pass an async function that returns a [Promise][promise] resolving to the initial state. This is particularly useful for scenarios where the initial state needs to be fetched from an external API.
-
-**Note** that the store will remain empty until the [Promise][promise] resolves. Also, if the resolved value is an object, it will be treated as a primitive value, not as a nested store. This is because nested stores are only created during [initialization][initialization] from objects directly passed to the `createStore` function.
-
-Here’s an example:
-
-```typescript
-type State = { apartment: string };
-
-async function fetchData(): Promise<State> {
-  const response = await fetch("https://api.example.com/data");
-  return response.json();
-}
-
-// Create a store with an asynchronous initial state
-const store = await createStore(fetchData);
-
-const state = store.$get();
-console.log(state); // { apartment: "123 Main St" }
-```
-
-By combining nested stores and asynchronous initialization, `@ibnlanre/portal` enables you to manage state efficiently in even the most dynamic applications.
-
-### React Integration
-
-`@ibnlanre/portal` offers seamless, first-class support for [React][react] applications. Each store instance provides a `$use` [hook][hook], which works similarly to React’s built-in [useState][use-state] hook. This hook returns a tuple: the **current state value** and a **dispatch function** to update the state.
-
-#### Basic Usage
-
-To use a store in a React component, simply call the `$use` hook on your store:
-
-```jsx
-import { store } from "./path-to-your-store";
-
-function Component() {
-  const [state, setState] = store.$use();
-  return <input value={state} onChange={(e) => setState(e.target.value)} />;
-}
-```
-
-The `$use` hook automatically subscribes your component to state changes and unsubscribes when the component unmounts. This means your UI will always reflect the latest state, with no manual subscription management required.
-
-#### Modifying State with a Selector
-
-Like `$get` and `$set`, the `$use` hook can accept a selector (callback function) as its first argument. This allows you to transform the state before it’s returned to your component, without mutating the store itself.
-
-```typescript
-const [state, setState] = store.$use((value) => `${value} modified`);
-```
-
-> **Note:** The selector only affects the value returned to the component, not the store’s internal state. The `setState` function always expects the original state type.
-
-#### Using Dependencies with the `$use` Hook
-
-If your selector depends on external values, you can pass a dependency array as the second argument. This works just like the dependency array in [useEffect][use-effect] or [useMemo][use-memo], ensuring the selector is only recomputed when dependencies change.
-
-```typescript
-const [count, setCount] = useState(0);
-const [state, setState] = store.$use(
-  (value) => `Count: ${count} - ${value}`,
-  [count]
-);
-```
-
-#### Partial State Updates
-
-When your store holds an object, the `setState` function supports partial updates. Pass an object with only the properties you want to update, and the store will merge them with the existing state.
-
-```tsx
-const store = createStore({ name: "John", age: 30 });
-
-function Component() {
-  const [state, setState] = store.$use();
-  const updateAge = () => setState({ age: 31 });
-
-  return (
-    <div>
-      <p>{state.name}</p>
-      <p>{state.age}</p>
-      <button onClick={updateAge}>Update Age</button>
-    </div>
-  );
-}
-```
-
-#### Advanced Usage Patterns
-
-The `$use` hook is highly flexible and supports a variety of advanced patterns:
-
-1. **Selectors for Derived State**
-
-   Transform state before rendering:
-
-   ```tsx
-   function UppercaseName() {
-     const [name] = store.user.name.$use((name) => name.toUpperCase());
-
-     return <div>{name}</div>;
-   }
-   ```
-
-2. **Dependency Arrays for Memoization**
-
-   Control when selectors are recomputed:
-
-   ```tsx
-   function FormattedUser({ formatter }) {
-     const [user] = store.user.$use((user) => formatter(user), [formatter]);
-     return <div>{user}</div>;
-   }
-   ```
-
-3. **Nested State Access**
-
-   Work with any level of state granularity:
-
-   ```tsx
-   function UserPreferences() {
-     const [prefs] = store.user.preferences.$use();
-     const [theme] = store.user.preferences.theme.$use();
-
-     return (
-       <>
-         <div>All preferences: {JSON.stringify(prefs)}</div>
-         <div>Theme: {theme}</div>
-       </>
-     );
-   }
-   ```
-
-4. **Synchronized Updates Across Components**
-
-   All components using the same store (or its nested stores) stay in sync:
-
-   ```tsx
-   function UserDashboard() {
-     const [user] = store.$use();
-     const [name] = store.user.name.$use();
-     const [prefs] = store.user.preferences.$use();
-
-     return (
-       <>
-         <UserInfo user={user} />
-         <UserName name={name} />
-         <PreferencesPanel prefs={prefs} />
-       </>
-     );
-   }
-   ```
-
-5. **Efficient Partial Updates**
-
-   Update nested state efficiently with functional updates:
-
-   ```tsx
-   function ThemeToggle() {
-     const [, setUser] = store.user.$use();
-     const toggleTheme = () => {
-       setUser((prev) => ({
-         ...prev,
-         preferences: {
-           ...prev.preferences,
-           theme: prev.preferences.theme === "light" ? "dark" : "light",
-         },
-       }));
-     };
-
-     return <button onClick={toggleTheme}>Toggle Theme</button>;
-   }
-   ```
-
-#### How `$use` Works
-
-- Subscribes to state changes when the component mounts
-- Unsubscribes automatically on unmount
-- Triggers efficient, targeted re-renders
-- Preserves TypeScript type safety for state and updates
-
-## Persistence
-
-`@ibnlanre/portal` provides storage [adapters][adapter] for [local storage][local-storage], [session storage][session-storage], and [cookies][cookies]. These [adapters][adapter] allow you to persist state across sessions and devices. The storage [adapters][adapter] are created using the `createLocalStorageAdapter`, `createSessionStorageAdapter`, and `createCookieStorageAdapter` functions.
-
-Each function takes a key as a parameter and returns two functions: one to get the state and the other to set the state. The `createStore` function can then be used with these storage [adapters][adapter] to create a store that persists state in the [web storage][web-storage].
-
-### Web Storage Adapter
-
-To persist state within the local/session storage of the browser, you can use either the `createLocalStorageAdapter` or `createSessionStorageAdapter` functions respectively. The parameters for these functions are the same. They are as follows:
-
-- `key`: The key used to store the state in the [web storage][web-storage].
-- `stringify`: A function to serialize the state to a string. The default is `JSON.stringify`.
-- `parse`: A function to deserialize the state from a string. The default is `JSON.parse`.
-
-#### Local Storage Adapter
-
-The only required parameter for the [web storage][web-storage] adapters is the `key`. This is the key used to store the state in the [storage][web-storage], as well as, to retrieve and update the state from the [storage][web-storage]. It's important to **note** that the `key` is unique to each store, and should be unique to prevent conflicts with other stores.
+For example, to configure a Local Storage adapter:
 
 ```typescript
 import { createLocalStorageAdapter } from "@ibnlanre/portal";
 
-const [getLocalStorageState, setLocalStorageState] = createLocalStorageAdapter({
-  key: "storage",
+const [getPersistentState, setPersistentState] = createLocalStorageAdapter({
+  key: "myAppUniqueStorageKey", // Required: A unique key for this store in Local Storage
+  // Optional: Custom serialization/deserialization
+  stringify: (state) => JSON.stringify(state),
+  parse: (storedString) => JSON.parse(storedString),
 });
 ```
 
-Through the `stringify` and `parse` functions, you can customize how the state is serialized and deserialized. This is useful when working with non-JSON serializable values or when you want to encrypt the state before storing it in the [web storage][web-storage].
+Refer to the [Persist state](#persist-state) section for detailed configuration of each adapter.
+
+## Use the API: Reference and examples
+
+This section provides a comprehensive reference for the `@ibnlanre/portal` API, with detailed explanations and examples.
+
+### Create stores: `createStore()`
+
+The `createStore()` function is the primary way to initialize a new store.
+
+**Syntax:**
+
+```typescript
+createStore<S>(initialState: S | Promise<S>): Store<S>
+```
+
+- **`initialState`**: The initial value for the store.
+  - If a primitive value (string, number, boolean, etc.) is provided, a `PrimitiveStore` is created.
+  - If an object is provided, a `CompositeStore` is created. Each property of the object becomes a nested store.
+  - If a `Promise` is provided, the store will be initialized with the resolved value of the promise. The store will be empty until the promise resolves. The resolved value is treated as a single entity; if it's an object, it becomes the state of a primitive-like store, not a composite store with nested properties.
+- **Returns**: A `Store` instance, which can be a `PrimitiveStore<S>` or `CompositeStore<S>` depending on `initialState`.
+
+**Examples:**
+
+1.  **Creating a primitive store:**
+
+    ```typescript
+    import { createStore } from "@ibnlanre/portal";
+
+    const countStore = createStore(0);
+    console.log(countStore.$get()); // Output: 0
+
+    const messageStore = createStore("Hello, world!");
+    console.log(messageStore.$get()); // Output: "Hello, world!"
+    ```
+
+2.  **Creating a composite store:**
+
+    ```typescript
+    import { createStore } from "@ibnlanre/portal";
+
+    const userStore = createStore({
+      id: 1,
+      name: "Alex Johnson",
+      email: "alex@example.com",
+      address: {
+        street: "123 Main St",
+        city: "Anytown",
+      },
+    });
+
+    console.log(userStore.name.$get()); // Output: "Alex Johnson"
+    console.log(userStore.address.city.$get()); // Output: "Anytown"
+    ```
+
+3.  **Creating a store with asynchronous initialization:**
+
+    ```typescript
+    import { createStore } from "@ibnlanre/portal";
+
+    async function fetchUserData(): Promise<{ id: number; name: string }> {
+      // Simulate API call
+      return new Promise((resolve) =>
+        setTimeout(() => resolve({ id: 1, name: "Fetched User" }), 500)
+      );
+    }
+
+    async function initializeApp() {
+      const userProfileStore = await createStore(fetchUserData());
+      // The store is now initialized with the fetched data.
+      // Note: userProfileStore holds { id: 1, name: "Fetched User" } as a single value.
+      // It's not a composite store with userProfileStore.id or userProfileStore.name.
+      console.log(userProfileStore.$get()); // Output: { id: 1, name: "Fetched User" }
+    }
+
+    initializeApp();
+    ```
+
+### Use store instance methods
+
+All store instances, whether primitive or composite, provide a core set of methods for interacting with the state.
+
+#### `$get()`
+
+Retrieves the current state of the store. Optionally, you can provide a selector function to compute a derived value from the state without altering the stored state.
+
+**Syntax:**
+
+```typescript
+$get(): S
+$get<R>(selector: (currentState: S) => R): R
+```
+
+- **`selector`** (optional): A function that takes the current state (`S`) as an argument and returns a derived value (`R`).
+- **Returns**: The current state (`S`) if no selector is provided, or the derived value (`R`) if a selector is provided.
+
+**Examples:**
+
+1.  **Getting the current state:**
+
+    ```typescript
+    const countStore = createStore(10);
+    const currentCount = countStore.$get(); // 10
+
+    const userStore = createStore({ name: "Alex", role: "admin" });
+    const currentUser = userStore.$get(); // { name: "Alex", role: "admin" }
+    const userName = userStore.name.$get(); // "Alex"
+    ```
+
+2.  **Getting a derived value using a selector:**
+
+    ```typescript
+    const countStore = createStore(10);
+    const doubledCount = countStore.$get((count) => count * 2); // 20
+    console.log(countStore.$get()); // 10 (original state is unchanged)
+
+    const userStore = createStore({ firstName: "Alex", lastName: "Johnson" });
+    const fullName = userStore.$get(
+      (user) => `${user.firstName} ${user.lastName}`
+    ); // "Alex Johnson"
+    ```
+
+#### `$set()`
+
+Updates the store's state. You can pass a new value directly or provide an update function that receives the previous state and returns the new state.
+
+For composite stores holding objects, `$set` performs a deep partial update. This means you only need to provide the properties you want to change, and `@ibnlanre/portal` will merge them intelligently with the existing state.
+
+**Syntax:**
+
+```typescript
+$set(newValue: S): void
+$set(updater: (prevState: S) => S): void
+```
+
+- **`newValue`**: The new state value to set directly.
+- **`updater`**: A function that takes the previous state (`S`) as an argument and returns the new state (`S`).
+- **Returns**: `void`.
+
+**Examples:**
+
+1.  **Setting a new value directly (Primitive Store):**
+
+    ```typescript
+    const countStore = createStore(0);
+    countStore.$set(5);
+    console.log(countStore.$get()); // 5
+    ```
+
+2.  **Updating using a function (Primitive Store):**
+
+    ```typescript
+    const countStore = createStore(5);
+    countStore.$set((prevCount) => prevCount + 1);
+    console.log(countStore.$get()); // 6
+    ```
+
+3.  **Partial update on a Composite Store:**
+
+    ```typescript
+    const settingsStore = createStore({
+      theme: "light",
+      fontSize: 12,
+      notifications: true,
+    });
+
+    // Update only theme and fontSize; notifications is preserved.
+    settingsStore.$set({ theme: "dark", fontSize: 14 });
+    // settingsStore.$get() is now { theme: "dark", fontSize: 14, notifications: true }
+
+    // Functional partial update
+    settingsStore.$set((prevSettings) => ({
+      ...prevSettings, // Spread previous settings to preserve unspecified ones
+      fontSize: prevSettings.fontSize + 2, // Only update fontSize
+    }));
+    // settingsStore.$get() is now { theme: "dark", fontSize: 16, notifications: true }
+    ```
+
+4.  **Updating nested properties in a Composite Store:**
+
+    ```typescript
+    const userStore = createStore({
+      profile: { name: "Alex", age: 30 },
+      role: "user",
+    });
+
+    // Update nested property directly
+    userStore.profile.name.$set("Alexandra");
+    console.log(userStore.profile.name.$get()); // "Alexandra"
+
+    // Update part of the nested object
+    userStore.profile.$set({ age: 31 }); // name is preserved
+    // userStore.profile.$get() is { name: "Alexandra", age: 31 }
+    ```
+
+**Note on arrays:** When a part of your state is an array, and you use `$set` on the parent object containing that array, the entire array will be replaced if it's part of the update object. To modify array elements (e.g., add or remove items), access the array store directly or use functional updates on that specific array store.
+
+```typescript
+const listStore = createStore({ items: [1, 2, 3], name: "My List" });
+
+// This replaces the entire 'items' array but preserves 'name'.
+listStore.$set({ items: [4, 5, 6] });
+// listStore.$get() is { items: [4, 5, 6], name: "My List" }
+
+// To add an item, update the 'items' store directly.
+listStore.items.$set((prevItems) => [...prevItems, 7]);
+// listStore.items.$get() is now [4, 5, 6, 7]
+```
+
+#### `$act()`
+
+Subscribes a callback function to state changes. The callback receives the new state (and optionally the old state) whenever it changes. This method returns an `unsubscribe` function to stop listening for updates.
+
+By default, the callback is invoked immediately with the current state upon subscription. To prevent this initial invocation, pass `false` as the second argument.
+
+**Syntax:**
+
+```typescript
+$act(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () => void
+```
+
+- **`subscriber`**: A function that is called when the state changes. It receives `newState` and optionally `oldState`.
+- **`immediate`** (optional, default `true`): If `true`, the `subscriber` is called immediately with the current state. If `false`, it's only called on subsequent changes. (On the initial immediate call, `oldState` is `undefined`.)
+- **Returns**: An `unsubscribe` function. Call this function to remove the subscription.
+
+**Examples:**
+
+1.  **Basic subscription:**
+
+    ```typescript
+    const nameStore = createStore("Alex");
+
+    const unsubscribe = nameStore.$act((newName, oldName) => {
+      console.log(`Name changed from "${oldName}" to "${newName}"`);
+    });
+    // Immediately logs: Name changed from "undefined" to "Alex"
+    // (oldState is undefined on the initial call if immediate: true)
+
+    nameStore.$set("Jordan"); // Logs: Name changed from "Alex" to "Jordan"
+
+    unsubscribe(); // Stop listening to changes
+    nameStore.$set("Casey"); // Nothing is logged
+    ```
+
+2.  **Subscription without immediate callback execution:**
+
+    ```typescript
+    const statusStore = createStore("idle");
+
+    const unsubscribeNonImmediate = statusStore.$act((newStatus) => {
+      console.log(`Status updated to: ${newStatus}`);
+    }, false); // `false` prevents immediate call
+
+    statusStore.$set("active"); // Logs: "Status updated to: active"
+    unsubscribeNonImmediate();
+    ```
+
+3.  **Subscribing to a composite store:**
+
+    ```typescript
+    const settingsStore = createStore({ theme: "light", volume: 70 });
+    const unsubscribeSettings = settingsStore.$act((newSettings) => {
+      console.log("Settings updated:", newSettings);
+    });
+    // Immediately logs: Settings updated: { theme: "light", volume: 70 }
+
+    settingsStore.theme.$set("dark");
+    // Logs: Settings updated: { theme: "dark", volume: 70 }
+    unsubscribeSettings();
+    ```
+
+#### `$key()`
+
+(CompositeStore only) Provides convenient access to deeply nested stores using a dot-separated string path. This method returns the nested store instance, allowing you to use its methods (`$get`, `$set`, `$act`, `$use`, `$key`) directly.
+
+**Syntax:**
+
+```typescript
+$key<N extends Store<any>>(path: string): N
+```
+
+- **`path`**: A dot-separated string representing the path to the nested store (e.g., `"user.preferences.theme"`). TypeScript provides autocompletion for valid paths.
+- **Returns**: The nested `Store` instance (`N`).
+
+**Examples:**
+
+```typescript
+const appStore = createStore({
+  user: {
+    profile: {
+      name: "Alex",
+      email: "alex@example.com",
+    },
+    preferences: {
+      theme: "dark",
+      language: "en",
+    },
+  },
+  status: "active",
+});
+
+// Access nested stores using $key
+const themeStore = appStore.$key("user.preferences.theme");
+console.log(themeStore.$get()); // "dark"
+
+themeStore.$set("light");
+console.log(appStore.user.preferences.theme.$get()); // "light" (state is synced)
+
+// $key can be used on intermediate stores as well
+const preferencesStore = appStore.user.$key("preferences");
+const languageStore = preferencesStore.$key("language"); // Equivalent to appStore.$key("user.preferences.language")
+console.log(languageStore.$get()); // "en"
+
+// Using methods on the store returned by $key
+const unsubscribeTheme = appStore
+  .$key("user.preferences.theme")
+  .$act((newTheme) => {
+    console.log("Theme via $key:", newTheme);
+  });
+appStore.user.preferences.theme.$set("blue"); // Triggers the subscription
+unsubscribeTheme();
+```
+
+#### `$use()` (React Hook)
+
+Connects your React components to an `@ibnlanre/portal` store. It works like React's `useState` hook, returning a tuple with the current state value (or a derived value) and a function to update the store's state.
+
+The `$use` hook automatically subscribes the component to store changes and unsubscribes when the component unmounts, ensuring efficient re-renders.
+
+**Syntax:**
+
+```typescript
+$use(): [S, (newValue: S | ((prevState: S) => S)) => void]
+$use<R>(
+  selector: (currentState: S) => R,
+  dependencies?: any[]
+): [R, (newValue: S | ((prevState: S) => S)) => void]
+```
+
+- **`selector`** (optional): A function that takes the current store state (`S`) and returns a transformed value (`R`) for the component.
+- **`dependencies`** (optional): An array of dependencies for the `selector` function. The selector is re-evaluated if any of these dependencies change (similar to `React.useMemo`).
+- **Returns**: A tuple:
+  1.  `currentStateOrDerivedValue`: The current state (`S`) or the value returned by the `selector` (`R`).
+  2.  `setStateFunction`: A function to update the store's state. It accepts either a new value of type `S` or an updater function `(prevState: S) => S`.
+
+**Examples:**
+
+1.  **Basic usage in a React component:**
+
+    ```tsx
+    // src/stores/counterStore.ts
+    import { createStore } from "@ibnlanre/portal";
+    export const counterStore = createStore(0);
+
+    // src/components/Counter.tsx
+    import React from "react";
+    import { counterStore } from "../stores/counterStore";
+
+    function Counter() {
+      const [count, setCount] = counterStore.$use();
+
+      return (
+        <div>
+          <p>Count: {count}</p>
+          <button onClick={() => setCount(count + 1)}>Increment</button>
+          <button onClick={() => setCount((prev) => prev - 1)}>
+            Decrement
+          </button>
+          <button onClick={() => setCount(0)}>Reset</button>
+        </div>
+      );
+    }
+    export default Counter;
+    ```
+
+2.  **Using a selector with `$use`:**
+
+    ```tsx
+    // In your component:
+    // Assume counterStore holds a number.
+    const [displayCount, setCount] = counterStore.$use(
+      (currentCount) => `Current count is: ${currentCount}`
+    );
+    // If counterStore holds 0, displayCount is "Current count is: 0".
+    // setCount still expects a number to update the original counterStore.
+
+    return <p>{displayCount}</p>;
+    ```
+
+3.  **Using a selector with dependencies:**
+
+    ```tsx
+    import React, { useState } from "react";
+    import { someStore } from "../stores/someStore"; // Assume someStore holds a string
+
+    function DisplayValue({ prefixFromProp }: { prefixFromProp: string }) {
+      const [displayValue, setValueInStore] = someStore.$use(
+        (storeValue) => `${prefixFromProp}${storeValue}`,
+        [prefixFromProp] // Selector re-runs if prefixFromProp changes
+      );
+
+      return (
+        <div>
+          <p>{displayValue}</p>
+          <input
+            type="text"
+            value={someStore.$get()} // For controlled input, get raw value
+            onChange={(e) => setValueInStore(e.target.value)}
+          />
+        </div>
+      );
+    }
+    ```
+
+4.  **Partial updates with objects using `$use`:**
+    When a store (or a part of a store accessed via `$use`) holds an object, the `setState` function returned by `$use` supports partial updates. Provide an object with only the properties you want to change.
+
+    ```tsx
+    // store.ts
+    import { createStore } from "@ibnlanre/portal";
+    export const userStore = createStore({
+      name: "Alex",
+      age: 30,
+      city: "Anytown",
+    });
+
+    // Component.tsx
+    import React from "react";
+    import { userStore } from "./store";
+
+    function UserProfile() {
+      const [user, setUser] = userStore.$use();
+
+      const handleAgeIncrease = () => {
+        setUser({ age: user.age + 1 }); // Only age is updated; name and city are preserved.
+      };
+
+      const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setUser({ name: event.target.value }); // Only name is updated.
+      };
+
+      return (
+        <div>
+          <input type="text" value={user.name} onChange={handleNameChange} />
+          <p>Age: {user.age}</p>
+          <p>City: {user.city}</p>
+          <button onClick={handleAgeIncrease}>Increase Age</button>
+        </div>
+      );
+    }
+    ```
+
+### Define actions: Functions in stores
+
+You can include functions within the initial state object of a composite store. These functions become methods on the store, allowing you to co-locate state logic (actions) with the state itself. This is useful for encapsulating complex state transitions.
+
+When defining actions, to update state, you must use the variable that holds the store instance. For example, if your store is `const myStore = createStore(...)`, you would use `myStore.someProperty.$set(...)` inside an action, not `this.someProperty.$set(...)`.
+
+**Examples:**
+
+1.  **Counter with actions:**
+
+    ```typescript
+    import { createStore } from "@ibnlanre/portal";
+
+    const counterStore = createStore({
+      value: 0,
+      increment(amount: number = 1) {
+        // To update 'value', use 'counterStore.value'
+        counterStore.value.$set((prev) => prev + amount);
+      },
+      decrement(amount: number = 1) {
+        counterStore.value.$set((prev) => prev - amount);
+      },
+      reset() {
+        counterStore.value.$set(0);
+      },
+    });
+
+    counterStore.increment(5);
+    console.log(counterStore.value.$get()); // 5
+
+    counterStore.decrement();
+    console.log(counterStore.value.$get()); // 4
+
+    counterStore.reset();
+    console.log(counterStore.value.$get()); // 0
+    ```
+
+2.  **Reducer pattern:**
+    You can structure actions to follow a reducer pattern if that fits your application's architecture.
+
+    ```typescript
+    import { createStore } from "@ibnlanre/portal";
+
+    type CounterAction =
+      | { type: "INCREMENT"; payload: number }
+      | { type: "DECREMENT"; payload: number }
+      | { type: "RESET" };
+
+    const dispatchingCounterStore = createStore({
+      value: 0,
+      dispatch(action: CounterAction) {
+        switch (action.type) {
+          case "INCREMENT":
+            // Use 'dispatchingCounterStore.value' to access $set
+            dispatchingCounterStore.value.$set((prev) => prev + action.payload);
+            break;
+          case "DECREMENT":
+            dispatchingCounterStore.value.$set((prev) => prev - action.payload);
+            break;
+          case "RESET":
+            dispatchingCounterStore.value.$set(0);
+            break;
+        }
+      },
+    });
+
+    dispatchingCounterStore.dispatch({ type: "INCREMENT", payload: 5 });
+    console.log(dispatchingCounterStore.value.$get()); // 5
+
+    dispatchingCounterStore.dispatch({ type: "RESET" });
+    console.log(dispatchingCounterStore.value.$get()); // 0
+    ```
+
+### Initialize state asynchronously
+
+You can initialize a store with state fetched asynchronously by passing an `async` function (that returns a `Promise`) to `createStore`. The store will initially be empty (or hold the unresolved Promise object itself, depending on internal handling) until the Promise resolves.
+
+**Important Considerations:**
+
+- The store's methods (`$get`, `$set`, `$act`, `$use`) will operate on the unresolved Promise or an initial empty state until resolution.
+- If the Promise resolves to an object, this object is treated as a single (primitive-like) value within the store. To achieve a nested structure from async data, initialize the store with a placeholder structure (or `null`) and then update it using `$set` once the data is fetched.
+- For complex or relational data, consider normalizing the data shape or using `normalizeObject` before store initialization.
+
+**Example:**
+
+```typescript
+import { createStore } from "@ibnlanre/portal";
+
+interface UserData {
+  id: number;
+  name: string;
+  email: string;
+}
+
+async function fetchInitialData(): Promise<UserData> {
+  // Simulate API call
+  return new Promise((resolve) =>
+    setTimeout(
+      () => resolve({ id: 1, name: "Lyn", email: "lyn@example.com" }),
+      500
+    )
+  );
+}
+
+// Using an async IIFE to manage the promise from createStore
+(async () => {
+  const asyncUserStore = await createStore(fetchInitialData());
+  // At this point, the promise has resolved, and the store is initialized.
+  const userData = asyncUserStore.$get();
+  console.log(userData); // { id: 1, name: "Lyn", email: "lyn@example.com" }
+
+  // userData is a single object. asyncUserStore.id does not exist as a sub-store.
+  // To update, you'd set the whole object:
+  // asyncUserStore.$set({ id: 2, name: "Alex", email: "alex@example.com" });
+})();
+```
+
+If you need a nested store structure from asynchronously loaded data, initialize the store with a placeholder structure (or `null`) and then update it using `$set` once the data is fetched. This allows the composite store structure to be established correctly.
+
+```typescript
+import { createStore } from "@ibnlanre/portal";
+
+interface AppData {
+  user: { name: string; role: string } | null;
+  settings: { theme: string } | null;
+  loading: boolean;
+}
+
+const appDataStore = createStore<AppData>({
+  user: null,
+  settings: null,
+  loading: true,
+});
+
+async function loadAppData() {
+  try {
+    // const fetchedData = await fetchActualDataFromAPI();
+    const fetchedData = {
+      // Example fetched data
+      user: { name: "Sam", role: "admin" },
+      settings: { theme: "dark" },
+    };
+    appDataStore.$set({ ...fetchedData, loading: false });
+    // Now appDataStore.user.name.$get() would work.
+    console.log(appDataStore.user.name.$get()); // "Sam"
+  } catch (error) {
+    console.error("Failed to load app data:", error);
+    appDataStore.$set({ user: null, settings: null, loading: false }); // Handle error state
+  }
+}
+
+loadAppData();
+```
+
+### Handle circular references
+
+`@ibnlanre/portal` handles objects with circular references safely during store creation and operations. This is particularly useful for complex data structures, such as graphs or when working with certain browser objects (after normalization).
+
+**Example:**
+
+```typescript
+import { createStore } from "@ibnlanre/portal";
+
+// Define a type for clarity
+interface Node {
+  name: string;
+  connections: Node[];
+  metadata?: { type: string };
+}
+
+const nodeA: Node = {
+  name: "A",
+  connections: [],
+  metadata: { type: "root" },
+};
+const nodeB: Node = {
+  name: "B",
+  connections: [],
+  metadata: { type: "leaf" },
+};
+
+nodeA.connections.push(nodeB); // nodeA points to nodeB
+nodeB.connections.push(nodeA); // nodeB points back to nodeA (circular reference)
+
+const graphStore = createStore({
+  nodes: [nodeA, nodeB], // 'nodes' is an array of Node objects
+  selectedNode: nodeA, // 'selectedNode' is a Node object
+});
+
+// Accessing data:
+// 1. For 'selectedNode' (a direct object property, so it and its properties are stores)
+console.log(graphStore.selectedNode.name.$get()); // "A"
+if (graphStore.selectedNode.metadata) {
+  // Check if metadata exists
+  console.log(graphStore.selectedNode.metadata.type.$get()); // "root"
+}
+
+// 2. For 'nodes' (an array property; elements are not individual stores)
+const currentNodes = graphStore.nodes.$get(); // Get the array value
+
+// Access properties of objects within the 'currentNodes' array
+console.log(currentNodes[0].name); // "A" (Accessing nodeA.name directly)
+console.log(currentNodes[0].connections[0].name); // "B" (Accessing nodeA.connections[0].name which is nodeB.name)
+// Demonstrating the circular reference is preserved:
+console.log(currentNodes[0].connections[0].connections[0].name); // "A" (nodeA -> nodeB -> nodeA)
+
+// Updates also work correctly:
+// Update via 'selectedNode' store
+graphStore.selectedNode.name.$set("Node Alpha");
+console.log(graphStore.selectedNode.name.$get()); // "Node Alpha"
+
+// The original nodeA object (referenced by selectedNode and within the nodes array) is updated
+console.log(nodeA.name); // "Node Alpha"
+// Verify in the array retrieved from the store
+const updatedNodes = graphStore.nodes.$get();
+console.log(updatedNodes[0].name); // "Node Alpha"
+
+// If you were to update an element within the 'nodes' array, you'd do it like this:
+graphStore.nodes.$set((prevNodes) => {
+  const newNodes = [...prevNodes];
+  // Example: Change name of the second node (nodeB)
+  if (newNodes[1]) {
+    newNodes[1] = { ...newNodes[1], name: "Node Beta" };
+  }
+  return newNodes;
+});
+// Assuming nodeB was correctly updated in the array:
+const finalNodes = graphStore.nodes.$get();
+if (finalNodes[1]) {
+  console.log(finalNodes[1].name); // Should be "Node Beta"
+}
+// And the original nodeB object is also updated if its reference was maintained
+console.log(nodeB.name); // "Node Beta"
+```
+
+### Handle arrays in stores
+
+When your store's state includes arrays, `@ibnlanre/portal` treats them in a specific way:
+
+- **Arrays as store properties**: If an array is a direct property of your initial state object (e.g., `items: [1, 2, 3]` in `createStore({ items: [...] })`), then `store.items` becomes a store instance that manages this array. You can use `$get()`, `$set()`, and `$act()` on `store.items` to interact with the entire array.
+
+  ```typescript
+  const store = createStore({ tags: ["typescript", "state-management"] });
+  const currentTags = store.tags.$get(); // ['typescript', 'state-management']
+  store.tags.$set(["javascript", "react"]); // Replaces the array
+  ```
+
+- **Elements within arrays are not individual stores**: Objects or other values _inside_ an array are treated as plain data. They are not automatically wrapped as individual store instances. This means you cannot call store methods like `$get()` or `$set()` directly on an array element, even if that element is an object.
+
+  ```typescript
+  const store = createStore({
+    users: [
+      { id: 1, name: "Alice" },
+      { id: 2, name: "Bob" },
+    ],
+  });
+
+  // Correct: Get the array, then access elements
+  const usersArray = store.users.$get();
+  const firstUserName = usersArray[0].name; // "Alice"
+
+  // Incorrect: Attempting to treat an array element as a store
+  // const firstUserStore = store.users[0]; // This is not how to access it
+  // const name = store.users[0].name.$get(); // This will cause an error
+  ```
+
+- **Updating arrays**:
+
+  - To replace the entire array, use `$set()` on the array's store property:
+    ```typescript
+    const listStore = createStore({ items: [1, 2, 3] });
+    listStore.items.$set([4, 5, 6]);
+    console.log(listStore.items.$get()); // Output: [4, 5, 6]
+    ```
+  - To modify the array (e.g., add, remove, or update elements), use a functional update with `$set()` on the array's store property. This ensures immutability by creating a new array.
+
+    ```typescript
+    const userListStore = createStore({
+      users: [{ id: 1, name: "Alex", details: { age: 30 } }],
+    });
+
+    // Add a new user
+    userListStore.users.$set((currentUsers) => [
+      ...currentUsers,
+      { id: 2, name: "Jordan", details: { age: 25 } },
+    ]);
+
+    // Update an existing user's name
+    userListStore.users.$set((currentUsers) =>
+      currentUsers.map((user) =>
+        user.id === 1 ? { ...user, name: "Alexandra" } : user
+      )
+    );
+    // To update a nested property within an object in an array:
+    userListStore.users.$set((currentUsers) =>
+      currentUsers.map((user) =>
+        user.id === 1
+          ? { ...user, details: { ...user.details, age: 31 } }
+          : user
+      )
+    );
+    ```
+
+- **Arrays of primitive values**: These are handled straightforwardly. The array itself is the store property.
+
+  ```typescript
+  const numberListStore = createStore({ ids: [101, 102, 103] });
+  numberListStore.ids.$set((prevIds) => [...prevIds, 104]);
+  ```
+
+This behavior ensures that arrays are managed predictably as collections, while direct object properties of a store are augmented for more granular control. If you require each item in a collection to have full store capabilities, consider structuring your state as an object mapping IDs to individual stores, rather than an array of items. For example:
+
+```typescript
+const itemStores = createStore({
+  item_1: { name: "Item A", stock: 10 },
+  item_2: { name: "Item B", stock: 5 },
+});
+// Now itemStores.item_1 is a store, itemStores.item_1.name is a store, etc.
+```
+
+### Normalize objects: `normalizeObject()`
+
+The `normalizeObject()` function converts interface-typed objects (like `window`, DOM elements, or complex API responses that might not be plain JavaScript objects) into dictionary types (`Record<PropertyKey, unknown>`) compatible with composite stores. This is important when an object's structure includes methods, symbols, or other non-serializable parts that shouldn't be part of the reactive state, or when TypeScript's type system for interfaces doesn't align with the expected structure for a composite store.
+
+`normalizeObject` helps by:
+
+- Converting interface types to store-compatible dictionary types.
+- Converting interface types to store-compatible dictionary types.
+- Safely handling circular references within the object during normalization.
+- Filtering out non-data properties like functions and Symbols.
+- Only preserving properties with string or number keys (symbol keys are excluded).
+- Preserving the accessible data structure of the original object.
+
+**Important**: The normalized object will only contain properties with string or number keys. Symbol keys are excluded during normalization.
+
+**Syntax:**
+
+```typescript
+normalizeObject<T extends object>(obj: T): Record<PropertyKey, unknown> // Simplified, actual return might be more specific
+```
+
+- **`obj`**: The object to normalize.
+- **Returns**: A new object that is a "plain" JavaScript object representation of `obj`, suitable for `createStore`.
+
+**Examples:**
+
+1.  **Normalizing the browser's `window` object:**
+
+    ```typescript
+    import { createStore, normalizeObject } from "@ibnlanre/portal";
+
+    // The 'window' object is complex and has an interface type.
+    // Normalizing it makes it suitable for a composite store.
+    const normalizedWindow = normalizeObject(window);
+    const browserInfoStore = createStore(normalizedWindow);
+
+    // Now you can access properties like browserInfoStore.navigator.userAgent.$get()
+    // Note: Functions on window (like alert) would typically be excluded by normalization.
+    console.log(browserInfoStore.location.href.$get());
+    // console.log(browserInfoStore.document.title.$get()); // This might work if 'document' is data-like
+    ```
+
+2.  **Normalizing a custom interface with methods and symbols:**
+
+    ```typescript
+    import { createStore, normalizeObject } from "@ibnlanre/portal";
+
+    interface UserProfileAPI {
+      id: number;
+      getFullName(): string; // A method
+      lastLogin: Date;
+      internalConfig: symbol; // A symbol
+      data: { value: string };
+    }
+
+    const apiResponse: UserProfileAPI = {
+      id: 123,
+      getFullName: () => "Alex Doe",
+      lastLogin: new Date(),
+      internalConfig: Symbol("config"),
+      data: { value: "test" },
+    };
+
+    const normalizedUserProfile = normalizeObject(apiResponse);
+    /*
+      normalizedUserProfile will be:
+      {
+        id: 123,
+        lastLogin: // Date object (preserved as it's data-like)
+        data: { value: "test" }
+      }
+      // The getFullName method and internalConfig symbol are removed by normalization,
+      // as functions and symbol keys are filtered out.
+    */
+
+    const userProfileStore = createStore(normalizedUserProfile);
+    console.log(userProfileStore.id.$get()); // 123
+    console.log(userProfileStore.data.value.$get()); // "test"
+    // userProfileStore.getFullName is undefined (method was stripped)
+    // userProfileStore.internalConfig is undefined (symbol key was excluded)
+    ```
+
+### Persist state
+
+`@ibnlanre/portal` allows you to persist store state across sessions using storage adapters. These adapters provide `getState` and `setState` functions that you integrate with your store.
+
+#### Web Storage adapters
+
+Use `createLocalStorageAdapter` or `createSessionStorageAdapter` to persist state in the browser's Local Storage or Session Storage.
+
+**Common Options:**
+
+- `key: string`: **Required**. A unique string identifying this store's data in web storage.
+- `stringify?: (state: any) => string`: Optional. A function to serialize the state before saving. Defaults to `JSON.stringify`.
+- `parse?: (storedString: string) => any`: Optional. A function to deserialize the state after loading. Defaults to `JSON.parse`.
+
+**Return Value:**
+Both adapters return a tuple: `[getStateFunction, setStateFunction]`.
+
+- `getStateFunction(): S | null`: Retrieves the state from storage. Returns `null` if no state is found for the key.
+- `setStateFunction(newState: S): void`: Saves the new state to storage.
+
+**1. `createLocalStorageAdapter`**
+Persists state in `localStorage`. Data remains until explicitly cleared or removed by the user/browser.
+
+**Example:**
 
 ```typescript
 import { createStore, createLocalStorageAdapter } from "@ibnlanre/portal";
 
-const [getLocalStorageState, setLocalStorageState] = createLocalStorageAdapter({
-  key: "storage",
-  stringify: (state) => btoa(JSON.stringify(state)),
-  parse: (state) => JSON.parse(atob(state)),
+const localStorageAdapter = createLocalStorageAdapter({
+  key: "myAppCounter",
+  // Example with custom serialization (e.g., simple obfuscation)
+  // stringify: (state) => btoa(JSON.stringify(state)),
+  // parse: (storedString) => JSON.parse(atob(storedString)),
 });
+
+const [getStoredCounter, setStoredCounter] = localStorageAdapter;
+
+// Load persisted state or use a default if nothing is stored
+const initialCounterState = getStoredCounter() ?? 0; // Default to 0 if null
+const persistentCounterStore = createStore(initialCounterState);
+
+// Subscribe to store changes to save them to Local Storage
+persistentCounterStore.$act((newState) => {
+  setStoredCounter(newState);
+}, false); // `false` prevents saving immediately on setup, only on actual changes
+
+// Example usage:
+persistentCounterStore.$set(10); // State is now 10 and saved to Local Storage
+persistentCounterStore.$set((prev) => prev + 5); // State is 15 and saved
 ```
 
-The benefit of using the storage [adapters][adapter] is that they can be used to automatically load the state from the storage when the store is being created. This allows you to initialize the store with the persisted state.
+**2. `createSessionStorageAdapter`**
+Persists state in `sessionStorage`. Data remains for the duration of the page session (until the browser tab is closed).
 
-```typescript
-const store = createStore(getLocalStorageState);
-```
-
-To persist the state in the [local storage][local-storage], you can subscribe to the store changes and update the storage with the new state. This ensures that the state is always in sync with the [local storage][local-storage].
-
-```typescript
-store.$act(setLocalStorageState);
-```
-
-#### Session Storage Adapter
-
-The `sessionStorage` adapter works similarly to the `localStorage` adapter. The only difference is that the state is stored in the [session storage][session-storage] instead of the [local storage][local-storage]. This is useful when you want the state to persist only for the duration of the session.
+**Example:**
 
 ```typescript
 import { createStore, createSessionStorageAdapter } from "@ibnlanre/portal";
 
-const [getSessionStorageState, setSessionStorageState] =
+const [getStoredSessionData, setStoredSessionData] =
   createSessionStorageAdapter({
-    key: "storage",
+    key: "userSessionData",
   });
 
-const store = createStore(getSessionStorageState);
-store.$act(setSessionStorageState);
+const initialSessionData = getStoredSessionData() ?? {
+  guestId: null,
+  lastPage: "/",
+};
+const sessionDataStore = createStore(initialSessionData);
+
+sessionDataStore.$act(setStoredSessionData, false);
+
+// Example:
+sessionDataStore.$set({ guestId: "guest-123", lastPage: "/products" });
+// This data will be cleared when the tab is closed.
 ```
 
-**Note** that both `getLocalStorageState` and `getSessionStorageState` are functions that can take an optional fallback state as an argument. This allows you to provide a default state when the state is not found in the storage.
+#### Cookie Storage adapter
+
+Use `createCookieStorageAdapter` for persisting state in browser cookies.
+
+**Options:**
+
+- `key: string`: **Required**. The name of the cookie.
+- `secret?: string`: Optional. A secret string for signing and verifying cookies. If provided, cookies are tamper-proofed.
+- `options?: CookieOptions`: Optional. An object for cookie attributes:
+  - `path?: string`: Cookie path (e.g., `/`).
+  - `domain?: string`: Cookie domain.
+  - `maxAge?: number`: Max age in seconds (e.g., `3600 * 24 * 7` for 7 days).
+  - `expires?: Date`: Expiration date.
+  - `secure?: boolean`: If `true`, cookie is only sent over HTTPS.
+  - `sameSite?: 'strict' | 'lax' | 'none'`: SameSite attribute.
+- `stringify?` / `parse?`: Same as web storage adapters.
+
+**Return Value:**
+`[getCookieStateFunction, setCookieStateFunction]`
+
+- `getCookieStateFunction(): S | null`: Retrieves and unsigns (if `secret` provided) the cookie value.
+- `setCookieStateFunction(newState: S, newCookieOptions?: CookieOptions): void`: Signs (if `secret` provided) and sets the cookie. `newCookieOptions` can override initial options for this specific set.
+
+**Example:**
 
 ```typescript
-const store = createStore(() => getLocalStorageState("initial value"));
-store.$act(setLocalStorageState);
+import { createStore, createCookieStorageAdapter } from "@ibnlanre/portal";
+
+const cookieAdapter = createCookieStorageAdapter({
+  key: "appPreferences",
+  secret: "your-very-strong-secret-key-for-signing", // Recommended for security
+  options: { path: "/", secure: true, sameSite: "lax", maxAge: 3600 * 24 * 30 }, // 30 days
+});
+
+const [getCookiePrefs, setCookiePrefs] = cookieAdapter;
+
+const initialPrefs = getCookiePrefs() ?? {
+  theme: "light",
+  notifications: true,
+};
+const prefsStore = createStore(initialPrefs);
+
+prefsStore.$act((newPrefs) => {
+  setCookiePrefs(newPrefs);
+  // Example: Update maxAge on a specific change
+  // if (newPrefs.notifications === false) {
+  //   setCookiePrefs(newPrefs, { maxAge: 3600 * 24 }); // Shorter expiry if notifications off
+  // }
+}, false);
+
+prefsStore.$set({ theme: "dark" }); // State saved to a signed cookie
 ```
 
-### Browser Storage Adapter
+**Signed cookies**: If you provide a `secret`, cookies are automatically signed before being set and verified when retrieved. This helps protect against client-side tampering.
 
-Although the storage [adapters][adapter] provided by the library are a select few, if you need to use a different storage mechanism, such as [IndexedDB][indexed-db] or a [custom API][storage], you can create your own [browser storage][browser-storage] adapter. The [browser storage][browser-storage] adapter only requires a **key**, and functions to **get** the item, **set** the item, and **remove** the item from the storage. Other options like `stringify` and `parse` are optional.
+#### Browser Storage adapter
+
+For custom storage mechanisms (e.g., IndexedDB, a remote API, `chrome.storage`), use `createBrowserStorageAdapter`.
+
+**Options:**
+
+- `key: string`: **Required**. A key for your custom storage.
+- `getItem: (key: string) => Promise<string | null> | string | null`: **Required**. Function to retrieve an item.
+- `setItem: (key: string, value: string) => Promise<void> | void`: **Required**. Function to save an item.
+- `removeItem: (key: string) => Promise<void> | void`: **Required**. Function to remove an item.
+- `stringify?` / `parse?`: Same as web storage adapters.
+
+**Return Value:**
+`[getCustomStateFunction, setCustomStateFunction, removeCustomStateFunction]`
+
+- `getCustomStateFunction(): Promise<S | null>` or `S | null`
+- `setCustomStateFunction(newState: S): Promise<void>` or `void`
+- `removeCustomStateFunction(): Promise<void>` or `void`
+
+**Example (using a simple in-memory object as custom storage):**
 
 ```typescript
 import { createStore, createBrowserStorageAdapter } from "@ibnlanre/portal";
 
-const storage = new Storage();
+// Example custom storage (can be async)
+const myCustomStorage = (() => {
+  const data: Record<string, string> = {};
+  return {
+    getItem: (key: string) => data[key] ?? null,
+    setItem: (key: string, value: string) => {
+      data[key] = value;
+    },
+    removeItem: (key: string) => {
+      delete data[key];
+    },
+  };
+})();
 
-const [getStorageState, setStorageState] = createBrowserStorageAdapter({
-  key: "storage",
-  getItem: (key: string) => storage.getItem(key),
-  setItem: (key: string, value: string) => storage.setItem(key, value),
-  removeItem: (key: string) => storage.removeItem(key),
-});
-```
-
-### Cookie Storage Adapter
-
-The last of the storage [adapters][adapter] provided by the library is the `cookie storage` adapter. It is created using the `createCookieStorageAdapter` function, which takes a key and an optional configuration object with cookie options. These options are similar to those provided by the `document.cookie` API.
-
-```typescript
-import { createCookieStorageAdapter } from "@ibnlanre/portal";
-
-const [getCookieStorageState, setCookieStorageState] =
-  createCookieStorageAdapter({
-    key: "storage",
-    domain: "example.com",
-    maxAge: 60 * 60 * 24 * 7, // 1 week
-    path: "/",
+const [getCustomState, setCustomState, removeCustomState] =
+  createBrowserStorageAdapter({
+    key: "myCustomDataKey",
+    getItem: myCustomStorage.getItem,
+    setItem: myCustomStorage.setItem,
+    removeItem: myCustomStorage.removeItem,
   });
+
+// Example usage (assuming synchronous custom storage for simplicity here)
+// const initialCustomData = getCustomState() ?? { lastSync: null };
+// const customDataStore = createStore(initialCustomData);
+// customDataStore.$act(setCustomState, false);
+// customDataStore.$set({ lastSync: new Date().toISOString() });
 ```
 
-#### Signed Cookies
+### Cookie Storage
 
-To enhance security, you can provide a `secret` parameter to [sign][signing] the cookie value. This adds an extra layer of protection, ensuring the cookie value has not been tampered with. To use the `secret` value, set `signed` to `true`.
+Beyond the `createCookieStorageAdapter`, `@ibnlanre/portal` also exposes a `cookieStorage` module. This module provides a collection of utility functions for direct, granular manipulation of browser cookies. You might use these functions if you need to interact with cookies outside the context of a store or require more fine-grained control than the adapter offers.
 
-**Note** that an error will be thrown if `signed` is set to `true` and the `secret` is not provided. To prevent this, ensure that the `secret` is provided or set `signed` to `false` to disable [signing][signing].
+These utilities are particularly helpful for tasks like signing/unsigning cookie values for security, directly reading or writing specific cookies, or managing cookie properties with precision.
 
-```typescript
-import { createCookieStorageAdapter } from "@ibnlanre/portal";
+**Access the module:**
 
-const secret = process.env.COOKIE_SECRET_KEY;
-
-if (!secret) {
-  throw new Error("Cookie secret key is required");
-}
-
-const [getCookieStorageState, setCookieStorageState] =
-  createCookieStorageAdapter({
-    key: "storage",
-    sameSite: "Strict",
-    signed: !!secret,
-    secret,
-  });
-```
-
-#### Updating Cookie Options
-
-One key difference between the `createCookieStorageAdapter` function and the other storage adapter functions is that its `setCookieStorageState` function takes an additional parameter: the `cookie options`. This allows you to update the initial cookie options when setting the cookie value. This is useful when you want to update the `max-age` or `expires` options of the cookie.
-
-```typescript
-const store = createStore(getCookieStorageState);
-
-store.$act((value) => {
-  const expires = new Date(Date.now() + 15 * 60 * 1000);
-
-  setCookieStorageState(value, {
-    secure: true,
-    partitioned: false,
-    httpOnly: true,
-    expires,
-  });
-});
-```
-
-## Cookie Storage
-
-One key module provided by the library is the `cookieStorage` module. This module provides a set of functions to manage [cookies][cookies] in a [web application][web-application]. Just like [localStorage][local-storage] and [sessionStorage][session-storage], [cookies][cookies] are a way to store data in the [browser][web-browser].
-
-### Motivation
-
-[Cookies][cookies] are useful for storing small amounts of data that need to be sent with each request to the server. However, most modern [web browsers][web-browser] do not have a means to manage [cookies][cookies], and this is where the `cookieStorage` module comes in. Accessing the `cookieStorage` module is similar to accessing the other modules provided by the library.
+To use these utilities, import `cookieStorage`:
 
 ```typescript
 import { cookieStorage } from "@ibnlanre/portal";
 ```
 
-### Utility Functions
+The `cookieStorage` object provides the following functions and properties:
 
-All functions in the `cookieStorage` module are static and do not require an [instance][instance] of the module to be created. This is because the module is a utility module that provides a set of functions to manage [cookies][cookies]. The following are the functions provided by the `cookieStorage` module:
+#### `sign()`
 
-- **sign(value: string, secret: string): string**
+Signs a string value using a secret key. This is useful for creating tamper-proof cookie values.
 
-  - Signs a cookie value using a secret key.
-  - Parameters:
-    - `value`: The cookie value to be signed.
-    - `secret`: The secret key used to sign the cookie.
-  - Returns: The signed cookie value.
-  - Example:
-    ```typescript
-    const signedValue = cookieStorage.sign("value", "secret");
-    ```
-
-- **unsign(signedValue: string, secret: string): string**
-
-  - Unsigns a signed cookie value using a secret key.
-  - Parameters:
-    - `signedValue`: The signed cookie value to be unsigned.
-    - `secret`: The secret key used to unsign the cookie.
-  - Returns: The original cookie value.
-  - Example:
-    ```typescript
-    const originalValue = cookieStorage.unsign(signedValue, "secret");
-    ```
-
-- **getItem(key: string): string**
-
-  - Retrieves the value of a cookie by its key.
-  - Parameters:
-    - `key`: The key of the cookie to retrieve.
-  - Returns: The value of the cookie.
-  - Example:
-    ```typescript
-    const value = cookieStorage.getItem("key");
-    ```
-
-- **setItem(key: string, value: string): void**
-
-  - Sets the value of a cookie.
-  - Parameters:
-    - `key`: The key of the cookie to set.
-    - `value`: The value to set for the cookie.
-  - Example:
-    ```typescript
-    cookieStorage.setItem("key", "value");
-    ```
-
-- **removeItem(key: string): void**
-
-  - Removes a cookie by its key.
-  - Parameters:
-    - `key`: The key of the cookie to remove.
-  - Example:
-    ```typescript
-    cookieStorage.removeItem("key");
-    ```
-
-- **clear(): void**
-
-  - Clears all cookies.
-  - Example:
-    ```typescript
-    cookieStorage.clear();
-    ```
-
-- **createKey(options: Object): string**
-
-  - Creates a cookie key based on the provided options.
-  - Parameters:
-    - `options.cookieFragmentDescription`: The description of the cookie fragment.
-    - `options.cookiePrefix`: The prefix to use for the cookie key. Default is `""`.
-    - `options.cookieFragmentSizes`: The sizes of the cookie fragments. Default is `[]`.
-    - `options.cookieScope`: The scope of the cookie. Default is `""`.
-    - `options.cookieScopeCase`: The case of the cookie scope. Default is `"title"`.
-    - `options.cookieService`: The service to use for the cookie. Default is `""`.
-    - `options.cookieScopeServiceConnector`: The connector to use for the cookie scope and service. Default is `"-"`.
-    - `options.cookieScopeFragmentConnector`: The connector to use for the cookie scope and fragment. Default is `"_"`.
-    - `options.cookieFragmentsConnector`: The connector to use for the cookie fragments. Default is `""`.
-    - `options.cookieSuffix`: The suffix to use for the cookie key. Default is `""`.
-  - Returns: The generated cookie key.
-  - Example:
-    ```typescript
-    const key = cookieStorage.createKey({
-      cookieFragmentDescription: "Authentication Token",
-      cookiePrefix: "__",
-      cookieFragmentSizes: [2, 3],
-      cookieScopeCase: "title",
-      cookieScope: "session",
-    });
-    ```
-
-- **key(index: number): string**
-
-  - Retrieves the key of a cookie by its index.
-  - Parameters:
-    - `index`: The index of the cookie to retrieve the key for.
-  - Returns: The key of the cookie.
-
+- **Parameters**:
+  - `value: string`: The string to sign.
+  - `secret: string`: The secret key for signing.
+- **Returns**: `string` - The signed string.
+- **Example**:
   ```typescript
-  const key = cookieStorage.key(0);
+  const originalValue = "user-session-data";
+  const secretKey = "your-super-secret-key";
+  const signedValue = cookieStorage.sign(originalValue, secretKey);
+  // signedValue might look like "user-session-data.asdfjklsemf..."
   ```
 
-- **length: number**
+#### `unsign()`
 
-  - Retrieves the number of cookies stored.
-  - Returns: The number of cookies.
+Verifies and unsigns a previously signed string using the corresponding secret key.
 
+- **Parameters**:
+  - `signedValue: string`: The signed string to unsign.
+  - `secret: string`: The secret key used for signing.
+- **Returns**: `string | false` - The original string if the signature is valid, or `false` if tampering is detected or the secret is incorrect.
+- **Example**:
   ```typescript
-  const length = cookieStorage.length;
+  const potentiallyTamperedValue = "user-session-data.asdfjklsemf...";
+  const secretKey = "your-super-secret-key";
+  const originalValue = cookieStorage.unsign(
+    potentiallyTamperedValue,
+    secretKey
+  );
+  if (originalValue === false) {
+    console.error("Cookie signature is invalid!");
+  } else {
+    console.log("Original value:", originalValue);
+  }
   ```
 
-## Contributions
+#### `getItem()`
 
-All contributions are welcome and appreciated. You can reach me on [Twitter](https://twitter.com/ibnlanre) or [GitHub](https://github.com/ibnlanre) to discuss ideas, report issues, or contribute code. If you find a bug or have a feature request, please open an issue on the [GitHub repository](https://github.com/ibnlanre/portal/issues).
+Retrieves the value of a cookie by its name (key).
 
-If you want to contribute code, please fork the repository, make your changes, and submit a pull request. Make sure to follow the [contribution guidelines](CONTRIBUTING.md) and include tests for any new features or bug fixes.
+- **Parameters**:
+  - `key: string`: The name of the cookie.
+- **Returns**: `string | null` - The cookie's value, or `null` if the cookie is not found.
+- **Example**:
+  ```typescript
+  const themePreference = cookieStorage.getItem("userTheme");
+  if (themePreference) {
+    console.log("User theme:", themePreference);
+  }
+  ```
 
-Your contributions help make `@ibnlanre/portal` a better state management library for everyone. Whether it's fixing bugs, improving documentation, or adding new features, your efforts are greatly appreciated. Thank you! 💚
+#### `setItem()`
+
+Sets or updates a cookie's value. You can also provide cookie options.
+
+- **Parameters**:
+  - `key: string`: The name of the cookie.
+  - `value: string`: The value to store in the cookie.
+  - `options?: CookieOptions`: Optional. An object specifying cookie attributes (e.g., `path`, `expires`, `secure`). Refer to the `CookieOptions` type definition for details.
+- **Returns**: `void`
+- **Example**:
+  ```typescript
+  cookieStorage.setItem("userToken", "abc123xyz789", {
+    secure: true,
+    path: "/",
+    maxAge: 3600 * 24, // 1 day in seconds
+  });
+  ```
+
+#### `removeItem()`
+
+Removes a cookie by its name.
+
+- **Parameters**:
+  - `key: string`: The name of the cookie to remove.
+  - `options?: CookieOptions`: Optional. Cookie options (like `path` and `domain`) that must match the options used when the cookie was set for successful removal.
+- **Returns**: `void`
+- **Example**:
+  ```typescript
+  cookieStorage.removeItem("userToken", { path: "/" });
+  ```
+
+#### `clear()`
+
+Attempts to clear all cookies accessible to the current document's path and domain by setting their expiration date to the past. Note that this might not remove cookies set with specific `path` or `domain` attributes unless those are also iterated and cleared individually.
+
+- **Returns**: `void`
+- **Example**:
+  ```typescript
+  cookieStorage.clear(); // Clears cookies for the current path/domain
+  ```
+
+#### `createKey()`
+
+Constructs a standardized cookie name string based on a set of provided options. This helps maintain consistent naming conventions for cookies across your application.
+
+- **Parameters**: An object with the following optional properties:
+  - `cookieFragmentDescription?: string`: A description for the cookie's purpose (e.g., "Authentication Token").
+  - `cookiePrefix?: string`: A prefix for the cookie name (e.g., `"__Host-"`). Default: `""`.
+  - `cookieFragmentSizes?: number[]`: Array defining sizes for fragments if the description is segmented. Default: `[]`.
+  - `cookieScope?: string`: The scope of the cookie (e.g., "session", "user"). Default: `""`.
+  - `cookieScopeCase?: "title" | "upper" | "lower" | "camel" | "snake" | "pascal" | "header" | "constant"`: The case formatting for the scope part. Default: `"title"`.
+  - `cookieService?: string`: The service associated with the cookie. Default: `""`.
+  - `cookieScopeServiceConnector?: string`: Connector between scope and service. Default: `"-"`.
+  - `cookieScopeFragmentConnector?: string`: Connector between scope and fragment description. Default: `"_"`.
+  - `cookieFragmentsConnector?: string`: Connector between multiple fragments of the description. Default: `""`.
+  - `cookieSuffix?: string`: A suffix for the cookie name. Default: `""`.
+- **Returns**: `string` - The generated cookie name.
+- **Example**:
+  ```typescript
+  const authTokenKey = cookieStorage.createKey({
+    cookieFragmentDescription: "Authentication Token",
+    cookiePrefix: "__Secure-",
+    cookieScope: "userSession",
+    cookieScopeCase: "camel",
+  });
+  // authTokenKey might be "__Secure-userSession_AuthenticationToken"
+  console.log(authTokenKey);
+  ```
+
+#### `key()`
+
+Retrieves the name (key) of a cookie at a specific index in the document's cookie string. The order of cookies can be browser-dependent.
+
+- **Parameters**:
+  - `index: number`: The zero-based index of the cookie.
+- **Returns**: `string | null` - The cookie name at the specified index, or `null` if the index is out of bounds.
+- **Example**:
+  ```typescript
+  const firstCookieName = cookieStorage.key(0);
+  if (firstCookieName) {
+    console.log("Name of the first cookie:", firstCookieName);
+  }
+  ```
+
+#### `length` (Property)
+
+Retrieves the total number of cookies accessible to the current document.
+
+- **Type**: `number`
+- **Example**:
+  ```typescript
+  const numberOfCookies = cookieStorage.length;
+  console.log(`There are ${numberOfCookies} cookies.`);
+  ```
+
+## Explore advanced usage
+
+While `createStore()` is the recommended and most common way to create stores, `@ibnlanre/portal` also exports direct store creation functions for specific scenarios or finer control.
+
+### Use direct store creation functions
+
+#### `createPrimitiveStore()`
+
+Creates a store specifically for a single, primitive value (string, number, boolean, null, undefined, symbol, bigint).
+
+**Syntax:**
+
+```typescript
+createPrimitiveStore<S extends Primitives>(initialState: S): PrimitiveStore<S>
+```
+
+- **`initialState`**: The initial primitive value.
+- **Returns**: A `PrimitiveStore<S>` instance.
+
+**When to use:**
+
+- When you are certain the state will always be a primitive value and want to be explicit.
+- In rare cases where `createStore()` type inference for primitives might need disambiguation (though generally robust).
+
+**Example:**
+
+```typescript
+import { createPrimitiveStore } from "@ibnlanre/portal";
+
+const isActiveStore = createPrimitiveStore(false);
+console.log(isActiveStore.$get()); // false
+isActiveStore.$set(true);
+```
+
+#### `createCompositeStore()`
+
+Creates a store specifically for an object, enabling nested state structures.
+
+**Syntax:**
+
+```typescript
+createCompositeStore<S extends GenericObject>(initialState: S): CompositeStore<S>
+```
+
+- **`initialState`**: The initial object. Each property can become a nested store.
+- **Returns**: A `CompositeStore<S>` instance.
+
+**When to use:**
+
+- When you are explicitly defining a store for an object structure.
+- If you are building higher-level abstractions on top of the library and need direct access to composite store creation.
+
+**Example:**
+
+```typescript
+import { createCompositeStore } from "@ibnlanre/portal";
+
+const userDetailsStore = createCompositeStore({
+  username: "guest",
+  permissions: { read: true, write: false },
+});
+
+console.log(userDetailsStore.username.$get()); // "guest"
+userDetailsStore.permissions.write.$set(true);
+```
+
+Using `createStore()` is generally preferred as it automatically determines whether to create a primitive or composite store based on the `initialState`.
+
+## Optimize performance
+
+`@ibnlanre/portal` is designed for performance, but here are some tips for optimal usage in complex applications:
+
+- **Use selectors for reactive derived data**: When you need derived state that should update when dependencies change, use selectors with `$use()` that depend on the actual store state, not external variables.
+
+  ```typescript
+  // ✅ Correct: Selector depends on store state - updates reactively
+  const [userItems] = appStore.$use((state) =>
+    state.items.filter((item) => item.ownedBy === state.selectedUserId)
+  );
+
+  // ❌ Incorrect: External variable captured in closure - won't update
+  const [userItems] = itemsStore.$use(
+    (items) => items.filter((item) => item.ownedBy === selectedUserId) // selectedUserId is external
+  );
+  ```
+
+- **Leverage dependency arrays for expensive computations**: When using selectors with `$use()`, provide a dependency array for expensive computations to prevent unnecessary recalculations.
+
+  ```typescript
+  // Expensive calculation with proper dependencies
+  const [processedData] = store.$use(
+    (state) => expensiveDataProcessing(state.rawData, complexConfig),
+    [complexConfig] // Only re-run if complexConfig changes
+  );
+  ```
+
+- **Choose the right approach for derived state**: Use different patterns based on your reactivity needs:
+
+  ```typescript
+  // For reactive derived state (updates components automatically)
+  const [totalPrice] = cartStore.$use((cart) =>
+    cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  );
+
+  // For one-time calculations (doesn't subscribe to changes)
+  const handleCheckout = () => {
+    const total = cartStore.$get((cart) =>
+      cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    );
+    processPayment(total);
+  };
+  ```
+
+- **Avoid common reactivity pitfalls**:
+
+  - **Don't use `useMemo` with incomplete dependencies**: If you use React's `useMemo` for derived state, ensure all store data is included in the dependency array.
+  - **Don't capture external variables in selectors**: Selectors should depend only on the store state they receive as their parameter.
+  - **Use store-level selectors for cross-store dependencies**: When deriving data from multiple stores, use a parent store that contains all the data.
+
+- **Structure state for optimal updates**: Organize your state to minimize unnecessary re-renders:
+
+  ```typescript
+  // ✅ Good: Related data grouped together
+  const uiStore = createStore({
+    modals: { loginVisible: false, cartVisible: false },
+    notifications: { count: 0, items: [] },
+    theme: "dark",
+  });
+
+  // ❌ Less optimal: Separate stores for closely related UI state
+  const loginModalStore = createStore(false);
+  const cartModalStore = createStore(false);
+  const notificationStore = createStore({ count: 0, items: [] });
+  ```
+
+- **Use granular subscriptions**: Subscribe only to the specific parts of state your component needs:
+
+  ```typescript
+  // ✅ Subscribe only to theme
+  const [theme] = uiStore.theme.$use();
+
+  // ❌ Subscribe to entire UI store when only theme is needed
+  const [uiState] = uiStore.$use();
+  const theme = uiState.theme;
+  ```
+
+- **Optimize array and collection handling**:
+
+  - For large collections, consider pagination or virtualization at the component level.
+  - Use functional updates to avoid recreating entire arrays when adding/removing items:
+
+    ```typescript
+    // Add item efficiently
+    listStore.items.$set((prevItems) => [...prevItems, newItem]);
+
+    // Remove item efficiently
+    listStore.items.$set((prevItems) =>
+      prevItems.filter((item) => item.id !== targetId)
+    );
+    ```
+
+- **Batch related updates**: When making multiple related changes, batch them to prevent intermediate re-renders:
+
+  ```typescript
+  // ✅ Single update for related changes
+  userStore.$set((prevUser) => ({
+    ...prevUser,
+    name: newName,
+    email: newEmail,
+    lastUpdated: Date.now(),
+  }));
+
+  // ❌ Multiple separate updates trigger multiple re-renders
+  userStore.name.$set(newName);
+  userStore.email.$set(newEmail);
+  userStore.lastUpdated.$set(Date.now());
+  ```
+
+- **Optimize persistence operations**: For frequently changing state, debounce or throttle persistence to avoid performance costs:
+
+  ```typescript
+  const debouncedSave = debounce((state) => {
+    localStorage.setItem("appState", JSON.stringify(state));
+  }, 1000);
+
+  store.$act(debouncedSave, false);
+  ```
+
+- **Profile and measure**: Use React DevTools Profiler and browser performance tools to identify actual performance bottlenecks rather than premature optimization.
+
+## Understand limitations
+
+While `@ibnlanre/portal` is versatile, it's important to be aware of its limitations:
+
+- **Serialization for persistence**: When using persistence adapters (localStorage, sessionStorage, cookies), the state must be serializable. Functions, Symbols, `undefined` (in some parts of objects when using `JSON.stringify`), or complex class instances might not serialize/deserialize correctly by default. Customize `stringify` and `parse` options in adapters for complex scenarios. Functions within stores (actions) are not persisted.
+- **`normalizeObject()` behavior**: The `normalizeObject()` utility is designed to convert complex objects into plain data structures suitable for stores. It strips out functions and symbol keys, keeping only properties with string or number keys. If you need to retain functions or symbol properties, this utility is not suitable, and you'll need to handle them separately or use a different approach.
+- **Reactivity scope**: Reactivity is triggered by changes to store values. If you mutate an object or array obtained via `$get()` directly (without using `$set()`), the store will not detect the change, and subscribers (including React components using `$use()`) will not update. Always use `$set()` or the updater function from `$use()` to modify state.
+- **Promise resolution in `createStore`**: When `createStore` is initialized with a Promise, the resolved value is treated as a single entity. If the Promise resolves to an object, this object becomes the state of a primitive-like store, not a composite store with automatically created nested properties. To achieve a nested structure from async data, initialize the store with a placeholder and use `$set()` after data fetching.
+- **Server-Side Rendering (SSR)**: While stores can be used in Node.js environments, managing state hydration and consistency in SSR setups requires careful consideration. The library itself doesn't provide out-of-the-box SSR-specific utilities beyond its core functionality.
+
+## Follow best practices
+
+To make the most of `@ibnlanre/portal`, consider these best practices:
+
+- **Organize stores logically**:
+  - **Feature-based**: Create stores related to specific features or domains of your application (e.g., `userStore`, `productStore`, `settingsStore`).
+  - **UI state**: Separate stores for UI-specific state (e.g., `modalStore`, `notificationStore`) if it helps with clarity.
+- **Keep state minimal**: Only store data that represents the actual state of your application. Derive computed values using selectors.
+- **Embrace immutability**: Always use `$set()` or the updater from `$use()` to change state. Avoid direct mutations.
+- **Co-locate actions**: Define actions (functions) within your composite stores to keep state logic close to the state it manages. This improves encapsulation and maintainability.
+- **Use selectors for derived data**: Prevent redundant state and keep your stores lean by computing derived values on the fly.
+  ```typescript
+  const cartStore = createStore({ items: [{ price: 10, quantity: 2 }] });
+  const totalCost = cartStore.$get((state) =>
+    state.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  );
+  ```
+- **Choose the right persistence adapter**:
+  - `localStorage`: For persistent user preferences or data that should survive browser restarts.
+  - `sessionStorage`: For temporary data related to a single session (e.g., form data, current tab state).
+  - `cookieStorage`: For small pieces of data that need to be sent with HTTP requests or shared across subdomains, or when signed/secure cookies are needed.
+- **Type safety**: Leverage TypeScript. Define clear types for your state and actions.
+- **Testing**:
+  - Store logic (actions, selectors) can often be tested independently of UI components.
+  - For components using stores, mock the stores or provide initial states suitable for your test cases.
+- **Naming conventions**: Use clear and consistent names for your stores and state properties (e.g., `userStore`, `profileSettingsStore`).
+
+## Troubleshoot common issues
+
+Here are some common issues and how to resolve them:
+
+| Problem                                       | Possible Cause                                                     | Solution                                                                                                                                                            |
+| :-------------------------------------------- | :----------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Component not re-rendering after state change | Store not updated via `$set()` or updater from `$use()`.           | Ensure all state modifications use the store's update mechanisms.                                                                                                   |
+|                                               | Selector in `$use(selector, deps)` has incorrect dependencies.     | Verify the `deps` array for selectors in `$use()`.                                                                                                                  |
+|                                               | Using `$get()` in render path instead of `$use()`.                 | Use `$use()` to subscribe React components to store changes. `$get()` does not subscribe.                                                                           |
+|                                               | Selector captures external variables instead of store state.       | Ensure selectors depend only on the store state parameter, not external variables. Use store-level selectors for cross-store dependencies.                          |
+| Derived state not updating reactively         | Using `useMemo` with incomplete dependencies.                      | Include all store data in `useMemo` dependencies, or better yet, use `$use()` with a selector that depends on store state.                                          |
+|                                               | External variables captured in selector closure.                   | Rewrite selectors to depend on store state: `store.$use(state => state.items.filter(item => item.ownedBy === state.selectedUserId))`.                               |
+| Array elements treated as stores              | Attempting to call store methods on array elements.                | Array elements are plain data. Use `arrayStore.$get()[index].property` instead of `arrayStore[index].property.$get()`.                                              |
+| State not persisting                          | Persistence adapter misconfigured (e.g., wrong key).               | Double-check adapter configuration (`key`, `stringify`, `parse`).                                                                                                   |
+|                                               | Data not serializable (e.g., functions, Symbols).                  | Ensure state is serializable or provide custom `stringify`/`parse` functions.                                                                                       |
+|                                               | Browser storage limits exceeded.                                   | Be mindful of storage limits (especially for cookies and localStorage).                                                                                             |
+| Type errors with store                        | Initial state type mismatch with usage.                            | Ensure the type of `initialState` matches how you intend to use the store.                                                                                          |
+|                                               | Incorrect type in `$set()` or action payload.                      | Verify types for updates and action arguments.                                                                                                                      |
+| Asynchronous data not appearing in store      | Accessing store before Promise in `createStore(promise)` resolves. | `await createStore(promise)` or use `$act()`/`$use()` which will update when the promise resolves.                                                                  |
+|                                               | Promise rejected.                                                  | Add error handling for the promise passed to `createStore` or for the async operation that provides data for `$set()`.                                              |
+| `oldState` is `undefined` in `$act`           | This is expected on the initial immediate call of the subscriber.  | The first time a subscriber is called (if `immediate` is true or default), `oldState` will be `undefined` as there's no "previous" state for that subscription yet. |
+| Circular references causing issues            | While supported, complex interactions might still be tricky.       | Ensure `normalizeObject` is used if input objects are not plain data. Simplify state structure if possible.                                                         |
+| Actions not updating state correctly          | Using `this` context instead of store variable.                    | In action functions, use the store variable (e.g., `myStore.property.$set(value)`) instead of `this.property.$set(value)`.                                          |
+| Functions/symbols missing after normalization | `normalizeObject()` strips functions and symbol keys.              | This is expected behavior. Functions and symbol keys are filtered out. Handle them separately if needed.                                                            |
+
+## Contribute to the project
+
+Contributions are welcome! We appreciate your help in making `@ibnlanre/portal` better.
+You can contribute by:
+
+- Reporting bugs or issues.
+- Suggesting new features or enhancements.
+- Submitting pull requests with code changes or documentation improvements.
+
+Please read our [CONTRIBUTING.md](CONTRIBUTING.md) file for detailed guidelines on how to contribute, including coding standards, testing requirements, and the pull request process.
+
+## Get help and support
+
+If you need help using `@ibnlanre/portal`, the best place to start is the documentation provided in this README and the [API Reference](https://ibnlanre.github.io/portal/). If you have specific questions or need assistance with implementation, you can also check the examples provided in the repository or ask for help in the community. If you encounter issues or have questions:
+
+1.  **Check existing issues**: Look through the [GitHub Issues](https://github.com/ibnlanre/portal/issues) to see if your question has already been addressed.
+2.  **Open a new issue**: If you can't find a solution, open a new issue on GitHub. Provide as much detail as possible, including:
+    - Version of `@ibnlanre/portal`.
+    - Steps to reproduce the issue.
+    - Relevant code snippets.
+    - Error messages, if any.
+3.  **Discussions**: Check the [GitHub Discussions tab](https://github.com/ibnlanre/portal/discussions) (if enabled for the repository) for community help, questions, and to share ideas.
 
 ## License
 
-This library is [licensed][licensed] under the [BSD-3-Clause][bsd-3-clause]. See the [LICENSE](LICENSE) file for more information.
-
-[adapter]: https://blog.stackademic.com/mastering-the-adapter-design-pattern-c118e90f696b
-[api]: https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Client-side_APIs/Introduction
-[asynchronous]: https://www.pluralsight.com/resources/blog/guides/introduction-to-asynchronous-javascript
-[boilerplate]: https://medium.com/theymakedesign/what-is-boilerplate-in-web-code-6062abace58e
-[browser-storage]: https://javascript-conference.com/blog/web-browser-storage/
-[bsd-3-clause]: https://opensource.org/licenses/BSD-3-Clause
-[callback]: https://builtin.com/software-engineering-perspectives/callback-function
-[cdn]: https://www.cloudflare.com/en-gb/learning/cdn/what-is-a-cdn/
-[colocation]: https://kentcdodds.com/blog/colocation
-[cookies]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
-[hook]: https://react.dev/reference/react/hooks
-[html]: https://developer.mozilla.org/en-US/docs/Web/HTML
-[indexed-db]: https://web.dev/articles/indexeddb/
-[initialization]: https://web.dev/learn/javascript/data-types/variable
-[instance]: https://www.altcademy.com/blog/what-is-an-instance-in-javascript/
-[licensed]: https://choosealicense.com/licenses/bsd-3-clause/
-[local-storage]: https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage
-[method]: https://www.altcademy.com/blog/what-are-methods-in-javascript/
-[npm]: https://www.npmjs.com/
-[package-manager]: https://www.cookielab.io/blog/package-managers-comparison-yarn-npm-pnpm
-[pnpm]: https://pnpm.io/
-[promise]: https://www.joshwcomeau.com/javascript/promises/
-[react]: https://react.dev/
-[reducer]: https://www.mitchellhanberg.com/post/2018/10/24/reducers-exploring-state-management-in-react/
-[session-storage]: https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage
-[side-effects]: https://monsterlessons-academy.com/posts/what-are-side-effects-in-javascript-what-are-pure-functions
-[signing]: https://bloggle.coggle.it/post/190706036692/what-weve-learned-from-moving-to-signed-cookies
-[storage]: https://developer.mozilla.org/en-US/docs/Web/API/Storage
-[typeScript]: https://www.typescriptlang.org
-[use-effect]: https://react.dev/reference/react/useEffect
-[use-memo]: https://react.dev/reference/react/useMemo
-[use-state]: https://react.dev/reference/react/useState
-[web-application]: https://aws.amazon.com/what-is/web-application/
-[web-browser]: https://www.ramotion.com/blog/what-is-web-browser/
-[web-storage]: https://www.ramotion.com/blog/what-is-web-storage/
-[xml]: https://developer.mozilla.org/en-US/docs/Web/XML/XML_introduction
-[yarn]: https://yarnpkg.com/
+This project is licensed under the [BSD-3-Clause License](LICENSE).
+Copyright (c) 2025, ibnlanre.
