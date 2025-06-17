@@ -248,7 +248,7 @@ describe("createCompositeStore", () => {
         store.$set({
           user: {
             name: "Jane",
-          } as any,
+          },
         });
 
         expect(store.$get()).toEqual({
@@ -264,7 +264,7 @@ describe("createCompositeStore", () => {
             preferences: {
               theme: "dark",
             },
-          } as any,
+          },
         });
 
         expect(store.$get()).toEqual({
@@ -1045,7 +1045,7 @@ describe("createCompositeStore", () => {
       expect(store.profile.age.$get()).toBe(30);
       expect(store.profile.settings.theme.$get()).toBe("light");
 
-      store.profile.settings.theme.$set("dark" as any);
+      store.profile.settings.theme.$set("dark");
       expect(store.profile.settings.theme.$get()).toBe("dark");
     });
 
@@ -1060,7 +1060,7 @@ describe("createCompositeStore", () => {
       expect(store.user.name.$get()).toBe("John");
       expect(store.user.email.$get()).toBeUndefined();
 
-      store.user.email.$set("john@example.com" as any);
+      store.user.email.$set("john@example.com");
       expect(store.user.email.$get()).toBe("john@example.com");
     });
   });

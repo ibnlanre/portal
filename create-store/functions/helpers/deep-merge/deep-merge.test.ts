@@ -337,7 +337,7 @@ describe("deepMerge", () => {
       const target = { regular: "prop", [sym1]: "target value" };
       const source = { regular: "updated", [sym2]: "source value" };
 
-      const result = deepMerge(target, source) as any;
+      const result = deepMerge(target, source);
 
       expect(result[sym1]).toBe("target value");
       expect(result[sym2]).toBe("source value");
@@ -353,7 +353,11 @@ describe("deepMerge", () => {
 
       const source = { new: "prop", regular: "updated" };
 
-      const result = deepMerge(target, source) as any;
+      const result = deepMerge(target, source) as {
+        hidden: string;
+        new: string;
+        regular: string;
+      };
 
       expect(result.regular).toBe("updated");
       expect(result.new).toBe("prop");
@@ -430,7 +434,7 @@ describe("deepMerge", () => {
       result.config.settings.retries = 9999;
 
       expect(target.config.settings.timeout).toBe(1000);
-      expect((source.config.settings as any).retries).toBe(3);
+      expect(source.config.settings.retries).toBe(3);
     });
   });
 
@@ -447,7 +451,7 @@ describe("deepMerge", () => {
       const target = new Child() as any;
       const source = { childProp: "updated", newProp: "added" };
 
-      const result = deepMerge(target, source) as any;
+      const result = deepMerge(target, source);
 
       expect(result.childProp).toBe("updated");
       expect(result.newProp).toBe("added");

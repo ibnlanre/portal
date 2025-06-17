@@ -51,7 +51,9 @@ export function createCompositeStore<State extends Dictionary>(
 
     subscribers.forEach((set, pathKey) => {
       if (pathKey === "") {
-        set.forEach((subscriber) => subscriber(state as any));
+        set.forEach((subscriber) => {
+          subscriber(state as ResolvePath<State, Paths<State>>);
+        });
       } else if (paths.has(pathKey)) {
         const resolvedValue = resolvePath(state, pathKey);
         set.forEach((subscriber) => subscriber(resolvedValue));
@@ -205,7 +207,7 @@ export function createCompositeStore<State extends Dictionary>(
     Value extends ResolvePath<State, Path>,
   >(state: Value, path?: Path) {
     const store = buildStore(path);
-    return shallowMerge(state, store) as any;
+    return shallowMerge(state, store) as CompositeStore<State>;
   }
 
   function traverse<Path extends Paths<State> = never>(

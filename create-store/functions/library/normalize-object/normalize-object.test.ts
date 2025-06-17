@@ -56,8 +56,7 @@ describe("normalizeObject", () => {
   it("should handle window object without circular reference errors", () => {
     if (typeof window !== "undefined") {
       expect(() => {
-        const normalized = normalizeObject(window as any);
-
+        const normalized = normalizeObject(window);
         expect(typeof normalized).toBe("object");
       }).not.toThrow();
     } else {

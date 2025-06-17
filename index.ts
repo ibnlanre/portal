@@ -14,6 +14,7 @@ export type {
   GetCookieStorage,
   SetCookieStorage,
 } from "@/create-store/types/cookie-storage";
+export type { DeepPartial } from "@/create-store/types/deep-partial";
 export type { Dictionary } from "@/create-store/types/dictionary";
 export type { Factory } from "@/create-store/types/factory";
 export type { Initializer } from "@/create-store/types/initializer";
@@ -22,6 +23,7 @@ export type {
   SetLocalStorage,
 } from "@/create-store/types/local-storage";
 export type { Normalize } from "@/create-store/types/normalize";
+export type { PartialStateSetter } from "@/create-store/types/partial-state-setter";
 export type { Paths } from "@/create-store/types/paths";
 export type { PrimitiveStore } from "@/create-store/types/primitive-store";
 export type { ResolvePath } from "@/create-store/types/resolve-path";
