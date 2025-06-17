@@ -48,14 +48,8 @@
   },
   "exports": {
     ".": {
-      "import": {
-        "default": "./dist/esm/index.js",
-        "types": "./dist/esm/index.d.ts"
-      },
-      "require": {
-        "default": "./dist/cjs/index.js",
-        "types": "./dist/cjs/index.d.ts"
-      }
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
     }
   },
   "files": [
@@ -83,28 +77,28 @@
     "bundle": "tsup --config tsup.config.ts",
     "commit": "git add .",
     "coverage": "vitest run --coverage --typecheck",
-    "dry-run": "pnpm publish --dry-run --no-git-checks",
+    "dry-run": "npm publish --dry-run --no-git-checks",
     "eslint": "eslint --fix .",
     "first-release": "standard-changelog --first-release",
     "lint": "biome lint --write .",
-    "major": "pnpm version major",
-    "minor": "pnpm version minor",
-    "package": "pnpm publish --access public",
-    "patch": "pnpm version patch",
+    "major": "npm version major",
+    "minor": "npm version minor",
+    "package": "npm publish --access public",
+    "patch": "npm version patch",
     "postpack": "git push",
     "postpublish": "git push --tags",
-    "posttest": "pnpm run eslint",
-    "postversion": "pnpm publish --access public",
-    "pre-major": "pnpm version premajor",
-    "pre-minor": "pnpm version preminor",
-    "pre-patch": "pnpm version prepatch",
+    "posttest": "npm run eslint",
+    "postversion": "npm run package",
+    "pre-major": "npm version premajor",
+    "pre-minor": "npm version preminor",
+    "pre-patch": "npm version prepatch",
     "precommit": "standard-changelog --releaseCount 0",
-    "prepublishOnly": "pnpm run bundle",
-    "pretest": "pnpm run typecheck",
-    "preversion": "pnpm run test",
+    "prepublishOnly": "npm run bundle",
+    "pretest": "npm run typecheck",
+    "preversion": "npm run test",
     "test": "vitest run --typecheck",
     "typecheck": "tsc --pretty --noEmit",
-    "version": "pnpm run commit"
+    "version": "npm run commit"
   },
   "version": "5.0.0"
 }
