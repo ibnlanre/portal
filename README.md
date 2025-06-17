@@ -1,7 +1,7 @@
 # @ibnlanre/portal
 
 [![npm version](https://badge.fury.io/js/%40ibnlanre%2Fportal.svg)](https://badge.fury.io/js/%40ibnlanre%2Fportal)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/ibnlanre/portal/ci.yml?branch=main)](https://github.com/ibnlanre/portal/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/ibnlanre/portal/pages/pages-build-deployment?branch=master)](https://github.com/ibnlanre/portal/actions)
 [![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD--3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 `@ibnlanre/portal` is a TypeScript state management library designed to help you manage complex application state with an intuitive API. It focuses on developer experience, robust type safety, and comprehensive features. This document is your complete guide to understanding, installing, and effectively using the library.
