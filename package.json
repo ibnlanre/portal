@@ -100,5 +100,5 @@
     "typecheck": "tsc --pretty --noEmit",
     "version": "npm run commit"
   },
-  "version": "5.0.0"
+  "version": "5.0.1"
 }

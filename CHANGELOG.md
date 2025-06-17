@@ -1,3 +1,12 @@
+## [5.0.1](https://github.com/ibnlanre/portal/compare/v5.0.0...v5.0.1) (2025-06-17)
+
+
+### Bug Fixes
+
+* Update build status badge to reflect correct workflow and branch ([732035b](https://github.com/ibnlanre/portal/commit/732035b5c5575bff96cf393e259d3b13df772777))
+
+
+
 # [5.0.0](https://github.com/ibnlanre/portal/compare/v4.0.1...v5.0.0) (2025-06-17)
 
 
