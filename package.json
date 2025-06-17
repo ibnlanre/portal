@@ -1,74 +1,109 @@
 {
-  "name": "@ibnlanre/portal",
-  "version": "4.0.1",
-  "description": "React state management library",
-  "scripts": {
-    "test": "vitest --typecheck",
-    "coverage": "vitest --coverage --typecheck",
-    "ts-lint": "tsc --pretty --noEmit --project tsconfig.json",
-    "lint": "biome lint --write .",
-    "bundle": "tsup --config tsup.config.ts",
-    "dry-run": "npm pack --dry-run",
-    "package": "npm publish --access public"
-  },
-  "files": [
-    "dist"
-  ],
-  "module": "./dist/esm/index.js",
-  "main": "./dist/cjs/index.js",
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./dist/esm/index.d.ts",
-        "default": "./dist/esm/index.js"
-      },
-      "require": {
-        "types": "./dist/cjs/index.d.ts",
-        "default": "./dist/cjs/index.js"
-      }
-    }
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ibnlanre/portal.git"
-  },
   "author": {
-    "name": "Ridwan Olanrewaju",
-    "email": "olaitanlanre28@gmail.com"
+    "email": "olaitanlanre28@gmail.com",
+    "name": "Ridwan Olanrewaju"
   },
   "bugs": {
     "url": "https://github.com/ibnlanre/portal/issues"
   },
-  "homepage": "https://ibnlanre.github.io/portal/",
-  "peerDependencies": {
-    "react": ">16.7",
-    "react-dom": ">16.7"
-  },
+  "description": "React state management library",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@eslint-react/eslint-plugin": "^1.52.2",
+    "@stylistic/eslint-plugin": "^4.4.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^14.3.1",
     "@types/node": "^20.17.10",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@typescript-eslint/parser": "^8.34.1",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "2.1.8",
+    "@vitest/eslint-plugin": "^1.2.7",
+    "eslint": "^9.29.0",
+    "eslint-import-resolver-typescript": "^4.4.3",
+    "eslint-plugin-import-x": "^4.15.2",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-only-warn": "^1.1.0",
+    "eslint-plugin-paths": "^1.1.0",
+    "eslint-plugin-perfectionist": "^4.14.0",
+    "eslint-plugin-prettier": "^5.4.1",
+    "eslint-plugin-react-redux": "^4.2.2",
+    "eslint-plugin-risxss": "^2.1.0",
+    "eslint-plugin-storybook": "^9.0.10",
+    "globals": "^16.2.0",
     "happy-dom": "^16.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "standard-changelog": "^7.0.1",
     "ts-node": "^10.9.2",
     "tsup": "^8.3.5",
     "typescript": "^5.7.3",
+    "typescript-eslint": "^8.34.1",
     "vitest": "^2.1.8"
   },
   "engines": {
     "node": ">=14"
   },
-  "license": "BSD-3-Clause",
+  "exports": {
+    ".": {
+      "import": {
+        "default": "./dist/esm/index.js",
+        "types": "./dist/esm/index.d.ts"
+      },
+      "require": {
+        "default": "./dist/cjs/index.js",
+        "types": "./dist/cjs/index.d.ts"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "homepage": "https://ibnlanre.github.io/portal/",
   "keywords": [
     "redux",
     "state",
     "store"
-  ]
+  ],
+  "license": "BSD-3-Clause",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "name": "@ibnlanre/portal",
+  "peerDependencies": {
+    "react": ">16.7",
+    "react-dom": ">16.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ibnlanre/portal.git"
+  },
+  "scripts": {
+    "bundle": "tsup --config tsup.config.ts",
+    "commit": "git add .",
+    "coverage": "vitest run --coverage --typecheck",
+    "dry-run": "npm publish --dry-run --no-git-checks",
+    "eslint": "eslint --fix .",
+    "lint": "biome lint --write .",
+    "major": "npm version major",
+    "minor": "npm version minor",
+    "package": "npm publish --access public",
+    "patch": "npm version patch",
+    "postcommit": "git commit --message $npm_package_version",
+    "postpack": "git push",
+    "postpublish": "git push --tags",
+    "posttest": "git pull",
+    "postversion": "npm publish --access public",
+    "pre-major": "npm version premajor",
+    "pre-minor": "npm version preminor",
+    "pre-patch": "npm version prepatch",
+    "precommit": "standard-changelog",
+    "prepublishOnly": "npm run bundle",
+    "pretest": "npm run typecheck",
+    "test": "vitest run --typecheck",
+    "typecheck": "tsc --pretty --noEmit",
+    "version": "npm run commit"
+  },
+  "version": "4.0.1"
 }

@@ -1,35 +1,42 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "vcs": {
-    "enabled": false,
-    "clientKind": "git",
-    "useIgnoreFile": false
-  },
   "files": {
-    "ignoreUnknown": false,
     "ignore": [
       "node_modules",
       "dist"
-    ]
+    ],
+    "ignoreUnknown": false
   },
   "formatter": {
+    "attributePosition": "auto",
+    "bracketSpacing": true,
     "enabled": true,
-    "useEditorconfig": true,
     "formatWithErrors": false,
     "indentStyle": "space",
     "indentWidth": 2,
     "lineEnding": "lf",
     "lineWidth": 80,
-    "attributePosition": "auto",
-    "bracketSpacing": true
+    "useEditorconfig": true
   },
-  "organizeImports": {
-    "enabled": true
+  "javascript": {
+    "formatter": {
+      "arrowParentheses": "always",
+      "attributePosition": "auto",
+      "bracketSameLine": false,
+      "bracketSpacing": true,
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "es5"
+    }
   },
   "linter": {
     "enabled": true,
+    "ignore": [
+      "**/dist/*.d.ts"
+    ],
     "rules": {
-      "recommended": false,
       "complexity": {
         "noBannedTypes": "off",
         "noExtraBooleanCast": "error",
@@ -40,8 +47,8 @@
         "noWith": "error"
       },
       "correctness": {
-        "noConstAssign": "error",
         "noConstantCondition": "error",
+        "noConstAssign": "error",
         "noEmptyCharacterClassInRegex": "error",
         "noEmptyPattern": "error",
         "noGlobalObjectCalls": "error",
@@ -65,11 +72,12 @@
         "useValidForDirection": "error",
         "useYield": "error"
       },
+      "recommended": false,
       "style": {
         "noNamespace": "off",
         "useAsConstAssertion": "error",
-        "useImportType": "error",
-        "useExportType": "error"
+        "useExportType": "error",
+        "useImportType": "error"
       },
       "suspicious": {
         "noAssignInExpressions": "error",
@@ -102,23 +110,10 @@
         "useNamespaceKeyword": "error",
         "useValidTypeof": "error"
       }
-    },
-    "ignore": [
-      "**/dist/*.d.ts"
-    ]
-  },
-  "javascript": {
-    "formatter": {
-      "jsxQuoteStyle": "double",
-      "quoteProperties": "asNeeded",
-      "trailingCommas": "es5",
-      "semicolons": "always",
-      "arrowParentheses": "always",
-      "bracketSameLine": false,
-      "quoteStyle": "double",
-      "attributePosition": "auto",
-      "bracketSpacing": true
     }
+  },
+  "organizeImports": {
+    "enabled": true
   },
   "overrides": [
     {
@@ -203,14 +198,19 @@
       "include": ["**/*.test.ts", "**/*.test.tsx"],
       "linter": {
         "rules": {
-          "suspicious": {
-            "noEmptyBlockStatements": "off"
-          },
           "correctness": {
             "noUnusedVariables": "off"
+          },
+          "suspicious": {
+            "noEmptyBlockStatements": "off"
           }
         }
       }
     }
-  ]
+  ],
+  "vcs": {
+    "clientKind": "git",
+    "enabled": false,
+    "useIgnoreFile": false
+  }
 }

@@ -1,0 +1,37 @@
+# Ignore artifacts:
+build
+dist
+node_modules
+tmp
+
+# Ignore coverage
+coverage
+
+# Ignore config files
+attw.json
+tsconfig.json
+package.json
+pnpm-workspace.yaml
+.storybook
+.prettierrc
+.eslintrc
+
+# Ignore tests
+coverage
+
+# Ignore git
+.gitignore
+.git
+
+# Ignore IDE
+.vscode
+.idea
+*.iml
+
+# Ignore package-lock.json
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Ignore .env
+.env
