@@ -1,35 +1,29 @@
 import react from "@vitejs/plugin-react";
+import tsconfigPaths from "vite-tsconfig-paths";
 
-import { resolve } from "node:path";
 import { defineConfig } from "vitest/config";
-const app = resolve(__dirname, "./");
 
-/**
- * @type {import("vitest/config").Config}
- */
+const exclude = [
+  "./node_modules/**",
+  "./dist/**",
+  "**/types/**",
+  "**/*.config.*",
+  "**/*.d.ts",
+  "**/*.json",
+  "**/*.test.*",
+];
+
 export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: [{ find: "@", replacement: app }],
-  },
+  plugins: [tsconfigPaths(), react()],
   test: {
     coverage: {
       clean: true,
-      exclude: [
-        "./dist/**",
-        "./index.ts",
-        "**/types/**",
-        "**/*.config.*",
-        "**/*.d.ts",
-        "**/*.json",
-        "**/*.test.*",
-      ],
+      exclude,
       include: ["**/*.ts"],
     },
     environment: "happy-dom",
     globals: true,
     logHeapUsage: true,
-    reporters: [],
     setupFiles: "vitest.setup.ts",
   },
 });
