@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { createLocalStorageAdapter } from "./index";
 
 const getItem = vi.spyOn(localStorage, "getItem");
@@ -64,8 +65,8 @@ describe("createLocalStorageAdapter", () => {
 
     const [getLocalStorageState, setLocalStorageState] =
       createLocalStorageAdapter<typeof newState>(key, {
-        stringify: customStringify,
         parse: customParse,
+        stringify: customStringify,
       });
 
     setLocalStorageState(newState);
@@ -81,9 +82,9 @@ describe("createLocalStorageAdapter", () => {
     const originalLocalStorage = localStorage;
 
     Object.defineProperty(window, "localStorage", {
+      configurable: true,
       value: undefined,
       writable: true,
-      configurable: true,
     });
 
     const [getLocalStorageState, setLocalStorageState] =

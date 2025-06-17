@@ -6,5 +6,5 @@ import type { WidenLiterals } from "@/create-store/types/widen-literals";
 export type StoreValueResolver<Value> = Value extends Function
   ? Value
   : NonNullable<Value> extends Dictionary
-  ? CompositeStore<NonNullable<Value>>
-  : BasicStore<WidenLiterals<Value>>;
+    ? CompositeStore<NonNullable<Value>>
+    : BasicStore<WidenLiterals<Value>>;

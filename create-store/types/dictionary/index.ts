@@ -1,5 +1,5 @@
 export type Dictionary = {
-  [k: string]: unknown;
   [k: number]: unknown;
+  [k: string]: unknown;
   [k: symbol]: unknown;
 };

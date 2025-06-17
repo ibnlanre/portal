@@ -9,7 +9,7 @@ import { resolveSegment } from "@/create-store/functions/utilities/resolve-segme
 
 export function resolvePath<
   State extends Dictionary,
-  Path extends Paths<State> = never
+  Path extends Paths<State> = never,
 >(state: State, path?: Path): ResolvePath<State, Path> {
   if (isUndefined(path)) return state as ResolvePath<State, Path>;
 

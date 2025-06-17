@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { safeStringify } from "./index";
 
 describe("safeStringify", () => {

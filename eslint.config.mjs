@@ -170,12 +170,7 @@ const perfectionistConfig = tseslint.config({
       "warn",
       {
         fallbackSort: { order: "asc", type: "alphabetical" },
-        groups: [
-          { commentAbove: "Type exports" },
-          "type-export",
-          { commentAbove: "Value exports" },
-          ["value-export", "unknown"],
-        ],
+        groups: ["type-export", ["value-export", "unknown"]],
         partitionByNewLine: true,
         type: "natural",
       },

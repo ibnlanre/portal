@@ -14,7 +14,7 @@ export function formatCookieOptions({
 }: CookieOptions = {}): string {
   let cookieOptions = `; path=${path}`;
 
-  const { domain, secure, httpOnly, sameSite, maxAge, partitioned, expires } = {
+  const { domain, expires, httpOnly, maxAge, partitioned, sameSite, secure } = {
     ...options,
   };
 

@@ -1,8 +1,9 @@
 import type { CookieOptions } from "@/cookie-storage/types/cookie-options";
 
-import { formatCookieOptions } from "@/cookie-storage/helpers/format-cookie-options";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { setCookieValue } from "./index";
+import { formatCookieOptions } from "@/cookie-storage/helpers/format-cookie-options";
 
 vi.mock("@/cookie-storage/helpers/format-cookie-options");
 
@@ -14,7 +15,7 @@ describe("setCookieValue", () => {
   it("should set a cookie with the specified name and value", () => {
     const name = "testCookie";
     const value = "testValue";
-    const options: CookieOptions = { path: "/", maxAge: 3600 };
+    const options: CookieOptions = { maxAge: 3600, path: "/" };
 
     const expectedOptions = "; path=/; max-age=3600";
     vi.mocked(formatCookieOptions).mockReturnValue(expectedOptions);
@@ -50,9 +51,9 @@ describe("setCookieValue", () => {
     const originalDocument = global.document;
 
     Object.defineProperty(global, "document", {
+      configurable: true,
       value: undefined,
       writable: true,
-      configurable: true,
     });
 
     const name = "testCookie";

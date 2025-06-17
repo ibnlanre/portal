@@ -3,5 +3,5 @@
  *
  * @template Key The type of the key.
  */
-export type ParseAsNumber<Key extends string | number> =
+export type ParseAsNumber<Key extends number | string> =
   Key extends `${infer Value extends number}` ? Value : Key;

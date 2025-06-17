@@ -1,5 +1,7 @@
 import type { CookieOptions } from "@/cookie-storage/types/cookie-options";
+
 import { describe, expect, it, vi } from "vitest";
+
 import { formatCookieOptions } from "./index";
 
 describe("formatCookieOptions", () => {
@@ -68,11 +70,11 @@ describe("formatCookieOptions", () => {
   it("should format multiple options correctly", () => {
     const options: CookieOptions = {
       domain: "example.com",
-      secure: true,
       httpOnly: true,
-      sameSite: "Lax",
       maxAge: 3600,
       partitioned: true,
+      sameSite: "Lax",
+      secure: true,
     };
     const result = formatCookieOptions(options);
     expect(result).toBe(

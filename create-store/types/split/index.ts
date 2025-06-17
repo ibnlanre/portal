@@ -1,15 +1,5 @@
 import type { ParseAsNumber } from "@/create-store/types/parse-as-number";
 
-type SplitHelper<
-  Key extends string,
-  Delimiter extends string,
-  Result extends (string | number)[] = []
-> = Key extends `${infer Head}${Delimiter}${infer Tail}`
-  ? SplitHelper<Tail, Delimiter, [...Result, ParseAsNumber<Head>]>
-  : Key extends ""
-  ? Result
-  : [...Result, ParseAsNumber<Key>];
-
 /**
  * Represents the split of a key.
  *
@@ -20,5 +10,15 @@ type SplitHelper<
  */
 export type Split<
   Key extends string,
-  Delimiter extends string = "."
+  Delimiter extends string = ".",
 > = SplitHelper<Key, Delimiter>;
+
+type SplitHelper<
+  Key extends string,
+  Delimiter extends string,
+  Result extends (number | string)[] = [],
+> = Key extends `${infer Head}${Delimiter}${infer Tail}`
+  ? SplitHelper<Tail, Delimiter, [...Result, ParseAsNumber<Head>]>
+  : Key extends ""
+    ? Result
+    : [...Result, ParseAsNumber<Key>];

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { tryParse } from "./index";
 
 describe("tryParse", () => {

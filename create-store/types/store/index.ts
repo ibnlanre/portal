@@ -9,7 +9,7 @@ export interface Store {
   <State extends Dictionary>(state: Factory<State>): CompositeStore<State>;
   <State>(state: Initializer<Promise<State>>): Promise<PrimitiveStore<State>>;
   <State>(state: Factory<State>): PrimitiveStore<State>;
-  <State>(state?: Possible<Factory<State | undefined>>): PrimitiveStore<
-    State | undefined
-  >;
+  <State>(
+    state?: Possible<Factory<State | undefined>>
+  ): PrimitiveStore<State | undefined>;
 }

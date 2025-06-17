@@ -4,7 +4,7 @@
  * @param {string} name The name of the cookie to retrieve.
  * @returns {string | null} The value of the cookie if found, or null if the cookie is not found or if document is not defined.
  */
-export function getCookieValueByRegex(name: string): string | null {
+export function getCookieValueByRegex(name: string): null | string {
   try {
     if (typeof document === "undefined") return null;
 

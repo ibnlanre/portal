@@ -1,28 +1,28 @@
+import type { Normalize } from "./index";
 import type { Dictionary } from "@/create-store/types/dictionary";
 import type { GenericObject } from "@/create-store/types/generic-object";
-import type { Normalize } from "./index";
 
 import { describe, expectTypeOf, it } from "vitest";
 
 describe("Normalize", () => {
   it("should preserve all properties from the original object", () => {
     interface Input {
-      name: string;
-      age: number;
       active: boolean;
+      age: number;
+      name: string;
     }
     type Result = Normalize<Input>;
-    type Expected = { name: string; age: number; active: boolean };
+    type Expected = { active: boolean; age: number; name: string };
     expectTypeOf<Result>().toMatchTypeOf<Expected>();
   });
 
   it("should handle objects with string keys", () => {
     interface Input {
-      foo: string;
       bar: number;
+      foo: string;
     }
     type Result = Normalize<Input>;
-    type Expected = { foo: string; bar: number };
+    type Expected = { bar: number; foo: string };
     expectTypeOf<Result>().toMatchTypeOf<Expected>();
   });
 
@@ -38,49 +38,49 @@ describe("Normalize", () => {
 
   it("should handle objects with mixed key types", () => {
     interface Input {
-      stringKey: string;
       42: number;
       [key: string]: any;
+      stringKey: string;
     }
     type Result = Normalize<Input>;
     type Expected = {
-      stringKey: string;
       42: number;
       [key: string]: any;
+      stringKey: string;
     };
     expectTypeOf<Result>().toMatchTypeOf<Expected>();
   });
 
   it("should handle nested objects", () => {
     interface Input {
+      metadata: { created: Date };
       user: {
-        profile: { name: string; age: number };
+        profile: { age: number; name: string };
         settings: { theme: string };
       };
-      metadata: { created: Date };
     }
     type Result = Normalize<Input>;
     type Expected = {
+      metadata: { created: Date };
       user: {
-        profile: { name: string; age: number };
+        profile: { age: number; name: string };
         settings: { theme: string };
       };
-      metadata: { created: Date };
     };
     expectTypeOf<Result>().toMatchTypeOf<Expected>();
   });
 
   it("should handle optional properties", () => {
     interface Input {
-      required: string;
-      optional?: number;
       nested?: { value: boolean };
+      optional?: number;
+      required: string;
     }
     type Result = Normalize<Input>;
     type Expected = {
-      required: string;
-      optional?: number;
       nested?: { value: boolean };
+      optional?: number;
+      required: string;
     };
     expectTypeOf<Result>().toMatchTypeOf<Expected>();
   });
@@ -88,27 +88,27 @@ describe("Normalize", () => {
   it("should handle arrays as property values", () => {
     interface Input {
       items: string[];
-      users: { id: number; name: string }[];
       numbers: number[];
+      users: { id: number; name: string }[];
     }
     type Result = Normalize<Input>;
     type Expected = {
       items: string[];
-      users: { id: number; name: string }[];
       numbers: number[];
+      users: { id: number; name: string }[];
     };
     expectTypeOf<Result>().toMatchTypeOf<Expected>();
   });
 
   it("should handle complex union types", () => {
     interface Input {
-      value: string | number | boolean;
-      data: { type: "user" } | { type: "admin"; permissions: string[] };
+      data: { permissions: string[]; type: "admin" } | { type: "user" };
+      value: boolean | number | string;
     }
     type Result = Normalize<Input>;
     type Expected = {
-      value: string | number | boolean;
-      data: { type: "user" } | { type: "admin"; permissions: string[] };
+      data: { permissions: string[]; type: "admin" } | { type: "user" };
+      value: boolean | number | string;
     };
     expectTypeOf<Result>().toMatchTypeOf<Expected>();
   });
@@ -122,8 +122,8 @@ describe("Normalize", () => {
 
   it("should be assignable to Dictionary", () => {
     interface Input {
-      name: string;
       age: number;
+      name: string;
     }
     type Result = Normalize<Input>;
     expectTypeOf<Result>().toMatchTypeOf<Dictionary>();
@@ -139,14 +139,14 @@ describe("Normalize", () => {
 
   it("should handle objects with function properties", () => {
     interface Input {
-      name: string;
       getValue: () => number;
+      name: string;
       process: (input: string) => boolean;
     }
     type Result = Normalize<Input>;
     type Expected = {
-      name: string;
       getValue: () => number;
+      name: string;
       process: (input: string) => boolean;
     };
     expectTypeOf<Result>().toMatchTypeOf<Expected>();
@@ -154,27 +154,27 @@ describe("Normalize", () => {
 
   it("should handle objects with symbol keys", () => {
     interface Input {
-      regularKey: string;
       [key: symbol]: any;
+      regularKey: string;
     }
     type Result = Normalize<Input>;
     type Expected = {
-      regularKey: string;
       [key: symbol]: any;
+      regularKey: string;
     };
     expectTypeOf<Result>().toMatchTypeOf<Expected>();
   });
 
   it("should handle readonly properties", () => {
     interface Input {
-      readonly id: string;
       readonly config: { readonly value: number };
+      readonly id: string;
       mutable: string;
     }
     type Result = Normalize<Input>;
     type Expected = {
-      readonly id: string;
       readonly config: { readonly value: number };
+      readonly id: string;
       mutable: string;
     };
     expectTypeOf<Result>().toMatchTypeOf<Expected>();
@@ -185,8 +185,8 @@ describe("Normalize", () => {
       id: number;
       name: string;
       preferences: {
-        theme: "light" | "dark";
         notifications: boolean;
+        theme: "dark" | "light";
       };
     }
 
@@ -195,22 +195,22 @@ describe("Normalize", () => {
       id: number;
       name: string;
       preferences: {
-        theme: "light" | "dark";
         notifications: boolean;
+        theme: "dark" | "light";
       };
     };
     expectTypeOf<Result>().toMatchTypeOf<Expected>();
   });
 
   it("should handle objects extending other types", () => {
-    type BaseType = { id: string; created: Date };
-    type Input = BaseType & { name: string; active: boolean };
+    type BaseType = { created: Date; id: string };
+    type Input = BaseType & { active: boolean; name: string };
     type Result = Normalize<Input>;
     type Expected = {
-      id: string;
-      created: Date;
-      name: string;
       active: boolean;
+      created: Date;
+      id: string;
+      name: string;
     };
     expectTypeOf<Result>().toMatchTypeOf<Expected>();
   });
@@ -224,14 +224,14 @@ describe("Normalize", () => {
 
   it("should handle objects with index signatures", () => {
     interface Input {
-      [key: string]: string | number;
       [key: number]: number;
+      [key: string]: number | string;
       specificProp: string;
     }
     type Result = Normalize<Input>;
     type Expected = {
-      [key: string]: string | number;
       [key: number]: number;
+      [key: string]: number | string;
       specificProp: string;
     };
     expectTypeOf<Result>().toMatchTypeOf<Expected>();
@@ -251,22 +251,22 @@ describe("Normalize", () => {
 
   it("should preserve never types", () => {
     interface Input {
-      validKey: string;
       neverKey: never;
+      validKey: string;
     }
     type Result = Normalize<Input>;
     type Expected = {
-      validKey: string;
       neverKey: never;
+      validKey: string;
     };
     expectTypeOf<Result>().toMatchTypeOf<Expected>();
   });
 
   it("should handle circular references in type definitions", () => {
     type Node = {
-      value: string;
       children: Node[];
       parent?: Node;
+      value: string;
     };
     interface Input {
       root: Node;

@@ -5,6 +5,7 @@ import type {
 } from "@/create-store/types/browser-storage-adapter";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { createBrowserStorageAdapter } from "./index";
 
 describe("createBrowserStorageAdapter", () => {
@@ -17,8 +18,8 @@ describe("createBrowserStorageAdapter", () => {
   beforeEach(() => {
     storage = {
       getItem: vi.fn(),
-      setItem: vi.fn(),
       removeItem: vi.fn(),
+      setItem: vi.fn(),
     };
 
     [getStorageState, setStorageState] = createBrowserStorageAdapter(key, {

@@ -1,29 +1,30 @@
-import { describe, expectTypeOf, it } from "vitest";
 import type { ResolvePath } from "./index";
+
+import { describe, expectTypeOf, it } from "vitest";
 
 describe("ResolvePath", () => {
   it("should get a top-level value", () => {
     type Result = ResolvePath<
       {
         user: {
-          id: number;
-          name: string;
           address: {
             city: string;
             zip: number;
           };
+          id: number;
+          name: string;
         };
       },
       "user"
     >;
 
     type Expected = {
-      id: number;
-      name: string;
       address: {
         city: string;
         zip: number;
       };
+      id: number;
+      name: string;
     };
     expectTypeOf<Result>().toEqualTypeOf<Expected>();
   });
@@ -41,10 +42,10 @@ describe("ResolvePath", () => {
     >;
 
     type Expected =
+      | undefined
       | {
           44: string;
-        }
-      | undefined;
+        };
     expectTypeOf<Result>().toEqualTypeOf<Expected>();
   });
 

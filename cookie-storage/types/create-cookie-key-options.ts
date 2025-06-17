@@ -2,7 +2,7 @@ import type { CaseType } from "./case-type";
 import type { WordMappingSegments } from "./word-mapping-segments";
 
 export interface CreateCookieKeyOptions<
-  CookieFragmentDescription extends string
+  CookieFragmentDescription extends string,
 > {
   /**
    * A descriptive phrase used to generate one or more fragments for the cookie key.
@@ -13,14 +13,21 @@ export interface CreateCookieKeyOptions<
   cookieFragmentDescription: CookieFragmentDescription;
 
   /**
+   * Character(s) used to join the extracted word fragments.
+   *
+   * @default ""
+   */
+  cookieFragmentsConnector?: "" | "-" | "." | "_" | (string & {});
+
+  /**
    * Array of numbers specifying how many letters to extract from each word in the description.
    * Defaults to extracting only one letter for each word if not provided.
    *
    * @example [2, 3]
    */
   cookieFragmentSizes?:
-    | WordMappingSegments<CookieFragmentDescription>
-    | number[];
+    | number[]
+    | WordMappingSegments<CookieFragmentDescription>;
 
   /**
    * Prefix added to the generated cookie key, e.g. for internal or system cookies.
@@ -57,6 +64,27 @@ export interface CreateCookieKeyOptions<
     | (string & {});
 
   /**
+   * Specifies the casing format applied to the cookie scope.
+   *
+   * @default "title"
+   */
+  cookieScopeCase?: CaseType;
+
+  /**
+   * Symbol that separates the scope from the fragments in the final cookie key.
+   *
+   * @default "_"
+   */
+  cookieScopeFragmentConnector?: "-" | "." | "_" | (string & {});
+
+  /**
+   * Character(s) used to connect the scope and service strings, enhancing readability.
+   *
+   * @default "_"
+   */
+  cookieScopeServiceConnector?: "-" | "_" | (string & {});
+
+  /**
    * Identifies the service or subsystem setting the cookie, like "auth" or "data".
    *
    * @default ""
@@ -70,34 +98,6 @@ export interface CreateCookieKeyOptions<
     | "log"
     | "store"
     | (string & {});
-
-  /**
-   * Specifies the casing format applied to the cookie scope.
-   *
-   * @default "title"
-   */
-  cookieScopeCase?: CaseType;
-
-  /**
-   * Character(s) used to connect the scope and service strings, enhancing readability.
-   *
-   * @default "_"
-   */
-  cookieScopeServiceConnector?: "-" | "_" | (string & {});
-
-  /**
-   * Symbol that separates the scope from the fragments in the final cookie key.
-   *
-   * @default "_"
-   */
-  cookieScopeFragmentConnector?: "_" | "-" | "." | (string & {});
-
-  /**
-   * Character(s) used to join the extracted word fragments.
-   *
-   * @default ""
-   */
-  cookieFragmentsConnector?: "" | "_" | "-" | "." | (string & {});
 
   /**
    * A suffix appended at the end of the cookie key, if required for differentiation.

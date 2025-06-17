@@ -5,7 +5,7 @@ import type { ResolvePath } from "@/create-store/types/resolve-path";
 
 export type PartialStatePath<
   State extends Dictionary,
-  Path extends Paths<State> = never
+  Path extends Paths<State> = never,
 > = [Path] extends [never]
   ? DeepPartial<State>
   : DeepPartial<ResolvePath<State, Path>>;

@@ -4,5 +4,5 @@ import type { Split } from "@/create-store/types/split";
 
 export type Segments<
   Store extends Dictionary,
-  Delimiter extends string = "."
+  Delimiter extends string = ".",
 > = Split<Paths<Store, Delimiter>, Delimiter>;

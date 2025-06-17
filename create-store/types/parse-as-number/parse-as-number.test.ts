@@ -1,22 +1,23 @@
-import { describe, expectTypeOf, test } from "vitest";
 import type { ParseAsNumber } from "./index";
 
+import { describe, expectTypeOf, test } from "vitest";
+
 type TestCases = {
-  input: string | number;
-  expected: string | number;
+  expected: number | string;
+  input: number | string;
 }[];
 
 const testCases = [
-  { input: "123", expected: 123 },
-  { input: "456", expected: 456 },
-  { input: "abc", expected: "abc" },
-  { input: 789, expected: 789 },
-  { input: "0", expected: 0 },
-  { input: "", expected: "" },
+  { expected: 123, input: "123" },
+  { expected: 456, input: "456" },
+  { expected: "abc", input: "abc" },
+  { expected: 789, input: 789 },
+  { expected: 0, input: "0" },
+  { expected: "", input: "" },
 ] as const satisfies TestCases;
 
 describe("ParseAsNumber", () => {
-  test.each(testCases)("should parse %p as %p", ({ input, expected }) => {
+  test.each(testCases)("should parse %p as %p", ({ expected, input }) => {
     type Result = ParseAsNumber<typeof input>;
     type Expected = typeof expected;
     expectTypeOf<Result>().toEqualTypeOf<Expected>();

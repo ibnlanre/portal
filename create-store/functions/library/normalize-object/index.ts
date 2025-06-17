@@ -5,6 +5,16 @@ import type { Normalize } from "@/create-store/types/normalize";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isObject } from "@/create-store/functions/assertions/is-object";
 
+export function normalizeObject<State extends GenericObject>(
+  state: State
+): Normalize<State> {
+  if (!isObject(state)) {
+    throw new Error("State must be an object");
+  }
+
+  return normalizeValue(state) as Normalize<State>;
+}
+
 function normalizeValue<State extends Dictionary>(
   state: State,
   seen = new WeakMap()
@@ -42,14 +52,4 @@ function normalizeValue<State extends Dictionary>(
   }
 
   return normalizedState as Normalize<State>;
-}
-
-export function normalizeObject<State extends GenericObject>(
-  state: State
-): Normalize<State> {
-  if (!isObject(state)) {
-    throw new Error("State must be an object");
-  }
-
-  return normalizeValue(state) as Normalize<State>;
 }

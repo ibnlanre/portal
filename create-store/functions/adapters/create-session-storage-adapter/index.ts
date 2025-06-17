@@ -10,12 +10,12 @@ import { tryParse } from "@/create-store/functions/utilities/try-parse";
 export function createSessionStorageAdapter<State>(
   key: string,
   {
-    stringify = safeStringify,
     parse = tryParse,
+    stringify = safeStringify,
   }: StorageAdapterOptions<State> = {}
 ): [
   getSessionStorageState: GetSessionStorage<State>,
-  setSessionStorageState: SetSessionStorage<State>
+  setSessionStorageState: SetSessionStorage<State>,
 ] {
   function getSessionStorageState(): State | undefined;
   function getSessionStorageState(fallback: State): State;

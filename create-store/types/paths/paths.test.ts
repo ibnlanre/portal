@@ -1,5 +1,6 @@
-import { describe, expectTypeOf, it } from "vitest";
 import type { Paths } from "./index";
+
+import { describe, expectTypeOf, it } from "vitest";
 
 describe("Paths type", () => {
   it("should generate correct paths for nested objects", () => {
@@ -21,16 +22,16 @@ describe("Paths type", () => {
     type Result = Paths<{
       a?: {
         b?: {
-          e: () => void;
           c?: {
             d?: string;
             f: [number, string];
           };
+          e: () => void;
         };
       };
     }>;
 
-    type Expected = "a" | "a.b" | "a.b.c" | "a.b.c.d" | "a.b.e" | "a.b.c.f";
+    type Expected = "a" | "a.b" | "a.b.c" | "a.b.c.d" | "a.b.c.f" | "a.b.e";
     expectTypeOf<Result>().toEqualTypeOf<Expected>();
   });
 
@@ -81,65 +82,65 @@ describe("Paths type", () => {
 
   it("should not generate paths with undefined for partial objects", () => {
     type PartialStore = Partial<{
-      user: {
-        name: string;
-        email: string;
-      };
       settings: {
         theme: string;
+      };
+      user: {
+        email: string;
+        name: string;
       };
     }>;
 
     type Result = Paths<PartialStore>;
 
     type Expected =
-      | "user"
-      | "user.name"
-      | "user.email"
       | "settings"
-      | "settings.theme";
+      | "settings.theme"
+      | "user"
+      | "user.email"
+      | "user.name";
     expectTypeOf<Result>().toEqualTypeOf<Expected>();
   });
 
   it("should handle optional properties correctly", () => {
     type Store = {
+      data: {
+        value: number;
+      };
       user?: {
         profile?: {
           name: string;
         };
-      };
-      data: {
-        value: number;
       };
     };
 
     type Result = Paths<Store>;
 
     type Expected =
+      | "data"
+      | "data.value"
       | "user"
       | "user.profile"
-      | "user.profile.name"
-      | "data"
-      | "data.value";
+      | "user.profile.name";
     expectTypeOf<Result>().toEqualTypeOf<Expected>();
   });
 
   it("should handle complex partial objects with potential circular references", () => {
     type ComplexStore = Partial<{
-      user?: {
-        profile?: {
-          name: string;
-          settings?: {
-            theme: string;
-            notifications?: boolean;
-          };
-        };
-        friends?: ComplexStore;
-      };
       data: {
         items: number[];
         metadata?: {
           version: string;
+        };
+      };
+      user?: {
+        friends?: ComplexStore;
+        profile?: {
+          name: string;
+          settings?: {
+            notifications?: boolean;
+            theme: string;
+          };
         };
       };
     }>;
@@ -147,25 +148,25 @@ describe("Paths type", () => {
     type Result = Paths<ComplexStore>;
 
     type Expected =
-      | "user"
-      | "user.profile"
-      | "user.profile.name"
-      | "user.profile.settings"
-      | "user.profile.settings.theme"
-      | "user.profile.settings.notifications"
-      | "user.friends"
       | "data"
       | "data.items"
       | "data.metadata"
-      | "data.metadata.version";
+      | "data.metadata.version"
+      | "user"
+      | "user.friends"
+      | "user.profile"
+      | "user.profile.name"
+      | "user.profile.settings"
+      | "user.profile.settings.notifications"
+      | "user.profile.settings.theme";
 
     expectTypeOf<Result>().toEqualTypeOf<Expected>();
   });
 
   it("should handle self-referencing types without infinite recursion", () => {
     type SelfRef = {
-      value: string;
       self: SelfRef;
+      value: string;
     };
 
     type Result = Paths<SelfRef>;
@@ -173,7 +174,7 @@ describe("Paths type", () => {
     expectTypeOf<Result>().toBeString();
 
     expectTypeOf<Result>().toMatchTypeOf<
-      "value" | "self" | "self.value" | "self.self"
+      "self" | "self.self" | "self.value" | "value"
     >();
   });
 
@@ -184,8 +185,8 @@ describe("Paths type", () => {
     };
 
     type TypeB = {
-      data: number;
       back: TypeA;
+      data: number;
     };
 
     type ResultA = Paths<TypeA>;
@@ -195,10 +196,10 @@ describe("Paths type", () => {
     expectTypeOf<ResultB>().toBeString();
 
     expectTypeOf<ResultA>().toMatchTypeOf<
-      "name" | "ref" | "ref.data" | "ref.back"
+      "name" | "ref" | "ref.back" | "ref.data"
     >();
     expectTypeOf<ResultB>().toMatchTypeOf<
-      "data" | "back" | "back.name" | "back.ref"
+      "back" | "back.name" | "back.ref" | "data"
     >();
   });
 
@@ -220,17 +221,17 @@ describe("Paths type", () => {
     expectTypeOf<Result>().toMatchTypeOf<
       | "document"
       | "location"
-      | "navigator"
       | "location.href"
       | "location.pathname"
+      | "navigator"
       | "navigator.userAgent"
     >();
     expectTypeOf<Result>().toMatchTypeOf<
       | "document"
       | "location"
-      | "navigator"
       | "location.href"
       | "location.pathname"
+      | "navigator"
       | "navigator.userAgent"
     >();
   });

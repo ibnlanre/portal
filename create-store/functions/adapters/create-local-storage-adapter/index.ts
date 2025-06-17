@@ -10,12 +10,12 @@ import { tryParse } from "@/create-store/functions/utilities/try-parse";
 export function createLocalStorageAdapter<State>(
   key: string,
   {
-    stringify = safeStringify,
     parse = tryParse,
+    stringify = safeStringify,
   }: StorageAdapterOptions<State> = {}
 ): [
   getLocalStorageState: GetLocalStorage<State>,
-  setLocalStorageState: SetLocalStorage<State>
+  setLocalStorageState: SetLocalStorage<State>,
 ] {
   function getLocalStorageState(): State | undefined;
   function getLocalStorageState(fallback: State): State;

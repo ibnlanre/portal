@@ -1,7 +1,8 @@
-import { signCookie } from "@/cookie-storage/functions/sign-cookie";
+import * as crypto from "crypto";
+
 import { describe, expect, it, vi } from "vitest";
 
-import * as crypto from "crypto";
+import { signCookie } from "@/cookie-storage/functions/sign-cookie";
 
 describe("signCookie", () => {
   it("should sign the cookie with the given secret", () => {

@@ -1,6 +1,7 @@
-import { setCookieValue } from "@/cookie-storage/functions/set-cookie-value";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { removeCookieValue } from "./index";
+import { setCookieValue } from "@/cookie-storage/functions/set-cookie-value";
 
 vi.mock("@/cookie-storage/functions/set-cookie-value");
 
@@ -14,8 +15,8 @@ describe("removeCookieValue", () => {
     removeCookieValue("testCookie");
 
     expect(setCookieValue).toHaveBeenCalledWith("testCookie", "", {
-      path: "/",
       expires: 0,
+      path: "/",
     });
   });
 
@@ -23,8 +24,8 @@ describe("removeCookieValue", () => {
     removeCookieValue("testCookie", "/custom-path");
 
     expect(setCookieValue).toHaveBeenCalledWith("testCookie", "", {
-      path: "/custom-path",
       expires: 0,
+      path: "/custom-path",
     });
   });
 
@@ -32,9 +33,9 @@ describe("removeCookieValue", () => {
     const originalDocument = global.document;
 
     Object.defineProperty(global, "document", {
+      configurable: true,
       value: undefined,
       writable: true,
-      configurable: true,
     });
 
     removeCookieValue("testCookie");

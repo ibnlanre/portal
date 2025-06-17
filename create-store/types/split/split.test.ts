@@ -1,5 +1,6 @@
-import { describe, expectTypeOf, it } from "vitest";
 import type { Split } from "./index";
+
+import { describe, expectTypeOf, it } from "vitest";
 
 describe("Split", () => {
   it("should split a string by dots", () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { deepMerge } from "./index";
 
 describe("deepMerge", () => {
@@ -36,23 +37,23 @@ describe("deepMerge", () => {
       const target = {
         a: 1,
         nested: {
-          x: 10,
-          y: 20,
           deep: {
             value: "original",
           },
+          x: 10,
+          y: 20,
         },
       };
 
       const source = {
         b: 2,
         nested: {
+          deep: {
+            newProp: "added",
+            value: "updated",
+          },
           y: 99,
           z: 30,
-          deep: {
-            value: "updated",
-            newProp: "added",
-          },
         },
       };
 
@@ -62,13 +63,13 @@ describe("deepMerge", () => {
         a: 1,
         b: 2,
         nested: {
+          deep: {
+            newProp: "added",
+            value: "updated",
+          },
           x: 10,
           y: 99,
           z: 30,
-          deep: {
-            value: "updated",
-            newProp: "added",
-          },
         },
       });
 
@@ -90,10 +91,10 @@ describe("deepMerge", () => {
       const source = {
         config: {
           enabled: false,
+          newOption: "added",
           settings: {
             retries: 3,
           },
-          newOption: "added",
         },
         metadata: {
           version: "1.0.0",
@@ -105,11 +106,11 @@ describe("deepMerge", () => {
       expect(result).toEqual({
         config: {
           enabled: false,
-          settings: {
-            timeout: 1000,
-            retries: 3,
-          },
           newOption: "added",
+          settings: {
+            retries: 3,
+            timeout: 1000,
+          },
         },
         data: [1, 2, 3],
         metadata: {
@@ -272,8 +273,8 @@ describe("deepMerge", () => {
       const source = { flags: "added" };
 
       const result = deepMerge(target, source) as {
-        pattern: RegExp;
         flags: string;
+        pattern: RegExp;
       };
 
       expect(result.pattern).not.toBe(regex);
@@ -283,7 +284,7 @@ describe("deepMerge", () => {
 
     it("should handle null and undefined values", () => {
       const target = {
-        a: null as string | null,
+        a: null as null | string,
         b: undefined as string | undefined,
         c: "value",
       };
@@ -333,8 +334,8 @@ describe("deepMerge", () => {
       const sym1 = Symbol("test1");
       const sym2 = Symbol("test2");
 
-      const target = { [sym1]: "target value", regular: "prop" };
-      const source = { [sym2]: "source value", regular: "updated" };
+      const target = { regular: "prop", [sym1]: "target value" };
+      const source = { regular: "updated", [sym2]: "source value" };
 
       const result = deepMerge(target, source) as any;
 
@@ -346,11 +347,11 @@ describe("deepMerge", () => {
     it("should preserve non-enumerable properties", () => {
       const target = { regular: "prop" };
       Object.defineProperty(target, "hidden", {
-        value: "hidden value",
         enumerable: false,
+        value: "hidden value",
       });
 
-      const source = { regular: "updated", new: "prop" };
+      const source = { new: "prop", regular: "updated" };
 
       const result = deepMerge(target, source) as any;
 
@@ -419,8 +420,8 @@ describe("deepMerge", () => {
       const result = deepMerge(target, source) as {
         config: {
           settings: {
-            timeout: number;
             retries: number;
+            timeout: number;
           };
         };
       };

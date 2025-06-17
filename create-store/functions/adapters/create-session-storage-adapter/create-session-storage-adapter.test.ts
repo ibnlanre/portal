@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { createSessionStorageAdapter } from "./index";
 
 const getItem = vi.spyOn(sessionStorage, "getItem");
@@ -64,8 +65,8 @@ describe("createSessionStorageAdapter", () => {
 
     const [getSessionStorageState, setSessionStorageState] =
       createSessionStorageAdapter<typeof newState>(key, {
-        stringify: customStringify,
         parse: customParse,
+        stringify: customStringify,
       });
 
     setSessionStorageState(newState);
@@ -81,9 +82,9 @@ describe("createSessionStorageAdapter", () => {
     const originalSessionStorage = sessionStorage;
 
     Object.defineProperty(window, "sessionStorage", {
+      configurable: true,
       value: undefined,
       writable: true,
-      configurable: true,
     });
 
     const [getSessionStorageState, setSessionStorageState] =

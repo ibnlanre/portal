@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+
 import { getCookieByIndex } from "./index";
 
 describe("getCookieByIndex", () => {
@@ -20,9 +21,9 @@ describe("getCookieByIndex", () => {
 
   it("should return the cookie name at the specified index", () => {
     Object.defineProperty(document, "cookie", {
+      configurable: true,
       value: "cookie1=value1; cookie2=value2; cookie3=value3",
       writable: true,
-      configurable: true,
     });
 
     expect(getCookieByIndex(0)).toBe("cookie1");
@@ -32,9 +33,9 @@ describe("getCookieByIndex", () => {
 
   it("should return null if the index is out of bounds", () => {
     Object.defineProperty(document, "cookie", {
+      configurable: true,
       value: "cookie1=value1; cookie2=value2",
       writable: true,
-      configurable: true,
     });
 
     expect(getCookieByIndex(3)).toBeNull();
@@ -42,9 +43,9 @@ describe("getCookieByIndex", () => {
 
   it("should handle cookies with no value", () => {
     Object.defineProperty(document, "cookie", {
+      configurable: true,
       value: "cookie1=; cookie2=value2",
       writable: true,
-      configurable: true,
     });
 
     expect(getCookieByIndex(0)).toBe("cookie1");
@@ -53,9 +54,9 @@ describe("getCookieByIndex", () => {
 
   it("should handle cookies with spaces around the name and value", () => {
     Object.defineProperty(document, "cookie", {
+      configurable: true,
       value: " cookie1 = value1 ; cookie2 = value2 ",
       writable: true,
-      configurable: true,
     });
 
     expect(getCookieByIndex(0)).toBe("cookie1");

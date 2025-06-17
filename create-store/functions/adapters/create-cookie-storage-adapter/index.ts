@@ -14,14 +14,14 @@ export function createCookieStorageAdapter<State>(
   key: string,
   {
     parse = tryParse,
-    stringify = safeStringify,
-    signed = false,
     secret,
+    signed = false,
+    stringify = safeStringify,
     ...cookieOptions
   }: CookieStorageAdapterOptions<State> = {} as CookieStorageAdapterOptions<State>
 ): [
   getCookieStorageState: GetCookieStorage<State>,
-  setCookieStorageState: SetCookieStorage<State>
+  setCookieStorageState: SetCookieStorage<State>,
 ] {
   const cookieOptionsMap = new Map<string, CookieOptions>();
 
@@ -36,7 +36,7 @@ export function createCookieStorageAdapter<State>(
 
   function getCookieStorageState(fallback?: State) {
     const value = cookieStorage.getItem(key);
-    if (!value) return <State>fallback;
+    if (!value) return fallback as State;
 
     if (secret) {
       const parsedValue = cookieStorage.unsign(value, secret);

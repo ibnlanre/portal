@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { combine } from "./index";
 
 describe("combine", () => {

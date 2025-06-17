@@ -10,13 +10,13 @@ import { tryParse } from "@/create-store/functions/utilities/try-parse";
 export function createBrowserStorageAdapter<State>(
   key: string,
   {
-    stringify = safeStringify,
     parse = tryParse,
+    stringify = safeStringify,
     ...storage
   }: BrowserStorageAdapterOptions<State>
 ): [
   getStorageState: GetBrowserStorage<State>,
-  setStorageState: SetBrowserStorage<State>
+  setStorageState: SetBrowserStorage<State>,
 ] {
   function getStorageState(): State | undefined;
   function getStorageState(fallback: State): State;

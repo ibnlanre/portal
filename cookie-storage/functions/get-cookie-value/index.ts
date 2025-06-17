@@ -4,7 +4,7 @@
  * @param {string} name The name of the cookie.
  * @returns {string | null} The value of the cookie, or null if the cookie is not found or if document is not defined.
  */
-export function getCookieValue(name: string): string | null {
+export function getCookieValue(name: string): null | string {
   try {
     if (typeof document === "undefined") return null;
     const cookies = document.cookie.split(";");

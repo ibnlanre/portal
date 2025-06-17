@@ -1,15 +1,16 @@
-import { removeCookieValue } from "@/cookie-storage/functions/remove-cookie-value";
 import { describe, expect, it, vi } from "vitest";
+
 import { clearCookieStorage } from "./index";
+import { removeCookieValue } from "@/cookie-storage/functions/remove-cookie-value";
 
 vi.mock("@/cookie-storage/functions/remove-cookie-value");
 
 describe("clearCookieStorage", () => {
   it("should clear all cookies", () => {
     Object.defineProperty(document, "cookie", {
+      configurable: true,
       value: "cookie1=value1; cookie2=value2; cookie3=value3",
       writable: true,
-      configurable: true,
     });
 
     clearCookieStorage();

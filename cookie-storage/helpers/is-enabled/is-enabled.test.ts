@@ -1,5 +1,6 @@
-import { isEnabled } from "@/cookie-storage/helpers/is-enabled";
 import { describe, expect, it } from "vitest";
+
+import { isEnabled } from "@/cookie-storage/helpers/is-enabled";
 
 describe("isEnabled", () => {
   it("should return true for a truthy value", () => {

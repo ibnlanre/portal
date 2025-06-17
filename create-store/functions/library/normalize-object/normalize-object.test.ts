@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
+
 import { normalizeObject } from "./index";
 
 describe("normalizeObject", () => {
   it("should normalize basic objects", () => {
-    const state = { name: "John", age: 30, active: true };
+    const state = { active: true, age: 30, name: "John" };
     const normalized = normalizeObject(state);
 
     expect(normalized).toEqual(state);
@@ -14,10 +15,10 @@ describe("normalizeObject", () => {
 
   it("should not filter out undefined and null values", () => {
     const state = {
-      name: "John",
-      age: undefined as string | undefined,
-      email: null as string | null,
       active: true,
+      age: undefined as string | undefined,
+      email: null as null | string,
+      name: "John",
     };
     const normalized = normalizeObject(state);
 
@@ -62,20 +63,20 @@ describe("normalizeObject", () => {
     } else {
       const mockWindow: {
         document: object;
+        globalThis?: typeof mockWindow;
+        localStorage: object;
         location: { href: string };
         navigator: { userAgent: string };
-        screen: { width: number; height: number };
-        localStorage: object;
+        screen: { height: number; width: number };
+        self?: typeof mockWindow;
         sessionStorage: object;
         window?: typeof mockWindow;
-        globalThis?: typeof mockWindow;
-        self?: typeof mockWindow;
       } = {
         document: {},
+        localStorage: {},
         location: { href: "http://localhost" },
         navigator: { userAgent: "test" },
-        screen: { width: 1920, height: 1080 },
-        localStorage: {},
+        screen: { height: 1080, width: 1920 },
         sessionStorage: {},
       };
 
@@ -130,9 +131,9 @@ describe("normalizeObject", () => {
 
   it("should strip out functions", () => {
     const state = {
+      asyncMethod: async () => "async test",
       data: "value",
       method: () => "test",
-      asyncMethod: async () => "async test",
     };
 
     const normalized = normalizeObject(state);
@@ -146,16 +147,16 @@ describe("normalizeObject", () => {
 
   it("should handle complex objects with mixed types", () => {
     const state = {
-      string: "value",
-      number: 42,
-      boolean: true,
       array: [1, 2, 3],
-      object: { nested: "value" },
-      func: () => "function",
-      undef: undefined,
-      nul: null,
+      boolean: true,
       date: new Date(),
+      func: () => "function",
+      nul: null,
+      number: 42,
+      object: { nested: "value" },
       regex: /test/g,
+      string: "value",
+      undef: undefined,
     };
 
     const normalized = normalizeObject(state);
@@ -195,8 +196,8 @@ describe("normalizeObject", () => {
   it("should handle objects with symbol keys", () => {
     const sym = Symbol("test");
     const state = {
-      [sym]: "symbol value",
       regular: "regular value",
+      [sym]: "symbol value",
     };
 
     const normalized = normalizeObject(state);

@@ -1,22 +1,22 @@
 import { defineConfig, type Options } from "tsup";
 
 const cjs = {
-  outDir: "dist/cjs",
-  entry: ["index.ts"],
-  splitting: false,
-  sourcemap: true,
   clean: true,
   dts: true,
+  entry: ["index.ts"],
   legacyOutput: true,
+  outDir: "dist/cjs",
+  sourcemap: true,
+  splitting: false,
 } satisfies Options;
 
 const esm = {
-  outDir: "dist/esm",
-  entry: ["index.ts"],
-  splitting: false,
-  sourcemap: true,
   clean: true,
   dts: true,
+  entry: ["index.ts"],
+  outDir: "dist/esm",
+  sourcemap: true,
+  splitting: false,
   target: "es6",
 } satisfies Options;
 

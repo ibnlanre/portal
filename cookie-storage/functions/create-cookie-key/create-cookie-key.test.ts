@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { createCookieKey } from "./index";
 
 describe("createCookieKey", () => {
@@ -30,12 +31,12 @@ describe("createCookieKey", () => {
   it("should create a cookie key with custom options", () => {
     const result = createCookieKey({
       cookieFragmentDescription: "Verification Signature",
+      cookieFragmentsConnector: "-",
       cookieFragmentSizes: [2, 3],
       cookiePrefix: "__",
       cookieScope: "secure",
       cookieScopeCase: "upper",
       cookieScopeFragmentConnector: "_",
-      cookieFragmentsConnector: "-",
     });
     expect(result).toBe("__SECURE_vr-sgt");
   });

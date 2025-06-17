@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
-import { signCookie } from "./index";
-
 import * as crypto from "crypto";
+
+import { describe, expect, it, vi } from "vitest";
+
+import { signCookie } from "./index";
 
 vi.mock("crypto");
 

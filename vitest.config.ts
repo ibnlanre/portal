@@ -1,7 +1,7 @@
+import react from "@vitejs/plugin-react";
+
 import { resolve } from "node:path";
 import { defineConfig } from "vitest/config";
-
-import react from "@vitejs/plugin-react";
 const app = resolve(__dirname, "./");
 
 /**
@@ -9,14 +9,12 @@ const app = resolve(__dirname, "./");
  */
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: [{ find: "@", replacement: app }],
+  },
   test: {
-    logHeapUsage: true,
-    setupFiles: "vitest.setup.ts",
-    environment: "happy-dom",
-    globals: true,
-    reporters: [],
     coverage: {
-      include: ["**/*.ts"],
+      clean: true,
       exclude: [
         "./dist/**",
         "./index.ts",
@@ -26,10 +24,12 @@ export default defineConfig({
         "**/*.json",
         "**/*.test.*",
       ],
-      clean: true,
+      include: ["**/*.ts"],
     },
-  },
-  resolve: {
-    alias: [{ find: "@", replacement: app }],
+    environment: "happy-dom",
+    globals: true,
+    logHeapUsage: true,
+    reporters: [],
+    setupFiles: "vitest.setup.ts",
   },
 });

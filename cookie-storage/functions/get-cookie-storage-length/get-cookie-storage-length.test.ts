@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+
 import { getCookieStorageLength } from "./index";
 
 describe("getCookieStorageLength", () => {
@@ -6,9 +7,9 @@ describe("getCookieStorageLength", () => {
     const originalDocument = global.document;
 
     Object.defineProperty(global, "document", {
+      configurable: true,
       value: undefined,
       writable: true,
-      configurable: true,
     });
 
     expect(() => getCookieStorageLength()).not.toThrow();

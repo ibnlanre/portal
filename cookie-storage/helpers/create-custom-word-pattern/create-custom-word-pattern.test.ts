@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { createCustomWordPattern } from "./index";
 
 describe("createCustomWordPattern", () => {

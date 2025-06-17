@@ -1,35 +1,6 @@
 import type { CookieOptions } from "@/cookie-storage/types/cookie-options";
 import type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 
-type CookieSignature =
-  | {
-      signed?: never;
-      secret?: never;
-    }
-  | {
-      signed?: false;
-      secret?: string;
-    }
-  | {
-      /**
-       * Specifies if the cookie is designed for use by a single application.
-       *
-       * @throws An error if `signed` is true and `secret` is undefined.
-       */
-      signed: true;
-
-      /**
-       * The secret to use for signing the cookie.
-       *
-       * @throws An error if `signed` is true and `secret` is undefined.
-       */
-      secret: string | undefined;
-    };
-
-interface CookieDataOptions<State>
-  extends StorageAdapterOptions<State>,
-    CookieOptions {}
-
 export type CookieStorageAdapterOptions<State> = CookieDataOptions<State> &
   CookieSignature;
 
@@ -60,3 +31,32 @@ export type SetCookieStorage<State> = (
   value?: State,
   options?: CookieOptions
 ) => void;
+
+interface CookieDataOptions<State>
+  extends CookieOptions,
+    StorageAdapterOptions<State> {}
+
+type CookieSignature =
+  | {
+      /**
+       * The secret to use for signing the cookie.
+       *
+       * @throws An error if `signed` is true and `secret` is undefined.
+       */
+      secret: string | undefined;
+
+      /**
+       * Specifies if the cookie is designed for use by a single application.
+       *
+       * @throws An error if `signed` is true and `secret` is undefined.
+       */
+      signed: true;
+    }
+  | {
+      secret?: never;
+      signed?: never;
+    }
+  | {
+      secret?: string;
+      signed?: false;
+    };

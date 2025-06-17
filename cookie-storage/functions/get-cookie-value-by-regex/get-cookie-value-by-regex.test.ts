@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
+
 import { getCookieValueByRegex } from ".";
 
 describe("getCookieValueByRegex", () => {
   it("should return the value of the specified cookie", () => {
     Object.defineProperty(document, "cookie", {
+      configurable: true,
       value: "testCookie=testValue",
       writable: true,
-      configurable: true,
     });
 
     const result = getCookieValueByRegex("testCookie");
@@ -15,9 +16,9 @@ describe("getCookieValueByRegex", () => {
 
   it("should return null if the cookie is not found", () => {
     Object.defineProperty(document, "cookie", {
+      configurable: true,
       value: "anotherCookie=anotherValue",
       writable: true,
-      configurable: true,
     });
 
     const result = getCookieValueByRegex("testCookie");
@@ -40,9 +41,9 @@ describe("getCookieValueByRegex", () => {
 
   it("should handle cookies with special characters in the name", () => {
     Object.defineProperty(document, "cookie", {
+      configurable: true,
       value: "special*Cookie=specialValue",
       writable: true,
-      configurable: true,
     });
 
     const result = getCookieValueByRegex("special*Cookie");
@@ -51,9 +52,9 @@ describe("getCookieValueByRegex", () => {
 
   it("should handle cookies with spaces around the equal sign", () => {
     Object.defineProperty(document, "cookie", {
+      configurable: true,
       value: "spacedCookie = spacedValue",
       writable: true,
-      configurable: true,
     });
 
     const result = getCookieValueByRegex("spacedCookie");

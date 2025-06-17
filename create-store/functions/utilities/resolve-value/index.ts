@@ -7,5 +7,5 @@ export function resolveValue<State>(
   initialState?: Possible<Factory<State | undefined>>
 ): State {
   if (isFunction<State>(initialState)) return initialState();
-  return <State>initialState;
+  return initialState as State;
 }

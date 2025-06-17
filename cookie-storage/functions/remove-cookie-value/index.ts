@@ -8,11 +8,11 @@ import { setCookieValue } from "@/cookie-storage/functions/set-cookie-value";
  *
  * @returns {void}
  */
-export function removeCookieValue(name: string, path: string = "/") {
+export function removeCookieValue(name: string, path = "/") {
   try {
     if (typeof document === "undefined") return;
 
-    setCookieValue(name, "", { path, expires: 0 });
+    setCookieValue(name, "", { expires: 0, path });
   } catch (error) {
     console.error("Error occurred while removing cookie", error);
   }

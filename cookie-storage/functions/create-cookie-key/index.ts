@@ -30,14 +30,14 @@ import { transformCase } from "@/cookie-storage/helpers/transform-case";
  */
 export function createCookieKey<CookieFragmentDescription extends string>({
   cookieFragmentDescription,
-  cookiePrefix = "",
+  cookieFragmentsConnector = "",
   cookieFragmentSizes = [],
+  cookiePrefix = "",
   cookieScope = "",
   cookieScopeCase = "title",
-  cookieService = "",
-  cookieScopeServiceConnector = "-",
   cookieScopeFragmentConnector = "_",
-  cookieFragmentsConnector = "",
+  cookieScopeServiceConnector = "-",
+  cookieService = "",
   cookieSuffix = "",
 }: CreateCookieKeyOptions<CookieFragmentDescription>): string {
   const words = cookieFragmentDescription.toLowerCase().split(" ");
@@ -53,7 +53,7 @@ export function createCookieKey<CookieFragmentDescription extends string>({
   }
 
   const fragments = words.map((word, index) => {
-    const length = cookieFragmentSizes[index] || 1;
+    const length = cookieFragmentSizes[index] ?? 1;
     return createCustomWordPattern(word, length);
   });
 

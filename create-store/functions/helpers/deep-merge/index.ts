@@ -18,10 +18,10 @@ import { createSnapshot } from "@/create-store/functions/helpers/create-snapshot
 export function deepMerge<
   Target extends Dictionary,
   Source = unknown,
-  Result = Merge<Target, Source>
+  Result = Merge<Target, Source>,
 >(target: Target, source: Source, visited = new WeakMap()): Result {
   if (!isDictionary(source)) {
-    return <any>createSnapshot(source, visited);
+    return createSnapshot(source, visited) as any;
   }
 
   if (isObject(target) && visited.has(target)) {
@@ -53,5 +53,5 @@ export function deepMerge<
     Reflect.set(result, key, createSnapshot(sourceValue, visited));
   }
 
-  return <any>result;
+  return result as any;
 }

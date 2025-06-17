@@ -1,6 +1,7 @@
 import type { Dictionary } from "@/create-store/types/dictionary";
 
 import { describe, expect, it } from "vitest";
+
 import { createSnapshot } from "./index";
 
 describe("createSnapshot", () => {
@@ -27,8 +28,8 @@ describe("createSnapshot", () => {
   it("should include non-enumerable properties in the snapshot", () => {
     const state: Dictionary = {};
     Object.defineProperty(state, "a", {
-      value: 1,
       enumerable: false,
+      value: 1,
     });
 
     const snapshot = createSnapshot(state);
@@ -102,8 +103,8 @@ describe("createSnapshot", () => {
       level1: {
         level2: {
           level3: {
-            value: string;
             backToRoot?: typeof root;
+            value: string;
           };
         };
       };
@@ -131,11 +132,11 @@ describe("createSnapshot", () => {
   it("should handle multiple references to the same object", () => {
     const shared = { value: "shared" };
     const container = {
-      ref1: shared,
-      ref2: shared,
       nested: {
         ref3: shared,
       },
+      ref1: shared,
+      ref2: shared,
     };
 
     const snapshot = createSnapshot(container);
@@ -151,9 +152,9 @@ describe("createSnapshot", () => {
   it("should handle circular references with Date objects", () => {
     const date = new Date("2023-01-01");
     const obj: {
+      self?: typeof obj;
       timestamp: Date;
       value: string;
-      self?: typeof obj;
     } = {
       timestamp: date,
       value: "test",
@@ -173,8 +174,8 @@ describe("createSnapshot", () => {
     const regex = /test/gi;
     const obj: {
       pattern: RegExp;
-      value: string;
       self?: typeof obj;
+      value: string;
     } = {
       pattern: regex,
       value: "test",
@@ -192,37 +193,37 @@ describe("createSnapshot", () => {
 
   it("should handle circular references with mixed data types", () => {
     type Complex = {
-      string: string;
-      number: number;
+      array: (Complex | number)[];
       boolean: boolean;
-      null: null;
-      undefined: undefined;
       date: Date;
-      regex: RegExp;
-      array: (number | Complex)[];
       nested: {
+        backToRoot?: typeof complex;
         deep: {
           value: string;
         };
-        backToRoot?: typeof complex;
       };
+      null: null;
+      number: number;
+      regex: RegExp;
       self?: typeof complex;
+      string: string;
+      undefined: undefined;
     };
 
     const complex: Complex = {
-      string: "hello",
-      number: 42,
-      boolean: true,
-      null: null,
-      undefined: undefined,
-      date: new Date("2023-01-01"),
-      regex: /pattern/g,
       array: [1, 2, 3],
+      boolean: true,
+      date: new Date("2023-01-01"),
       nested: {
         deep: {
           value: "nested",
         },
       },
+      null: null,
+      number: 42,
+      regex: /pattern/g,
+      string: "hello",
+      undefined: undefined,
     };
 
     complex.self = complex;
@@ -254,7 +255,7 @@ describe("createSnapshot", () => {
   });
 
   it("should not create infinite loops when accessing circular properties", () => {
-    const obj: { value: number; circular?: typeof obj } = { value: 1 };
+    const obj: { circular?: typeof obj; value: number } = { value: 1 };
     obj.circular = obj;
 
     const snapshot = createSnapshot(obj);
@@ -277,8 +278,8 @@ describe("createSnapshot", () => {
     const original = {
       user: {
         preferences: {
-          theme: "light",
           notifications: true,
+          theme: "light",
         },
       },
     };

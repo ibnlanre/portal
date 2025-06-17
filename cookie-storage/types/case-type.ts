@@ -1,8 +1,8 @@
 export type CaseType =
-  | "title"
-  | "lower"
-  | "upper"
   | "camel"
+  | "kebab"
+  | "lower"
   | "pascal"
   | "sentence"
-  | "kebab";
+  | "title"
+  | "upper";

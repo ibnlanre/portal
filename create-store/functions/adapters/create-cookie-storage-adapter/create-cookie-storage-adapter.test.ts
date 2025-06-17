@@ -1,6 +1,7 @@
-import { cookieStorage } from "@/cookie-storage";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { createCookieStorageAdapter } from "./index";
+import { cookieStorage } from "@/cookie-storage";
 
 const getItem = vi.spyOn(cookieStorage, "getItem");
 const setItem = vi.spyOn(cookieStorage, "setItem");
@@ -9,8 +10,8 @@ const removeItem = vi.spyOn(cookieStorage, "removeItem");
 afterEach(() => {
   vi.clearAllMocks();
   Object.defineProperty(document, "cookie", {
-    writable: true,
     value: "",
+    writable: true,
   });
 });
 
@@ -56,8 +57,8 @@ describe("createCookieStorageAdapter", () => {
     expect(cookieStorage.getItem(key)).toBe(JSON.stringify(newState));
 
     setCookieStorageState(newState, {
-      expires: new Date().getTime() + 1000,
       domain: "localhost",
+      expires: new Date().getTime() + 1000,
     });
 
     const newStateValue = JSON.stringify({ state: "new value" });
@@ -65,8 +66,8 @@ describe("createCookieStorageAdapter", () => {
       key,
       newStateValue,
       expect.objectContaining({
-        expires: expect.any(Number),
         domain: "localhost",
+        expires: expect.any(Number),
       })
     );
   });
@@ -76,8 +77,8 @@ describe("createCookieStorageAdapter", () => {
 
     const [getCookieStorageState, setCookieStorageState] =
       createCookieStorageAdapter<typeof initialState>(key, {
-        signed: true,
         secret: "signature",
+        signed: true,
       });
     expect(setItem).not.toHaveBeenCalled();
 
@@ -113,8 +114,8 @@ describe("createCookieStorageAdapter", () => {
 
     const [getCookieStorageState, setCookieStorageState] =
       createCookieStorageAdapter<typeof newState>(key, {
-        stringify: customStringify,
         parse: customParse,
+        stringify: customStringify,
       });
 
     setCookieStorageState(newState);
@@ -134,8 +135,8 @@ describe("createCookieStorageAdapter", () => {
     setCookieStorageState(
       { state: "new value" },
       {
-        expires: new Date().getTime() + 1000,
         domain: "localhost",
+        expires: new Date().getTime() + 1000,
       }
     );
 
@@ -144,8 +145,8 @@ describe("createCookieStorageAdapter", () => {
       key,
       newStateValue,
       expect.objectContaining({
-        expires: expect.any(Number),
         domain: "localhost",
+        expires: expect.any(Number),
       })
     );
 
@@ -158,8 +159,8 @@ describe("createCookieStorageAdapter", () => {
     const [, setCookieStorageState] = createCookieStorageAdapter<
       typeof initialState
     >(key, {
-      signed: true,
       secret: "",
+      signed: true,
     });
 
     setCookieStorageState({ state: "new value" });

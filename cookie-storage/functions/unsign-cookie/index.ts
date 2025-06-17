@@ -1,5 +1,6 @@
-import { signCookie } from "@/cookie-storage/functions/sign-cookie";
 import { Buffer } from "buffer";
+
+import { signCookie } from "@/cookie-storage/functions/sign-cookie";
 
 /**
  * Unsign a signed cookie.
@@ -12,7 +13,7 @@ import { Buffer } from "buffer";
 export function unsignCookie(
   signedCookie: string,
   secret: string
-): string | null {
+): null | string {
   try {
     const demarcator = signedCookie.lastIndexOf(".");
     if (demarcator === -1) return null;

@@ -13,16 +13,16 @@ import { unsignCookie } from "@/cookie-storage/functions/unsign-cookie";
 /**
  * An object representing a cookie storage with various methods to interact with cookies.
  */
-export const cookieStorage = <CookieStorage>{
-  sign: signCookie,
-  unsign: unsignCookie,
-  getItem: getCookieValue,
-  setItem: setCookieValue,
-  removeItem: removeCookieValue,
+export const cookieStorage = {
   clear: clearCookieStorage,
   createKey: createCookieKey,
+  getItem: getCookieValue,
   key: getCookieByIndex,
   get length() {
     return getCookieStorageLength();
   },
-};
+  removeItem: removeCookieValue,
+  setItem: setCookieValue,
+  sign: signCookie,
+  unsign: unsignCookie,
+} as CookieStorage;

@@ -6,85 +6,6 @@ import type { CreateCookieKeyOptions } from "./create-cookie-key-options";
  */
 export interface CookieStorage extends Storage {
   /**
-   * Sign a cookie value.
-   *
-   * @param {string} value The value to sign.
-   * @param {string} secret The secret to use for signing.
-   *
-   * @returns {string} The signed value.
-   *
-   * @example
-   *
-   * ```ts
-   * cookieStorage.sign("unsignedValue", process.env.SECRET); // "signedValue"
-   * ```
-   */
-  sign: (value: string, secret: string) => string;
-
-  /**
-   * Unsign a signed cookie.
-   *
-   * @param signedCookie The signed cookie to unsign.
-   * @param secret The secret to use for unsigning.
-   *
-   * @returns The unsigned cookie or null if the signed cookie is invalid.
-   *
-   * @example
-   *
-   * ```ts
-   * cookieStorage.unsign("signedValue", process.env.SECRET); // "unsignedValue"
-   * ```
-   */
-  unsign: (signedCookie: string, secret: string) => string | null;
-
-  /**
-   * Retrieves the value of the cookie with the specified name from the document.cookie.
-   *
-   * @param {string} name The name of the cookie.
-   * @returns {string|null} The value of the cookie, or null if the cookie is not found.
-   *
-   * @example
-   *
-   * ```ts
-   * cookieStorage.getItem("cookie1"); // "value1"
-   * ```
-   */
-  getItem: (name: string) => string | null;
-
-  /**
-   * Sets a cookie with the specified name and value.
-   *
-   * @param {string} name The name of the cookie.
-   * @param {string} value The value to be set for the cookie.
-   * @param {CookieOptions} [options] Optional cookie options.
-   *
-   * @returns {void}
-   *
-   * @example
-   *
-   * ```ts
-   * cookieStorage.setItem("cookie1", "value1", { path: "/" });
-   * ```
-   */
-  setItem: (name: string, value: string, options?: CookieOptions) => void;
-
-  /**
-   * Removes a cookie with the specified name.
-   *
-   * @param {string} name The name of the cookie to be removed.
-   * @param {string} [path] The path of the cookie to be removed.
-   *
-   * @returns {void}
-   *
-   * @example
-   *
-   * ```ts
-   * cookieStorage.removeItem("cookie1");
-   * ```
-   */
-  removeItem: (name: string, path?: string) => void;
-
-  /**
    * Clears all cookies from cookieStorage.
    *
    * @returns {void}
@@ -126,6 +47,20 @@ export interface CookieStorage extends Storage {
   ) => string;
 
   /**
+   * Retrieves the value of the cookie with the specified name from the document.cookie.
+   *
+   * @param {string} name The name of the cookie.
+   * @returns {string|null} The value of the cookie, or null if the cookie is not found.
+   *
+   * @example
+   *
+   * ```ts
+   * cookieStorage.getItem("cookie1"); // "value1"
+   * ```
+   */
+  getItem: (name: string) => null | string;
+
+  /**
    * Get a cookie by index from cookieStorage.
    *
    * @param {number} index The index of the cookie to retrieve.
@@ -137,7 +72,7 @@ export interface CookieStorage extends Storage {
    * cookieStorage.key; // "cookie1"
    * ```
    */
-  key: (index: number) => string | null;
+  key: (index: number) => null | string;
 
   /**
    * Get the length of cookieStorage (the number of individual cookies).
@@ -151,4 +86,69 @@ export interface CookieStorage extends Storage {
    * ```
    */
   length: number;
+
+  /**
+   * Removes a cookie with the specified name.
+   *
+   * @param {string} name The name of the cookie to be removed.
+   * @param {string} [path] The path of the cookie to be removed.
+   *
+   * @returns {void}
+   *
+   * @example
+   *
+   * ```ts
+   * cookieStorage.removeItem("cookie1");
+   * ```
+   */
+  removeItem: (name: string, path?: string) => void;
+
+  /**
+   * Sets a cookie with the specified name and value.
+   *
+   * @param {string} name The name of the cookie.
+   * @param {string} value The value to be set for the cookie.
+   * @param {CookieOptions} [options] Optional cookie options.
+   *
+   * @returns {void}
+   *
+   * @example
+   *
+   * ```ts
+   * cookieStorage.setItem("cookie1", "value1", { path: "/" });
+   * ```
+   */
+  setItem: (name: string, value: string, options?: CookieOptions) => void;
+
+  /**
+   * Sign a cookie value.
+   *
+   * @param {string} value The value to sign.
+   * @param {string} secret The secret to use for signing.
+   *
+   * @returns {string} The signed value.
+   *
+   * @example
+   *
+   * ```ts
+   * cookieStorage.sign("unsignedValue", process.env.SECRET); // "signedValue"
+   * ```
+   */
+  sign: (value: string, secret: string) => string;
+
+  /**
+   * Unsign a signed cookie.
+   *
+   * @param signedCookie The signed cookie to unsign.
+   * @param secret The secret to use for unsigning.
+   *
+   * @returns The unsigned cookie or null if the signed cookie is invalid.
+   *
+   * @example
+   *
+   * ```ts
+   * cookieStorage.unsign("signedValue", process.env.SECRET); // "unsignedValue"
+   * ```
+   */
+  unsign: (signedCookie: string, secret: string) => null | string;
 }

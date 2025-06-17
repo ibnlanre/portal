@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { createStore } from "./index";
 import { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
 import { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
-import { createStore } from "./index";
 
 vi.mock("@/create-store/functions/library/create-composite-store");
 vi.mock("@/create-store/functions/library/create-primitive-store");

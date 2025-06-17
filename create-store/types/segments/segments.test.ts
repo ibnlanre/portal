@@ -1,5 +1,6 @@
-import { describe, expectTypeOf, it } from "vitest";
 import type { Segments } from "./index";
+
+import { describe, expectTypeOf, it } from "vitest";
 
 describe("Segments type", () => {
   it("should correctly infer types for nested objects", () => {
@@ -13,7 +14,7 @@ describe("Segments type", () => {
       };
     }>;
 
-    type Expected = ["a"] | ["a", "b"] | ["a", "b", "c"] | ["a", "b", "c", 4];
+    type Expected = ["a", "b", "c", 4] | ["a", "b", "c"] | ["a", "b"] | ["a"];
     expectTypeOf<Result>().toEqualTypeOf<Expected>();
   });
 
@@ -28,7 +29,7 @@ describe("Segments type", () => {
       };
     }>;
 
-    type Expected = ["a"] | ["a", "b"] | ["a", "b", "c"] | ["a", "b", "c", "d"];
+    type Expected = ["a", "b", "c", "d"] | ["a", "b", "c"] | ["a", "b"] | ["a"];
     expectTypeOf<Result>().toEqualTypeOf<Expected>();
   });
 
@@ -41,7 +42,7 @@ describe("Segments type", () => {
       };
     }>;
 
-    type Expected = ["a"] | ["a", "b"] | ["a", "b", "c"];
+    type Expected = ["a", "b", "c"] | ["a", "b"] | ["a"];
     expectTypeOf<Result>().toEqualTypeOf<Expected>();
   });
 });

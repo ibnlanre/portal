@@ -7,9 +7,10 @@ import type { Split } from "@/create-store/types/split";
 export type ResolvePath<
   Store extends Dictionary,
   Key extends Paths<Store> = never,
-  Delimiter extends string = "."
-> = Split<Key, Delimiter> extends infer Segment
-  ? Segment extends Segments<Store, Delimiter>
-    ? ResolveSegment<Store, Segment, Delimiter>
-    : never
-  : never;
+  Delimiter extends string = ".",
+> =
+  Split<Key, Delimiter> extends infer Segment
+    ? Segment extends Segments<Store, Delimiter>
+      ? ResolveSegment<Store, Segment, Delimiter>
+      : never
+    : never;

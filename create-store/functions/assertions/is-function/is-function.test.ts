@@ -1,6 +1,7 @@
 import type { Initializer } from "@/create-store/types/initializer";
 
 import { describe, expect, it } from "vitest";
+
 import { isFunction } from "./index";
 
 describe("isFunction", () => {

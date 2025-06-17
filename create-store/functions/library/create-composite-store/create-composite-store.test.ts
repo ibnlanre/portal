@@ -17,7 +17,7 @@ describe("createCompositeStore", () => {
       count: 0,
       user: {
         name: "John",
-        preferences: { theme: "light", notifications: true },
+        preferences: { notifications: true, theme: "light" },
       },
     };
 
@@ -33,7 +33,7 @@ describe("createCompositeStore", () => {
           count: 0,
           user: {
             name: "John",
-            preferences: { theme: "light", notifications: true },
+            preferences: { notifications: true, theme: "light" },
           },
         });
       });
@@ -41,11 +41,11 @@ describe("createCompositeStore", () => {
       it("should get nested state", () => {
         expect(store.user.$get()).toEqual({
           name: "John",
-          preferences: { theme: "light", notifications: true },
+          preferences: { notifications: true, theme: "light" },
         });
         expect(store.user.preferences.$get()).toEqual({
-          theme: "light",
           notifications: true,
+          theme: "light",
         });
         expect(store.user.preferences.theme.$get()).toBe("light");
       });
@@ -58,8 +58,8 @@ describe("createCompositeStore", () => {
       it("should get state via $key path notation", () => {
         expect(store.$key("user.preferences.theme").$get()).toBe("light");
         expect(store.$key("user.preferences").$get()).toEqual({
-          theme: "light",
           notifications: true,
+          theme: "light",
         });
       });
     });
@@ -74,7 +74,7 @@ describe("createCompositeStore", () => {
           count: 10,
           user: {
             name: "Jane",
-            preferences: { theme: "dark", notifications: false },
+            preferences: { notifications: false, theme: "dark" },
           },
         });
 
@@ -82,7 +82,7 @@ describe("createCompositeStore", () => {
           count: 0,
           user: {
             name: "John",
-            preferences: { theme: "light", notifications: true },
+            preferences: { notifications: true, theme: "light" },
           },
         });
 
@@ -90,7 +90,7 @@ describe("createCompositeStore", () => {
           count: 10,
           user: {
             name: "Jane",
-            preferences: { theme: "dark", notifications: false },
+            preferences: { notifications: false, theme: "dark" },
           },
         });
 
@@ -100,7 +100,7 @@ describe("createCompositeStore", () => {
           count: 0,
           user: {
             name: "John",
-            preferences: { theme: "light", notifications: true },
+            preferences: { notifications: true, theme: "light" },
           },
         });
 
@@ -108,7 +108,7 @@ describe("createCompositeStore", () => {
           count: 20,
           user: {
             name: "Jane",
-            preferences: { theme: "dark", notifications: false },
+            preferences: { notifications: false, theme: "dark" },
           },
         });
       });
@@ -120,7 +120,7 @@ describe("createCompositeStore", () => {
           count: 0,
           user: {
             name: "John",
-            preferences: { theme: "light", notifications: true },
+            preferences: { notifications: true, theme: "light" },
           },
         });
 
@@ -128,7 +128,7 @@ describe("createCompositeStore", () => {
           count: 10,
           user: {
             name: "John",
-            preferences: { theme: "light", notifications: true },
+            preferences: { notifications: true, theme: "light" },
           },
         });
       });
@@ -141,7 +141,7 @@ describe("createCompositeStore", () => {
           count: 0,
           user: {
             name: "John",
-            preferences: { theme: "light", notifications: true },
+            preferences: { notifications: true, theme: "light" },
           },
         });
 
@@ -149,7 +149,7 @@ describe("createCompositeStore", () => {
           count: 0,
           user: {
             name: "Jane",
-            preferences: { theme: "dark", notifications: true },
+            preferences: { notifications: true, theme: "dark" },
           },
         });
       });
@@ -157,19 +157,19 @@ describe("createCompositeStore", () => {
       it("should set nested values via $key path notation", () => {
         store
           .$key("user.preferences")
-          .$set({ theme: "dark", notifications: false });
+          .$set({ notifications: false, theme: "dark" });
 
         expect(state).toEqual({
           count: 0,
           user: {
             name: "John",
-            preferences: { theme: "light", notifications: true },
+            preferences: { notifications: true, theme: "light" },
           },
         });
 
         expect(store.user.preferences.$get()).toEqual({
-          theme: "dark",
           notifications: false,
+          theme: "dark",
         });
 
         store.$key("user.name").$set("Alice");
@@ -178,7 +178,7 @@ describe("createCompositeStore", () => {
           count: 0,
           user: {
             name: "John",
-            preferences: { theme: "light", notifications: true },
+            preferences: { notifications: true, theme: "light" },
           },
         });
 
@@ -192,7 +192,7 @@ describe("createCompositeStore", () => {
           count: 0,
           user: {
             name: "John",
-            preferences: { theme: "light", notifications: true },
+            preferences: { notifications: true, theme: "light" },
           },
         });
         expect(store.count.$get()).toBe(5);
@@ -202,7 +202,7 @@ describe("createCompositeStore", () => {
           count: 0,
           user: {
             name: "John",
-            preferences: { theme: "light", notifications: true },
+            preferences: { notifications: true, theme: "light" },
           },
         });
         expect(store.user.name.$get()).toBe("JOHN");
@@ -215,7 +215,7 @@ describe("createCompositeStore", () => {
           count: 0,
           user: {
             name: "John",
-            preferences: { theme: "light", notifications: true },
+            preferences: { notifications: true, theme: "light" },
           },
         });
         expect(store.user.preferences.$key("theme").$get()).toBe("dark");
@@ -227,7 +227,7 @@ describe("createCompositeStore", () => {
           count: 0,
           user: {
             name: "John",
-            preferences: { theme: "light", notifications: true },
+            preferences: { notifications: true, theme: "light" },
           },
         });
 
@@ -237,7 +237,7 @@ describe("createCompositeStore", () => {
           count: 0,
           user: {
             name: "Jane",
-            preferences: { theme: "light", notifications: true },
+            preferences: { notifications: true, theme: "light" },
           },
         });
       });
@@ -255,7 +255,7 @@ describe("createCompositeStore", () => {
           count: 0,
           user: {
             name: "Jane",
-            preferences: { theme: "light", notifications: true },
+            preferences: { notifications: true, theme: "light" },
           },
         });
 
@@ -272,8 +272,8 @@ describe("createCompositeStore", () => {
           user: {
             name: "Jane",
             preferences: {
-              theme: "dark",
               notifications: true,
+              theme: "dark",
             },
           },
         });
@@ -408,7 +408,7 @@ describe("createCompositeStore", () => {
     });
 
     it("should support selectors and dependency arrays", () => {
-      const { result, rerender } = renderHook(
+      const { rerender, result } = renderHook(
         (prefix) => store.text.$use((text) => `${prefix}: ${text}`, [prefix]),
         { initialProps: "prefix" }
       );
@@ -446,18 +446,18 @@ describe("createCompositeStore", () => {
 
     it("should support deep partial updates with $use hook", () => {
       const complexStore = createCompositeStore({
-        user: {
-          name: "John",
-          age: 30,
-          preferences: {
-            theme: "light",
-            notifications: true,
-            language: "en",
-          },
-        },
         settings: {
-          volume: 80,
           autoplay: false,
+          volume: 80,
+        },
+        user: {
+          age: 30,
+          name: "John",
+          preferences: {
+            language: "en",
+            notifications: true,
+            theme: "light",
+          },
         },
       });
 
@@ -472,18 +472,18 @@ describe("createCompositeStore", () => {
       });
 
       expect(rootResult.current[0]).toEqual({
-        user: {
-          name: "Jane",
-          age: 30,
-          preferences: {
-            theme: "light",
-            notifications: true,
-            language: "en",
-          },
-        },
         settings: {
-          volume: 80,
           autoplay: false,
+          volume: 80,
+        },
+        user: {
+          age: 30,
+          name: "Jane",
+          preferences: {
+            language: "en",
+            notifications: true,
+            theme: "light",
+          },
         },
       });
 
@@ -492,12 +492,12 @@ describe("createCompositeStore", () => {
       });
 
       expect(userResult.current[0]).toEqual({
-        name: "Jane",
         age: 31,
+        name: "Jane",
         preferences: {
-          theme: "dark",
-          notifications: true,
           language: "en",
+          notifications: true,
+          theme: "dark",
         },
       });
 
@@ -506,9 +506,9 @@ describe("createCompositeStore", () => {
       });
 
       expect(preferencesResult.current[0]).toEqual({
-        theme: "dark",
-        notifications: false,
         language: "en",
+        notifications: false,
+        theme: "dark",
       });
 
       expect(rootResult.current[0].user.preferences.notifications).toBe(false);
@@ -518,37 +518,37 @@ describe("createCompositeStore", () => {
 
   describe("Derived State within React", () => {
     interface User {
+      age: number;
       id: number;
       name: string;
-      age: number;
     }
 
     interface Item {
       id: number;
-      value: string;
       ownedBy: number;
+      value: string;
     }
 
     it("should demonstrate reactivity issues with useMemo and provide correct solutions", () => {
       const users: User[] = [
-        { id: 0, name: "Alice", age: 25 },
-        { id: 1, name: "Bob", age: 30 },
+        { age: 25, id: 0, name: "Alice" },
+        { age: 30, id: 1, name: "Bob" },
       ];
 
       const items: Item[] = [
-        { id: 1, value: "Item 1", ownedBy: 1 },
-        { id: 2, value: "Item 2", ownedBy: 0 },
-        { id: 3, value: "Item 3", ownedBy: 1 },
+        { id: 1, ownedBy: 1, value: "Item 1" },
+        { id: 2, ownedBy: 0, value: "Item 2" },
+        { id: 3, ownedBy: 1, value: "Item 3" },
       ];
 
       const commonStore = createCompositeStore({
-        users,
-        items,
         getUserItems: (userId: number) => {
           return commonStore.items
             .$get()
             .filter((item) => item.ownedBy === userId);
         },
+        items,
+        users,
       });
 
       const userId = 1;
@@ -574,7 +574,7 @@ describe("createCompositeStore", () => {
       act(() => {
         commonStore.items.$set((prevItems) => [
           ...prevItems,
-          { id: 4, value: "Item 4", ownedBy: userId },
+          { id: 4, ownedBy: userId, value: "Item 4" },
         ]);
       });
 
@@ -617,7 +617,7 @@ describe("createCompositeStore", () => {
       act(() => {
         commonStore.items.$set((prevItems) => [
           ...prevItems,
-          { id: 5, value: "Item 5", ownedBy: userId },
+          { id: 5, ownedBy: userId, value: "Item 5" },
         ]);
       });
 
@@ -636,16 +636,16 @@ describe("createCompositeStore", () => {
 
     it("should handle dynamic user selection with derived state", () => {
       const commonStore = createCompositeStore({
-        users: [
-          { id: 0, name: "Alice", age: 25 },
-          { id: 1, name: "Bob", age: 30 },
-        ],
         items: [
-          { id: 1, value: "Item 1", ownedBy: 1 },
-          { id: 2, value: "Item 2", ownedBy: 0 },
-          { id: 3, value: "Item 3", ownedBy: 1 },
+          { id: 1, ownedBy: 1, value: "Item 1" },
+          { id: 2, ownedBy: 0, value: "Item 2" },
+          { id: 3, ownedBy: 1, value: "Item 3" },
         ],
         selectedUserId: 1,
+        users: [
+          { age: 25, id: 0, name: "Alice" },
+          { age: 30, id: 1, name: "Bob" },
+        ],
       });
 
       const { result } = renderHook(() => {
@@ -658,7 +658,7 @@ describe("createCompositeStore", () => {
           state.users.find((user) => user.id === state.selectedUserId)
         );
 
-        return { selectedUserId, userItems, selectedUser };
+        return { selectedUser, selectedUserId, userItems };
       });
 
       expect(result.current.selectedUserId).toBe(1);
@@ -678,7 +678,7 @@ describe("createCompositeStore", () => {
       act(() => {
         commonStore.items.$set((prevItems) => [
           ...prevItems,
-          { id: 4, value: "Item 4", ownedBy: 0 },
+          { id: 4, ownedBy: 0, value: "Item 4" },
         ]);
       });
 
@@ -690,19 +690,19 @@ describe("createCompositeStore", () => {
   describe("Advanced Store Patterns", () => {
     describe("Method-based store (reducer pattern)", () => {
       const count = createCompositeStore({
-        value: 0,
-        set(value: number) {
-          count.value.$set(value);
+        decrease(value: number = 1) {
+          count.value.$set((state) => state - value);
         },
         increase(value: number = 1) {
           count.value.$set((state) => state + value);
         },
-        decrease(value: number = 1) {
-          count.value.$set((state) => state - value);
-        },
         reset() {
           count.value.$set(0);
         },
+        set(value: number) {
+          count.value.$set(value);
+        },
+        value: 0,
       });
 
       beforeEach(() => {
@@ -763,15 +763,15 @@ describe("createCompositeStore", () => {
     describe("Complex nested store with methods", () => {
       const store = createCompositeStore({
         bears: 0,
-        fish: 10,
-        increasePopulation: (by: number = 1) => {
-          store.bears.$set((state) => state + by);
-        },
         eatFish: () => {
           store.fish.$set((state) => Math.max(0, state - 1));
           if (store.fish.$get() === 0) {
             store.bears.$set((state) => Math.max(0, state - 1));
           }
+        },
+        fish: 10,
+        increasePopulation: (by: number = 1) => {
+          store.bears.$set((state) => state + by);
         },
         removeAllBears: () => {
           store.bears.$set(0);
@@ -832,7 +832,7 @@ describe("createCompositeStore", () => {
         const { result } = renderHook(() => {
           const [state] = store.$use();
           const [bearCount] = store.bears.$use();
-          return { state, bearCount };
+          return { bearCount, state };
         });
 
         expect(result.current.state).toEqual(
@@ -847,7 +847,7 @@ describe("createCompositeStore", () => {
         const { result: updatedResult } = renderHook(() => {
           const [state] = store.$use();
           const [bearCount] = store.bears.$use();
-          return { state, bearCount };
+          return { bearCount, state };
         });
 
         expect(updatedResult.current.state.bears).toBe(3);
@@ -858,7 +858,7 @@ describe("createCompositeStore", () => {
 
   describe("Circular References", () => {
     it("should handle circular references in selectors", () => {
-      const circularObj: { ref: typeof circularObj | null } = { ref: null };
+      const circularObj: { ref: null | typeof circularObj } = { ref: null };
       circularObj.ref = circularObj;
 
       const store = createCompositeStore({
@@ -873,7 +873,7 @@ describe("createCompositeStore", () => {
     });
 
     it("should handle creating store with circular reference", () => {
-      const circularObj: { ref: typeof circularObj | null } = { ref: null };
+      const circularObj: { ref: null | typeof circularObj } = { ref: null };
       circularObj.ref = circularObj;
 
       expect(() => {
@@ -884,7 +884,7 @@ describe("createCompositeStore", () => {
     });
 
     it("should handle accessing value with circular reference", () => {
-      const circularObj: { ref: typeof circularObj | null } = { ref: null };
+      const circularObj: { ref: null | typeof circularObj } = { ref: null };
       circularObj.ref = circularObj;
 
       const store = createCompositeStore({
@@ -895,7 +895,7 @@ describe("createCompositeStore", () => {
     });
 
     it("should reuse augmented objects for circular references", () => {
-      const circularObj: { value: number; ref?: typeof circularObj } = {
+      const circularObj: { ref?: typeof circularObj; value: number } = {
         value: 42,
       };
       circularObj.ref = circularObj;
@@ -943,7 +943,7 @@ describe("createCompositeStore", () => {
   describe("Edge Cases and Error Handling", () => {
     it("should handle undefined and null values", () => {
       const store = createCompositeStore({
-        data: { value: 42 as number | null | undefined },
+        data: { value: 42 as null | number | undefined },
       });
 
       store.data.$set({ value: undefined });
@@ -987,7 +987,7 @@ describe("createCompositeStore", () => {
 
     it("should handle symbol keys", () => {
       const sym = Symbol("test");
-      const objWithSymbol = { [sym]: "symbol value", regular: "regular" };
+      const objWithSymbol = { regular: "regular", [sym]: "symbol value" };
 
       const store = createCompositeStore({
         data: objWithSymbol,
@@ -1003,7 +1003,7 @@ describe("createCompositeStore", () => {
     it("should handle large state objects efficiently", () => {
       const largeState: Record<string, any> = {};
       for (let i = 0; i < 1000; i++) {
-        largeState[`key${i}`] = { value: i, nested: { data: i * 2 } };
+        largeState[`key${i}`] = { nested: { data: i * 2 }, value: i };
       }
 
       const store = createCompositeStore(largeState);
@@ -1038,11 +1038,11 @@ describe("createCompositeStore", () => {
     it("should maintain type safety with nested objects", () => {
       const userState = {
         profile: {
-          name: "John",
           age: 30,
+          name: "John",
           settings: {
-            theme: "light" as "light" | "dark",
             notifications: true,
+            theme: "light" as "dark" | "light",
           },
         },
       };
@@ -1060,8 +1060,8 @@ describe("createCompositeStore", () => {
     it("should handle optional properties correctly", () => {
       const store = createCompositeStore({
         user: {
-          name: "John",
           email: undefined as string | undefined,
+          name: "John",
         },
       });
 
@@ -1075,22 +1075,22 @@ describe("createCompositeStore", () => {
 
   describe("Selector Functions Advanced Cases", () => {
     const store = createCompositeStore({
-      users: [
-        { id: 1, name: "John", active: true },
-        { id: 2, name: "Jane", active: false },
-        { id: 3, name: "Bob", active: true },
-      ],
       filters: { showActive: true },
+      users: [
+        { active: true, id: 1, name: "John" },
+        { active: false, id: 2, name: "Jane" },
+        { active: true, id: 3, name: "Bob" },
+      ],
     });
 
     beforeEach(() => {
       store.$set({
-        users: [
-          { id: 1, name: "John", active: true },
-          { id: 2, name: "Jane", active: false },
-          { id: 3, name: "Bob", active: true },
-        ],
         filters: { showActive: true },
+        users: [
+          { active: true, id: 1, name: "John" },
+          { active: false, id: 2, name: "Jane" },
+          { active: true, id: 3, name: "Bob" },
+        ],
       });
     });
 
@@ -1105,7 +1105,7 @@ describe("createCompositeStore", () => {
 
     it("should handle selectors with multiple dependencies", () => {
       const filteredUsers = store.$get((state) => {
-        const { users, filters } = state;
+        const { filters, users } = state;
         return filters.showActive ? users.filter((user) => user.active) : users;
       });
 
@@ -1113,7 +1113,7 @@ describe("createCompositeStore", () => {
 
       store.filters.showActive.$set(false);
       const allUsers = store.$get((state) => {
-        const { users, filters } = state;
+        const { filters, users } = state;
         return filters.showActive ? users.filter((user) => user.active) : users;
       });
 
@@ -1123,9 +1123,9 @@ describe("createCompositeStore", () => {
     it("should handle async selector scenarios", async () => {
       const asyncSelector = async (
         users: {
+          active: boolean;
           id: number;
           name: string;
-          active: boolean;
         }[]
       ) => {
         await new Promise((resolve) => setTimeout(resolve, 1));
@@ -1141,14 +1141,14 @@ describe("createCompositeStore", () => {
     it("should work with immutability libraries", () => {
       const store = createCompositeStore({
         todos: [
-          { id: 1, text: "Learn React", completed: false },
-          { id: 2, text: "Build App", completed: false },
+          { completed: false, id: 1, text: "Learn React" },
+          { completed: false, id: 2, text: "Build App" },
         ],
       });
 
       store.todos.$set((todos) => [
         ...todos,
-        { id: 3, text: "Deploy", completed: false },
+        { completed: false, id: 3, text: "Deploy" },
       ]);
 
       expect(store.todos.$get()).toHaveLength(3);
@@ -1157,8 +1157,8 @@ describe("createCompositeStore", () => {
 
     it("should handle state serialization and deserialization", () => {
       const initialState = {
-        user: { name: "John", age: 30 },
         settings: { theme: "dark" },
+        user: { age: 30, name: "John" },
       };
 
       const store = createCompositeStore(initialState);

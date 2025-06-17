@@ -4,7 +4,7 @@
  * @param {number} index The index of the cookie to retrieve.
  * @returns {string | null} The cookie value if found, or null if not found.
  */
-export function getCookieByIndex(index: number): string | null {
+export function getCookieByIndex(index: number): null | string {
   try {
     if (typeof document === "undefined") return null;
 

@@ -1,6 +1,7 @@
-import { signCookie } from "@/cookie-storage/functions/sign-cookie";
 import { describe, expect, it } from "vitest";
+
 import { unsignCookie } from "./index";
+import { signCookie } from "@/cookie-storage/functions/sign-cookie";
 
 describe("unsignCookie", () => {
   const secret = "mySecret";

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { createPathComponents } from "./index";
 
 describe("createPathComponents", () => {

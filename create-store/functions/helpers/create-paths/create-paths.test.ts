@@ -1,6 +1,7 @@
 import type { Dictionary } from "@/create-store/types/dictionary";
 
 import { describe, expect, it } from "vitest";
+
 import { createPaths } from "./index";
 
 describe("createPaths", () => {

@@ -1,5 +1,6 @@
 import { Buffer } from "buffer";
 import { describe, expect, it, vi } from "vitest";
+
 import { unsignCookie } from "./index";
 
 vi.mock("buffer");
