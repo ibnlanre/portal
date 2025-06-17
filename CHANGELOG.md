@@ -1,3 +1,19 @@
+# [5.0.0](https://github.com/ibnlanre/portal/compare/v4.0.1...v5.0.0) (2025-06-17)
+
+
+### Bug Fixes
+
+* update default values for cookiePrefix and cookieScope in createCookieKey function and tests ([7b1824a](https://github.com/ibnlanre/portal/commit/7b1824ab5740422bb8e4d97f888ac9827c4d9140))
+
+
+### Features
+
+* Add initial documentation for @ibnlanre/portal library including setup, store creation, and persistence methods ([2a7e858](https://github.com/ibnlanre/portal/commit/2a7e858918cd13a8f4a3cf1fb1e9cf7082e22fd8))
+* Enhance createCompositeStore with deep partial updates and derived state handling ([67d8121](https://github.com/ibnlanre/portal/commit/67d81210e09b171dd957219d61e2a985a9b53bf9))
+* implement deep merge function and remove callable properties ([51d4143](https://github.com/ibnlanre/portal/commit/51d4143fb7c40042ea9fa8045fc9ac572d810cf3))
+
+
+
 ## [4.0.1](https://github.com/ibnlanre/portal/compare/v0.0.7...v4.0.1) (2025-01-23)
 
 

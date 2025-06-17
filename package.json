@@ -106,5 +106,5 @@
     "typecheck": "tsc --pretty --noEmit",
     "version": "pnpm run commit"
   },
-  "version": "4.0.1"
+  "version": "5.0.0"
 }
