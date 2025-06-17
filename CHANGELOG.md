@@ -1,9 +1,15 @@
-## [5.0.1](https://github.com/ibnlanre/portal/compare/v5.0.0...v5.0.1) (2025-06-17)
+## [5.0.2](https://github.com/ibnlanre/portal/compare/v5.0.1...v5.0.2) (2025-06-17)
 
 
 ### Bug Fixes
 
+* **tsconfig:** add trailing comma in paths configuration ([7282bed](https://github.com/ibnlanre/portal/commit/7282bed7e37d1da3c8ff1bc6162ff61fd0aa177d))
 * Update build status badge to reflect correct workflow and branch ([732035b](https://github.com/ibnlanre/portal/commit/732035b5c5575bff96cf393e259d3b13df772777))
+
+
+### Features
+
+* add vitest configuration for testing setup ([0ff6a56](https://github.com/ibnlanre/portal/commit/0ff6a567d804734e203511f99633d3cec499f4ec))
 
 
 
