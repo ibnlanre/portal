@@ -32,6 +32,7 @@ export type {
   GetSessionStorage,
   SetSessionStorage,
 } from "@/create-store/types/session-storage";
+export type { SetPartial } from "@/create-store/types/set-partial";
 export type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
 export type {
   PartialStateManager,
