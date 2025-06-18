@@ -271,21 +271,17 @@ createStore<S>(initialState: S | Promise<S>): Store<S>
     import { createStore } from "@ibnlanre/portal";
 
     async function fetchUserData(): Promise<{ id: number; name: string }> {
-      // Simulate API call
-      return new Promise((resolve) =>
-        setTimeout(() => resolve({ id: 1, name: "Fetched User" }), 500)
-      );
+      return new Promise((resolve) => {
+        setTimeout(() => resolve({ id: 1, name: "Fetched User" }), 1000);
+      });
     }
 
-    async function initializeApp() {
-      const userProfileStore = await createStore(fetchUserData());
-      // The store is now initialized with the fetched data.
-      // Note: userProfileStore holds { id: 1, name: "Fetched User" } as a single value.
-      // It's not a composite store with userProfileStore.id or userProfileStore.name.
-      console.log(userProfileStore.$get()); // Output: { id: 1, name: "Fetched User" }
-    }
+    const userProfileStore = await createStore(fetchUserData());
+    // The store is now initialized as a primitive store with the fetched data.
+    // Note: userProfileStore holds { id: 1, name: "Fetched User" } as a single value.
+    // It's not created as a composite store despite being an object.
 
-    initializeApp();
+    console.log(userProfileStore.$get()); // Output: { id: 1, name: "Fetched User" }
     ```
 
 ### Use store instance methods
@@ -766,17 +762,14 @@ async function fetchInitialData(): Promise<UserData> {
   );
 }
 
-// Using an async IIFE to manage the promise from createStore
-(async () => {
-  const asyncUserStore = await createStore(fetchInitialData());
-  // At this point, the promise has resolved, and the store is initialized.
-  const userData = asyncUserStore.$get();
-  console.log(userData); // { id: 1, name: "Lyn", email: "lyn@example.com" }
+const asyncUserStore = await createStore(fetchInitialData());
+// At this point, the promise has resolved, and the store is initialized.
+const userData = asyncUserStore.$get();
+console.log(userData); // { id: 1, name: "Lyn", email: "lyn@example.com" }
 
-  // userData is a single object. asyncUserStore.id does not exist as a sub-store.
-  // To update, you'd set the whole object:
-  // asyncUserStore.$set({ id: 2, name: "Alex", email: "alex@example.com" });
-})();
+// userData is a single object. asyncUserStore.id does not exist as a sub-store.
+// To update, you'd set the whole object:
+asyncUserStore.$set({ id: 2, name: "Alex", email: "alex@example.com" });
 ```
 
 If you need a nested store structure from asynchronously loaded data, initialize the store with a placeholder structure (or `null`) and then update it using `$set` once the data is fetched. This allows the composite store structure to be established correctly.
@@ -805,6 +798,7 @@ async function loadAppData() {
       settings: { theme: "dark" },
     };
     appDataStore.$set({ ...fetchedData, loading: false });
+
     // Now appDataStore.user.name.$get() would work.
     console.log(appDataStore.user.name.$get()); // "Sam"
   } catch (error) {
@@ -854,6 +848,7 @@ const graphStore = createStore({
 // Accessing data:
 // 1. For 'selectedNode' (a direct object property, so it and its properties are stores)
 console.log(graphStore.selectedNode.name.$get()); // "A"
+
 if (graphStore.selectedNode.metadata) {
   // Check if metadata exists
   console.log(graphStore.selectedNode.metadata.type.$get()); // "root"
@@ -865,6 +860,7 @@ const currentNodes = graphStore.nodes.$get(); // Get the array value
 // Access properties of objects within the 'currentNodes' array
 console.log(currentNodes[0].name); // "A" (Accessing nodeA.name directly)
 console.log(currentNodes[0].connections[0].name); // "B" (Accessing nodeA.connections[0].name which is nodeB.name)
+
 // Demonstrating the circular reference is preserved:
 console.log(currentNodes[0].connections[0].connections[0].name); // "A" (nodeA -> nodeB -> nodeA)
 
@@ -875,6 +871,7 @@ console.log(graphStore.selectedNode.name.$get()); // "Node Alpha"
 
 // The original nodeA object (referenced by selectedNode and within the nodes array) is updated
 console.log(nodeA.name); // "Node Alpha"
+
 // Verify in the array retrieved from the store
 const updatedNodes = graphStore.nodes.$get();
 console.log(updatedNodes[0].name); // "Node Alpha"
@@ -882,17 +879,22 @@ console.log(updatedNodes[0].name); // "Node Alpha"
 // If you were to update an element within the 'nodes' array, you'd do it like this:
 graphStore.nodes.$set((prevNodes) => {
   const newNodes = [...prevNodes];
+
   // Example: Change name of the second node (nodeB)
   if (newNodes[1]) {
     newNodes[1] = { ...newNodes[1], name: "Node Beta" };
   }
+
   return newNodes;
 });
+
 // Assuming nodeB was correctly updated in the array:
 const finalNodes = graphStore.nodes.$get();
+
 if (finalNodes[1]) {
   console.log(finalNodes[1].name); // Should be "Node Beta"
 }
+
 // And the original nodeB object is also updated if its reference was maintained
 console.log(nodeB.name); // "Node Beta"
 ```
@@ -924,8 +926,8 @@ When your store's state includes arrays, `@ibnlanre/portal` treats them in a spe
   const firstUserName = usersArray[0].name; // "Alice"
 
   // Incorrect: Attempting to treat an array element as a store
-  // const firstUserStore = store.users[0]; // This is not how to access it
-  // const name = store.users[0].name.$get(); // This will cause an error
+  const firstUserStore = store.users[0]; // This is not how to access it
+  const name = store.users[0].name.$get(); // This will cause an error
   ```
 
 - **Updating arrays**:
@@ -1021,7 +1023,9 @@ normalizeObject<T extends object>(obj: T): Record<PropertyKey, unknown> // Simpl
     // Now you can access properties like browserInfoStore.navigator.userAgent.$get()
     // Note: Functions on window (like alert) would typically be excluded by normalization.
     console.log(browserInfoStore.location.href.$get());
-    // console.log(browserInfoStore.document.title.$get()); // This might work if 'document' is data-like
+
+    // This might work if 'document' is data-like
+    console.log(browserInfoStore.document.title.$get());
     ```
 
 2.  **Normalizing a custom interface with methods and symbols:**
@@ -1060,6 +1064,7 @@ normalizeObject<T extends object>(obj: T): Record<PropertyKey, unknown> // Simpl
     const userProfileStore = createStore(normalizedUserProfile);
     console.log(userProfileStore.id.$get()); // 123
     console.log(userProfileStore.data.value.$get()); // "test"
+
     // userProfileStore.getFullName is undefined (method was stripped)
     // userProfileStore.internalConfig is undefined (symbol key was excluded)
     ```
@@ -1109,7 +1114,7 @@ const localStorageAdapter = createLocalStorageAdapter("myAppCounter", {
 const [getStoredCounter, setStoredCounter] = localStorageAdapter;
 
 // Load persisted state or use a default if nothing is stored
-const initialCounterState = getStoredCounter() ?? 0; // Default to 0 if null
+const initialCounterState = getStoredCounter(0); // Default to 0 if null
 const persistentCounterStore = createStore(initialCounterState);
 
 // Subscribe to store changes to save them to Local Storage
@@ -1133,10 +1138,10 @@ import { createStore, createSessionStorageAdapter } from "@ibnlanre/portal";
 const [getStoredSessionData, setStoredSessionData] =
   createSessionStorageAdapter("userSessionData");
 
-const initialSessionData = getStoredSessionData() ?? {
+const initialSessionData = getStoredSessionData({
   guestId: null,
   lastPage: "/",
-};
+});
 const sessionDataStore = createStore(initialSessionData);
 
 sessionDataStore.$act(setStoredSessionData, false);
@@ -1193,18 +1198,19 @@ const cookieAdapter = createCookieStorageAdapter("appPreferences", {
 
 const [getCookiePrefs, setCookiePrefs] = cookieAdapter;
 
-const initialPrefs = getCookiePrefs() ?? {
+const initialPrefs = getCookiePrefs({
   theme: "light",
   notifications: true,
-};
+});
 const prefsStore = createStore(initialPrefs);
 
 prefsStore.$act((newPrefs) => {
   setCookiePrefs(newPrefs);
+
   // Example: Update maxAge on a specific change
-  // if (newPrefs.notifications === false) {
-  //   setCookiePrefs(newPrefs, { maxAge: 3600 * 24 }); // Shorter expiry if notifications off
-  // }
+  if (newPrefs.notifications === false) {
+    setCookiePrefs(newPrefs, { maxAge: 3600 * 24 }); // Shorter expiry if notifications off
+  }
 }, false);
 
 prefsStore.$set({ theme: "dark" }); // State saved to a signed cookie
@@ -1245,18 +1251,18 @@ createBrowserStorageAdapter<State>(key: string, options: BrowserStorageAdapterOp
 import { createStore, createBrowserStorageAdapter } from "@ibnlanre/portal";
 
 // Example custom storage (can be async)
-const myCustomStorage = (() => {
-  const data: Record<string, string> = {};
-  return {
-    getItem: (key: string) => data[key] ?? null,
-    setItem: (key: string, value: string) => {
-      data[key] = value;
-    },
-    removeItem: (key: string) => {
-      delete data[key];
-    },
-  };
-})();
+const myCustomStorage = {
+  data: {} as Record<string, string>,
+  getItem(key: string) {
+    this.data[key];
+  },
+  removeItem(key: string) {
+    delete this.data[key];
+  },
+  setItem(key: string, value: string) {
+    this.data[key] = value;
+  },
+};
 
 const [getCustomState, setCustomState, removeCustomState] =
   createBrowserStorageAdapter("myCustomDataKey", {
@@ -1266,10 +1272,11 @@ const [getCustomState, setCustomState, removeCustomState] =
   });
 
 // Example usage (assuming synchronous custom storage for simplicity here)
-// const initialCustomData = getCustomState() ?? { lastSync: null };
-// const customDataStore = createStore(initialCustomData);
-// customDataStore.$act(setCustomState, false);
-// customDataStore.$set({ lastSync: new Date().toISOString() });
+const initialCustomData = getCustomState({ lastSync: null });
+const customDataStore = createStore(initialCustomData);
+
+customDataStore.$act(setCustomState, false);
+customDataStore.$set({ lastSync: new Date().toISOString() });
 ```
 
 ### Cookie Storage
@@ -1300,6 +1307,7 @@ Signs a string value using a secret key. This is useful for creating tamper-proo
   ```typescript
   const originalValue = "user-session-data";
   const secretKey = "your-super-secret-key";
+
   const signedValue = cookieStorage.sign(originalValue, secretKey);
   // signedValue might look like "user-session-data.asdfjklsemf..."
   ```
@@ -1316,10 +1324,12 @@ Verifies and unsigns a previously signed string using the corresponding secret k
   ```typescript
   const potentiallyTamperedValue = "user-session-data.asdfjklsemf...";
   const secretKey = "your-super-secret-key";
+
   const originalValue = cookieStorage.unsign(
     potentiallyTamperedValue,
     secretKey
   );
+
   if (originalValue === false) {
     console.error("Cookie signature is invalid!");
   } else {
@@ -1337,6 +1347,7 @@ Retrieves the value of a cookie by its name (key).
 - **Example**:
   ```typescript
   const themePreference = cookieStorage.getItem("userTheme");
+
   if (themePreference) {
     console.log("User theme:", themePreference);
   }
@@ -1407,6 +1418,7 @@ Constructs a standardized cookie name string based on a set of provided options.
     cookieScope: "userSession",
     cookieScopeCase: "camel",
   });
+
   // authTokenKey might be "__Secure-userSession_AuthenticationToken"
   console.log(authTokenKey);
   ```
@@ -1421,6 +1433,7 @@ Retrieves the name (key) of a cookie at a specific index in the document's cooki
 - **Example**:
   ```typescript
   const firstCookieName = cookieStorage.key(0);
+
   if (firstCookieName) {
     console.log("Name of the first cookie:", firstCookieName);
   }
@@ -1468,6 +1481,7 @@ import { createPrimitiveStore } from "@ibnlanre/portal";
 
 const isActiveStore = createPrimitiveStore(false);
 console.log(isActiveStore.$get()); // false
+
 isActiveStore.$set(true);
 ```
 
