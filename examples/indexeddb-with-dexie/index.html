@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IndexedDB + Dexie + Portal Store</title>
+    <style>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      .container {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+      }
+      h1 {
+        color: #2c3e50;
+      }
+      .note {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 15px;
+        border-radius: 6px;
+        margin: 15px 0;
+      }
+      pre {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 6px;
+        overflow-x: auto;
+        border: 1px solid #e9ecef;
+      }
+      code {
+        font-family: "Monaco", "Consolas", monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🗄️ IndexedDB + Dexie + Portal Store</h1>
+
+      <div class="note">
+        <strong>Check the browser console</strong> to see the example output.
+        Open DevTools (F12) → Console tab to view the logs.
+      </div>
+
+      <h2>What's happening:</h2>
+      <ul>
+        <li>Creating persisted stores with IndexedDB</li>
+        <li>Counter store with increment/decrement</li>
+        <li>Todo list with CRUD operations</li>
+        <li>User profile with custom Date serialization</li>
+        <li>Auto-persisting settings store</li>
+      </ul>
+
+      <h2>Commands to explore:</h2>
+      <pre><code># Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build</code></pre>
+
+      <p>
+        <strong>Pro tip:</strong> Open DevTools → Application → Storage →
+        IndexedDB → PortalStore to see the persisted data structure.
+      </p>
+    </div>
+
+    <script type="module" src="./index.ts"></script>
+  </body>
+</html>
