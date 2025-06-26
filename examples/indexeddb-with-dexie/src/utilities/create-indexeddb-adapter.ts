@@ -1,5 +1,4 @@
-import Dexie from "dexie";
-
+import { StoreDatabase } from "./store-database";
 import { createAsyncBrowserStorageAdapter } from "@/create-store/functions/adapters/create-async-browser-storage-adapter";
 import { AsyncStorageAdapterOptions } from "@/create-store/types/async-browser-storage-adapter";
 
@@ -7,26 +6,6 @@ export interface IndexedDBAdapterOptions<State, StoredState = State>
   extends AsyncStorageAdapterOptions<State, StoredState> {
   databaseName?: string;
   version?: number;
-}
-
-export interface StoreEntry<StoredState> {
-  id: string;
-  timestamp: number;
-  value: StoredState;
-}
-
-export class StoreDatabase<State, StoredState = State> extends Dexie {
-  stores: Dexie.Table<StoreEntry<StoredState>, string>;
-
-  constructor(databaseName = "PortalStore", version = 1) {
-    super(databaseName);
-
-    this.version(version).stores({
-      stores: "id, timestamp",
-    });
-
-    this.stores = this.table<StoreEntry<StoredState>, string>("stores");
-  }
 }
 
 export function createIndexedDBAdapter<State, StoredState = State>(

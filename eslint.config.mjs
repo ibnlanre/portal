@@ -105,7 +105,7 @@ const importConfig = tseslint.config({
 });
 
 const typescriptConfig = tseslint.config({
-  extends: tseslint.configs.stylisticTypeChecked,
+  extends: tseslint.configs.eslintRecommended,
   files: [EXT.TS],
   ignores: [EXT.DEFINITION_FILES, EXT.TYPE_DEFINITION, EXT.TEST],
   languageOptions: {

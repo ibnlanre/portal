@@ -16,11 +16,12 @@ import { useMemo, useSyncExternalStore } from "react";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
-import { combine } from "@/create-store/functions/helpers/combine";
+import { isUndefined } from "@/create-store/functions/assertions/is-undefined";
+import { replace } from "@/create-store/functions/helpers/replace";
 import { createPathComponents } from "@/create-store/functions/helpers/create-path-components";
 import { createPaths } from "@/create-store/functions/helpers/create-paths";
 import { createSnapshot } from "@/create-store/functions/helpers/create-snapshot";
-import { shallowMerge } from "@/create-store/functions/helpers/shallow-merge";
+import { merge } from "@/create-store/functions/helpers/merge";
 import { splitPath } from "@/create-store/functions/helpers/split-path";
 import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
@@ -91,16 +92,16 @@ export function createCompositeStore<State extends Dictionary>(
 
       if (isSetStateActionFunction(value)) {
         const resolvedValue = value(createSnapshot(current));
-        setProperty(combine(current, resolvedValue), path);
-      } else setProperty(combine(current, value), path);
+        setProperty(replace(current, resolvedValue), path);
+      } else setProperty(replace(current, value), path);
     };
   }
 
   function setStateAction(value: SetPartialStateAction<State>) {
     if (isSetStateActionFunction<State>(value)) {
       const resolvedValue = value(createSnapshot(state));
-      setState(combine(state, resolvedValue));
-    } else setState(combine(state, value));
+      setState(replace(state, resolvedValue));
+    } else setState(replace(state, value));
   }
 
   function get<
@@ -122,7 +123,7 @@ export function createCompositeStore<State extends Dictionary>(
   ): Dispatch<SetPartialStateAction<State>>;
 
   function set<Path extends Paths<State>>(path?: Path) {
-    if (!path) return setStateAction;
+    if (isUndefined(path)) return setStateAction;
     return createSetStatePathAction(path);
   }
 
@@ -214,7 +215,7 @@ export function createCompositeStore<State extends Dictionary>(
     Value extends ResolvePath<State, Path>,
   >(state: Value, path?: Path) {
     const store = buildStore(path);
-    return shallowMerge(state, store) as CompositeStore<State>;
+    return merge(state, store) as CompositeStore<State>;
   }
 
   function traverse<Path extends Paths<State> = never>(

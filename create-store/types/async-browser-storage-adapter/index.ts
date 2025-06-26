@@ -63,7 +63,7 @@ export interface AsyncStorageAdapterOptions<State, StoredState = State> {
   storageTransform?: (value: State) => StoredState;
 
   /**
-   * A function to transform the value before getting it from storage.
+   * A function to transform the value after getting it from storage.
    * This can be used to parse or modify the value.
    *
    * @param value The value to transform.

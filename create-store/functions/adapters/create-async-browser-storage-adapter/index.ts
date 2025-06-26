@@ -4,6 +4,8 @@ import type {
   AsyncSetBrowserStorage,
 } from "@/create-store/types/async-browser-storage-adapter";
 
+import { isNullish } from "@/create-store/functions/assertions/is-nullish";
+
 export function createAsyncBrowserStorageAdapter<State, StoredState = State>(
   key: string,
   {
@@ -22,7 +24,7 @@ export function createAsyncBrowserStorageAdapter<State, StoredState = State>(
 
   async function getStorageState(fallback?: State): Promise<State | undefined> {
     const value = await getItem(key);
-    if (value === undefined) return fallback;
+    if (isNullish(value)) return fallback;
     return usageTransform(value);
   }
 

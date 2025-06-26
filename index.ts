@@ -45,6 +45,7 @@ export type { StoreValueResolver } from "@/create-store/types/store-value-resolv
 export type { Subscriber } from "@/create-store/types/subscriber";
 
 export { cookieStorage } from "@/cookie-storage";
+export { combine } from "@/create-store/functions/helpers/combine";
 export { createStore } from "@/create-store";
 export { createBrowserStorageAdapter } from "@/create-store/functions/adapters/create-browser-storage-adapter";
 export { createCookieStorageAdapter } from "@/create-store/functions/adapters/create-cookie-storage-adapter";

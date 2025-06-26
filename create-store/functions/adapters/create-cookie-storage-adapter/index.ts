@@ -6,7 +6,8 @@ import type {
 } from "@/create-store/types/cookie-storage";
 
 import { cookieStorage } from "@/cookie-storage";
-import { shallowMerge } from "@/create-store/functions/helpers/shallow-merge";
+import { isNullish } from "@/create-store/functions/assertions/is-nullish";
+import { merge } from "@/create-store/functions/helpers/merge";
 import { safeStringify } from "@/create-store/functions/utilities/safe-stringify";
 import { tryParse } from "@/create-store/functions/utilities/try-parse";
 
@@ -36,7 +37,7 @@ export function createCookieStorageAdapter<State>(
 
   function getCookieStorageState(fallback?: State) {
     const value = cookieStorage.getItem(key);
-    if (!value) return fallback as State;
+    if (isNullish(value)) return fallback as State;
 
     if (secret) {
       const parsedValue = cookieStorage.unsign(value, secret);
@@ -53,7 +54,7 @@ export function createCookieStorageAdapter<State>(
     if (value === undefined) return cookieStorage.removeItem(key);
 
     const previousOptions = retrieveCookieOptions(key);
-    const mergedOptions = shallowMerge(previousOptions, options);
+    const mergedOptions = merge(previousOptions, options);
     const serializedValue = stringify(value);
 
     if (secret) {

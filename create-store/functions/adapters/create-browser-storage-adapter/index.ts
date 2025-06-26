@@ -4,6 +4,7 @@ import type {
   SetBrowserStorage,
 } from "@/create-store/types/browser-storage-adapter";
 
+import { isNullish } from "@/create-store/functions/assertions/is-nullish";
 import { safeStringify } from "@/create-store/functions/utilities/safe-stringify";
 import { tryParse } from "@/create-store/functions/utilities/try-parse";
 
@@ -25,8 +26,8 @@ export function createBrowserStorageAdapter<State>(
 
   function getStorageState(fallback?: State) {
     const value = getItem(key);
-    if (value) return parse(value);
-    return fallback;
+    if (isNullish(value)) return fallback;
+    return parse(value);
   }
 
   const setStorageState = (value?: State) => {

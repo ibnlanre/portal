@@ -1,5 +1,5 @@
 import { createStore } from "../../create-store";
-import { createIndexedDBAdapter } from "./indexeddb-adapter";
+import { createIndexedDBAdapter } from "./src/utilities/create-indexeddb-adapter";
 
 export interface Todo {
   completed: boolean;

@@ -22,9 +22,10 @@ describe("createBrowserStorageAdapter", () => {
       setItem: vi.fn(),
     };
 
-    [getStorageState, setStorageState] = createBrowserStorageAdapter(key, {
-      ...storage,
-    });
+    [getStorageState, setStorageState] = createBrowserStorageAdapter(
+      key,
+      storage
+    );
   });
 
   it("should return undefined if no value is set and no fallback is provided", () => {
