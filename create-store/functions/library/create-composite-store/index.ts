@@ -2,12 +2,12 @@ import type { Dispatch } from "react";
 
 import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { Dictionary } from "@/create-store/types/dictionary";
+import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 import type { PartialStatePath } from "@/create-store/types/partial-state-path";
 import type { Paths } from "@/create-store/types/paths";
 import type { ResolvePath } from "@/create-store/types/resolve-path";
 import type { Selector } from "@/create-store/types/selector";
 import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
-import type { PartialStateManager } from "@/create-store/types/state-manager";
 import type { StatePath } from "@/create-store/types/state-path";
 import type { Subscriber } from "@/create-store/types/subscriber";
 

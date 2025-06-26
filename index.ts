@@ -27,6 +27,7 @@ export type {
   SetLocalStorage,
 } from "@/create-store/types/local-storage";
 export type { Normalize } from "@/create-store/types/normalize";
+export type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 export type { PartialStateSetter } from "@/create-store/types/partial-state-setter";
 export type { Paths } from "@/create-store/types/paths";
 export type { PrimitiveStore } from "@/create-store/types/primitive-store";
@@ -38,7 +39,6 @@ export type {
 } from "@/create-store/types/session-storage";
 export type { SetPartial } from "@/create-store/types/set-partial";
 export type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
-export type { PartialStateManager } from "@/create-store/types/state-manager";
 export type { StatePath } from "@/create-store/types/state-path";
 export type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 export type { StoreValueResolver } from "@/create-store/types/store-value-resolver";

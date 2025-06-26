@@ -1,6 +1,6 @@
+import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 import type { PartialStateSetter } from "@/create-store/types/partial-state-setter";
 import type { Selector } from "@/create-store/types/selector";
-import type { PartialStateManager } from "@/create-store/types/state-manager";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
 /**

@@ -1,7 +1,7 @@
+import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
 import type { Selector } from "@/create-store/types/selector";
 import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
-import type { PartialStateManager } from "@/create-store/types/state-manager";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
 import { useSyncExternalStore } from "react";
