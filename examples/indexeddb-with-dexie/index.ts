@@ -80,7 +80,7 @@ async function main() {
   console.log("Initial settings:", settingsStore.$get());
 
   // Update settings - automatically persisted
-  settingsStore.$set((prev) => ({ ...prev, language: "es", theme: "dark" }));
+  settingsStore.$set({ language: "es", theme: "dark" });
   console.log("After update:", settingsStore.$get());
 
   // Cleanup

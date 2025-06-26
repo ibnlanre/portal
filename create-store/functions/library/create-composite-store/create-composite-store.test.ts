@@ -1001,13 +1001,17 @@ describe("createCompositeStore", () => {
 
   describe("Performance and Memory Management", () => {
     it("should handle large state objects efficiently", () => {
-      const largeState: Record<string, any> = {};
+      const largeState: Record<
+        string,
+        { nested: { data: number }; value: number }
+      > = {};
+
       for (let i = 0; i < 1000; i++) {
         largeState[`key${i}`] = { nested: { data: i * 2 }, value: i };
       }
 
       const store = createCompositeStore(largeState);
-      expect(store.key99.value.$get()).toBe(99);
+      expect(store.key99?.value?.$get()).toBe(99);
     });
 
     it("should properly clean up subscribers on unsubscribe", () => {
@@ -1160,6 +1164,228 @@ describe("createCompositeStore", () => {
 
       const newStore = createCompositeStore(deserialized);
       expect(newStore.$get()).toEqual(initialState);
+    });
+  });
+
+  describe("State Mutation Protection", () => {
+    describe("Root state setter protection", () => {
+      it("should prevent mutations to original state when using function setter on objects", () => {
+        const originalState = {
+          settings: { notifications: true, theme: "light" },
+          user: { age: 30, name: "John" },
+        };
+
+        const store = createCompositeStore(originalState);
+        const stateBefore = store.$get();
+
+        store.$set((state) => {
+          state.user.name = "Mutated";
+          state.settings.theme = "dark";
+          return { user: { age: 25, name: "Jane" } };
+        });
+
+        expect(stateBefore.user.name).toBe("John");
+        expect(stateBefore.settings.theme).toBe("light");
+
+        expect(store.$get().user.name).toBe("Jane");
+        expect(store.$get().user.age).toBe(25);
+        expect(store.$get().settings.theme).toBe("light");
+      });
+
+      it("should prevent mutations to original state when using function setter on arrays", () => {
+        const originalState = {
+          items: [
+            { id: 1, name: "Item 1" },
+            { id: 2, name: "Item 2" },
+          ],
+          metadata: { count: 2 },
+        };
+
+        const store = createCompositeStore(originalState);
+        const stateBefore = store.$get();
+
+        store.$set((state) => {
+          state.items.push({ id: 3, name: "Mutated Item" });
+          state.items[0]!.name = "Mutated";
+
+          return { items: [{ id: 1, name: "Updated Item" }] };
+        });
+
+        expect(stateBefore.items).toHaveLength(2);
+        expect(stateBefore.items.at(0)?.name).toBe("Item 1");
+
+        expect(store.$get().items).toHaveLength(1);
+        expect(store.$get().items.at(0)?.name).toBe("Updated Item");
+      });
+    });
+
+    describe("Nested state setter protection", () => {
+      it("should prevent mutations to original nested objects", () => {
+        const store = createCompositeStore({
+          settings: { language: "en" },
+          user: {
+            preferences: { notifications: true, theme: "light" },
+            profile: { age: 30, name: "John" },
+          },
+        });
+
+        const userBefore = store.user.$get();
+
+        store.user.$set((user) => {
+          user.profile.name = "Mutated";
+          user.preferences.theme = "dark";
+
+          return { profile: { age: 25, name: "Jane" } };
+        });
+
+        expect(userBefore.profile.name).toBe("John");
+        expect(userBefore.preferences.theme).toBe("light");
+
+        expect(store.user.$get().profile.name).toBe("Jane");
+        expect(store.user.$get().profile.age).toBe(25);
+        expect(store.user.$get().preferences.theme).toBe("light");
+      });
+
+      it("should prevent mutations to original nested arrays", () => {
+        const store = createCompositeStore({
+          data: {
+            items: [
+              { id: 1, name: "Item 1" },
+              { id: 2, name: "Item 2" },
+            ],
+            tags: ["tag1", "tag2"],
+          },
+          metadata: { version: 1 },
+        });
+
+        const dataBefore = store.data.$get();
+
+        store.data.$set((data) => {
+          data.items.push({ id: 3, name: "Mutated" });
+          data.tags[0] = "mutated";
+          return { items: [{ id: 1, name: "Updated" }] };
+        });
+
+        expect(dataBefore.items).toHaveLength(2);
+        expect(dataBefore.items.at(0)?.name).toBe("Item 1");
+        expect(dataBefore.tags.at(0)).toBe("tag1");
+
+        expect(store.data.$get().items).toHaveLength(1);
+        expect(store.data.$get().items.at(0)?.name).toBe("Updated");
+      });
+    });
+
+    describe("Deep path setter protection", () => {
+      it("should prevent mutations when using $key path notation", () => {
+        const store = createCompositeStore({
+          app: {
+            user: {
+              permissions: ["read", "write"],
+              profile: { name: "John", settings: { theme: "light" } },
+            },
+          },
+        });
+
+        const profileBefore = store.$key("app.user.profile").$get();
+
+        store.$key("app.user.profile").$set((profile) => {
+          profile.name = "Mutated";
+          profile.settings.theme = "dark";
+
+          return { name: "Jane" };
+        });
+
+        expect(profileBefore.name).toBe("John");
+        expect(profileBefore.settings.theme).toBe("light");
+
+        expect(store.$key("app.user.profile").$get().name).toBe("Jane");
+        expect(store.$key("app.user.profile").$get().settings.theme).toBe(
+          "light"
+        );
+      });
+    });
+
+    describe("Complex nested structure protection", () => {
+      it("should handle deeply nested objects with arrays and mixed types", () => {
+        const complexState = {
+          app: {
+            global: { features: { beta: true }, version: "1.0" },
+            modules: [
+              {
+                config: { enabled: true, settings: { debug: false } },
+                dependencies: ["dep1", "dep2"],
+                id: 1,
+              },
+              {
+                config: { enabled: false, settings: { debug: true } },
+                dependencies: ["dep3"],
+                id: 2,
+              },
+            ],
+          },
+        };
+
+        const store = createCompositeStore(complexState);
+        const modulesBefore = store.app.modules.$get();
+
+        store.app.modules.$set((modules) => {
+          modules.at(0)!.config.enabled = false;
+          modules.at(0)?.dependencies.push("mutated");
+          modules.at(1)!.config.settings.debug = false;
+          modules.push({
+            config: { enabled: true, settings: { debug: true } },
+            dependencies: [],
+            id: 3,
+          });
+
+          return [
+            {
+              config: { enabled: true, settings: { debug: true } },
+              dependencies: ["updated"],
+              id: 1,
+            },
+          ];
+        });
+
+        expect(modulesBefore).toHaveLength(2);
+        expect(modulesBefore.at(0)?.config.enabled).toBe(true);
+        expect(modulesBefore.at(0)?.config.settings.debug).toBe(false);
+        expect(modulesBefore.at(0)?.dependencies).toEqual(["dep1", "dep2"]);
+        expect(modulesBefore.at(1)?.config.enabled).toBe(false);
+        expect(modulesBefore.at(1)?.config.settings.debug).toBe(true);
+
+        const newModules = store.app.modules.$get();
+        expect(newModules).toHaveLength(1);
+        expect(newModules.at(0)?.id).toBe(1);
+        expect(newModules.at(0)?.config.enabled).toBe(true);
+        expect(newModules.at(0)?.config.settings.debug).toBe(true);
+        expect(newModules.at(0)?.dependencies).toEqual(["updated"]);
+      });
+    });
+
+    describe("Reference equality checks", () => {
+      it("should ensure original state references are not shared with snapshots", () => {
+        const originalObject = { shared: { value: "original" } };
+        const store = createCompositeStore({
+          data: originalObject,
+          other: { value: "test" },
+        });
+
+        let capturedState: any;
+
+        store.data.$set((data) => {
+          capturedState = data;
+          return { shared: { value: "updated" } };
+        });
+
+        expect(capturedState).not.toBe(originalObject);
+        expect(capturedState.shared).not.toBe(originalObject.shared);
+
+        expect(capturedState.shared.value).toBe("original");
+
+        capturedState.shared.value = "should not affect anything";
+        expect(store.data.$get().shared.value).toBe("updated");
+      });
     });
   });
 });

@@ -11,7 +11,7 @@ import type { PartialStateManager } from "@/create-store/types/state-manager";
 import type { StatePath } from "@/create-store/types/state-path";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
@@ -90,7 +90,7 @@ export function createCompositeStore<State extends Dictionary>(
       const current = resolvePath(state, path);
 
       if (isSetStateActionFunction(value)) {
-        const resolvedValue = value(current);
+        const resolvedValue = value(createSnapshot(current));
         setProperty(combine(current, resolvedValue), path);
       } else setProperty(combine(current, value), path);
     };
@@ -98,7 +98,7 @@ export function createCompositeStore<State extends Dictionary>(
 
   function setStateAction(value: SetPartialStateAction<State>) {
     if (isSetStateActionFunction<State>(value)) {
-      const resolvedValue = value(state);
+      const resolvedValue = value(createSnapshot(state));
       setState(combine(state, resolvedValue));
     } else setState(combine(state, value));
   }
@@ -166,16 +166,23 @@ export function createCompositeStore<State extends Dictionary>(
     selector?: Selector<Value, Result>,
     dependencies: unknown[] = []
   ): PartialStateManager<State, Result> {
-    const [value, setValue] = useState(() => {
-      return resolvePath(state, path);
-    });
+    const subscribe = useMemo(() => {
+      return (callback: () => void) => {
+        return act(callback, path, false);
+      };
+    }, [path]);
+
+    const getSnapshot = useMemo(() => {
+      return () => resolvePath(state, path);
+    }, [path]);
+
+    const value = useSyncExternalStore(subscribe, getSnapshot);
 
     const resolvedValue = useMemo(
       () => resolveSelectorValue(value, selector),
       [value, ...dependencies]
     );
 
-    useEffect(() => act(setValue, path), [path]);
     return [resolvedValue, set(path)];
   }
 

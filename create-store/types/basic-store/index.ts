@@ -3,6 +3,13 @@ import type { Selector } from "@/create-store/types/selector";
 import type { PartialStateManager } from "@/create-store/types/state-manager";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
+/**
+ * @deprecated
+ *
+ * Use `PrimitiveStore` instead.
+ * This type is kept for backward compatibility.
+ * It will be removed in a future version.
+ */
 export type BasicStore<State> = {
   readonly $act: (
     subscriber: Subscriber<State>,

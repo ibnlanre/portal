@@ -7,7 +7,7 @@
  * @param value The value to convert to a string.
  * @returns The value as a string.
  */
-export function safeStringify(value: unknown): string {
+export function safeStringify<ValueType = unknown>(value: ValueType): string {
   if (typeof value === "string") return value;
   return JSON.stringify(value);
 }

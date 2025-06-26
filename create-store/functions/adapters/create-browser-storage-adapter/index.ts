@@ -10,29 +10,29 @@ import { tryParse } from "@/create-store/functions/utilities/try-parse";
 export function createBrowserStorageAdapter<State>(
   key: string,
   {
+    getItem,
     parse = tryParse,
+    removeItem,
+    setItem,
     stringify = safeStringify,
-    ...storage
   }: BrowserStorageAdapterOptions<State>
 ): [
   getStorageState: GetBrowserStorage<State>,
   setStorageState: SetBrowserStorage<State>,
 ] {
-  function getStorageState(): State | undefined;
   function getStorageState(fallback: State): State;
+  function getStorageState(fallback?: State): State | undefined;
 
   function getStorageState(fallback?: State) {
-    const value = storage.getItem(key);
+    const value = getItem(key);
     if (value) return parse(value);
-
     return fallback;
   }
 
   const setStorageState = (value?: State) => {
-    if (value === undefined) return storage.removeItem(key);
-
+    if (value === undefined) return removeItem(key);
     const serializedValue = stringify(value);
-    storage.setItem(key, serializedValue);
+    setItem(key, serializedValue);
   };
 
   return [getStorageState, setStorageState];

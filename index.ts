@@ -2,7 +2,11 @@ export type { CookieOptions } from "@/cookie-storage/types/cookie-options";
 export type { CookieStorage } from "@/cookie-storage/types/cookie-storage";
 export type { CreateCookieKeyOptions } from "@/cookie-storage/types/create-cookie-key-options";
 export type { WordMappingSegments } from "@/cookie-storage/types/word-mapping-segments";
-export type { BasicStore } from "@/create-store/types/basic-store";
+export type {
+  AsyncBrowserStorageAdapterOptions,
+  AsyncGetBrowserStorage,
+  AsyncSetBrowserStorage,
+} from "@/create-store/types/async-browser-storage-adapter";
 export type {
   BrowserStorageAdapterOptions,
   GetBrowserStorage,
@@ -34,10 +38,7 @@ export type {
 } from "@/create-store/types/session-storage";
 export type { SetPartial } from "@/create-store/types/set-partial";
 export type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
-export type {
-  PartialStateManager,
-  StateManager,
-} from "@/create-store/types/state-manager";
+export type { PartialStateManager } from "@/create-store/types/state-manager";
 export type { StatePath } from "@/create-store/types/state-path";
 export type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 export type { StoreValueResolver } from "@/create-store/types/store-value-resolver";

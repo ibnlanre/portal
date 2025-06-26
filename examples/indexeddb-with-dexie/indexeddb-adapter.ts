@@ -1,81 +1,81 @@
-import Dexie, { type EntityTable } from "dexie";
+import Dexie from "dexie";
 
-export interface IndexedDBAdapterOptions {
+import { createAsyncBrowserStorageAdapter } from "@/create-store/functions/adapters/create-async-browser-storage-adapter";
+import { AsyncStorageAdapterOptions } from "@/create-store/types/async-browser-storage-adapter";
+
+export interface IndexedDBAdapterOptions<State, StoredState = State>
+  extends AsyncStorageAdapterOptions<State, StoredState> {
   databaseName?: string;
-  deserialize?: (value: any) => any;
-  serialize?: (value: any) => any;
+  version?: number;
 }
 
-export interface StoreEntry {
+export interface StoreEntry<StoredState> {
   id: string;
   timestamp: number;
-  value: any;
+  value: StoredState;
 }
 
-export class StoreDatabase extends Dexie {
-  stores!: EntityTable<StoreEntry, "id">;
+export class StoreDatabase<State, StoredState = State> extends Dexie {
+  stores: Dexie.Table<StoreEntry<StoredState>, string>;
 
-  constructor(databaseName = "PortalStore") {
+  constructor(databaseName = "PortalStore", version = 1) {
     super(databaseName);
 
-    this.version(1).stores({
+    this.version(version).stores({
       stores: "id, timestamp",
     });
+
+    this.stores = this.table<StoreEntry<StoredState>, string>("stores");
   }
 }
 
-export function createIndexedDBAdapter<State>(
+export function createIndexedDBAdapter<State, StoredState = State>(
   key: string,
-  options: IndexedDBAdapterOptions = {}
-): [
-  getState: () => Promise<State | undefined>,
-  setState: (value: State | undefined) => Promise<void>,
-  clearState: () => Promise<void>,
-] {
+  options: IndexedDBAdapterOptions<State, StoredState> = {}
+) {
   const {
     databaseName = "PortalStore",
-    deserialize = (value) => value,
-    serialize = (value) => value,
+    storageTransform,
+    usageTransform,
+    version = 1,
   } = options;
 
-  const db = new StoreDatabase(databaseName);
+  const db = new StoreDatabase<State, StoredState>(databaseName, version);
 
-  const getState = async (): Promise<State | undefined> => {
-    try {
-      const entry = await db.stores.get(key);
-      if (!entry) return undefined;
+  db.open().catch((error) => {
+    console.error("Failed to open IndexedDB:", error);
+  });
 
-      return deserialize(entry.value);
-    } catch (error) {
-      console.error("Failed to get state from IndexedDB:", error);
-      return undefined;
-    }
-  };
-
-  const setState = async (value: State | undefined): Promise<void> => {
-    try {
-      if (value === undefined) {
-        await db.stores.delete(key);
-        return;
+  return createAsyncBrowserStorageAdapter<State, StoredState>(key, {
+    getItem: async (key) => {
+      try {
+        const result = await db.stores.get(key);
+        if (!result) return undefined;
+        return result.value;
+      } catch (error) {
+        console.error("Failed to get state from IndexedDB:", error);
+        return undefined;
       }
-
-      await db.stores.put({
-        id: key,
-        timestamp: Date.now(),
-        value: serialize(value),
-      });
-    } catch (error) {
-      console.error("Failed to set state in IndexedDB:", error);
-    }
-  };
-
-  const clearState = async (): Promise<void> => {
-    try {
-      await db.stores.delete(key);
-    } catch (error) {
-      console.error("Failed to clear state from IndexedDB:", error);
-    }
-  };
-
-  return [getState, setState, clearState];
+    },
+    removeItem: async (key) => {
+      try {
+        await db.stores.delete(key);
+      } catch (error) {
+        console.error("Failed to clear state from IndexedDB:", error);
+      }
+    },
+    setItem: async (key, value) => {
+      try {
+        await db.stores.put({
+          id: key,
+          timestamp: Date.now(),
+          value,
+        });
+      } catch (error) {
+        console.error("Failed to set state in IndexedDB:", error);
+      }
+    },
+    storageTransform,
+    usageTransform,
+  });
 }

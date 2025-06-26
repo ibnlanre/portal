@@ -1,13 +1,14 @@
-import type { SetStateAction } from "react";
-
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
 import type { Selector } from "@/create-store/types/selector";
-import type { StateManager } from "@/create-store/types/state-manager";
+import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
+import type { PartialStateManager } from "@/create-store/types/state-manager";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
+import { combine } from "@/create-store/functions/helpers/combine";
+import { createSnapshot } from "@/create-store/functions/helpers/create-snapshot";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
 export function createPrimitiveStore<State>(
@@ -29,18 +30,23 @@ export function createPrimitiveStore<State>(
     return resolveSelectorValue(state, selector);
   }
 
-  function $set(value: SetStateAction<State>) {
+  function $set(value: SetPartialStateAction<State>) {
     if (isSetStateActionFunction<State>(value)) {
-      const resolvedValue = value(state);
-      setState(resolvedValue);
-    } else setState(value);
+      const resolvedValue = value(createSnapshot(state));
+      setState(combine(state, resolvedValue));
+    } else setState(combine(state, value));
   }
+
+  const subscribe = (callback: () => void) => {
+    return $act(callback, false);
+  };
+
+  const getSnapshot = () => state;
 
   function $use<Value = State>(
     selector?: Selector<State, Value>
-  ): StateManager<State, Value> {
-    const [value, setValue] = useState(state);
-    useEffect(() => $act(setValue), []);
+  ): PartialStateManager<State, Value> {
+    const value = useSyncExternalStore(subscribe, getSnapshot);
     return [resolveSelectorValue(value, selector), $set];
   }
 

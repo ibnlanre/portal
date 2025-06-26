@@ -6,19 +6,20 @@ export interface BrowserStorageAdapterOptions<State>
 
 export interface GetBrowserStorage<State> {
   /**
-   * Get the state from storage.
-   *
-   * @returns The state from storage or undefined.
-   */
-  (): State | undefined;
-
-  /**
    * Get the state from storage or return a fallback state.
    *
    * @param fallback The fallback state to return if the state is not found in storage.
    * @returns The state from storage or the fallback state.
    */
   (fallback: State): State;
+
+  /**
+   * Get the state from storage or return a fallback state.
+   *
+   * @param [fallback] The fallback state to return if the state is not found in storage.
+   * @returns The state from storage, the fallback state, or undefined.
+   */
+  (fallback?: State): State | undefined;
 }
 
 /**

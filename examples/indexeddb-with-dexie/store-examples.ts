@@ -18,24 +18,26 @@ export interface UserProfile {
   };
 }
 
+interface StoredUserProfile extends Omit<UserProfile, "lastLogin"> {
+  lastLogin: string; // Store as ISO string for IndexedDB
+}
+
 // Example 1: Auto-persisting store with reactive updates
-export function createAutoPersistStore<T>(key: string, initialValue: T) {
+export function createAutoPersistStore<T>(key: string, initialValue?: T) {
   const [getStoredValue, setStoredValue] = createIndexedDBAdapter<T>(key);
 
   // Initialize with stored value or fallback to initial value
   const store = createStore(initialValue);
 
   // Load from IndexedDB when store is created
-  getStoredValue().then((storedValue) => {
+  getStoredValue(initialValue).then((storedValue) => {
     if (storedValue !== undefined) {
       store.$set(storedValue);
     }
   });
 
   // Subscribe to store changes and auto-persist
-  store.$act((newValue) => {
-    setStoredValue(newValue);
-  });
+  store.$act(setStoredValue);
 
   return store;
 }
@@ -46,26 +48,26 @@ export async function createPersistedCounterStore() {
     createIndexedDBAdapter<number>("counter");
 
   // Load initial state from IndexedDB
-  const initialCount = (await getStoredCount()) ?? 0;
+  const initialCount = await getStoredCount(0);
 
   // Create the store with initial state
   const counterStore = createStore({
     decrement: () => {
       const newValue = counterStore.value.$get() - 1;
       counterStore.value.$set(newValue);
-      setStoredCount(newValue); // Persist to IndexedDB
     },
     increment: () => {
       const newValue = counterStore.value.$get() + 1;
       counterStore.value.$set(newValue);
-      setStoredCount(newValue); // Persist to IndexedDB
     },
     reset: () => {
       counterStore.value.$set(0);
-      setStoredCount(0); // Persist to IndexedDB
     },
     value: initialCount,
   });
+
+  // Subscribe to store changes and auto-persist
+  counterStore.value.$act(setStoredCount);
 
   return counterStore;
 }
@@ -76,7 +78,7 @@ export async function createPersistedTodoStore() {
     createIndexedDBAdapter<Todo[]>("todos");
 
   // Load initial state from IndexedDB
-  const initialTodos = (await getStoredTodos()) ?? [];
+  const initialTodos = await getStoredTodos([]);
 
   // Create the store with initial state
   const todoStore = createStore({
@@ -91,21 +93,18 @@ export async function createPersistedTodoStore() {
       const updatedTodos = [...currentTodos, newTodo];
 
       todoStore.todos.$set(updatedTodos);
-      setStoredTodos(updatedTodos); // Persist to IndexedDB
     },
     clearCompleted: () => {
       const currentTodos = todoStore.todos.$get();
       const updatedTodos = currentTodos.filter((todo) => !todo.completed);
 
       todoStore.todos.$set(updatedTodos);
-      setStoredTodos(updatedTodos); // Persist to IndexedDB
     },
     removeTodo: (id: string) => {
       const currentTodos = todoStore.todos.$get();
       const updatedTodos = currentTodos.filter((todo) => todo.id !== id);
 
       todoStore.todos.$set(updatedTodos);
-      setStoredTodos(updatedTodos); // Persist to IndexedDB
     },
     todos: initialTodos,
     toggleTodo: (id: string) => {
@@ -115,27 +114,34 @@ export async function createPersistedTodoStore() {
       );
 
       todoStore.todos.$set(updatedTodos);
-      setStoredTodos(updatedTodos); // Persist to IndexedDB
     },
   });
+
+  // Subscribe to store changes and auto-persist
+  todoStore.todos.$act(setStoredTodos);
 
   return todoStore;
 }
 
 // Example 4: User profile store with custom serialization
 export async function createPersistedUserProfileStore() {
-  const [getStoredProfile, setStoredProfile] =
-    createIndexedDBAdapter<UserProfile>("userProfile", {
-      // Custom serialization to handle Date objects
-      deserialize: (profile) => ({
-        ...profile,
-        lastLogin: new Date(profile.lastLogin),
-      }),
-      serialize: (profile) => ({
+  const [getStoredProfile, setStoredProfile] = createIndexedDBAdapter<
+    UserProfile,
+    StoredUserProfile
+  >("userProfile", {
+    storageTransform(profile) {
+      return {
         ...profile,
         lastLogin: profile.lastLogin.toISOString(),
-      }),
-    });
+      };
+    },
+    usageTransform(profile) {
+      return {
+        ...profile,
+        lastLogin: new Date(profile.lastLogin),
+      };
+    },
+  });
 
   // Load initial state from IndexedDB
   const initialProfile = await getStoredProfile();
@@ -144,11 +150,10 @@ export async function createPersistedUserProfileStore() {
     login: (profile: UserProfile) => {
       const loginProfile = { ...profile, lastLogin: new Date() };
       profileStore.profile.$set(loginProfile);
-      setStoredProfile(loginProfile); // Persist to IndexedDB
     },
     logout: () => {
-      profileStore.profile.$set(null as any); // Clear profile
-      setStoredProfile(undefined); // Clear from IndexedDB
+      // Clear profile (from store, and IndexedDB)
+      profileStore.profile.$set(undefined);
     },
     profile: initialProfile,
     updatePreferences: (preferences: Partial<UserProfile["preferences"]>) => {
@@ -161,7 +166,6 @@ export async function createPersistedUserProfileStore() {
       };
 
       profileStore.profile.$set(updatedProfile);
-      setStoredProfile(updatedProfile); // Persist to IndexedDB
     },
     updateProfile: (updates: Partial<UserProfile>) => {
       const currentProfile = profileStore.profile.$get();
@@ -169,9 +173,11 @@ export async function createPersistedUserProfileStore() {
 
       const updatedProfile = { ...currentProfile, ...updates };
       profileStore.profile.$set(updatedProfile);
-      setStoredProfile(updatedProfile); // Persist to IndexedDB
     },
   });
+
+  // Subscribe to store changes and auto-persist
+  profileStore.profile.$act(setStoredProfile);
 
   return profileStore;
 }
