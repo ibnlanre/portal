@@ -14,7 +14,7 @@ export function Layout({ children }: PropsWithChildren) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-gray-100 shadow-sm">
         <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -74,7 +74,7 @@ export function Layout({ children }: PropsWithChildren) {
       </nav>
 
       {/* Main Content */}
-      <main className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8">
+      <main className="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8 flex-1">
         {children}
       </main>
 

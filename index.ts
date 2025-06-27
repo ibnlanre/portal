@@ -44,6 +44,7 @@ export type { StatePath } from "@/create-store/types/state-path";
 export type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 export type { StoreValueResolver } from "@/create-store/types/store-value-resolver";
 export type { Subscriber } from "@/create-store/types/subscriber";
+export type { InferType } from "@/create-store/types/infer-type";
 
 export { cookieStorage } from "@/cookie-storage";
 export { combine } from "@/create-store/functions/helpers/combine";

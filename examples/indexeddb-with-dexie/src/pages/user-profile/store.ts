@@ -45,6 +45,7 @@ export const profileStore = createStore({
     profileStore.profile.$set(loginProfile);
   },
   logout: () => {
+    console.log("Logging out...");
     // Clear profile (from store, and IndexedDB)
     profileStore.profile.$set(undefined);
   },

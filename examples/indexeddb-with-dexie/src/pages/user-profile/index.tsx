@@ -1,35 +1,39 @@
-import { useState } from "react";
-import { profileStore, type UserProfile } from "./store";
+import { profileStore } from "./store";
+import { createStore } from "@ibnlanre/portal";
 
-export function UserProfile() {
-  const [loginForm, setLoginForm] = useState({
+const loginStore = createStore({
+  form: {
     name: "",
     email: "",
     avatar: "",
-  });
+  },
+});
 
+export function UserProfile() {
   const [profile] = profileStore.profile.$use();
+  const [name, setName] = loginStore.form.name.$use();
+  const [email, setEmail] = loginStore.form.email.$use();
+  const [avatar, setAvatar] = loginStore.form.avatar.$use();
 
-  const handleLogin = () => {
-    if (loginForm.name.trim() && loginForm.email.trim()) {
-      const newProfile: UserProfile = {
-        name: loginForm.name.trim(),
-        email: loginForm.email.trim(),
-        avatar: loginForm.avatar.trim() || undefined,
+  function handleLogin() {
+    if (name.trim() && email.trim()) {
+      profileStore.login({
+        name: name.trim(),
+        email: email.trim(),
+        avatar: avatar.trim() || undefined,
         lastLogin: new Date(),
         preferences: {
           theme: "light",
           notifications: true,
         },
-      };
+      });
 
-      profileStore.login(newProfile);
-      setLoginForm({ name: "", email: "", avatar: "" });
+      loginStore.form.$set({ name: "", email: "", avatar: "" });
     }
-  };
+  }
 
   const toggleTheme = () => {
-    if (profileStore && profile) {
+    if (profile) {
       const newTheme = profile.preferences.theme === "light" ? "dark" : "light";
       profileStore.updatePreferences({ theme: newTheme });
     }
@@ -70,32 +74,26 @@ export function UserProfile() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-portal-blue-500 focus:border-transparent"
               placeholder="Full Name"
               type="text"
-              value={loginForm.name}
-              onChange={(e) =>
-                setLoginForm((prev) => ({ ...prev, name: e.target.value }))
-              }
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
             <input
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-portal-blue-500 focus:border-transparent"
               placeholder="Email"
               type="email"
-              value={loginForm.email}
-              onChange={(e) =>
-                setLoginForm((prev) => ({ ...prev, email: e.target.value }))
-              }
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
             <input
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-portal-blue-500 focus:border-transparent"
               placeholder="Avatar URL (optional)"
               type="url"
-              value={loginForm.avatar}
-              onChange={(e) =>
-                setLoginForm((prev) => ({ ...prev, avatar: e.target.value }))
-              }
+              value={avatar}
+              onChange={(e) => setAvatar(e.target.value)}
             />
             <button
               className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!loginForm.name.trim() || !loginForm.email.trim()}
+              disabled={!name.trim() || !email.trim()}
               type="button"
               onClick={handleLogin}
             >
@@ -167,7 +165,7 @@ export function UserProfile() {
               <button
                 className="btn-danger"
                 type="button"
-                onClick={() => profileStore.logout}
+                onClick={profileStore.logout}
               >
                 Logout
               </button>
