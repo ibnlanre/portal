@@ -1,7 +1,7 @@
-import { createStore } from "@/create-store";
-import { createIndexedDBAdapter } from "src/utilities/create-indexeddb-adapter";
+import { createStore } from "@ibnlanre/portal";
+import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
 
-interface Todo {
+export interface Todo {
   completed: boolean;
   id: string;
   text: string;

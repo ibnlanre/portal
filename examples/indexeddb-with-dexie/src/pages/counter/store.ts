@@ -1,6 +1,6 @@
-import { createIndexedDBAdapter } from "src/utilities/create-indexeddb-adapter";
+import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
 
-import { createStore } from "@/create-store";
+import { createStore } from "@ibnlanre/portal";
 
 const [getStoredCount, setStoredCount] =
   createIndexedDBAdapter<number>("counter");

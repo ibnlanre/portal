@@ -1,5 +1,5 @@
-import { createStore } from "@/create-store";
-import { createIndexedDBAdapter } from "src/utilities/create-indexeddb-adapter";
+import { createStore } from "@ibnlanre/portal";
+import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
 
 interface Preferences {
   notifications: boolean;
@@ -39,7 +39,7 @@ const [getStoredProfile, setStoredProfile] = createIndexedDBAdapter<
 // Load initial state from IndexedDB
 const initialProfile = await getStoredProfile();
 
-const profileStore = createStore({
+export const profileStore = createStore({
   login: (profile: UserProfile) => {
     const loginProfile = { ...profile, lastLogin: new Date() };
     profileStore.profile.$set(loginProfile);

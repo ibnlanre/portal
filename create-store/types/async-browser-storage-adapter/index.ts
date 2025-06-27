@@ -2,7 +2,7 @@
  * An interface for a storage object.
  */
 export interface AsyncBrowserStorageAdapterOptions<State, StoredState = State>
-  extends AsyncStorageAdapterOptions<State, StoredState> {
+  extends AsyncBrowserStorageTransforms<State, StoredState> {
   /**
    * Returns the current value associated with the given key, or null if the given key does not exist.
    *
@@ -52,7 +52,7 @@ export interface AsyncGetBrowserStorage<State> {
  */
 export type AsyncSetBrowserStorage<State> = (value?: State) => Promise<void>;
 
-export interface AsyncStorageAdapterOptions<State, StoredState = State> {
+export interface AsyncBrowserStorageTransforms<State, StoredState = State> {
   /**
    * A function to transform the value before setting it in storage.
    * This can be used to serialize or modify the value.

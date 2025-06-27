@@ -3,6 +3,7 @@ export type { CookieStorage } from "@/cookie-storage/types/cookie-storage";
 export type { CreateCookieKeyOptions } from "@/cookie-storage/types/create-cookie-key-options";
 export type { WordMappingSegments } from "@/cookie-storage/types/word-mapping-segments";
 export type {
+  AsyncBrowserStorageTransforms,
   AsyncBrowserStorageAdapterOptions,
   AsyncGetBrowserStorage,
   AsyncSetBrowserStorage,
@@ -54,3 +55,4 @@ export { createSessionStorageAdapter } from "@/create-store/functions/adapters/c
 export { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
 export { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
 export { normalizeObject } from "@/create-store/functions/library/normalize-object";
+export { createAsyncBrowserStorageAdapter } from "@/create-store/functions/adapters/create-async-browser-storage-adapter";

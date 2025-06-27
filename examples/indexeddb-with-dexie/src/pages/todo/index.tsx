@@ -1,10 +1,6 @@
-import type { Todo } from "../../../store-examples";
+import { todoStore, type Todo } from "./store";
 
-import React from "react";
-
-import { todoStore } from "./store";
-
-const TodoExample: React.FC = () => {
+export function TodoList() {
   const [todos] = todoStore.todos.$use();
   const [newTodoText] = todoStore.newTodoText.$use();
 
@@ -16,7 +12,7 @@ const TodoExample: React.FC = () => {
   // if (loading) {
   //   return (
   //     <div className="flex items-center justify-center min-h-64">
-  //       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-portal-blue-500" />
+  //       <div className="w-12 h-12 border-b-2 rounded-full animate-spin border-portal-blue-500" />
   //     </div>
   //   );
   // }
@@ -27,14 +23,14 @@ const TodoExample: React.FC = () => {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Todo Example</h1>
+        <h1 className="mb-4 text-3xl font-bold text-gray-900">Todo Example</h1>
         <p className="text-lg text-gray-600">
           A todo list that persists to IndexedDB with real-time updates
         </p>
       </div>
 
-      <div className="card max-w-2xl mx-auto">
-        <div className="flex space-x-2 mb-6">
+      <div className="max-w-2xl mx-auto card">
+        <div className="flex mb-6 space-x-2">
           <input
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-portal-blue-500 focus:border-transparent"
             placeholder="Add a new todo..."
@@ -54,7 +50,7 @@ const TodoExample: React.FC = () => {
         </div>
 
         <div className="space-y-4">
-          <div className="flex justify-between items-center text-sm text-gray-600">
+          <div className="flex items-center justify-between text-sm text-gray-600">
             <span>
               {activeTodos.length} active, {completedTodos.length} completed
             </span>
@@ -82,7 +78,7 @@ const TodoExample: React.FC = () => {
                   type="checkbox"
                   checked={todo.completed}
                   onChange={() => todoStore.toggleTodo(todo.id)}
-                  className="w-4 h-4 text-portal-blue-600 border-gray-300 rounded focus:ring-portal-blue-500"
+                  className="w-4 h-4 border-gray-300 rounded text-portal-blue-600 focus:ring-portal-blue-500"
                 />
                 <span
                   className={`flex-1 ${
@@ -95,7 +91,7 @@ const TodoExample: React.FC = () => {
                 </span>
                 <button
                   onClick={() => todoStore.removeTodo(todo.id)}
-                  className="text-red-600 hover:text-red-800 text-sm"
+                  className="text-sm text-red-600 hover:text-red-800"
                 >
                   Remove
                 </button>
@@ -104,16 +100,16 @@ const TodoExample: React.FC = () => {
           </div>
 
           {todos.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="py-8 text-center text-gray-500">
               No todos yet. Add one above to get started!
             </div>
           )}
         </div>
       </div>
 
-      <div className="card bg-green-50 border-green-200 max-w-2xl mx-auto">
-        <h3 className="font-semibold text-green-900 mb-2">Features:</h3>
-        <ul className="text-green-800 space-y-1 text-sm">
+      <div className="max-w-2xl mx-auto border-green-200 card bg-green-50">
+        <h3 className="mb-2 font-semibold text-green-900">Features:</h3>
+        <ul className="space-y-1 text-sm text-green-800">
           <li>• Todos persist across browser sessions</li>
           <li>• Real-time updates across multiple tabs</li>
           <li>• Add, toggle, and remove todos with instant feedback</li>
@@ -124,5 +120,3 @@ const TodoExample: React.FC = () => {
     </div>
   );
 };
-
-export default TodoExample;

@@ -1,4 +1,4 @@
-import { createHmac } from "crypto";
+import { createHmac } from "@/cookie-storage/helpers/create-hmac";
 
 /**
  * Sign a cookie with a secret.

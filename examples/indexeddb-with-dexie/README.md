@@ -1,17 +1,40 @@
-# IndexedDB with Dexie - Portal Store Example
+# Portal Store - IndexedDB with Dexie Example
 
-This example demonstrates how to persist state data with IndexedDB using the createStore from @ibnlanre/portal and Dexie as the IndexedDB wrapper library.
+A modern React application demonstrating Portal state management with IndexedDB persistence using Dexie.
 
-## 🏗️ Project Structure
+## 🚀 Features
+
+- **Counter Store**: Simple persistent counter with increment/decrement operations
+- **Todo List**: CRUD operations with array state management and persistence
+- **User Profile**: Complex object state with custom serialization for Date objects
+- **Preferences**: Auto-persisting settings store with reactive updates
+
+## 🛠️ Technologies
+
+- **Portal Store** - State management library
+- **IndexedDB** - Browser persistence layer
+- **Dexie** - IndexedDB wrapper for easier usage
+- **React** - UI framework with hooks
+- **TypeScript** - Type safety and developer experience
+- **Tailwind CSS** - Utility-first styling
+- **React Router** - Client-side routing
+- **Vite** - Fast build tool and dev server
+
+## 📁 Project Structure
 
 ```
-examples/indexeddb-with-dexie/
-├── package.json          # Project dependencies (Dexie, Vite, TypeScript)
-├── indexeddb-adapter.ts   # IndexedDB adapter using Dexie
-├── store-examples.ts      # Store examples with IndexedDB persistence
-├── demo.html             # Interactive demo page
-├── README.md             # This file
-└── tsconfig.json         # TypeScript configuration
+src/
+├── components/
+│   └── Layout.tsx          # Main app layout with navigation
+├── pages/
+│   ├── Home.tsx           # Landing page with feature overview
+│   ├── CounterExample.tsx # Persistent counter demo
+│   ├── TodoExample.tsx    # Todo list with CRUD operations
+│   ├── UserProfileExample.tsx # Complex object with Date serialization
+│   └── PreferencesExample.tsx # Auto-persisting settings
+├── App.tsx                # Main app component with routing
+├── main.tsx              # React app entry point
+└── index.css             # Tailwind CSS imports and custom styles
 ```
 
 ## 📦 Installation
@@ -32,7 +55,7 @@ pnpm install
 yarn install
 ```
 
-## 🚀 Running the Example
+## 🔍 Running the Example
 
 ### Development Server
 
@@ -52,141 +75,28 @@ npm run build
 npm run preview
 ```
 
-### View the Demo
+## 🏗️ Key Concepts Demonstrated
 
-Open `demo.html` in your browser to see an interactive demo of all the examples.
+### 1. **Reactive State Management**
 
-## 📚 What's Included
+Portal's `$use` hook automatically subscribes components to state changes, providing real-time updates across the entire application.
 
-### 1. IndexedDB Adapter (`indexeddb-adapter.ts`)
+### 2. **Persistent State**
 
-A reusable adapter that provides:
+All examples use IndexedDB through Dexie to persist state across browser sessions, demonstrating different patterns:
 
-- **Database Setup**: Creates and manages an IndexedDB database using Dexie
-- **Generic Interface**: Works with any data type
-- **Serialization Support**: Custom serialize/deserialize functions for complex data types
-- **Error Handling**: Graceful error handling for database operations
+- Simple values (counter)
+- Arrays (todo list)
+- Complex objects (user profile)
+- Auto-persistence (preferences)
 
-Key features:
+### 3. **Custom Middleware**
 
-- Stores data with timestamps for audit trails
-- Supports custom serialization (useful for Date objects, etc.)
-- Simple API: `[getState, setState, clearState]`
+The user profile example shows how to handle complex types like Date objects that need serialization for storage.
 
-### 2. Store Examples (`store-examples.ts`)
+### 4. **Cross-tab Synchronization**
 
-Four comprehensive examples showing different patterns:
-
-#### Example 1: Simple Counter Store
-
-```typescript
-const counterStore = await createPersistedCounterStore();
-counterStore.increment(); // Auto-persists to IndexedDB
-```
-
-Features:
-
-- Simple number value persistence
-- Methods for increment, decrement, reset
-- Immediate persistence on state changes
-
-#### Example 2: Todo List Store
-
-```typescript
-const todoStore = await createPersistedTodoStore();
-todoStore.addTodo("Learn IndexedDB"); // Auto-persists to IndexedDB
-```
-
-Features:
-
-- Array of complex objects
-- CRUD operations (Create, Read, Update, Delete)
-- Filtering operations (clear completed)
-
-#### Example 3: User Profile Store with Custom Serialization
-
-```typescript
-const profileStore = await createPersistedUserProfileStore();
-profileStore.login(userProfile); // Handles Date serialization automatically
-```
-
-Features:
-
-- Custom serialization for Date objects
-- Nested object structure
-- Complex state management
-
-#### Example 4: Auto-Persisting Store
-
-```typescript
-const settingsStore = createAutoPersistStore("settings", { theme: "light" });
-settingsStore.$set({ theme: "dark" }); // Automatically persisted
-```
-
-Features:
-
-- Reactive persistence (saves on every change)
-- Generic implementation
-- Minimal setup required
-
-### 3. Interactive Demo (`demo.html`)
-
-A complete HTML demo showcasing:
-
-- Live counter with persistence
-- Interactive todo list
-- Settings that auto-save
-- Database management tools
-
-## 🔧 Key Concepts
-
-### IndexedDB Adapter Pattern
-
-The adapter pattern separates storage concerns from business logic:
-
-```typescript
-// Create adapter
-const [getStoredData, setStoredData] = createIndexedDBAdapter<MyData>("myKey");
-
-// Load initial state
-const initialData = (await getStoredData()) ?? defaultData;
-
-// Create store with initial state
-const store = createStore({
-  data: initialData,
-  updateData: (newData) => {
-    store.data.$set(newData);
-    setStoredData(newData); // Persist to IndexedDB
-  },
-});
-```
-
-### Custom Serialization
-
-Handle complex data types with custom serialization:
-
-```typescript
-const adapter = createIndexedDBAdapter<UserProfile>("profile", {
-  serialize: (profile) => ({
-    ...profile,
-    lastLogin: profile.lastLogin.toISOString(), // Date → string
-  }),
-  deserialize: (profile) => ({
-    ...profile,
-    lastLogin: new Date(profile.lastLogin), // string → Date
-  }),
-});
-```
-
-### Reactive Persistence
-
-Use `$act` to automatically persist state changes:
-
-```typescript
-store.$act((newState) => {
-  persistToIndexedDB(newState);
-});
-```
+Open multiple tabs to see how state changes propagate across browser tabs in real-time.
 
 ## 🎯 Benefits
 
@@ -214,7 +124,14 @@ store.$act((newState) => {
 - Multiple databases and object stores
 - Transaction support for data integrity
 
-## 🔍 Browser Support
+## 🔧 Development
+
+### Prerequisites
+
+- Node.js 16+
+- pnpm (or npm/yarn)
+
+### Browser Support
 
 IndexedDB is supported in all modern browsers:
 
@@ -223,6 +140,44 @@ IndexedDB is supported in all modern browsers:
 - Safari 8+
 - Edge 12+
 - Mobile browsers
+-
+
+### Setup
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start development server
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Preview production build
+pnpm preview
+```
+
+### Development Tips
+
+1. **Inspect Persisted Data**:
+   Open DevTools → Application → Storage → IndexedDB → PortalStore
+
+2. **Monitor State Changes**:
+   Check the browser console for Portal store activity
+
+3. **Test Cross-tab Sync**:
+   Open multiple tabs and observe real-time state synchronization
+
+## 🎨 UI Design
+
+The application uses a modern, responsive design with:
+
+- Gradient backgrounds and smooth animations
+- Card-based layout for clear content separation
+- Mobile-first responsive navigation
+- Tailwind CSS custom color palette
+- Accessibility-focused design patterns
 
 ## 🛠️ Customization
 
@@ -234,12 +189,22 @@ const adapter = createIndexedDBAdapter("myKey", {
 });
 ```
 
-### Custom Serialization
+### Custom Middleware
 
 ```typescript
 const adapter = createIndexedDBAdapter("myKey", {
-  serialize: JSON.stringify,
-  deserialize: JSON.parse,
+  storageTransform: (value) => {
+    if (value instanceof Date) {
+      return value.toISOString(); // Serialize Date to string
+    }
+    return value; // Default serialization
+  },
+  usageTransform: (value) => {
+    if (typeof value === "string" && !isNaN(Date.parse(value))) {
+      return new Date(value); // Deserialize string back to Date
+    }
+    return value; // Default deserialization
+  },
 });
 ```
 
@@ -257,19 +222,35 @@ try {
 }
 ```
 
+## 📚 Code Examples
+
+Each page demonstrates different Portal patterns:
+
+- **Counter**: Basic reactive state with persistence
+- **Todo List**: Array manipulation and CRUD operations
+- **User Profile**: Complex object state with type transforms
+- **Preferences**: Auto-persisting settings with immediate sync
+
+Browse the source code to see practical implementations of these patterns in real-world scenarios.
+
 ## 📝 Best Practices
 
 1. **Always Handle Async Operations**: IndexedDB operations are asynchronous
-2. **Provide Fallback Values**: Use `|| defaultValue` when loading state
-3. **Custom Serialization**: Handle Date objects and other complex types
+2. **Provide Fallback Values**: Use `defaultValue` when loading state
+3. **Custom Middleware**: Handle Date objects and other complex types
 4. **Error Boundaries**: Wrap IndexedDB operations in try-catch blocks
 5. **Database Versioning**: Plan for schema changes in production apps
 
-## 🔗 Related Resources
+## 🔗 Learning Resources
 
-- [Dexie.js Documentation](https://dexie.org/)
-- [IndexedDB API Documentation](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API)
-- [@ibnlanre/portal Documentation](../../README.md)
+- [Portal Documentation](../../README.md) - Main Portal library docs
+- [Dexie Documentation](https://dexie.org/) - IndexedDB wrapper
+- [React Documentation](https://react.dev/) - React fundamentals
+- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS
+- [IndexedDB API Documentation](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) - MDN IndexedDB API
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/) - TypeScript language
+- [React Router Documentation](https://reactrouter.com/) - Client-side routing
+- [Vite Documentation](https://vitejs.dev/) - Fast build tool
 
 ## 🤝 Contributing
 

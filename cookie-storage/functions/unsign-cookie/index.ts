@@ -1,6 +1,5 @@
-import { Buffer } from "buffer";
-
 import { signCookie } from "@/cookie-storage/functions/sign-cookie";
+import { constantTimeCompare } from "@/cookie-storage/helpers/constant-time-compare";
 
 /**
  * Unsign a signed cookie.
@@ -21,10 +20,9 @@ export function unsignCookie(
     const cookie = signedCookie.slice(0, demarcator);
     const expectedSignature = signCookie(cookie, secret);
 
-    const expectedInput = Buffer.from(expectedSignature);
-    const input = Buffer.from(signedCookie);
-
-    if (expectedInput.equals(input)) return cookie;
+    if (constantTimeCompare(expectedSignature, signedCookie)) {
+      return cookie;
+    }
   } catch (error) {
     console.error("Error occurred while unsigning cookie:", error);
   }

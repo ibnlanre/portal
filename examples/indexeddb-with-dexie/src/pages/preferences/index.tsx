@@ -1,4 +1,6 @@
-import { preferencesStore } from "./store";
+import { preferencesStore, type AppPreferences } from "./store";
+
+import type { Paths, ResolvePath } from "@ibnlanre/portal";
 
 export function Preferences() {
   const [preferences] = preferencesStore.$use();
@@ -6,17 +8,22 @@ export function Preferences() {
   // if (loading) {
   //   return (
   //     <div className="flex items-center justify-center min-h-64">
-  //       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-portal-blue-500" />
+  //       <div className="w-12 h-12 border-b-2 rounded-full animate-spin border-portal-blue-500" />
   //     </div>
   //   );
   // }
 
-  if (!preferences) return null;
+  function handleUpdate(
+    path: Paths<AppPreferences>,
+    value: ResolvePath<AppPreferences, typeof path>
+  ) {
+    preferencesStore.$key(path).$set(value);
+  }
 
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
+        <h1 className="mb-4 text-3xl font-bold text-gray-900">
           Preferences Example
         </h1>
         <p className="text-lg text-gray-600">
@@ -27,7 +34,7 @@ export function Preferences() {
       <div className="grid gap-6 md:grid-cols-2">
         {/* General Settings */}
         <div className="card">
-          <h2 className="text-xl font-semibold mb-4">General</h2>
+          <h2 className="mb-4 text-xl font-semibold">General</h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <label className="text-gray-700" htmlFor="autoSave">
@@ -36,7 +43,7 @@ export function Preferences() {
               <input
                 checked={preferences.autoSave}
                 id="autoSave"
-                onChange={(e) => preferencesStore.update("autoSave", e.target.checked)}
+                onChange={(e) => handleUpdate("autoSave", e.target.checked)}
                 type="checkbox"
               />
             </div>
@@ -47,7 +54,7 @@ export function Preferences() {
               </label>
               <select
                 id="language"
-                onChange={(e) => preferencesStore.update("language", e.target.value)}
+                onChange={(e) => handleUpdate("language", e.target.value)}
                 value={preferences.language}
               >
                 <option value="en">English</option>
@@ -63,9 +70,7 @@ export function Preferences() {
               </label>
               <select
                 id="theme"
-                onChange={(e) =>
-                  preferencesStore.update("theme", e.target.value as any)
-                }
+                onChange={(e) => handleUpdate("theme", e.target.value as any)}
                 value={preferences.theme}
               >
                 <option value="light">Light</option>
@@ -78,7 +83,7 @@ export function Preferences() {
 
         {/* Notifications */}
         <div className="card">
-          <h2 className="text-xl font-semibold mb-4">Notifications</h2>
+          <h2 className="mb-4 text-xl font-semibold">Notifications</h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <label className="text-gray-700" htmlFor="emailNotifications">
@@ -88,7 +93,7 @@ export function Preferences() {
                 checked={preferences.notifications.email}
                 id="emailNotifications"
                 onChange={(e) =>
-                  preferencesStore.update("notifications.email", e.target.checked)
+                  handleUpdate("notifications.email", e.target.checked)
                 }
                 type="checkbox"
               />
@@ -102,7 +107,7 @@ export function Preferences() {
                 checked={preferences.notifications.push}
                 id="pushNotifications"
                 onChange={(e) =>
-                  preferencesStore.update("notifications.push", e.target.checked)
+                  handleUpdate("notifications.push", e.target.checked)
                 }
                 type="checkbox"
               />
@@ -116,7 +121,7 @@ export function Preferences() {
                 checked={preferences.notifications.desktop}
                 id="desktopNotifications"
                 onChange={(e) =>
-                  preferencesStore.update("notifications.desktop", e.target.checked)
+                  handleUpdate("notifications.desktop", e.target.checked)
                 }
                 type="checkbox"
               />
@@ -126,7 +131,7 @@ export function Preferences() {
 
         {/* Layout */}
         <div className="card">
-          <h2 className="text-xl font-semibold mb-4">Layout</h2>
+          <h2 className="mb-4 text-xl font-semibold">Layout</h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <label className="text-gray-700" htmlFor="sidebar">
@@ -136,7 +141,7 @@ export function Preferences() {
                 checked={preferences.layout.sidebar}
                 id="sidebar"
                 onChange={(e) =>
-                  preferencesStore.update("layout.sidebar", e.target.checked)
+                  handleUpdate("layout.sidebar", e.target.checked)
                 }
                 type="checkbox"
               />
@@ -150,7 +155,7 @@ export function Preferences() {
                 checked={preferences.layout.compactMode}
                 id="compactMode"
                 onChange={(e) =>
-                  preferencesStore.update("layout.compactMode", e.target.checked)
+                  handleUpdate("layout.compactMode", e.target.checked)
                 }
                 type="checkbox"
               />
@@ -160,16 +165,16 @@ export function Preferences() {
 
         {/* Current State */}
         <div className="card">
-          <h2 className="text-xl font-semibold mb-4">Current State</h2>
-          <pre className="bg-gray-100 p-4 rounded-lg text-sm overflow-auto">
+          <h2 className="mb-4 text-xl font-semibold">Current State</h2>
+          <pre className="p-4 overflow-auto text-sm bg-gray-100 rounded-lg">
             {JSON.stringify(preferences, null, 2)}
           </pre>
         </div>
       </div>
 
-      <div className="card bg-indigo-50 border-indigo-200 max-w-4xl mx-auto">
-        <h3 className="font-semibold text-indigo-900 mb-2">Features:</h3>
-        <ul className="text-indigo-800 space-y-1 text-sm">
+      <div className="max-w-4xl mx-auto border-indigo-200 card bg-indigo-50">
+        <h3 className="mb-2 font-semibold text-indigo-900">Features:</h3>
+        <ul className="space-y-1 text-sm text-indigo-800">
           <li>• Automatic persistence of all preference changes</li>
           <li>• Support for nested objects and complex data structures</li>
           <li>• Real-time UI updates without manual subscription management</li>

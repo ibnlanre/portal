@@ -8,28 +8,91 @@
   }
 
   body {
-    @apply bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen;
+    @apply min-h-screen bg-gradient-to-br from-blue-50 to-purple-50;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-gradient-to-r from-portal-blue-500 to-portal-purple-500 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95;
+    @apply px-6 py-2 font-medium text-white transition-all duration-200 rounded-lg bg-gradient-to-r from-portal-blue-500 to-portal-purple-500 hover:shadow-lg hover:scale-105 active:scale-95;
   }
 
   .btn-secondary {
-    @apply bg-white text-gray-700 px-6 py-2 rounded-lg font-medium border border-gray-200 transition-all duration-200 hover:shadow-md hover:border-gray-300;
+    @apply px-6 py-2 font-medium text-gray-700 transition-all duration-200 bg-white border border-gray-200 rounded-lg hover:shadow-md hover:border-gray-300;
   }
 
   .btn-danger {
-    @apply bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:scale-105 active:scale-95;
+    @apply px-4 py-2 font-medium text-white transition-all duration-200 rounded-lg bg-gradient-to-r from-red-500 to-red-600 hover:shadow-lg hover:scale-105 active:scale-95;
   }
 
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200 hover:shadow-md;
+    @apply p-6 transition-all duration-200 bg-white border border-gray-100 shadow-sm rounded-xl hover:shadow-md;
   }
 
   .input-field {
-    @apply w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-portal-blue-500 focus:border-transparent transition-all duration-200;
+    @apply w-full px-4 py-2 transition-all duration-200 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-portal-blue-500 focus:border-transparent;
   }
+}
+
+@theme {
+  --color-portal-blue-50: #eff6ff;
+  --color-portal-blue-500: #3b82f6;
+  --color-portal-blue-600: #2563eb;
+  --color-portal-blue-700: #1d4ed8;
+  --color-portal-purple-50: #faf5ff;
+  --color-portal-purple-500: #8b5cf6;
+  --color-portal-purple-600: #7c3aed;
+  --color-portal-purple-700: #6d28d9;
+
+  --animate-wiggle: wiggle 1s ease-in-out infinite;
+  @keyframes wiggle {
+    0%,
+    100% {
+      transform: rotate(-3deg);
+    }
+    50% {
+      transform: rotate(3deg);
+    }
+  }
+
+  --animate-bounce-subtle: bounceSubtle 0.6s ease-in-out;
+  @keyframes bounceSubtle {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+
+  --animate-fade-in: fadeIn 0.5s ease-in-out;
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  --animate-slide-up: slideUp 0.3s ease-out;
+  @keyframes slideUp {
+    0% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-mono: "Courier New", Courier, monospace;
+  --font-serif: Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-heading: "Poppins", sans-serif;
+  --font-body: "Inter", sans-serif;
 }

@@ -53,6 +53,7 @@ const ignoresConfig = tseslint.config({
     "**/.yarnrc.yml",
     "**/.yarnrc",
     "**/yarn.lock",
+    "**/package.json",
     "**/package-lock.json",
     "**/pnpm-lock.yaml",
     "**/npm-shrinkwrap.json",

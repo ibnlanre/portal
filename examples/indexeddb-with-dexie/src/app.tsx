@@ -1,9 +1,9 @@
-import Layout from "./components/Layout";
-import TodoExample from "./pages/todo";
-import UserProfileExample from "./pages/user-profile";
+import Layout from "./components/layout";
 
 import { Route, Routes } from "react-router-dom";
 
+import { TodoList} from "./pages/todo";
+import { UserProfile } from "./pages/user-profile";
 import { Counter } from "./pages/counter";
 import { Home } from "./pages/home";
 import { Preferences } from "./pages/preferences";
@@ -14,8 +14,8 @@ export function App() {
       <Routes>
         <Route element={<Home />} path="/" />
         <Route element={<Counter />} path="/counter" />
-        <Route element={<TodoExample />} path="/todos" />
-        <Route element={<UserProfileExample />} path="/profile" />
+        <Route element={<TodoList />} path="/todos" />
+        <Route element={<UserProfile />} path="/profile" />
         <Route element={<Preferences />} path="/preferences" />
       </Routes>
     </Layout>

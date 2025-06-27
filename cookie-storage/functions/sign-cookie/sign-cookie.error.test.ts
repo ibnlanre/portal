@@ -1,13 +1,12 @@
-import * as crypto from "crypto";
-
 import { describe, expect, it, vi } from "vitest";
 
 import { signCookie } from "./index";
+import * as createHmacModule from "@/cookie-storage/helpers/create-hmac";
 
-vi.mock("crypto");
+vi.mock("@/cookie-storage/helpers/create-hmac");
 
 describe("signCookie", () => {
-  it("should return the cookie if an error occurs", async () => {
+  it("should return the cookie if an error occurs", () => {
     const consoleErrorSpy = vi
       .spyOn(console, "error")
       .mockImplementationOnce(() => {});
@@ -15,8 +14,8 @@ describe("signCookie", () => {
     const cookie = "testCookie";
     const secret = "testSecret";
 
-    const cryptoSpy = vi
-      .spyOn(crypto, "createHmac")
+    const createHmacSpy = vi
+      .spyOn(createHmacModule, "createHmac")
       .mockImplementationOnce(() => {
         throw new Error("Test error");
       });
@@ -30,7 +29,7 @@ describe("signCookie", () => {
     );
 
     consoleErrorSpy.mockRestore();
-    cryptoSpy.mockRestore();
+    createHmacSpy.mockRestore();
 
     vi.restoreAllMocks();
   });

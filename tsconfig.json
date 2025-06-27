@@ -12,7 +12,7 @@
     "noImplicitThis": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noUncheckedIndexedAccess": true,
+    "noUncheckedIndexedAccess": false,
     "forceConsistentCasingInFileNames": true,
     "strictNullChecks": true,
     "allowJs": false,
@@ -26,5 +26,7 @@
     "paths": {
       "@/*": ["./*"],
     }
-  }
+  },
+  "include": ["cookie-storage/**/*", "create-store/**/*", "index.ts", "vitest.config.mts"],
+  "exclude": ["node_modules", "dist", "build", "coverage", "examples"]
 }

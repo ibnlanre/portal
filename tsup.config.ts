@@ -1,23 +1,14 @@
-import { defineConfig, type Options } from "tsup";
+import { defineConfig } from "tsup";
 
-const cjs = {
+export default defineConfig({
   clean: true,
-  dts: true,
+  external: ["react", "react-dom"],
+  dts: { resolve: true },
+  format: ["esm", "cjs"],
   entry: ["index.ts"],
-  legacyOutput: true,
-  outDir: "dist/cjs",
+  outDir: "dist",
   sourcemap: true,
   splitting: false,
-} satisfies Options;
-
-const esm = {
-  clean: true,
-  dts: true,
-  entry: ["index.ts"],
-  outDir: "dist/esm",
-  sourcemap: true,
-  splitting: false,
-  target: "es6",
-} satisfies Options;
-
-export default defineConfig([cjs, esm]);
+  target: "es2015",
+  platform: "browser",
+});

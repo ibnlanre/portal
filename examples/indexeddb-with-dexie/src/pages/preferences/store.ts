@@ -1,11 +1,8 @@
-import { createIndexedDBAdapter } from "src/utilities/create-indexeddb-adapter";
+import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
 
-import { createStore } from "@/create-store";
-import { Paths } from "@/create-store/types/paths";
-import { ResolvePath } from "@/create-store/types/resolve-path";
-import { combine } from "@/create-store/functions/helpers/combine";
+import { createStore } from "@ibnlanre/portal";
 
-type AppPreferences = {
+export type AppPreferences = {
   autoSave: boolean;
   language: string;
   layout: {
@@ -39,16 +36,7 @@ const [getStoredValue, setStoredValue] =
   createIndexedDBAdapter<AppPreferences>("appPreferences");
 
 // Initialize with stored value or fallback to initial value
-export const preferencesStore = createStore(
-  combine(initialValue, {
-    update: (
-      path: Paths<AppPreferences>,
-      value: ResolvePath<AppPreferences, typeof path>
-    ) => {
-      preferencesStore.$key(path).$set(value);
-    },
-  })
-);
+export const preferencesStore = createStore(initialValue);
 
 // Load from IndexedDB when store is created
 getStoredValue(initialValue).then(preferencesStore.$set);

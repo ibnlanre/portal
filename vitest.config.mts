@@ -1,17 +1,13 @@
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-import { defineConfig } from "vitest/config";
+import { defineConfig, defaultExclude } from "vitest/config";
 
-const exclude = [
-  "./node_modules/**",
-  "./dist/**",
+const exclude = defaultExclude.concat([
+  "**/*.{test,json}.*",
   "**/types/**",
-  "**/*.config.*",
   "**/*.d.ts",
-  "**/*.json",
-  "**/*.test.*",
-];
+]);
 
 export default defineConfig({
   plugins: [tsconfigPaths(), react()],

@@ -1,9 +1,11 @@
 import { StoreDatabase } from "./store-database";
-import { createAsyncBrowserStorageAdapter } from "@/create-store/functions/adapters/create-async-browser-storage-adapter";
-import { AsyncStorageAdapterOptions } from "@/create-store/types/async-browser-storage-adapter";
+import {
+  createAsyncBrowserStorageAdapter,
+  type AsyncBrowserStorageTransforms,
+} from "@ibnlanre/portal";
 
 export interface IndexedDBAdapterOptions<State, StoredState = State>
-  extends AsyncStorageAdapterOptions<State, StoredState> {
+  extends AsyncBrowserStorageTransforms<State, StoredState> {
   databaseName?: string;
   version?: number;
 }
