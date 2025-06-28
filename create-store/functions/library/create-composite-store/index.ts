@@ -17,11 +17,11 @@ import { isDictionary } from "@/create-store/functions/assertions/is-dictionary"
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { isUndefined } from "@/create-store/functions/assertions/is-undefined";
-import { replace } from "@/create-store/functions/helpers/replace";
 import { createPathComponents } from "@/create-store/functions/helpers/create-path-components";
 import { createPaths } from "@/create-store/functions/helpers/create-paths";
 import { createSnapshot } from "@/create-store/functions/helpers/create-snapshot";
 import { merge } from "@/create-store/functions/helpers/merge";
+import { replace } from "@/create-store/functions/helpers/replace";
 import { splitPath } from "@/create-store/functions/helpers/split-path";
 import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";

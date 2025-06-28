@@ -27,6 +27,26 @@ export interface AsyncBrowserStorageAdapterOptions<State, StoredState = State>
   setItem(key: string, value: StoredState): Promise<void>;
 }
 
+export interface AsyncBrowserStorageTransforms<State, StoredState = State> {
+  /**
+   * A function to transform the value before setting it in storage.
+   * This can be used to serialize or modify the value.
+   *
+   * @param value The value to transform.
+   * @returns The transformed value.
+   */
+  storageTransform?: (value: State) => StoredState;
+
+  /**
+   * A function to transform the value after getting it from storage.
+   * This can be used to parse or modify the value.
+   *
+   * @param value The value to transform.
+   * @returns The transformed value.
+   */
+  usageTransform?: (value: StoredState) => State;
+}
+
 export interface AsyncGetBrowserStorage<State> {
   /**
    * Get the state from storage or return a fallback state.
@@ -51,23 +71,3 @@ export interface AsyncGetBrowserStorage<State> {
  * @param value The state to set in storage.
  */
 export type AsyncSetBrowserStorage<State> = (value?: State) => Promise<void>;
-
-export interface AsyncBrowserStorageTransforms<State, StoredState = State> {
-  /**
-   * A function to transform the value before setting it in storage.
-   * This can be used to serialize or modify the value.
-   *
-   * @param value The value to transform.
-   * @returns The transformed value.
-   */
-  storageTransform?: (value: State) => StoredState;
-
-  /**
-   * A function to transform the value after getting it from storage.
-   * This can be used to parse or modify the value.
-   *
-   * @param value The value to transform.
-   * @returns The transformed value.
-   */
-  usageTransform?: (value: StoredState) => State;
-}

@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
-import { createHmac } from "./index";
 import { createHmac as nodeCreateHmac } from "crypto";
+import { describe, expect, it } from "vitest";
+
+import { createHmac } from "./index";
 
 describe("createHmac", () => {
   describe("initialization", () => {

@@ -1,11 +1,12 @@
-import { profileStore } from "./store";
 import { createStore } from "@ibnlanre/portal";
+
+import { profileStore } from "./store";
 
 const loginStore = createStore({
   form: {
-    name: "",
-    email: "",
     avatar: "",
+    email: "",
+    name: "",
   },
 });
 
@@ -18,17 +19,17 @@ export function UserProfile() {
   function handleLogin() {
     if (name.trim() && email.trim()) {
       profileStore.login({
-        name: name.trim(),
-        email: email.trim(),
         avatar: avatar.trim() || undefined,
+        email: email.trim(),
         lastLogin: new Date(),
+        name: name.trim(),
         preferences: {
-          theme: "light",
           notifications: true,
+          theme: "light",
         },
       });
 
-      loginStore.form.$set({ name: "", email: "", avatar: "" });
+      loginStore.form.$set({ avatar: "", email: "", name: "" });
     }
   }
 
@@ -72,30 +73,30 @@ export function UserProfile() {
           <div className="space-y-4">
             <input
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-portal-blue-500 focus:border-transparent"
+              onChange={(e) => setName(e.target.value)}
               placeholder="Full Name"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
             />
             <input
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-portal-blue-500 focus:border-transparent"
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
             />
             <input
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-portal-blue-500 focus:border-transparent"
+              onChange={(e) => setAvatar(e.target.value)}
               placeholder="Avatar URL (optional)"
               type="url"
               value={avatar}
-              onChange={(e) => setAvatar(e.target.value)}
             />
             <button
               className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!name.trim() || !email.trim()}
-              type="button"
               onClick={handleLogin}
+              type="button"
             >
               Login
             </button>
@@ -138,8 +139,8 @@ export function UserProfile() {
                         ? "bg-gray-800 text-white"
                         : "bg-gray-200 text-gray-800"
                     }`}
-                    type="button"
                     onClick={toggleTheme}
+                    type="button"
                   >
                     {profile.preferences.theme === "dark" ? "Dark" : "Light"}
                   </button>
@@ -152,8 +153,8 @@ export function UserProfile() {
                         ? "bg-green-500 text-white"
                         : "bg-gray-300 text-gray-700"
                     }`}
-                    type="button"
                     onClick={toggleNotifications}
+                    type="button"
                   >
                     {profile.preferences.notifications ? "Enabled" : "Disabled"}
                   </button>
@@ -164,8 +165,8 @@ export function UserProfile() {
             <div className="pt-6 mt-6 border-t">
               <button
                 className="btn-danger"
-                type="button"
                 onClick={profileStore.logout}
+                type="button"
               >
                 Logout
               </button>

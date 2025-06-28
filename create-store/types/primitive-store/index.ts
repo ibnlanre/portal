@@ -3,7 +3,7 @@ import type { PartialStateSetter } from "@/create-store/types/partial-state-sett
 import type { Selector } from "@/create-store/types/selector";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
-export interface PrimitiveStore<State> {
+export type PrimitiveStore<State> = {
   readonly $act: (
     subscriber: Subscriber<State>,
     immediate?: boolean
@@ -14,4 +14,4 @@ export interface PrimitiveStore<State> {
     selector?: Selector<State, Value>,
     dependencies?: unknown[]
   ) => PartialStateManager<State, Value>;
-}
+};

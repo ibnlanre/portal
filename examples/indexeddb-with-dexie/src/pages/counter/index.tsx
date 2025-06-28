@@ -29,14 +29,14 @@ export function Counter() {
 
         <div className="flex justify-center space-x-4">
           <button
-            className="btn-secondary text-2xl w-12 h-12 rounded-full"
+            className="btn-secondary text-2xl size-12 justify-center items-center flex rounded-full"
             onClick={counterStore.decrement}
             type="button"
           >
             −
           </button>
           <button
-            className="btn-primary text-2xl w-12 h-12 rounded-full"
+            className="btn-primary text-2xl size-12 justify-center items-center flex rounded-full"
             onClick={counterStore.increment}
             type="button"
           >

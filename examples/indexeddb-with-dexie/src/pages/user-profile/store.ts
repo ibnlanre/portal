@@ -1,10 +1,6 @@
 import { createStore } from "@ibnlanre/portal";
-import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
 
-interface Preferences {
-  notifications: boolean;
-  theme: "dark" | "light";
-};
+import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
 
 export interface UserProfile {
   avatar?: string;
@@ -12,6 +8,11 @@ export interface UserProfile {
   lastLogin: Date;
   name: string;
   preferences: Preferences;
+}
+
+interface Preferences {
+  notifications: boolean;
+  theme: "dark" | "light";
 }
 
 interface StoredUserProfile extends Omit<UserProfile, "lastLogin"> {

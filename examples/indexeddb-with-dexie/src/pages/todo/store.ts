@@ -1,4 +1,5 @@
 import { createStore } from "@ibnlanre/portal";
+
 import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
 
 export interface Todo {
@@ -33,11 +34,18 @@ export const todoStore = createStore({
 
     todoStore.todos.$set(updatedTodos);
   },
+  clearNewTodoText: () => {
+    todoStore.newTodoText.$set("");
+  },
+  newTodoText: "",
   removeTodo: (id: string) => {
     const currentTodos = todoStore.todos.$get();
     const updatedTodos = currentTodos.filter((todo) => todo.id !== id);
 
     todoStore.todos.$set(updatedTodos);
+  },
+  setNewTodoText: (text: string) => {
+    todoStore.newTodoText.$set(text);
   },
   todos: initialTodos,
   toggleTodo: (id: string) => {
@@ -48,13 +56,6 @@ export const todoStore = createStore({
 
     todoStore.todos.$set(updatedTodos);
   },
-  newTodoText: "",
-  setNewTodoText: (text: string) => {
-    todoStore.newTodoText.$set(text);
-  },
-  clearNewTodoText: () => {
-    todoStore.newTodoText.$set("");
-  }
 });
 
 // Subscribe to store changes and auto-persist

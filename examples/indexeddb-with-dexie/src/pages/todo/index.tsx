@@ -1,4 +1,4 @@
-import { todoStore, type Todo } from "./store";
+import { type Todo, todoStore } from "./store";
 
 export function TodoList() {
   const [todos] = todoStore.todos.$use();
@@ -33,17 +33,17 @@ export function TodoList() {
         <div className="flex mb-6 space-x-2">
           <input
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-portal-blue-500 focus:border-transparent"
-            placeholder="Add a new todo..."
             onChange={(e) => todoStore.setNewTodoText(e.target.value)}
             onKeyDown={handleKeyPress}
+            placeholder="Add a new todo..."
             type="text"
             value={newTodoText}
           />
           <button
             className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!newTodoText.trim()}
-            type="button"
             onClick={todoStore.addTodo}
+            type="button"
           >
             Add
           </button>
@@ -56,8 +56,9 @@ export function TodoList() {
             </span>
             {completedTodos.length > 0 && (
               <button
-                onClick={() => todoStore.clearCompleted()}
                 className="text-red-600 hover:text-red-800"
+                onClick={() => todoStore.clearCompleted()}
+                type="button"
               >
                 Clear completed
               </button>
@@ -67,18 +68,18 @@ export function TodoList() {
           <div className="space-y-2">
             {todos.map((todo: Todo) => (
               <div
-                key={todo.id}
                 className={`flex items-center space-x-3 p-3 rounded-lg border ${
                   todo.completed
                     ? "bg-gray-50 border-gray-200"
                     : "bg-white border-gray-300"
                 }`}
+                key={todo.id}
               >
                 <input
-                  type="checkbox"
                   checked={todo.completed}
-                  onChange={() => todoStore.toggleTodo(todo.id)}
                   className="w-4 h-4 border-gray-300 rounded text-portal-blue-600 focus:ring-portal-blue-500"
+                  onChange={() => todoStore.toggleTodo(todo.id)}
+                  type="checkbox"
                 />
                 <span
                   className={`flex-1 ${
@@ -90,8 +91,9 @@ export function TodoList() {
                   {todo.text}
                 </span>
                 <button
-                  onClick={() => todoStore.removeTodo(todo.id)}
                   className="text-sm text-red-600 hover:text-red-800"
+                  onClick={() => todoStore.removeTodo(todo.id)}
+                  type="button"
                 >
                   Remove
                 </button>
@@ -119,4 +121,4 @@ export function TodoList() {
       </div>
     </div>
   );
-};
+}

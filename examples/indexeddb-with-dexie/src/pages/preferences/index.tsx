@@ -1,6 +1,6 @@
-import { preferencesStore, type AppPreferences } from "./store";
-
 import type { Paths, ResolvePath } from "@ibnlanre/portal";
+
+import { type AppPreferences, preferencesStore } from "./store";
 
 export function Preferences() {
   const [preferences] = preferencesStore.$use();
@@ -70,7 +70,7 @@ export function Preferences() {
               </label>
               <select
                 id="theme"
-                onChange={(e) => handleUpdate("theme", e.target.value as any)}
+                onChange={(e) => handleUpdate("theme", e.target.value)}
                 value={preferences.theme}
               >
                 <option value="light">Light</option>

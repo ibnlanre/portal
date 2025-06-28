@@ -1,7 +1,8 @@
+import * as signCookieModule from "@/cookie-storage/functions/sign-cookie";
+
 import { describe, expect, it, vi } from "vitest";
 
 import { unsignCookie } from "./index";
-import * as signCookieModule from "@/cookie-storage/functions/sign-cookie";
 
 vi.mock("@/cookie-storage/functions/sign-cookie");
 

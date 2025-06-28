@@ -59,7 +59,6 @@ const ignoresConfig = tseslint.config({
     "**/npm-shrinkwrap.json",
     "**/lerna-debug.log",
     "**/lerna.json",
-    "**/tsconfig*.json",
     "**/tsconfig*.tsbuildinfo",
     "**/*.d.ts",
   ],
@@ -106,7 +105,7 @@ const importConfig = tseslint.config({
 });
 
 const typescriptConfig = tseslint.config({
-  extends: tseslint.configs.eslintRecommended,
+  extends: [tseslint.configs.eslintRecommended],
   files: [EXT.TS],
   ignores: [EXT.DEFINITION_FILES, EXT.TYPE_DEFINITION, EXT.TEST],
   languageOptions: {

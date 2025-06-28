@@ -7,8 +7,8 @@ import type { Subscriber } from "@/create-store/types/subscriber";
 import { useSyncExternalStore } from "react";
 
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
-import { replace } from "@/create-store/functions/helpers/replace";
 import { createSnapshot } from "@/create-store/functions/helpers/create-snapshot";
+import { replace } from "@/create-store/functions/helpers/replace";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
 export function createPrimitiveStore<State>(

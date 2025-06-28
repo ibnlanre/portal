@@ -207,8 +207,9 @@ export function Home() {
 
           <div className="pt-2 border-t border-red-200">
             <button
-              onClick={handleClearAllData}
               className="px-4 py-2 font-medium text-white transition-colors duration-200 bg-red-600 rounded-md hover:bg-red-700"
+              onClick={handleClearAllData}
+              type="button"
             >
               Clear All Data
             </button>

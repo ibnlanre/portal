@@ -13,14 +13,6 @@ const LITTLE_ENDIAN = (() => {
   }
 })();
 
-function getFractionalBits(n: number): number {
-  return ((n - (n | 0)) * 2 ** 32) | 0;
-}
-
-function rightRotate(word: number, bits: number): number {
-  return (word >>> bits) | (word << (32 - bits));
-}
-
 function convertEndian(word: number): number {
   if (!LITTLE_ENDIAN) return word;
   return (
@@ -29,6 +21,14 @@ function convertEndian(word: number): number {
     ((word & 0xff00) << 8) |
     (word << 24)
   );
+}
+
+function getFractionalBits(n: number): number {
+  return ((n - (n | 0)) * 2 ** 32) | 0;
+}
+
+function rightRotate(word: number, bits: number): number {
+  return (word >>> bits) | (word << (32 - bits));
 }
 
 const DEFAULT_STATE = (() => {
@@ -70,6 +70,52 @@ const ROUND_CONSTANTS = (() => {
   }
   return constants;
 })();
+
+class Hmac {
+  private data: Uint8Array[] = [];
+  private key: Uint8Array;
+
+  constructor(key: string | Uint8Array) {
+    this.key = toUint8Array(key);
+    if (this.key.length > BLOCK_SIZE) this.key = SHA256.hash(this.key);
+    if (this.key.length < BLOCK_SIZE) {
+      const tmp = new Uint8Array(BLOCK_SIZE);
+      tmp.set(this.key);
+      this.key = tmp;
+    }
+  }
+
+  digest(encoding: "base64" | "binary" | "hex" = "base64"): string {
+    const msg = new Uint8Array(this.data.reduce((sum, a) => sum + a.length, 0));
+    let offset = 0;
+    for (const chunk of this.data)
+      msg.set(chunk, offset), (offset += chunk.length);
+
+    const oKeyPad = new Uint8Array(BLOCK_SIZE);
+    const iKeyPad = new Uint8Array(BLOCK_SIZE);
+    for (let i = 0; i < BLOCK_SIZE; i++) {
+      iKeyPad[i] = this.key[i] ^ 0x36;
+      oKeyPad[i] = this.key[i] ^ 0x5c;
+    }
+
+    const inner = SHA256.hash(concat(iKeyPad, msg));
+    const result = SHA256.hash(concat(oKeyPad, inner));
+
+    switch (encoding) {
+      case "binary":
+        return String.fromCharCode(...result);
+      case "hex":
+        return toHex(result);
+      default:
+        return toBase64(result);
+    }
+  }
+
+  update(data: string | Uint8Array): this {
+    this.data.push(toUint8Array(data));
+    return this;
+  }
+}
 
 export class SHA256 {
   public static hash(data: Uint8Array): Uint8Array {
@@ -132,8 +178,15 @@ export class SHA256 {
   }
 }
 
-function toUint8Array(input: string | Uint8Array): Uint8Array {
-  return typeof input === "string" ? new TextEncoder().encode(input) : input;
+function concat(a: Uint8Array, b: Uint8Array): Uint8Array {
+  const res = new Uint8Array(a.length + b.length);
+  res.set(a);
+  res.set(b, a.length);
+  return res;
+}
+
+function toBase64(buf: Uint8Array): string {
+  return btoa(String.fromCharCode(...buf));
 }
 
 function toHex(buf: Uint8Array): string {
@@ -142,61 +195,8 @@ function toHex(buf: Uint8Array): string {
     .join("");
 }
 
-function toBase64(buf: Uint8Array): string {
-  return btoa(String.fromCharCode(...buf));
-}
-
-function concat(a: Uint8Array, b: Uint8Array): Uint8Array {
-  const res = new Uint8Array(a.length + b.length);
-  res.set(a);
-  res.set(b, a.length);
-  return res;
-}
-
-class Hmac {
-  private key: Uint8Array;
-  private data: Uint8Array[] = [];
-
-  constructor(key: string | Uint8Array) {
-    this.key = toUint8Array(key);
-    if (this.key.length > BLOCK_SIZE) this.key = SHA256.hash(this.key);
-    if (this.key.length < BLOCK_SIZE) {
-      const tmp = new Uint8Array(BLOCK_SIZE);
-      tmp.set(this.key);
-      this.key = tmp;
-    }
-  }
-
-  update(data: string | Uint8Array): this {
-    this.data.push(toUint8Array(data));
-    return this;
-  }
-
-  digest(encoding: "base64" | "hex" | "binary" = "base64"): string {
-    const msg = new Uint8Array(this.data.reduce((sum, a) => sum + a.length, 0));
-    let offset = 0;
-    for (const chunk of this.data)
-      msg.set(chunk, offset), (offset += chunk.length);
-
-    const oKeyPad = new Uint8Array(BLOCK_SIZE);
-    const iKeyPad = new Uint8Array(BLOCK_SIZE);
-    for (let i = 0; i < BLOCK_SIZE; i++) {
-      iKeyPad[i] = this.key[i] ^ 0x36;
-      oKeyPad[i] = this.key[i] ^ 0x5c;
-    }
-
-    const inner = SHA256.hash(concat(iKeyPad, msg));
-    const result = SHA256.hash(concat(oKeyPad, inner));
-
-    switch (encoding) {
-      case "hex":
-        return toHex(result);
-      case "binary":
-        return String.fromCharCode(...result);
-      default:
-        return toBase64(result);
-    }
-  }
+function toUint8Array(input: string | Uint8Array): Uint8Array {
+  return typeof input === "string" ? new TextEncoder().encode(input) : input;
 }
 
 export const createHmac = (algorithm: "sha256", key: string | Uint8Array) => {
