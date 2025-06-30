@@ -26,14 +26,18 @@
     - [`$key()`](#key)
     - [`$use()` (React Hook)](#use-react-hook)
   - [Define actions: Functions in stores](#define-actions-functions-in-stores)
+  - [Actions as hooks](#actions-as-hooks)
+  - [Combine stores and actions: `combine()`](#combine-stores-and-actions-combine)
   - [Initialize state asynchronously](#initialize-state-asynchronously)
   - [Handle circular references](#handle-circular-references)
   - [Handle arrays in stores](#handle-arrays-in-stores)
   - [Normalize objects: `normalizeObject()`](#normalize-objects-normalizeobject)
+  - [Infer state types: `InferType`](#infer-state-types-infertype)
   - [Persist state](#persist-state)
     - [Web Storage adapters](#web-storage-adapters)
     - [Cookie Storage adapter](#cookie-storage-adapter)
     - [Browser Storage adapter](#browser-storage-adapter)
+    - [Async Browser Storage adapter](#async-browser-storage-adapter)
   - [Cookie Storage](#cookie-storage)
     - [`sign()`](#sign)
     - [`unsign()`](#unsign)
@@ -66,9 +70,12 @@
 - **Object normalization**: Convert interface-typed objects (e.g., `window`, API responses) for store compatibility using `normalizeObject`.
 - **Comprehensive type safety**: Leverage full TypeScript support with robust type inference for a reliable development experience.
 - **Seamless React integration**: Connect stores to React components effortlessly using the `$use` hook, with automatic subscription management.
+- **Actions as hooks**: Create actions that can behave like React hooks, allowing you to use hooks like `useState` and `useEffect` inside your store's actions.
 - **Flexible store types**: Manage both primitive values (strings, numbers, booleans) and complex, nested objects within a unified system.
 - **State persistence**: Persist state across sessions with built-in adapters for Local Storage, Session Storage, and Cookie Storage.
+- **Flexible persistence**: Use the `createAsyncBrowserStorageAdapter` for more control over how state is transformed before being stored or used.
 - **Action management**: Define and use actions (functions) directly within your stores to co-locate state logic.
+- **Utility functions**: Use helpers like `combine` to simplify merging state and actions.
 - **Asynchronous initialization**: Initialize stores with data fetched from APIs or other asynchronous sources.
 
 ## Get started
@@ -153,32 +160,7 @@ A store is an object that holds your application's state. It allows you to read 
 
 1.  **Primitive Store**: Manages a single, primitive value (e.g., a string, number, boolean, null, or undefined).
 
-    ```typescript
-    import { createStore } from "@ibnlanre/portal";
-
-    const countStore = createStore(0); // A primitive store for a number
-    const nameStore = createStore("Alex"); // A primitive store for a string
-    ```
-
-2.  **Composite Store**: Manages an object and enables nested state structures. Each property in a composite store's initial object can itself become a store instance (either primitive or composite), allowing for granular state management and access.
-
-    ```typescript
-    import { createStore } from "@ibnlanre/portal";
-
-    const userSettingsStore = createStore({
-      profile: {
-        name: "Alex",
-        age: 30,
-      },
-      preferences: {
-        theme: "dark",
-        notificationsEnabled: true,
-      },
-    });
-    // userSettingsStore is a composite store.
-    // userSettingsStore.profile is also a composite store.
-    // userSettingsStore.profile.name is a primitive store.
-    ```
+2.  **Composite Store**: Manages an object, enabling nested state structures. Each property in a composite store's initial object can itself become a store instance (either primitive or composite), allowing for granular state management and access.
 
 Both store types share a consistent API for getting, setting, and subscribing to state.
 
@@ -731,6 +713,157 @@ When defining actions, to update state, you must use the variable that holds the
     console.log(dispatchingCounterStore.value.$get()); // 0
     ```
 
+### Actions as hooks
+
+`@ibnlanre/portal` allows you to define functions within your store that can be used as React custom hooks. This powerful feature enables you to co-locate complex, stateful logic—including side effects managed by `useEffect` or component-level state from `useState`—directly with the store it relates to.
+
+To create an action that functions as a hook, simply follow React's convention: prefix the function name with `use`, place it directly within the object you pass to createStore, then use it like any regular custom hook in your React components.
+
+This pattern leverages React's own rules for hooks. It doesn't prevent the function from being recreated on re-renders (which is normal React behavior), but it provides an excellent way to organize and attach reusable hook logic to your store instance.
+
+> ⚠️ Note: These functions aren’t automatically memoized. Make sure your store is created once at the module level, and not within a component, to avoid re-creating the hook logic on every render.
+
+**Example:**
+
+Let's create a store with an action that uses `useState` and `useEffect` to automatically reset a message after a delay.
+
+```typescript
+import { createStore } from "@ibnlanre/portal";
+import { useState, useEffect } from "react";
+
+export const notificationStore = createStore({
+  message: "",
+  setMessage(newMessage: string) {
+    notificationStore.message.$set(newMessage);
+  },
+  useAutoResetMessage(initialMessage: string, delay: number) {
+    const [internalMessage, setInternalMessage] = useState(initialMessage);
+
+    useEffect(() => {
+      if (internalMessage) {
+        const timer = setTimeout(() => {
+          setInternalMessage("");
+        }, delay);
+        return () => clearTimeout(timer);
+      }
+    }, [internalMessage, delay]);
+
+    useEffect(() => {
+      notificationStore.message.$set(internalMessage);
+    }, [internalMessage]);
+
+    return [internalMessage, setInternalMessage] as const;
+  },
+});
+```
+
+**Using the hook action in a component:**
+
+```tsx
+import { notificationStore } from "../stores/notification-store";
+
+export function NotificationManager() {
+  const [message, setMessage] = notificationStore.useAutoResetMessage(
+    "Welcome!",
+    3000
+  );
+
+  const [globalMessage] = notificationStore.message.$use();
+
+  return (
+    <div>
+      <p>Current message (from hook state): {message}</p>
+      <p>Global message (from store): {globalMessage}</p>
+      <button onClick={() => setMessage("Resetting in 3 seconds")}>
+        Set Temporary Message
+      </button>
+    </div>
+  );
+}
+```
+
+In this example, `useAutoResetMessage` encapsulates its own state and side effects, just like a custom React hook, while still being able to interact with the global store. This pattern allows you to:
+
+- Reuse complex hook logic across components
+- Co-locate logic with the state it touches
+- Maintain a clean separation of concern between logic and UI
+
+### Combine stores and actions: `combine()`
+
+The `combine()` utility performs a deep merge between two objects. It's useful for unifying your initial state and actions into one cohesive structure before passing it into createStore.
+
+Unlike shallow merging (such as Object.assign or object spread), `combine()`:
+
+- Recursively merges nested objects
+- Preserves store instances within deeply nested structures
+- Handles circular references safely
+
+However, `combine()` does not automatically bind the store reference to your actions. If your actions need access to the store, they must reference it manually—so they should be defined inline when calling combine() and not imported separately.
+
+**Syntax:**
+
+```typescript
+combine<Target extends Dictionary, Source>(target: Target, source: Source): Merge<Target, Source>
+```
+
+- **`target`**: Base state or object.
+- **`source`**: Object containing actions or additional properties to merge.
+- **Returns**:A new, deeply merged object with references preserved.
+
+**Example:**
+
+Let's define state and actions separately and then combine them into a single store.
+
+```typescript
+import { createStore, combine } from "@ibnlanre/portal";
+
+// 1. Define initial state
+const initialState = {
+  profile: {
+    name: "Alex",
+    email: "alex@example.com",
+  },
+  isLoggedIn: false,
+};
+
+// 2. Use combine to merge state and inline actions
+export const userStore = createStore(
+  combine(initialState, {
+    login(email: string) {
+      userStore.$set({
+        profile: {
+          ...userStore.profile.$get(),
+          email,
+        },
+        isLoggedIn: true,
+      });
+    },
+    logout() {
+      userStore.$set({
+        profile: { name: "", email: "" },
+        isLoggedIn: false,
+      });
+    },
+    updateName(newName: string) {
+      userStore.profile.name.$set(newName);
+    },
+  })
+);
+```
+
+Once your store is set up, you can use the state and actions like this:
+
+```typescript
+// Now you can use the store with both state and actions
+userStore.login("alex@example.com");
+console.log(userStore.profile.email.$get()); // "alex@example.com"
+
+userStore.updateName("Alexandra");
+console.log(userStore.profile.name.$get()); // "Alexandra"
+```
+
+This approach allows you to keep your state and actions organized in one place, making it easier to manage complex stores. It also ensures that your actions have access to the store instance, allowing them to update the state correctly.
+
 ### Initialize state asynchronously
 
 You can initialize a store with state fetched asynchronously by passing an `async` function (that returns a `Promise`) to `createStore`. The store will initially be empty (or hold the unresolved Promise object itself, depending on internal handling) until the Promise resolves.
@@ -762,14 +895,14 @@ async function fetchInitialData(): Promise<UserData> {
   );
 }
 
-const asyncUserStore = await createStore(fetchInitialData());
+const userStore = await createStore(fetchInitialData());
 // At this point, the promise has resolved, and the store is initialized.
-const userData = asyncUserStore.$get();
+const userData = userStore.$get();
 console.log(userData); // { id: 1, name: "Lyn", email: "lyn@example.com" }
 
-// userData is a single object. asyncUserStore.id does not exist as a sub-store.
+// userData is a single object. userStore.id does not exist as a sub-store.
 // To update, you'd set the whole object:
-asyncUserStore.$set({ id: 2, name: "Alex", email: "alex@example.com" });
+userStore.$set({ id: 2, name: "Alex", email: "alex@example.com" });
 ```
 
 If you need a nested store structure from asynchronously loaded data, initialize the store with a placeholder structure (or `null`) and then update it using `$set` once the data is fetched. This allows the composite store structure to be established correctly.
@@ -1069,15 +1202,187 @@ normalizeObject<T extends object>(obj: T): Record<PropertyKey, unknown> // Simpl
     // userProfileStore.internalConfig is undefined (symbol key was excluded)
     ```
 
-### Persist state
+### Infer state types: `InferType`
+
+The `InferType` utility type allows you to extract TypeScript types from your Portal stores. This is especially useful when you need to work with the underlying state type in other parts of your application, such as API calls, form validation, or when passing state to other components.
+
+**Syntax:**
+
+```typescript
+InferType<Store, Path?>;
+```
+
+**Parameters:**
+
+- **`Store`**: The store from which to infer the type (must extend `PrimitiveStore<any>`)
+- **`Path`** (optional): A path within the store's state to extract a specific nested type
+
+**Returns**: The TypeScript type of the store's state, or the type at the specified path
+
+**Examples:**
+
+1. **Infer the complete state type:**
+
+   ```typescript
+   import { createStore, InferType } from "@ibnlanre/portal";
+
+   const userStore = createStore({
+     name: "Alice",
+     age: 30,
+     preferences: {
+       theme: "dark",
+       notifications: true,
+     },
+   });
+
+   // Extract the full state type
+   type UserState = InferType<typeof userStore>;
+   /*
+   UserState is:
+   {
+     name: string;
+     age: number;
+     preferences: {
+       theme: string;
+       notifications: boolean;
+     };
+   }
+   */
+
+   // Use the inferred type in functions
+   function saveUserToAPI(user: UserState) {
+     // API call with properly typed user data
+     return fetch("/api/users", {
+       method: "POST",
+       body: JSON.stringify(user),
+     });
+   }
+
+   // Get the current state with correct typing
+   const currentUser = userStore.$get(); // Type is automatically UserState
+   saveUserToAPI(currentUser);
+   ```
+
+2. **Infer specific nested types:**
+
+   ```typescript
+   import { createStore, InferType } from "@ibnlanre/portal";
+
+   const appStore = createStore({
+     user: {
+       profile: {
+         name: "Bob",
+         email: "bob@example.com",
+       },
+       settings: {
+         theme: "light",
+         language: "en",
+       },
+     },
+     data: {
+       posts: [],
+       comments: [],
+     },
+   });
+
+   // Extract specific nested types
+   type UserProfile = InferType<typeof appStore, "user.profile">;
+   // UserProfile is: { name: string; email: string; }
+
+   type UserSettings = InferType<typeof appStore, "user.settings">;
+   // UserSettings is: { theme: string; language: string; }
+
+   type AppData = InferType<typeof appStore, "data">;
+   // AppData is: { posts: any[]; comments: any[]; }
+
+   // Use inferred types for type-safe operations
+   function updateProfile(newProfile: Partial<UserProfile>) {
+     appStore.user.profile.$set((current) => ({ ...current, ...newProfile }));
+   }
+
+   function updateSettings(settings: UserSettings) {
+     appStore.user.settings.$set(settings);
+   }
+   ```
+
+3. **Use with primitive stores:**
+
+   ```typescript
+   import { createStore, InferType } from "@ibnlanre/portal";
+
+   const countStore = createStore(0);
+   const nameStore = createStore("Hello");
+   const itemsStore = createStore<string[]>([]);
+
+   type CountType = InferType<typeof countStore>; // number
+   type NameType = InferType<typeof nameStore>; // string
+   type ItemsType = InferType<typeof itemsStore>; // string[]
+
+   // Use inferred types in function parameters
+   function processCount(value: CountType) {
+     console.log(`Processing count: ${value}`);
+   }
+
+   function processItems(items: ItemsType) {
+     return items.map((item) => item.toUpperCase());
+   }
+   ```
+
+4. **Integration with forms and validation:**
+
+   ```typescript
+   import { createStore, InferType } from "@ibnlanre/portal";
+
+   const formStore = createStore({
+     username: "",
+     email: "",
+     profile: {
+       firstName: "",
+       lastName: "",
+       bio: "",
+     },
+   });
+
+   type FormData = InferType<typeof formStore>;
+   type ProfileData = InferType<typeof formStore, "profile">;
+
+   // Type-safe form validation
+   function validateForm(data: FormData): boolean {
+     return (
+       data.username.length > 0 &&
+       data.email.includes("@") &&
+       data.profile.firstName.length > 0
+     );
+   }
+
+   // Type-safe API integration
+   async function submitForm(formData: FormData) {
+     const response = await fetch("/api/register", {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify(formData),
+     });
+     return response.json();
+   }
+
+   // Usage
+   const currentFormData = formStore.$get();
+   if (validateForm(currentFormData)) {
+     await submitForm(currentFormData);
+   }
+   ```
+
+The `InferType` utility ensures type safety when working with store data outside of the reactive context, making it easier to integrate Portal stores with other parts of your TypeScript application.
+
+## Persist state
 
 `@ibnlanre/portal` allows you to persist store state across sessions using storage adapters. These adapters provide `getState` and `setState` functions that you integrate with your store.
 
 #### Web Storage adapters
 
-Use `createLocalStorageAdapter` or `createSessionStorageAdapter` to persist state in the browser's Local Storage or Session Storage.
+Use `createLocalStorageAdapter` or `createSessionStorageAdapter` to persist in the browser's Local Storage or Session Storage.
 
-**Function Signature:**
+**Syntax:**
 
 ```typescript
 createLocalStorageAdapter<State>(key: string, options?: StorageAdapterOptions<State>)
@@ -1155,7 +1460,7 @@ sessionDataStore.$set({ guestId: "guest-123", lastPage: "/products" });
 
 Use `createCookieStorageAdapter` for persisting state in browser cookies.
 
-**Function Signature:**
+**Syntax:**
 
 ```typescript
 createCookieStorageAdapter<State>(key: string, options?: CookieStorageAdapterOptions<State>)
@@ -1222,28 +1527,36 @@ prefsStore.$set({ theme: "dark" }); // State saved to a signed cookie
 
 For custom storage mechanisms (e.g., IndexedDB, a remote API, `chrome.storage`), use `createBrowserStorageAdapter`.
 
-**Function Signature:**
+**Syntax:**
 
 ```typescript
-createBrowserStorageAdapter<State>(key: string, options: BrowserStorageAdapterOptions<State>)
+createBrowserStorageAdapter<State>(
+  key: string,
+  options: BrowserStorageAdapterOptions<State>
+): [
+  getStorageState: GetBrowserStorage<State>,
+  setStorageState: SetBrowserStorage<State>,
+]
 ```
 
 **Parameters:**
 
 - `key: string`: **Required**. A key for your custom storage.
 - `options: BrowserStorageAdapterOptions<State>`: **Required** configuration object with:
-  - `getItem: (key: string) => Promise<string | null> | string | null`: Function to retrieve an item.
-  - `setItem: (key: string, value: string) => Promise<void> | void`: Function to save an item.
-  - `removeItem: (key: string) => Promise<void> | void`: Function to remove an item.
+  - `getItem: (key: string) => string | null`: Function to retrieve an item.
+  - `setItem: (key: string, value: string) => void`: Function to save an item.
+  - `removeItem: (key: string) => void`: Function to remove an item.
   - `stringify?: (state: State) => string`: Function to serialize the state. Defaults to `JSON.stringify`.
   - `parse?: (storedString: string) => State`: Function to deserialize the state. Defaults to `JSON.parse`.
 
 **Return Value:**
-`[getCustomStateFunction, setCustomStateFunction, removeCustomStateFunction]`
+`[getStorageState, setStorageState]`
 
-- `getCustomStateFunction(): Promise<S | null>` or `S | null`
-- `setCustomStateFunction(newState: S): Promise<void>` or `void`
-- `removeCustomStateFunction(): Promise<void>` or `void`
+- `getStorageState(fallback?: State): State | undefined`
+  - Retrieves the state from storage, applying the `parse` function.
+  - If no state is found, it returns the provided fallback value.
+- `setStorageState(value?: State): void`
+  - Saves the state to storage, applying the `stringify` function.
 
 **Example (using a simple in-memory object as custom storage):**
 
@@ -1279,6 +1592,87 @@ customDataStore.$act(setCustomState, false);
 customDataStore.$set({ lastSync: new Date().toISOString() });
 ```
 
+#### Async Browser Storage adapter
+
+The `createAsyncBrowserStorageAdapter` is a more flexible version of `createBrowserStorageAdapter`. It allows for asynchronous transformations of your state, which is useful when you need to perform operations like encryption, compression, or other async tasks before storing or retrieving the state.
+
+The adapter provides two functions: one for getting the state from storage and another for setting the state to storage. Both functions can handle asynchronous operations, allowing you to work with data that requires processing before being used in your application.
+
+**Syntax:**
+
+```typescript
+createAsyncBrowserStorageAdapter<State, StoredState>(
+  key: string,
+  options: AsyncBrowserStorageAdapterOptions<State, StoredState>
+): [
+  getStorageState: AsyncGetBrowserStorage<State>,
+  setStorageState: AsyncSetBrowserStorage<State>,
+]
+```
+
+**Parameters:**
+
+- `key: string`: **Required**. A key for your custom storage.
+- `options: BrowserStorageAdapterOptions<State>`: **Required** configuration object with:
+  - `getItem: (key: string) => Promise<string | null> | string | null`: Function to retrieve an item.
+  - `setItem: (key: string, value: string) => Promise<void> | void`: Function to save an item.
+  - `removeItem: (key: string) => Promise<void> | void`: Function to remove an item.
+  - `usageTransform`: A function that transforms the data **from** storage before it's used in your application.
+  - `storageTransform`: A function that transforms the data **to** be stored.
+
+**Return Value:**
+`[getStorageState, setStorageState]`
+
+- `getStorageState(fallback?: State): Promise<State | undefined>`
+  - Retrieves the state from storage, applying the `usageTransform` function.
+  - If no state is found, it returns the provided fallback value.
+- `setStorageState(value?: State): Promise<void>`
+  - Saves the state to storage, applying the `storageTransform` function.
+
+**Example:**
+
+Let's create an adapter that simulates async encryption and decryption.
+
+```typescript
+import { createAsyncBrowserStorageAdapter } from "@ibnlanre/portal";
+
+// Simulate async encryption/decryption
+async function encrypt(data: any): Promise<string> {
+  return btoa(JSON.stringify(data));
+}
+
+async function decrypt(data: string): Promise<any> {
+  return JSON.parse(atob(data));
+}
+
+const [getEncryptedState, setEncryptedState] = createAsyncBrowserStorageAdapter(
+  "my-encrypted-store",
+  {
+    ...localStorage, // Use localStorage methods for simplicity
+    storageTransform(data) {
+      return btoa(JSON.stringify(data)); // Encrypt before storing
+    },
+    usageTransform(data) {
+      return JSON.parse(atob(data)); // Decrypt when retrieving
+    },
+  }
+);
+
+// Now, you can use these functions to persist a store
+const myStore = createStore(
+  { sensitiveData: "secret" },
+  {
+    get: getEncryptedState,
+    set: setEncryptedState,
+  }
+);
+
+// When you set the state, it will be encrypted before being stored.
+myStore.sensitiveData.$set("new secret");
+
+// When the store is initialized, the data will be decrypted.
+```
+
 ### Cookie Storage
 
 Beyond the `createCookieStorageAdapter`, `@ibnlanre/portal` also exposes a `cookieStorage` module. This module provides a collection of utility functions for direct, granular manipulation of browser cookies. You might use these functions if you need to interact with cookies outside the context of a store or require more fine-grained control than the adapter offers.
@@ -1304,6 +1698,7 @@ Signs a string value using a secret key. This is useful for creating tamper-proo
   - `secret: string`: The secret key for signing.
 - **Returns**: `string` - The signed string.
 - **Example**:
+
   ```typescript
   const originalValue = "user-session-data";
   const secretKey = "your-super-secret-key";
@@ -1321,6 +1716,7 @@ Verifies and unsigns a previously signed string using the corresponding secret k
   - `secret: string`: The secret key used for signing.
 - **Returns**: `string | false` - The original string if the signature is valid, or `false` if tampering is detected or the secret is incorrect.
 - **Example**:
+
   ```typescript
   const potentiallyTamperedValue = "user-session-data.asdfjklsemf...";
   const secretKey = "your-super-secret-key";
@@ -1345,6 +1741,7 @@ Retrieves the value of a cookie by its name (key).
   - `key: string`: The name of the cookie.
 - **Returns**: `string | null` - The cookie's value, or `null` if the cookie is not found.
 - **Example**:
+
   ```typescript
   const themePreference = cookieStorage.getItem("userTheme");
 
@@ -1363,6 +1760,7 @@ Sets or updates a cookie's value. You can also provide cookie options.
   - `options?: CookieOptions`: Optional. An object specifying cookie attributes (e.g., `path`, `expires`, `secure`). Refer to the `CookieOptions` type definition for details.
 - **Returns**: `void`
 - **Example**:
+
   ```typescript
   cookieStorage.setItem("userToken", "abc123xyz789", {
     secure: true,
@@ -1380,6 +1778,7 @@ Removes a cookie by its name.
   - `options?: CookieOptions`: Optional. Cookie options (like `path` and `domain`) that must match the options used when the cookie was set for successful removal.
 - **Returns**: `void`
 - **Example**:
+
   ```typescript
   cookieStorage.removeItem("userToken", { path: "/" });
   ```
@@ -1390,6 +1789,7 @@ Attempts to clear all cookies accessible to the current document's path and doma
 
 - **Returns**: `void`
 - **Example**:
+
   ```typescript
   cookieStorage.clear(); // Clears cookies for the current path/domain
   ```
@@ -1411,6 +1811,7 @@ Constructs a standardized cookie name string based on a set of provided options.
   - `cookieSuffix?: string`: A suffix for the cookie name. Default: `""`.
 - **Returns**: `string` - The generated cookie name.
 - **Example**:
+
   ```typescript
   const authTokenKey = cookieStorage.createKey({
     cookieFragmentDescription: "Authentication Token",
@@ -1431,6 +1832,7 @@ Retrieves the name (key) of a cookie at a specific index in the document's cooki
   - `index: number`: The zero-based index of the cookie.
 - **Returns**: `string | null` - The cookie name at the specified index, or `null` if the index is out of bounds.
 - **Example**:
+
   ```typescript
   const firstCookieName = cookieStorage.key(0);
 
@@ -1445,6 +1847,7 @@ Retrieves the total number of cookies accessible to the current document.
 
 - **Type**: `number`
 - **Example**:
+
   ```typescript
   const numberOfCookies = cookieStorage.length;
   console.log(`There are ${numberOfCookies} cookies.`);
