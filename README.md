@@ -798,7 +798,7 @@ Unlike shallow merging (such as Object.assign or object spread), `combine()`:
 - Preserves store instances within deeply nested structures
 - Handles circular references safely
 
-However, `combine()` does not automatically bind the store reference to your actions. If your actions need access to the store, they must reference it manually—so they should be defined inline when calling combine() and not imported separately.
+However, `combine()` does not automatically bind the store reference to your actions. If your actions need access to the store, they must reference it manually; so they should be defined inline when calling `combine()` and not imported separately.
 
 **Syntax:**
 
@@ -1227,34 +1227,21 @@ InferType<Store, Path?>;
    import { createStore, InferType } from "@ibnlanre/portal";
 
    const userStore = createStore({
-     name: "Alice",
      age: 30,
+     name: "Alice",
      preferences: {
-       theme: "dark",
        notifications: true,
+       theme: "dark",
      },
    });
 
-   // Extract the full state type
+   // Infer the complete state type
    type UserState = InferType<typeof userStore>;
-   /*
-   UserState is:
-   {
-     name: string;
-     age: number;
-     preferences: {
-       theme: string;
-       notifications: boolean;
-     };
-   }
-   */
 
-   // Use the inferred type in functions
    function saveUserToAPI(user: UserState) {
-     // API call with properly typed user data
      return fetch("/api/users", {
-       method: "POST",
        body: JSON.stringify(user),
+       method: "POST",
      });
    }
 
@@ -1269,30 +1256,30 @@ InferType<Store, Path?>;
    import { createStore, InferType } from "@ibnlanre/portal";
 
    const appStore = createStore({
+     data: {
+       comments: [],
+       posts: [],
+     },
      user: {
        profile: {
-         name: "Bob",
          email: "bob@example.com",
+         name: "Bob",
        },
        settings: {
-         theme: "light",
          language: "en",
+         theme: "light",
        },
-     },
-     data: {
-       posts: [],
-       comments: [],
      },
    });
 
-   // Extract specific nested types
-   type UserProfile = InferType<typeof appStore, "user.profile">;
+   type AppData = InferType<typeof appStore, "data">;
    // UserProfile is: { name: string; email: string; }
 
-   type UserSettings = InferType<typeof appStore, "user.settings">;
+   // Extract specific nested types
+   type UserProfile = InferType<typeof appStore, "user.profile">;
    // UserSettings is: { theme: string; language: string; }
 
-   type AppData = InferType<typeof appStore, "data">;
+   type UserSettings = InferType<typeof appStore, "user.settings">;
    // AppData is: { posts: any[]; comments: any[]; }
 
    // Use inferred types for type-safe operations
@@ -1315,8 +1302,8 @@ InferType<Store, Path?>;
    const itemsStore = createStore<string[]>([]);
 
    type CountType = InferType<typeof countStore>; // number
-   type NameType = InferType<typeof nameStore>; // string
    type ItemsType = InferType<typeof itemsStore>; // string[]
+   type NameType = InferType<typeof nameStore>; // string
 
    // Use inferred types in function parameters
    function processCount(value: CountType) {
@@ -1334,19 +1321,27 @@ InferType<Store, Path?>;
    import { createStore, InferType } from "@ibnlanre/portal";
 
    const formStore = createStore({
-     username: "",
      email: "",
      profile: {
+       bio: "",
        firstName: "",
        lastName: "",
-       bio: "",
      },
+     username: "",
    });
 
    type FormData = InferType<typeof formStore>;
    type ProfileData = InferType<typeof formStore, "profile">;
 
-   // Type-safe form validation
+   async function submitForm(formData: FormData) {
+     const response = await fetch("/api/register", {
+       body: JSON.stringify(formData),
+       headers: { "Content-Type": "application/json" },
+       method: "POST",
+     });
+     return response.json();
+   }
+
    function validateForm(data: FormData): boolean {
      return (
        data.username.length > 0 &&
@@ -1355,17 +1350,6 @@ InferType<Store, Path?>;
      );
    }
 
-   // Type-safe API integration
-   async function submitForm(formData: FormData) {
-     const response = await fetch("/api/register", {
-       method: "POST",
-       headers: { "Content-Type": "application/json" },
-       body: JSON.stringify(formData),
-     });
-     return response.json();
-   }
-
-   // Usage
    const currentFormData = formStore.$get();
    if (validateForm(currentFormData)) {
      await submitForm(currentFormData);
@@ -1563,11 +1547,10 @@ createBrowserStorageAdapter<State>(
 ```typescript
 import { createStore, createBrowserStorageAdapter } from "@ibnlanre/portal";
 
-// Example custom storage (can be async)
-const myCustomStorage = {
+const customStorage = {
   data: {} as Record<string, string>,
   getItem(key: string) {
-    this.data[key];
+    return this.data[key];
   },
   removeItem(key: string) {
     delete this.data[key];
@@ -1577,14 +1560,10 @@ const myCustomStorage = {
   },
 };
 
-const [getCustomState, setCustomState, removeCustomState] =
-  createBrowserStorageAdapter("myCustomDataKey", {
-    getItem: myCustomStorage.getItem,
-    setItem: myCustomStorage.setItem,
-    removeItem: myCustomStorage.removeItem,
-  });
+const [getCustomState, setCustomState] = createBrowserStorageAdapter<{
+  lastSync: null | string;
+}>("custom-key", customStorage);
 
-// Example usage (assuming synchronous custom storage for simplicity here)
 const initialCustomData = getCustomState({ lastSync: null });
 const customDataStore = createStore(initialCustomData);
 
@@ -1636,39 +1615,33 @@ Let's create an adapter that simulates async encryption and decryption.
 ```typescript
 import { createAsyncBrowserStorageAdapter } from "@ibnlanre/portal";
 
-// Simulate async encryption/decryption
-async function encrypt(data: any): Promise<string> {
-  return btoa(JSON.stringify(data));
-}
-
-async function decrypt(data: string): Promise<any> {
-  return JSON.parse(atob(data));
-}
-
-const [getEncryptedState, setEncryptedState] = createAsyncBrowserStorageAdapter(
-  "my-encrypted-store",
-  {
-    ...localStorage, // Use localStorage methods for simplicity
-    storageTransform(data) {
-      return btoa(JSON.stringify(data)); // Encrypt before storing
-    },
-    usageTransform(data) {
-      return JSON.parse(atob(data)); // Decrypt when retrieving
-    },
-  }
-);
+const [getEncryptedState, setEncryptedState] = createAsyncBrowserStorageAdapter<
+  { sensitive: string },
+  string
+>("encrypted", {
+  getItem(key) {
+    return localStorage.getItem(key);
+  },
+  removeItem(key) {
+    return localStorage.removeItem(key);
+  },
+  setItem(key, value) {
+    return localStorage.setItem(key, value);
+  },
+  storageTransform(data) {
+    return btoa(JSON.stringify(data)); // Encrypt before storing
+  },
+  usageTransform(data) {
+    return JSON.parse(atob(data)); // Decrypt when retrieving
+  },
+});
 
 // Now, you can use these functions to persist a store
-const myStore = createStore(
-  { sensitiveData: "secret" },
-  {
-    get: getEncryptedState,
-    set: setEncryptedState,
-  }
-);
+const result = await getEncryptedState({ sensitive: "data" });
+const store = createStore(result);
 
 // When you set the state, it will be encrypted before being stored.
-myStore.sensitiveData.$set("new secret");
+store.$act(setEncryptedState, false);
 
 // When the store is initialized, the data will be decrypted.
 ```

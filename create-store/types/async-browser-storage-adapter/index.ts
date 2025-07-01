@@ -9,14 +9,14 @@ export interface AsyncBrowserStorageAdapterOptions<State, StoredState = State>
    * @param key The key to retrieve the value for.
    * @returns The value associated with the key, or null if the key does not exist.
    */
-  getItem(key: string): Promise<StoredState | undefined>;
+  getItem(key: string): null | Promise<StoredState | undefined> | StoredState;
 
   /**
    * Removes the key/value pair with the given key, if a key/value pair with the given key exists.
    *
    * @param key The key to remove the value for.
    */
-  removeItem(key: string): Promise<void>;
+  removeItem(key: string): Promise<void> | void;
 
   /**
    * Sets the value of the pair identified by key to value, creating a new key/value pair if none existed for key previously.
@@ -24,7 +24,7 @@ export interface AsyncBrowserStorageAdapterOptions<State, StoredState = State>
    * @param key The key to set the value for.
    * @param value The value to set.
    */
-  setItem(key: string, value: StoredState): Promise<void>;
+  setItem(key: string, value: StoredState): Promise<void> | void;
 }
 
 export interface AsyncBrowserStorageTransforms<State, StoredState = State> {
