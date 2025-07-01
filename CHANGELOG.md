@@ -1,3 +1,23 @@
+# [5.1.0](https://github.com/ibnlanre/portal/compare/v5.0.4...v5.1.0) (2025-07-01)
+
+
+### Bug Fixes
+
+* update AsyncBrowserStorageAdapterOptions to allow synchronous item retrieval and removal ([6609e62](https://github.com/ibnlanre/portal/commit/6609e6238d4b5a112c7c8cf710a4523c2678333c))
+* update linting scripts to use eslint directly for consistency ([f8211ce](https://github.com/ibnlanre/portal/commit/f8211ce53e1eb460859d6ba173249b7c8066deac))
+
+
+### Features
+
+* add IndexedDB example with Dexie integration ([c8df46f](https://github.com/ibnlanre/portal/commit/c8df46ffdee49a10e48d8e399a1ca12ada27ff78))
+* add InferType utility type and update user profile component to use createStore ([30b8c99](https://github.com/ibnlanre/portal/commit/30b8c993cb8b3662cae3b03d470a75de37db9720))
+* add unit tests for isValidKey function ([cc043e0](https://github.com/ibnlanre/portal/commit/cc043e047ecb8958e7e2bd5720eae4df67df0365))
+* convert example from html to react ([21c73f1](https://github.com/ibnlanre/portal/commit/21c73f1730ee39b2f048d6de6a37448bd11e8299))
+* enhance createSnapshot to support deep cloning of Map, Set, ArrayBuffer, and Error objects ([01dd211](https://github.com/ibnlanre/portal/commit/01dd2119266f758228977affae27172db51dcaef))
+* enhance README with new features including Actions as hooks and InferType utility ([115f830](https://github.com/ibnlanre/portal/commit/115f830a1223057867ed913ff6096f633b755e13))
+
+
+
 ## [5.0.4](https://github.com/ibnlanre/portal/compare/v5.0.3...v5.0.4) (2025-06-18)
 
 
