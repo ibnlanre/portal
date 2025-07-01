@@ -11,6 +11,14 @@ const cloneFunction = (fn: Function) => {
  * - Primitives
  * - Date objects
  * - RegExp objects
+ * - Map objects (keys and values are deep cloned)
+ * - Set objects (values are deep cloned)
+ * - ArrayBuffer objects
+ * - Typed arrays (Int8Array, Uint8Array, etc.)
+ * - DataView objects
+ * - Error objects (including custom properties)
+ * - URL objects
+ * - URLSearchParams objects
  * - Arrays
  * - Plain objects (preserving prototype)
  * - Cyclic references
@@ -38,6 +46,75 @@ export function createSnapshot<T>(value: T, visited = new WeakMap()): T {
 
   if (value instanceof RegExp) {
     return new RegExp(value.source, value.flags) as T;
+  }
+
+  if (value instanceof Map) {
+    const clone = new Map();
+    visited.set(value, clone);
+
+    value.forEach((val, key) => {
+      clone.set(createSnapshot(key, visited), createSnapshot(val, visited));
+    });
+
+    return clone as T;
+  }
+
+  if (value instanceof Set) {
+    const clone = new Set();
+    visited.set(value, clone);
+
+    value.forEach((val) => {
+      clone.add(createSnapshot(val, visited));
+    });
+
+    return clone as T;
+  }
+
+  if (value instanceof ArrayBuffer) {
+    return value.slice(0) as T;
+  }
+
+  if (ArrayBuffer.isView(value)) {
+    const buffer = value.buffer.slice(0);
+
+    if (value instanceof DataView) {
+      return new DataView(buffer, value.byteOffset, value.byteLength) as T;
+    }
+
+    const Constructor = value.constructor as any;
+    return new Constructor(buffer, value.byteOffset, value.length) as T;
+  }
+
+  if (value instanceof Error) {
+    const Constructor = value.constructor as ErrorConstructor;
+    const clone = new Constructor(value.message);
+
+    clone.name = value.name;
+    clone.stack = value.stack;
+    visited.set(value, clone);
+
+    for (const key of Object.getOwnPropertyNames(value)) {
+      if (["message", "name", "stack"].includes(key)) continue;
+
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+
+      if (descriptor) {
+        Object.defineProperty(clone, key, {
+          ...descriptor,
+          value: createSnapshot(descriptor.value, visited),
+        });
+      }
+    }
+
+    return clone as T;
+  }
+
+  if (value instanceof URL) {
+    return new URL(value.href) as T;
+  }
+
+  if (value instanceof URLSearchParams) {
+    return new URLSearchParams(value.toString()) as T;
   }
 
   if (Array.isArray(value)) {
