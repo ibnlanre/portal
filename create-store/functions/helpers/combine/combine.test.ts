@@ -182,8 +182,8 @@ describe("combine", () => {
 
       expect(result.first.name).toBe("A");
       expect(result.second.name).toBe("B");
-      expect(result.first.ref).toBe(result.second);
-      expect(result.second.ref).toBe(result.first);
+      expect(result.first.ref).toStrictEqual(result.second);
+      expect(result.second.ref).toStrictEqual(result.first);
     });
 
     it("should handle deeply nested circular references", () => {

@@ -1,10 +1,11 @@
 import type { Dictionary } from "@/create-store/types/dictionary";
 import type { Merge } from "@/create-store/types/merge";
 
+import clone from "@ibnlanre/clone";
+
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isObject } from "@/create-store/functions/assertions/is-object";
 import { isValidKey } from "@/create-store/functions/assertions/is-valid-key";
-import { createSnapshot } from "@/create-store/functions/helpers/create-snapshot";
 
 /**
  * A simple and straightforward deep merge function that recursively merges objects.
@@ -21,14 +22,14 @@ export function combine<
   Result = Merge<Target, Source>,
 >(target: Target, source: Source, visited = new WeakMap()): Result {
   if (!isDictionary(source)) {
-    return createSnapshot(source, visited) as any;
+    return clone<any>(source, visited);
   }
 
   if (isObject(target) && visited.has(target)) {
     return visited.get(target) as Result;
   }
 
-  const result = createSnapshot(target, visited);
+  const result = clone(target, visited);
 
   if (isObject(target)) {
     visited.set(target, result);
@@ -50,7 +51,7 @@ export function combine<
       continue;
     }
 
-    Reflect.set(result, key, createSnapshot(sourceValue, visited));
+    Reflect.set(result, key, clone(sourceValue, visited));
   }
 
   return result as any;

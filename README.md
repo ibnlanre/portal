@@ -177,20 +177,7 @@ Stores are reactive. When a store's state changes, any components or subscribers
 1.  **Store Initialization**: When you call `createStore()`, you provide the initial state. This is the main configuration for a store's structure and default values.
 2.  **Persistence Adapters**: If you use state persistence, you configure adapters with options like storage keys and serialization functions.
 
-For example, to configure a Local Storage adapter:
-
-```typescript
-import { createLocalStorageAdapter } from "@ibnlanre/portal";
-
-const [getPersistentState, setPersistentState] = createLocalStorageAdapter(
-  "myAppUniqueStorageKey", // Required: A unique key for this store in Local Storage
-  {
-    // Optional: Custom serialization/deserialization
-    stringify: (state) => JSON.stringify(state),
-    parse: (storedString) => JSON.parse(storedString),
-  }
-);
-```
+````
 
 Refer to the [Persist state](#persist-state) section for detailed configuration of each adapter.
 
@@ -206,7 +193,7 @@ The `createStore()` function is the primary way to initialize a new store.
 
 ```typescript
 createStore<S>(initialState: S | Promise<S>): Store<S>
-```
+````
 
 - **`initialState`**: The initial value for the store.
   - If a primitive value (string, number, boolean, etc.) is provided, a `PrimitiveStore` is created.
@@ -644,7 +631,7 @@ $use<R>(
 
 You can include functions within the initial state object of a composite store. These functions become methods on the store, allowing you to co-locate state logic (actions) with the state itself. This is useful for encapsulating complex state transitions.
 
-When defining actions, to update state, you must use the variable that holds the store instance. For example, if your store is `const myStore = createStore(...)`, you would use `myStore.someProperty.$set(...)` inside an action, not `this.someProperty.$set(...)`.
+When defining actions, to update state, you must use the variable that holds the store instance. For example, if your store is `const store = createStore(...)`, you would use `store.property.$set(...)` inside an action, not `this.property.$set(...)`.
 
 **Examples:**
 
@@ -715,13 +702,13 @@ When defining actions, to update state, you must use the variable that holds the
 
 ### Actions as hooks
 
-`@ibnlanre/portal` allows you to define functions within your store that can be used as React custom hooks. This powerful feature enables you to co-locate complex, stateful logic—including side effects managed by `useEffect` or component-level state from `useState`—directly with the store it relates to.
+`@ibnlanre/portal` allows you to define functions within your store that can be used as React custom hooks. This powerful feature enables you to co-locate complex, stateful logic—including side effects managed by `useEffect` or component-level state from `useState` directly with the store it relates to.
 
-To create an action that functions as a hook, simply follow React's convention: prefix the function name with `use`, place it directly within the object you pass to createStore, then use it like any regular custom hook in your React components.
+To create an action that functions as a hook, simply follow React's convention: prefix the function name with `use`, place it directly within the object you pass to `createStore`, then use it like any regular custom hook in your React components.
 
 This pattern leverages React's own rules for hooks. It doesn't prevent the function from being recreated on re-renders (which is normal React behavior), but it provides an excellent way to organize and attach reusable hook logic to your store instance.
 
-> ⚠️ Note: These functions aren’t automatically memoized. Make sure your store is created once at the module level, and not within a component, to avoid re-creating the hook logic on every render.
+> ⚠️ Note: These functions are not automatically memoized. To prevent recreating hook logic on every render, define your store at the module level whenever possible. If you need to create a store inside a React component, use the `useMemo` hook to ensure the store is created based on stable dependencies.
 
 **Example:**
 
@@ -798,8 +785,6 @@ Unlike shallow merging (such as Object.assign or object spread), `combine()`:
 - Preserves store instances within deeply nested structures
 - Handles circular references safely
 
-However, `combine()` does not automatically bind the store reference to your actions. If your actions need access to the store, they must reference it manually; so they should be defined inline when calling `combine()` and not imported separately.
-
 **Syntax:**
 
 ```typescript
@@ -817,41 +802,44 @@ Let's define state and actions separately and then combine them into a single st
 ```typescript
 import { createStore, combine } from "@ibnlanre/portal";
 
-// 1. Define initial state
+// Define the initial state
 const initialState = {
-  profile: {
-    name: "Alex",
-    email: "alex@example.com",
-  },
   isLoggedIn: false,
+  profile: {
+    email: "alex@example.com",
+    name: "Alex",
+  },
 };
 
-// 2. Use combine to merge state and inline actions
-export const userStore = createStore(
-  combine(initialState, {
-    login(email: string) {
-      userStore.$set({
-        profile: {
-          ...userStore.profile.$get(),
-          email,
-        },
-        isLoggedIn: true,
-      });
-    },
-    logout() {
-      userStore.$set({
-        profile: { name: "", email: "" },
-        isLoggedIn: false,
-      });
-    },
-    updateName(newName: string) {
-      userStore.profile.name.$set(newName);
-    },
-  })
-);
+// Define actions separately
+const actions = {
+  login(email: string) {
+    userStore.$set({
+      isLoggedIn: true,
+      profile: {
+        ...userStore.profile.$get(),
+        email,
+      },
+    });
+  },
+  logout() {
+    userStore.$set({
+      isLoggedIn: false,
+      profile: { email: "", name: "" },
+    });
+  },
+  updateName(newName: string) {
+    userStore.profile.name.$set(newName);
+  },
+};
+
+// Combine initial state and actions into a single object
+export const userStore = createStore(combine(initialState, actions));
 ```
 
-Once your store is set up, you can use the state and actions like this:
+The action functions (e.g., `login`, `logout`) reference the `userStore` variable to update the state. This pattern is possible because the functions are defined in the same scope as the `userStore` constant. When these actions are called, `userStore` has already been initialized, giving them access to the store's methods like `$set`. Type inferrence ensures that the actions are aware of the store's structure, allowing for type-safe updates.
+
+Once the store is created, you can use its state and actions as follows:
 
 ```typescript
 // Now you can use the store with both state and actions
@@ -1394,7 +1382,7 @@ Persists state in `localStorage`. Data remains until explicitly cleared or remov
 ```typescript
 import { createStore, createLocalStorageAdapter } from "@ibnlanre/portal";
 
-const localStorageAdapter = createLocalStorageAdapter("myAppCounter", {
+const localStorageAdapter = createLocalStorageAdapter<number>("app-counter", {
   // Example with custom serialization (e.g., simple obfuscation)
   // stringify: (state) => btoa(JSON.stringify(state)),
   // parse: (storedString) => JSON.parse(atob(storedString)),
@@ -1425,7 +1413,10 @@ Persists state in `sessionStorage`. Data remains for the duration of the page se
 import { createStore, createSessionStorageAdapter } from "@ibnlanre/portal";
 
 const [getStoredSessionData, setStoredSessionData] =
-  createSessionStorageAdapter("userSessionData");
+  createSessionStorageAdapter<{
+    guestId: string | null;
+    lastPage: string;
+  }>("userSessionData");
 
 const initialSessionData = getStoredSessionData({
   guestId: null,
@@ -1477,7 +1468,10 @@ createCookieStorageAdapter<State>(key: string, options?: CookieStorageAdapterOpt
 ```typescript
 import { createStore, createCookieStorageAdapter } from "@ibnlanre/portal";
 
-const cookieAdapter = createCookieStorageAdapter("appPreferences", {
+const cookieAdapter = createCookieStorageAdapter<{
+  theme: "light" | "dark";
+  notifications: boolean;
+}>("app-preferences", {
   secret: "your-very-strong-secret-key-for-signing", // Recommended for security
   path: "/",
   secure: true,
@@ -1485,9 +1479,9 @@ const cookieAdapter = createCookieStorageAdapter("appPreferences", {
   maxAge: 3600 * 24 * 30, // 30 days
 });
 
-const [getCookiePrefs, setCookiePrefs] = cookieAdapter;
+const [getCookiePreferences, setCookiePreferences] = cookieAdapter;
 
-const initialPrefs = getCookiePrefs({
+const initialPrefs = getCookiePreferences({
   theme: "light",
   notifications: true,
 });
@@ -2063,7 +2057,6 @@ Here are some common issues and how to resolve them:
 | Component not re-rendering after state change | Store not updated via `$set()` or updater from `$use()`.           | Ensure all state modifications use the store's update mechanisms.                                                                                                   |
 |                                               | Selector in `$use(selector, deps)` has incorrect dependencies.     | Verify the `deps` array for selectors in `$use()`.                                                                                                                  |
 |                                               | Using `$get()` in render path instead of `$use()`.                 | Use `$use()` to subscribe React components to store changes. `$get()` does not subscribe.                                                                           |
-|                                               | Selector captures external variables instead of store state.       | Ensure selectors depend only on the store state parameter, not external variables. Use store-level selectors for cross-store dependencies.                          |
 | Derived state not updating reactively         | Using `useMemo` with incomplete dependencies.                      | Include all store data in `useMemo` dependencies, or better yet, use `$use()` with a selector that depends on store state.                                          |
 |                                               | External variables captured in selector closure.                   | Rewrite selectors to depend on store state: `store.$use(state => state.items.filter(item => item.ownedBy === state.selectedUserId))`.                               |
 | Array elements treated as stores              | Attempting to call store methods on array elements.                | Array elements are plain data. Use `arrayStore.$get()[index].property` instead of `arrayStore[index].property.$get()`.                                              |
@@ -2076,7 +2069,7 @@ Here are some common issues and how to resolve them:
 |                                               | Promise rejected.                                                  | Add error handling for the promise passed to `createStore` or for the async operation that provides data for `$set()`.                                              |
 | `oldState` is `undefined` in `$act`           | This is expected on the initial immediate call of the subscriber.  | The first time a subscriber is called (if `immediate` is true or default), `oldState` will be `undefined` as there's no "previous" state for that subscription yet. |
 | Circular references causing issues            | While supported, complex interactions might still be tricky.       | Ensure `normalizeObject` is used if input objects are not plain data. Simplify state structure if possible.                                                         |
-| Actions not updating state correctly          | Using `this` context instead of store variable.                    | In action functions, use the store variable (e.g., `myStore.property.$set(value)`) instead of `this.property.$set(value)`.                                          |
+| Actions not updating state correctly          | Using `this` context instead of store variable.                    | In action functions, use the store variable (e.g., `store.property.$set(value)`) instead of `this.property.$set(value)`.                                            |
 | Functions/symbols missing after normalization | `normalizeObject()` strips functions and symbol keys.              | This is expected behavior. Functions and symbol keys are filtered out. Handle them separately if needed.                                                            |
 
 ## Contribute to the project

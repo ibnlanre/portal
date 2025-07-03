@@ -11,15 +11,15 @@ import type { SetPartialStateAction } from "@/create-store/types/set-partial-sta
 import type { StatePath } from "@/create-store/types/state-path";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
-import { useMemo, useSyncExternalStore } from "react";
+import clone from "@ibnlanre/clone";
+
+import { useEffect, useMemo, useState } from "react";
 
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
-import { isUndefined } from "@/create-store/functions/assertions/is-undefined";
 import { createPathComponents } from "@/create-store/functions/helpers/create-path-components";
 import { createPaths } from "@/create-store/functions/helpers/create-paths";
-import { createSnapshot } from "@/create-store/functions/helpers/create-snapshot";
 import { merge } from "@/create-store/functions/helpers/merge";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { splitPath } from "@/create-store/functions/helpers/split-path";
@@ -72,36 +72,14 @@ export function createCompositeStore<State extends Dictionary>(
     Value extends ResolvePath<State, Path>,
   >(value: Value, path: Path) {
     const keys = splitPath(path);
-    const snapshot = createSnapshot(state) as any;
+    const snapshot = clone(state);
     const pivot = keys.pop()!;
 
-    const current = keys.reduce((accumulator, key) => {
-      return accumulator[key];
-    }, snapshot);
+    let current: any = snapshot;
+    for (const key of keys) current = current[key];
 
     current[pivot] = value;
     setState(snapshot, path);
-  }
-
-  function createSetStatePathAction<
-    Path extends Paths<State>,
-    Value extends ResolvePath<State, Path>,
-  >(path: Path) {
-    return (value: SetPartialStateAction<Value>) => {
-      const current = resolvePath(state, path);
-
-      if (isSetStateActionFunction(value)) {
-        const resolvedValue = value(createSnapshot(current));
-        setProperty(replace(current, resolvedValue), path);
-      } else setProperty(replace(current, value), path);
-    };
-  }
-
-  function setStateAction(value: SetPartialStateAction<State>) {
-    if (isSetStateActionFunction<State>(value)) {
-      const resolvedValue = value(createSnapshot(state));
-      setState(replace(state, resolvedValue));
-    } else setState(replace(state, value));
   }
 
   function get<
@@ -123,8 +101,24 @@ export function createCompositeStore<State extends Dictionary>(
   ): Dispatch<SetPartialStateAction<State>>;
 
   function set<Path extends Paths<State>>(path?: Path) {
-    if (isUndefined(path)) return setStateAction;
-    return createSetStatePathAction(path);
+    if (!path) {
+      return (action: SetPartialStateAction<State>) => {
+        const next = isSetStateActionFunction<State>(action)
+          ? action(clone(state))
+          : action;
+        setState(replace(state, next));
+      };
+    }
+
+    return <Value extends ResolvePath<State, Path>>(
+      action: SetPartialStateAction<Value>
+    ) => {
+      const current = resolvePath(state, path);
+      const next = isSetStateActionFunction(action)
+        ? action(clone(current))
+        : action;
+      setProperty(replace(current, next), path);
+    };
   }
 
   function act<
@@ -151,8 +145,7 @@ export function createCompositeStore<State extends Dictionary>(
     }
 
     if (isDictionary(value)) {
-      const valueSnapshot = createSnapshot(value);
-      return traverse(valueSnapshot, chain);
+      return traverse(clone(value), chain);
     }
 
     return buildStore(chain);
@@ -167,23 +160,16 @@ export function createCompositeStore<State extends Dictionary>(
     selector?: Selector<Value, Result>,
     dependencies: unknown[] = []
   ): PartialStateManager<State, Result> {
-    const subscribe = useMemo(() => {
-      return (callback: () => void) => {
-        return act(callback, path, false);
-      };
-    }, [path]);
-
-    const getSnapshot = useMemo(() => {
-      return () => resolvePath(state, path);
-    }, [path]);
-
-    const value = useSyncExternalStore(subscribe, getSnapshot);
+    const [value, setValue] = useState(() => {
+      return resolvePath(state, path);
+    });
 
     const resolvedValue = useMemo(
       () => resolveSelectorValue(value, selector),
       [value, ...dependencies]
     );
 
+    useEffect(() => act(setValue, path), [path]);
     return [resolvedValue, set(path)];
   }
 
@@ -214,8 +200,7 @@ export function createCompositeStore<State extends Dictionary>(
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>,
   >(state: Value, path?: Path) {
-    const store = buildStore(path);
-    return merge(state, store) as CompositeStore<State>;
+    return merge(state, buildStore(path)) as CompositeStore<State>;
   }
 
   function traverse<Path extends Paths<State> = never>(
@@ -239,45 +224,37 @@ export function createCompositeStore<State extends Dictionary>(
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>,
   >(
-    state: Value,
+    node: Value,
     chain?: Path,
     visited = new WeakMap(),
     seen = new WeakSet()
   ): CompositeStore<State> {
-    if (visited.has(state)) return visited.get(state);
+    if (visited.has(node)) return visited.get(node);
 
-    const result = connect(state, chain);
-    visited.set(state, result);
+    const proxy = connect(node, chain);
+    visited.set(node, proxy);
 
-    for (const key in state) {
-      const property = state[key] as Value;
+    for (const key in node) {
+      const property = node[key] as Value;
       const path = [chain, key].filter(Boolean).join(".") as Path;
 
       if (seen.has(property)) {
-        if (visited.has(property)) {
-          result[key] = visited.get(property);
-        } else {
-          result[key] = buildStore(path) as any;
-        }
-
+        proxy[key] = visited.get(property) ?? buildStore(path);
         continue;
       }
 
       if (isFunction(property)) {
-        result[key] = property as any;
+        proxy[key] = property;
       } else if (isDictionary(property)) {
         seen.add(property);
-
-        const value = traverse(property, path, visited, seen) as any;
-        result[key] = value;
+        proxy[key] = traverse(property, path, visited, seen) as any;
       } else {
-        result[key] = buildStore(path) as any;
+        proxy[key] = buildStore(path) as any;
       }
     }
 
-    return result;
+    return proxy;
   }
 
-  const structureSnapshot = createSnapshot(initialState);
-  return traverse(structureSnapshot);
+  return traverse(clone(initialState));
 }
