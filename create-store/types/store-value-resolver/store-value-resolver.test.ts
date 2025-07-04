@@ -1,5 +1,5 @@
 import type { StoreValueResolver } from ".";
-import type { BasicStore } from "@/create-store/types/basic-store";
+import type { PrimitiveStore } from "../primitive-store";
 import type { CompositeStore } from "@/create-store/types/composite-store";
 
 import { describe, expectTypeOf, it } from "vitest";
@@ -10,15 +10,17 @@ describe("StoreValueResolver", () => {
     expectTypeOf<StoreValueResolver<TestFn>>().toEqualTypeOf<TestFn>();
   });
 
-  it("should wrap primitive values in BasicStore", () => {
+  it("should wrap primitive values in PrimitiveStore", () => {
     expectTypeOf<StoreValueResolver<string>>().toEqualTypeOf<
-      BasicStore<string>
+      PrimitiveStore<string>
     >();
+
     expectTypeOf<StoreValueResolver<number>>().toEqualTypeOf<
-      BasicStore<number>
+      PrimitiveStore<number>
     >();
+
     expectTypeOf<StoreValueResolver<boolean>>().toEqualTypeOf<
-      BasicStore<boolean>
+      PrimitiveStore<boolean>
     >();
   });
 
@@ -35,34 +37,39 @@ describe("StoreValueResolver", () => {
 
   it("should widen literal types", () => {
     expectTypeOf<StoreValueResolver<"hello">>().toEqualTypeOf<
-      BasicStore<string>
+      PrimitiveStore<"hello">
     >();
-    expectTypeOf<StoreValueResolver<123>>().toEqualTypeOf<BasicStore<number>>();
+
+    expectTypeOf<StoreValueResolver<123>>().toEqualTypeOf<
+      PrimitiveStore<123>
+    >();
   });
 
   it("should handle nullish values", () => {
-    expectTypeOf<StoreValueResolver<null>>().toEqualTypeOf<BasicStore<null>>();
+    expectTypeOf<StoreValueResolver<null>>().toEqualTypeOf<
+      PrimitiveStore<null>
+    >();
 
     expectTypeOf<StoreValueResolver<undefined>>().toEqualTypeOf<
-      BasicStore<undefined>
+      PrimitiveStore<undefined>
     >();
   });
 
   it("should handle union types", () => {
     expectTypeOf<StoreValueResolver<null | string>>().toEqualTypeOf<
-      BasicStore<null | string>
+      PrimitiveStore<null | string>
     >();
 
     expectTypeOf<StoreValueResolver<number | string>>().toEqualTypeOf<
-      BasicStore<number | string>
+      PrimitiveStore<number | string>
     >();
 
     expectTypeOf<StoreValueResolver<(() => void) | string>>().toEqualTypeOf<
-      BasicStore<(() => void) | string>
+      PrimitiveStore<(() => void) | string>
     >();
 
     expectTypeOf<StoreValueResolver<null | { foo: string }>>().toEqualTypeOf<
-      BasicStore<null | { foo: string }>
+      PrimitiveStore<null | { foo: string }>
     >();
   });
 });
