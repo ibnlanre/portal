@@ -158,9 +158,15 @@ A store is an object that holds your application's state. It allows you to read 
 
 `@ibnlanre/portal` distinguishes between two main types of stores, created automatically based on the initial state you provide:
 
-1.  **Primitive Store**: Manages a single, primitive value (e.g., a string, number, boolean, null, or undefined).
+1.  **Primitive Store**: Manages a single, primitive value (e.g., a string, number, boolean, null, or undefined). At times, it can also manage a single object as a primitive-like store, where the entire object is treated as a single value.
+
+    - **Example**: A store holding a user's name as a string or a count as a number.
+    - Primitive stores provide methods to get the current value, set a new value, and subscribe to changes.
 
 2.  **Composite Store**: Manages an object, enabling nested state structures. Each property in a composite store's initial object can itself become a store instance (either primitive or composite), allowing for granular state management and access.
+
+    - **Example**: A store holding user details, where each property (like `name`, `email`, `address`) can be accessed and updated independently.
+    - Composite stores provide methods to get the current state, set new values for specific properties, and subscribe to changes at any level of the nested structure.
 
 Both store types share a consistent API for getting, setting, and subscribing to state.
 
@@ -177,8 +183,6 @@ Stores are reactive. When a store's state changes, any components or subscribers
 1.  **Store Initialization**: When you call `createStore()`, you provide the initial state. This is the main configuration for a store's structure and default values.
 2.  **Persistence Adapters**: If you use state persistence, you configure adapters with options like storage keys and serialization functions.
 
-````
-
 Refer to the [Persist state](#persist-state) section for detailed configuration of each adapter.
 
 ## Use the API: Reference and examples
@@ -193,11 +197,11 @@ The `createStore()` function is the primary way to initialize a new store.
 
 ```typescript
 createStore<S>(initialState: S | Promise<S>): Store<S>
-````
+```
 
 - **`initialState`**: The initial value for the store.
-  - If a primitive value (string, number, boolean, etc.) is provided, a `PrimitiveStore` is created.
-  - If an object is provided, a `CompositeStore` is created. Each property of the object becomes a nested store.
+  - If a primitive value (string, number, boolean, etc.) is provided, or an object that may be undefined or null, a `PrimitiveStore<S>` is created.
+  - If an object is provided, a `CompositeStore<S>` is created, allowing for nested properties to be accessed as individual stores.
   - If a `Promise` is provided, the store will be initialized with the resolved value of the promise. The store will be empty until the promise resolves. The resolved value is treated as a single entity; if it's an object, it becomes the state of a primitive-like store, not a composite store with nested properties.
 - **Returns**: A `Store` instance, which can be a `PrimitiveStore<S>` or `CompositeStore<S>` depending on `initialState`.
 
