@@ -178,6 +178,92 @@ Both store types share a consistent API for getting, setting, and subscribing to
 
 Stores are reactive. When a store's state changes, any components or subscribers listening to that store (or its parts) are notified, allowing your UI to update automatically.
 
+## ⚠️ Important: Use Types, Not Interfaces
+
+**Before creating stores, please note this important TypeScript consideration:**
+
+`@ibnlanre/portal` works best with **type aliases** rather than **interfaces** when defining your state structure. This is because `createStore()` (which uses `createCompositeStore` internally) expects a dictionary type (`Record<string, unknown>`), and interfaces don't automatically extend this constraint.
+
+**Why this matters:**
+
+- Interfaces and dictionary types have different structural characteristics in TypeScript
+- Using interfaces can break type inference for composite stores
+- Arrays and other object types are properly typed as `Record<string, any>`, but interfaces would disrupt this consistency
+
+**✅ Recommended - Use type aliases:**
+
+```typescript
+// ✅ Good: Use type aliases
+type UserState = {
+  name: string;
+  email: string;
+  settings: {
+    theme: "light" | "dark";
+    notifications: boolean;
+  };
+};
+
+const userStore = createStore<UserState>({
+  name: "Alex",
+  email: "alex@example.com",
+  settings: {
+    theme: "light",
+    notifications: true,
+  },
+});
+```
+
+**❌ Avoid - Interfaces can cause type issues:**
+
+```typescript
+// ❌ Problematic: Interfaces can lead to unexpected type inference issues
+interface UserState {
+  name: string;
+  email: string;
+  settings: {
+    theme: "light" | "dark";
+    notifications: boolean;
+  };
+}
+
+// This would be inferred as a PrimitiveStore instead of a CompositeStore
+const userStore = createStore<UserState>({
+  /* ... */
+});
+```
+
+**Alternative for interfaces:**
+If you must work with existing interfaces (e.g., from APIs), use the `normalizeObject()` utility to convert them to dictionary-compatible types:
+
+```typescript
+interface APIResponse {
+  id: number;
+  data: { value: string };
+}
+
+const apiData: APIResponse = {
+  /* ... */
+};
+const normalizedData = normalizeObject(apiData);
+const store = createStore(normalizedData);
+```
+
+Alternatively, you can use the `Normalize` type utility directly on the interface to convert it to a dictionary type:
+
+```typescript
+import { Normalize } from "@ibnlanre/portal";
+
+interface APIResponse {
+  id: number;
+  data: { value: string };
+}
+
+const apiData: Normalize<APIResponse> = {
+  /* ... */
+};
+const store = createStore(apiData);
+```
+
 ## Configure your stores
 
 `@ibnlanre/portal` is designed to work with minimal configuration. The primary configuration points are:

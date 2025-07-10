@@ -1,3 +1,5 @@
+import type { Dictionary } from "@/create-store/types/dictionary";
+
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 
 /**
@@ -12,7 +14,7 @@ import { isDictionary } from "@/create-store/functions/assertions/is-dictionary"
  *
  * @returns An array of strings representing the paths in the store object.
  */
-export function createPaths<Store>(
+export function createPaths<Store extends Dictionary>(
   store: Store,
   prefix: string[] = [],
   visited = new WeakSet()

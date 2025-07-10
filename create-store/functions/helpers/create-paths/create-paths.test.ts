@@ -1,12 +1,10 @@
-import type { Dictionary } from "@/create-store/types/dictionary";
-
 import { describe, expect, it } from "vitest";
 
 import { createPaths } from "./index";
 
 describe("createPaths", () => {
   it("should generate paths for a flat dictionary", () => {
-    const store: Dictionary = {
+    const store = {
       key1: "value1",
       key2: "value2",
     };
@@ -16,7 +14,7 @@ describe("createPaths", () => {
   });
 
   it("should generate paths for a nested dictionary", () => {
-    const store: Dictionary = {
+    const store = {
       key1: {
         nestedKey1: "value1",
         nestedKey2: "value2",
@@ -35,13 +33,13 @@ describe("createPaths", () => {
   });
 
   it("should handle an empty dictionary", () => {
-    const store: Dictionary = {};
+    const store = {};
     const result = createPaths(store);
     expect(result).toEqual([]);
   });
 
   it("should include the prefix in the generated paths", () => {
-    const store: Dictionary = {
+    const store = {
       key1: {
         nestedKey1: "value1",
       },
@@ -52,7 +50,7 @@ describe("createPaths", () => {
   });
 
   it("should handle deeply nested dictionaries", () => {
-    const store: Dictionary = {
+    const store = {
       key1: {
         nestedKey1: {
           deepKey1: "value1",
@@ -73,7 +71,7 @@ describe("createPaths", () => {
     const circularObj: any = { ref: null };
     circularObj.ref = circularObj;
 
-    const store: Dictionary = {
+    const store = {
       data: { value: circularObj },
       normal: "test",
     };

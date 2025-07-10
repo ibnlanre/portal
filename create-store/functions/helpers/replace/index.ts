@@ -7,5 +7,5 @@ export function replace<Target>(target: Target, source: unknown): Target {
     return combine(target, source);
   }
 
-  return source as Target;
+  return source as unknown as Target;
 }
