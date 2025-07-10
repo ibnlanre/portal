@@ -18,9 +18,9 @@ describe("stringify", () => {
 
   it("stringifies functions", () => {
     function foo() {}
-    expect(stringify(foo)).toBe("function foo() { [native code] }");
+    expect(stringify(foo)).toBe("Function(function foo() { })");
     const anon = () => {};
-    expect(stringify(anon)).toBe("function anon() { [native code] }");
+    expect(stringify(anon)).toBe("Function(() => { })");
   });
 
   it("stringifies Date, RegExp, and Error", () => {

@@ -21,6 +21,7 @@ import { createPaths } from "@/create-store/functions/helpers/create-paths";
 import { merge } from "@/create-store/functions/helpers/merge";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { splitPath } from "@/create-store/functions/helpers/split-path";
+import { useCompare } from "@/create-store/functions/hooks/use-compare";
 import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
@@ -160,17 +161,17 @@ export function createCompositeStore<State extends Dictionary>(
     selector?: Selector<Value, Result>,
     dependencies: unknown[] = []
   ): PartialStateManager<State, Result> {
-    const [value, setValue] = useState(() => {
-      return resolvePath(state, path);
-    });
+    const [value, setValue] = useState(() => resolvePath(state, path));
 
-    const resolvedValue = useMemo(
-      () => resolveSelectorValue(value, selector),
-      [value, ...dependencies]
-    );
-
+    const setter = useMemo(() => set(path), [path]);
     useEffect(() => act(setValue, path), [path]);
-    return [resolvedValue, set(path)];
+
+    const comparison = useCompare([value, dependencies]);
+    const resolvedValue = useMemo(() => {
+      return resolveSelectorValue(value, selector);
+    }, comparison);
+
+    return [resolvedValue, setter];
   }
 
   function buildStore<Path extends Paths<State>>(chain?: Path) {

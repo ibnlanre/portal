@@ -19,14 +19,14 @@ export function stringify(value: unknown): string {
     switch (typeof value) {
       case "bigint":
       case "boolean":
-      case "number":
+      case "symbol":
         return String(value);
       case "function":
-        return `function ${value.name}() { [native code] }`;
+        return `Function(${value.toString().replace(/\s+/g, " ")})`;
+      case "number":
+        return Object.is(value, -0) ? "-0" : String(value);
       case "string":
         return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
-      case "symbol":
-        return value.toString();
       case "undefined":
         return "undefined";
     }
