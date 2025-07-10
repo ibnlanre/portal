@@ -19,9 +19,9 @@ describe("createContextStore", () => {
     });
 
     it("should throw error when useStore is called outside provider", () => {
-      const [, useStore] = createContextStore((context: { value: string }) =>
-        createStore(context)
-      );
+      const [, useStore] = createContextStore((context: { value: string }) => {
+        return createStore(context.value);
+      });
 
       function TestComponent() {
         useStore();
@@ -35,13 +35,13 @@ describe("createContextStore", () => {
 
     it("should provide store through context when wrapped in provider", () => {
       const [Provider, useStore] = createContextStore(
-        (context: { value: string }) => createStore(context)
+        (context: { value: string }) => createStore(context.value)
       );
 
       function TestComponent() {
         const store = useStore();
         const value = store.$get();
-        return <div data-testid="value">{value.value}</div>;
+        return <div data-testid="value">{value}</div>;
       }
 
       render(
@@ -57,12 +57,12 @@ describe("createContextStore", () => {
   describe("Store initialization with context", () => {
     it("should initialize store with context value", () => {
       const [Provider, useStore] = createContextStore(
-        (context: { count: number }) => createStore(context)
+        (context: { count: number }) => createStore(context.count)
       );
 
       function TestComponent() {
         const store = useStore();
-        const { count } = store.$get();
+        const count = store.$get();
         return <div data-testid="count">{count}</div>;
       }
 
@@ -77,12 +77,12 @@ describe("createContextStore", () => {
 
     it("should reinitialize store when context value changes", () => {
       const [Provider, useStore] = createContextStore(
-        (context: { count: number }) => createStore(context)
+        (context: { count: number }) => createStore(context.count)
       );
 
       function TestComponent() {
         const store = useStore();
-        const { count } = store.$get();
+        const count = store.$get();
         return <div data-testid="count">{count}</div>;
       }
 
@@ -236,18 +236,18 @@ describe("createContextStore", () => {
   describe("Multiple providers", () => {
     it("should support multiple independent providers", () => {
       const [ValueProvider, useValueStore] = createContextStore(
-        (context: { value: string }) => createStore(context)
+        (context: { value: string }) => createStore(context.value)
       );
       const [CountProvider, useCountStore] = createContextStore(
-        (context: { count: number }) => createStore(context)
+        (context: { count: number }) => createStore(context.count)
       );
 
       function TestComponent() {
         const valueStore = useValueStore();
         const countStore = useCountStore();
 
-        const { value } = valueStore.$get();
-        const { count } = countStore.$get();
+        const value = valueStore.$get();
+        const count = countStore.$get();
 
         return (
           <div>
@@ -271,19 +271,19 @@ describe("createContextStore", () => {
 
     it("should support nested providers of the same type", () => {
       const [LevelProvider, useLevelStore] = createContextStore(
-        (context: { level: number }) => createStore(context)
+        (context: { level: number }) => createStore(context.level)
       );
 
       function InnerComponent() {
         const store = useLevelStore();
-        const { level } = store.$get();
+        const level = store.$get();
 
         return <div data-testid="inner-level">{level}</div>;
       }
 
       function OuterComponent() {
         const store = useLevelStore();
-        const { level } = store.$get();
+        const level = store.$get();
 
         return (
           <Fragment>
@@ -308,14 +308,14 @@ describe("createContextStore", () => {
 
   describe("Store memoization", () => {
     it("should memoize store based on context value", () => {
-      const initializerMock = vi.fn((context: { value: string }) =>
-        createStore(context)
-      );
+      const initializerMock = vi.fn((context: { value: string }) => {
+        return createStore(context.value);
+      });
       const [Provider, useStore] = createContextStore(initializerMock);
 
       function TestComponent() {
         const store = useStore();
-        const { value } = store.$get();
+        const value = store.$get();
         return <div data-testid="value">{value}</div>;
       }
 
@@ -420,13 +420,14 @@ describe("createContextStore", () => {
   describe("Edge cases", () => {
     it("should handle undefined context values", () => {
       const [Provider, useStore] = createContextStore(
-        (context: { value?: string }) => createStore(context)
+        (context: { value?: string }) => createStore(context.value)
       );
 
       function TestComponent() {
         const store = useStore();
-        const { value } = store.$get();
-        return <div data-testid="value">{value || "undefined"}</div>;
+        const value = store.$get((value = "undefined") => value);
+
+        return <div data-testid="value">{value}</div>;
       }
 
       render(
@@ -439,9 +440,9 @@ describe("createContextStore", () => {
     });
 
     it("should handle empty object context", () => {
-      const [Provider, useStore] = createContextStore((context: {}) =>
-        createStore(context)
-      );
+      const [Provider, useStore] = createContextStore((context: {}) => {
+        return createStore(context);
+      });
 
       function TestComponent() {
         const store = useStore();
