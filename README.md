@@ -19,6 +19,7 @@
 - [Configure your stores](#configure-your-stores)
 - [Use the API: Reference and examples](#use-the-api-reference-and-examples)
   - [Create stores: `createStore()`](#create-stores-createstore)
+  - [Create context stores: `createContextStore()`](#create-context-stores-createcontextstore)
   - [Use store instance methods](#use-store-instance-methods)
     - [`$get()`](#get)
     - [`$set()`](#set)
@@ -77,6 +78,7 @@
 - **Action management**: Define and use actions (functions) directly within your stores to co-locate state logic.
 - **Utility functions**: Use helpers like `combine` to simplify merging state and actions.
 - **Asynchronous initialization**: Initialize stores with data fetched from APIs or other asynchronous sources.
+- **Context Store creation**: Use `createContextStore` to create React Context-based stores that can be initialized with props or external data, solving the problem of prop-to-store synchronization.
 
 ## Get started
 
@@ -256,6 +258,131 @@ createStore<S>(initialState: S | Promise<S>): Store<S>
 
     console.log(userProfileStore.$get()); // Output: { id: 1, name: "Fetched User" }
     ```
+
+### Create context stores: `createContextStore()`
+
+The `createContextStore()` function creates React Context-based stores that solve a common problem: initializing stores with dynamic values that come from props or external sources. This is particularly useful when you need to create stores that depend on runtime data rather than static initial values.
+
+**The Problem it Solves:**
+
+Global stores are typically created outside of the React component lifecycle, so they can't be initialized with values from props or context. With a global store, you'd need to:
+
+1. Create the store with a known default state
+2. Sync props to the store using `useEffect` in every component that needs it
+
+`createContextStore` eliminates this boilerplate by allowing you to pass a function that receives the context data needed before the store is initialized.
+
+**Syntax:**
+
+```typescript
+createContextStore<Context, ContextStore>(
+  initializer: (context: Context) => ContextStore
+): [StoreProvider, useStore]
+```
+
+- **`initializer`**: A function that receives the context value and returns a store instance
+- **Returns**: An array containing `[StoreProvider, useStore]`
+
+**Basic Example:**
+
+```typescript
+import { createContextStore, createStore } from "@ibnlanre/portal";
+
+// Create a context store for user settings
+const [UserProvider, useUserStore] = createContextStore(
+  (context: { userId: string; theme: "light" | "dark" }) => {
+    return createStore(context)
+  }
+);
+
+function UserProfile() {
+  const store = useUserStore();
+  const { userId, theme } = store.$get();
+
+  return (
+    <div style={{ background: theme === "dark" ? "#333" : "#fff" }}>
+      User ID: {userId}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <UserProvider value={{ userId: "123", theme: "dark" }}>
+      <UserProfile />
+    </UserProvider>
+  );
+}
+```
+
+**Advanced Example with Actions:**
+
+```typescript
+import { createContextStore, createStore, combine } from "@ibnlanre/portal";
+
+type CounterContext = { initialCount: number };
+
+const [CounterProvider, useCounterStore] = createContextStore(
+  (context: CounterContext) => {
+    const actions = {
+      increment: () => {
+        store.count.$set(prev => prev + 1);
+      },
+      decrement: () => {
+        store.count.$set(prev => prev - 1);
+      },
+      reset: () => {
+        store.count.$set(context.initialCount);
+      }
+    };
+
+    const store = createStore(
+      combine({ count: context.initialCount }, actions)
+    );
+
+    return store;
+  }
+);
+
+function Counter() {
+  const store = useCounterStore();
+  const [count] = store.count.$use();
+
+  return (
+    <div>
+      <span>Count: {count}</span>
+      <button onClick={store.increment}>+</button>
+      <button onClick={store.decrement}>-</button>
+      <button onClick={store.reset}>Reset</button>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <CounterProvider value={{ initialCount: 10 }}>
+      <Counter />
+    </CounterProvider>
+  );
+}
+```
+
+**Key Features:**
+
+- **Dynamic Initialization**: Initialize stores with runtime values from props, context, or API responses
+- **Type Safety**: Full TypeScript support with proper type inference for context and store
+- **React Integration**: Works seamlessly with React's component lifecycle and context system
+- **Memoization**: Store instances are memoized based on context value to prevent unnecessary re-creation
+- **Nested Providers**: Support for multiple independent providers and nested providers of the same type
+- **Error Handling**: Clear error messages when `useStore` is called outside of the provider
+
+**Use Cases:**
+
+- **User-specific stores**: Initialize stores with user data from authentication context
+- **Feature flags**: Create stores based on feature flag configuration
+- **Multi-tenant applications**: Initialize stores with tenant-specific configuration
+- **Server-side rendering**: Initialize stores with server-rendered data
+- **Theme providers**: Create theme-aware stores with runtime theme configuration
 
 ### Use store instance methods
 
@@ -1960,6 +2087,8 @@ Using `createStore()` is generally preferred as it automatically determines whet
   const notificationStore = createStore({ count: 0, items: [] });
   ```
 
+- **Keep components simple**: Components should focus on rendering UI and handling user interactions. Move complex logic or data fetching to actions or hooks.
+
 - **Use granular subscriptions**: Subscribe only to the specific parts of state your component needs:
 
   ```typescript
@@ -1986,7 +2115,7 @@ Using `createStore()` is generally preferred as it automatically determines whet
     );
     ```
 
-- **Batch related updates**: When making multiple related changes, batch them to prevent intermediate re-renders:
+- **Batch related updates**: When making multiple related changes, batch them to prevent intermediate re-renders. This is especially important in React, where each state change can trigger a re-render:
 
   ```typescript
   // ✅ Single update for related changes

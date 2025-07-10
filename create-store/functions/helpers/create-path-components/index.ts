@@ -14,7 +14,16 @@ export function createPathComponents<Path extends string>(
   path?: Path
 ): Components<Path> {
   if (!path) return [] as unknown as Components<Path>;
-  return path.split(".").map((_, index, segments) => {
-    return segments.slice(0, index + 1).join(".");
-  }) as Components<Path>;
+
+  const segments = path.split(".");
+  const result = new Array(segments.length);
+  let current = segments[0];
+  result[0] = current;
+
+  for (let index = 1; index < segments.length; index++) {
+    current += "." + segments[index];
+    result[index] = current;
+  }
+
+  return result as Components<Path>;
 }

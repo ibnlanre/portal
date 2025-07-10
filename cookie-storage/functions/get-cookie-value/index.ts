@@ -9,8 +9,8 @@ export function getCookieValue(name: string): null | string {
     if (typeof document === "undefined") return null;
     const cookies = document.cookie.split(";");
 
-    for (let i = 0; i < cookies.length; i++) {
-      const cookieAtIndex = cookies.at(i);
+    for (let index = 0; index < cookies.length; index++) {
+      const cookieAtIndex = cookies.at(index);
       if (!cookieAtIndex) continue;
 
       const cookie = cookieAtIndex.trim();

@@ -1,8 +1,8 @@
-import * as createHmacModule from "@/cookie-storage/helpers/create-hmac";
-
 import { describe, expect, it, vi } from "vitest";
 
 import { signCookie } from "./index";
+
+import * as createHmacModule from "@/cookie-storage/helpers/create-hmac";
 
 vi.mock("@/cookie-storage/helpers/create-hmac");
 

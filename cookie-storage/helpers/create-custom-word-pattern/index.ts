@@ -35,7 +35,7 @@ export function createCustomWordPattern(word: string, length: number): string {
     consonants = consonants.filter((idx) => idx !== index);
     const factor = 2 - (iterator % 2);
 
-    if (index + factor == word.length) index++;
+    if (index + factor === word.length) index++;
     else if (index + factor < word.length) index += factor;
     else index = ++iterator;
   }
@@ -51,7 +51,7 @@ export function createCustomWordPattern(word: string, length: number): string {
     vowels = vowels.filter((idx) => idx !== index);
     const factor = 2 + (iterator % 2);
 
-    if (index - factor == 0) index--;
+    if (index - factor === 0) index--;
     else if (index - factor > 0) index -= factor;
     else index = --iterator;
   }

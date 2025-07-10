@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { getCookieValueByRegex } from ".";
+import { getCookieValueByRegex } from "./index";
 
 describe("getCookieValueByRegex", () => {
   it("should return the value of the specified cookie", () => {

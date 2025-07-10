@@ -9,6 +9,7 @@
     "emitDeclarationOnly": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
+    "jsx": "preserve",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "module": "ES2022",
     "moduleResolution": "node",
@@ -24,9 +25,9 @@
     "skipLibCheck": true,
     "strict": true,
     "strictNullChecks": true,
-    "target": "ES2017",
+    "target": "ES2024",
     "verbatimModuleSyntax": true
   },
   "exclude": ["node_modules", "dist", "build", "coverage", "examples"],
-  "include": ["cookie-storage/**/*", "create-store/**/*", "index.ts", "vitest.config.mts", "vitest.setup.ts", "tsup.config.ts",]
+  "include": ["cookie-storage/**/*", "create-store/**/*", "**/*.ts", "**/*.tsx", "vitest.config.mts", "vitest.setup.ts", "tsup.config.ts",]
 }

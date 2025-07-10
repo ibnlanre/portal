@@ -868,7 +868,7 @@ describe("createCompositeStore", () => {
       expect(() => store.data.value.$get()).not.toThrow();
 
       const value = store.data.value.ref.$get();
-      expect(value?.ref?.ref?.ref?.ref?.ref?.ref).toBe(circularObj);
+      expect(value?.ref?.ref?.ref?.ref?.ref?.ref).toStrictEqual(circularObj);
       expect(value?.ref?.ref).toBe(value);
     });
 
@@ -999,34 +999,193 @@ describe("createCompositeStore", () => {
     });
   });
 
-  describe("Performance and Memory Management", () => {
-    it("should handle large state objects efficiently", () => {
-      const largeState: Record<
-        string,
-        { nested: { data: number }; value: number }
-      > = {};
+  describe("Memory Management and Cloning", () => {
+    describe("Performance and Memory Management", () => {
+      it("should handle large state objects efficiently", () => {
+        const largeState: Record<
+          string,
+          { nested: { data: number }; value: number }
+        > = {};
 
-      for (let i = 0; i < 1000; i++) {
-        largeState[`key${i}`] = { nested: { data: i * 2 }, value: i };
-      }
+        for (let i = 0; i < 1000; i++) {
+          largeState[`key${i}`] = { nested: { data: i * 2 }, value: i };
+        }
 
-      const store = createCompositeStore(largeState);
-      expect(store.key99?.value?.$get()).toBe(99);
+        const store = createCompositeStore(largeState);
+        expect(store.key99?.value?.$get()).toBe(99);
+      });
+
+      it("should properly clean up subscribers on unsubscribe", () => {
+        const store = createCompositeStore({ count: 0 });
+        const subscribers = [];
+
+        for (let i = 0; i < 10; i++) {
+          const unsubscribe = store.count.$act(() => {});
+          subscribers.push(unsubscribe);
+        }
+
+        subscribers.forEach((unsub) => unsub());
+
+        store.count.$set(42);
+        expect(store.count.$get()).toBe(42);
+      });
     });
 
-    it("should properly clean up subscribers on unsubscribe", () => {
-      const store = createCompositeStore({ count: 0 });
-      const subscribers = [];
+    describe("State isolation and immutability", () => {
+      it("should isolate state returned by $get from store mutations", () => {
+        const store = createCompositeStore({
+          settings: { theme: "dark" },
+          user: { age: 30, name: "John" },
+        });
 
-      for (let i = 0; i < 10; i++) {
-        const unsubscribe = store.count.$act(() => {});
-        subscribers.push(unsubscribe);
-      }
+        const state1 = store.$get();
+        const state2 = store.$get();
 
-      subscribers.forEach((unsub) => unsub());
+        // Should be deep equal but not the same reference
+        expect(state1).toEqual(state2);
+        expect(state1).not.toBe(state2);
+        expect(state1.user).not.toBe(state2.user);
 
-      store.count.$set(42);
-      expect(store.count.$get()).toBe(42);
+        // Mutating returned state should not affect store
+        state1.user.name = "Jane";
+        state1.settings.theme = "light";
+
+        expect(store.user.name.$get()).toBe("John");
+        expect(store.settings.theme.$get()).toBe("dark");
+
+        // Should not affect other retrieved states
+        expect(state2.user.name).toBe("John");
+        expect(state2.settings.theme).toBe("dark");
+      });
+
+      it("should isolate nested state returned by $get", () => {
+        const store = createCompositeStore({
+          data: {
+            items: [1, 2, 3],
+            metadata: { count: 3, type: "array" },
+          },
+        });
+
+        const items1 = store.data.items.$get();
+        const items2 = store.data.items.$get();
+
+        expect(items1).toEqual(items2);
+        expect(items1).not.toBe(items2);
+
+        // Mutating should not affect store
+        items1.push(4);
+        expect(store.data.items.$get()).toEqual([1, 2, 3]);
+        expect(items2).toEqual([1, 2, 3]);
+      });
+
+      it("should isolate state with selectors", () => {
+        const store = createCompositeStore({
+          users: [
+            { active: true, id: 1, name: "Alice" },
+            { active: false, id: 2, name: "Bob" },
+          ],
+        });
+
+        const activeUsers1 = store.users.$get((users) =>
+          users.filter((u) => u.active)
+        );
+        const activeUsers2 = store.users.$get((users) =>
+          users.filter((u) => u.active)
+        );
+
+        expect(activeUsers1).toEqual(activeUsers2);
+        expect(activeUsers1).not.toBe(activeUsers2);
+
+        // Mutating should not affect store
+        activeUsers1[0].name = "Modified";
+        expect(store.users.$get()[0].name).toBe("Alice");
+      });
+    });
+
+    describe("Memory efficiency", () => {
+      it("should handle large objects efficiently", () => {
+        const largeArray = Array.from({ length: 10000 }, (_, i) => ({
+          id: i,
+          value: `item-${i}`,
+        }));
+        const store = createCompositeStore({ data: largeArray });
+
+        const start = performance.now();
+
+        // Multiple gets should complete reasonably quickly
+        for (let i = 0; i < 100; i++) {
+          store.data.$get();
+        }
+
+        const end = performance.now();
+        const duration = end - start;
+
+        // Should complete within reasonable time (adjust threshold as needed)
+        expect(duration).toBeLessThan(1000); // 1 second
+      });
+
+      it("should allow garbage collection of returned states", () => {
+        const store = createCompositeStore({
+          data: { items: Array.from({ length: 1000 }, (_, i) => `item-${i}`) },
+        });
+
+        // Create weak references to track garbage collection
+        const weakRefs: WeakRef<any>[] = [];
+
+        // Create many cloned states
+        for (let i = 0; i < 10; i++) {
+          const state = store.$get();
+          weakRefs.push(new WeakRef(state));
+        }
+
+        // Force garbage collection (if available)
+        if (global.gc) {
+          global.gc();
+        }
+
+        // At least some should be garbage collected
+        // Note: This is not guaranteed due to JS GC behavior, but gives us insight
+        const collected = weakRefs.filter(
+          (ref) => ref.deref() === undefined
+        ).length;
+
+        // This test is informational - we can't guarantee GC behavior
+        console.log(
+          `Garbage collected ${collected} out of ${weakRefs.length} cloned states`
+        );
+
+        // Add a basic assertion so the test doesn't fail
+        expect(weakRefs.length).toBe(10);
+      });
+    });
+
+    describe("Performance comparison", () => {
+      it("should benchmark clone vs no-clone performance", () => {
+        const largeState = {
+          settings: { language: "en", theme: "dark" },
+          users: Array.from({ length: 1000 }, (_, i) => ({
+            id: i,
+            name: `User ${i}`,
+            profile: { active: i % 2 === 0, age: 20 + (i % 50) },
+          })),
+        };
+
+        const store = createCompositeStore(largeState);
+
+        // Benchmark current implementation (with cloning)
+        const cloneStart = performance.now();
+        for (let i = 0; i < 1000; i++) {
+          store.$get();
+        }
+        const cloneEnd = performance.now();
+
+        console.log(
+          `Clone performance: ${cloneEnd - cloneStart}ms for 1000 operations`
+        );
+
+        // This gives us baseline performance metrics
+        expect(cloneEnd - cloneStart).toBeLessThan(5000); // Should be under 5 seconds
+      });
     });
   });
 

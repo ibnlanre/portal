@@ -1,5 +1,8 @@
 import "eslint-plugin-only-warn";
 
+import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
+import { defineConfig } from "eslint/config";
+
 import eslintReact from "@eslint-react/eslint-plugin";
 import stylisticJsx from "@stylistic/eslint-plugin";
 import typescript from "@typescript-eslint/parser";
@@ -14,9 +17,6 @@ import risxss from "eslint-plugin-risxss";
 import storybookPlugin from "eslint-plugin-storybook";
 import globals from "globals";
 import tseslint from "typescript-eslint";
-
-import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
-import { defineConfig } from "eslint/config";
 
 const EXT = {
   COMMONJS: "**/*.cjs",
@@ -190,8 +190,6 @@ const perfectionistConfig = tseslint.config({
             "named-type-index",
           ],
           ["ts-equals-import"],
-          ["value-builtin", "value-subpath", "value-external"],
-          ["value-internal", "value-parent", "value-sibling", "value-index"],
           [
             "named-value-builtin",
             "named-value-subpath",
@@ -203,6 +201,8 @@ const perfectionistConfig = tseslint.config({
             "named-value-sibling",
             "named-value-index",
           ],
+          ["value-builtin", "value-subpath", "value-external"],
+          ["value-internal", "value-parent", "value-sibling", "value-index"],
           ["value-side-effect", "value-side-effect-style"],
           ["require-import"],
           ["unknown"],

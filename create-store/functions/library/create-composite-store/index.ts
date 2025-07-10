@@ -11,8 +11,6 @@ import type { SetPartialStateAction } from "@/create-store/types/set-partial-sta
 import type { StatePath } from "@/create-store/types/state-path";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
-import clone from "@ibnlanre/clone";
-
 import { useEffect, useMemo, useState } from "react";
 
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
@@ -25,6 +23,8 @@ import { replace } from "@/create-store/functions/helpers/replace";
 import { splitPath } from "@/create-store/functions/helpers/split-path";
 import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
+
+import clone from "@ibnlanre/clone";
 
 export function createCompositeStore<State extends Dictionary>(
   initialState: State

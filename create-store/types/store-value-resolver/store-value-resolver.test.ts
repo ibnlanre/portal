@@ -1,6 +1,6 @@
-import type { StoreValueResolver } from ".";
-import type { PrimitiveStore } from "../primitive-store";
+import type { StoreValueResolver } from "./index";
 import type { CompositeStore } from "@/create-store/types/composite-store";
+import type { PrimitiveStore } from "@/create-store/types/primitive-store";
 
 import { describe, expectTypeOf, it } from "vitest";
 

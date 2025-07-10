@@ -19,7 +19,8 @@ export default defineConfig({
     },
     environment: "happy-dom",
     globals: true,
-    logHeapUsage: true,
+    logHeapUsage: false,
     setupFiles: "vitest.setup.ts",
+    reporters: ["default"],
   },
 });

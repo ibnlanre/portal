@@ -55,5 +55,6 @@ export { createLocalStorageAdapter } from "@/create-store/functions/adapters/cre
 export { createSessionStorageAdapter } from "@/create-store/functions/adapters/create-session-storage-adapter";
 export { combine } from "@/create-store/functions/helpers/combine";
 export { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
+export { createContextStore } from "@/create-store/functions/library/create-context-store";
 export { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
 export { normalizeObject } from "@/create-store/functions/library/normalize-object";

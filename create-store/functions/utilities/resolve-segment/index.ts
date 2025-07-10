@@ -6,6 +6,11 @@ export function resolveSegment<
   State extends Dictionary,
   Keys extends Segments<State>,
 >(state: State, keys: Keys): ResolveSegment<State, Keys> {
-  for (const key of keys) state = state[key] as State;
-  return state as ResolveSegment<State, Keys>;
+  let current: any = state;
+
+  for (let index = 0; index < keys.length; index++) {
+    current = current[keys[index]];
+  }
+
+  return current as ResolveSegment<State, Keys>;
 }

@@ -1,5 +1,3 @@
-import Layout from "./components/layout";
-
 import { Route, Routes } from "react-router-dom";
 
 import { Counter } from "./pages/counter";
@@ -7,6 +5,8 @@ import { Home } from "./pages/home";
 import { Preferences } from "./pages/preferences";
 import { TodoList } from "./pages/todo";
 import { UserProfile } from "./pages/user-profile";
+
+import Layout from "./components/layout";
 
 export function App() {
   return (

@@ -1,11 +1,10 @@
 import type { Dictionary } from "@/create-store/types/dictionary";
 import type { Merge } from "@/create-store/types/merge";
 
-import clone from "@ibnlanre/clone";
-
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
-import { isObject } from "@/create-store/functions/assertions/is-object";
-import { isValidKey } from "@/create-store/functions/assertions/is-valid-key";
+import { isPrimitive } from "@/create-store/functions/assertions/is-primitive";
+
+import clone from "@ibnlanre/clone";
 
 /**
  * A simple and straightforward deep merge function that recursively merges objects.
@@ -21,38 +20,47 @@ export function combine<
   Source = unknown,
   Result = Merge<Target, Source>,
 >(target: Target, source: Source, visited = new WeakMap()): Result {
-  if (!isDictionary(source)) {
-    return clone<any>(source, visited);
+  if (isPrimitive(source) || !isDictionary(source)) {
+    return source as unknown as Result;
   }
 
-  if (isObject(target) && visited.has(target)) {
-    return visited.get(target) as Result;
-  }
+  if (visited.has(target)) return visited.get(target) as Result;
+  const result: Dictionary = clone(target, visited);
+  visited.set(target, result);
 
-  const result = clone(target, visited);
+  const properties = Object.getOwnPropertyNames(source);
+  const symbols = Object.getOwnPropertySymbols(source);
 
-  if (isObject(target)) {
-    visited.set(target, result);
-  }
+  copyProperties(result, properties, source, visited);
+  copyProperties(result, symbols, source, visited);
 
-  for (const key of Reflect.ownKeys(source)) {
-    if (!isValidKey(key)) continue;
+  return result as unknown as Result;
+}
+
+/**
+ * Copies properties from the source dictionary to the result dictionary.
+ * If a property in the result is a non-dictionary, it is replaced with the source value.
+ * If it is a dictionary, it is combined with the source value.
+ *
+ * @param result - The target dictionary to copy properties into
+ * @param keys - The keys to copy from the source dictionary
+ * @param source - The source dictionary from which to copy properties
+ * @param visited - A WeakMap to track visited objects for cyclic references
+ */
+export function copyProperties(
+  result: Dictionary,
+  keys: (string | symbol)[],
+  source: Dictionary,
+  visited: WeakMap<object, object>
+): void {
+  for (let index = 0; index < keys.length; index++) {
+    const key = keys[index];
 
     const targetValue = result[key];
-    const sourceValue = Reflect.get(source, key);
-
-    if (isObject(sourceValue) && visited.has(sourceValue)) {
-      Reflect.set(result, key, visited.get(sourceValue));
-      continue;
-    }
+    const sourceValue = source[key];
 
     if (isDictionary(targetValue)) {
-      Reflect.set(result, key, combine(targetValue, sourceValue, visited));
-      continue;
-    }
-
-    Reflect.set(result, key, clone(sourceValue, visited));
+      result[key] = combine(targetValue, sourceValue, visited);
+    } else result[key] = sourceValue;
   }
-
-  return result as any;
 }

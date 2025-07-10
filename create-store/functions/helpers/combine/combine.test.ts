@@ -229,7 +229,7 @@ describe("combine", () => {
       expect(result.list[0]).toBe(4);
       expect(result.list[1]).toBe(5);
       expect(result.list).not.toBe(target.list);
-      expect(result.list).not.toBe(source.list);
+      expect(result.list).toBe(source.list);
     });
 
     it("should handle array circular references", () => {
@@ -322,8 +322,8 @@ describe("combine", () => {
         newFunc: () => string;
       };
 
-      expect(result.func).not.toBe(fn2);
-      expect(result.newFunc).not.toBe(fn1);
+      expect(result.func).toBe(fn2);
+      expect(result.newFunc).toBe(fn1);
       expect(result.func()).toBe("source");
       expect(result.newFunc()).toBe("target");
     });

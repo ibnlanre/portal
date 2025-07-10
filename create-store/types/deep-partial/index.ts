@@ -1,4 +1,4 @@
-import type { Dictionary } from "../dictionary";
+import type { Dictionary } from "@/create-store/types/dictionary";
 import type { Primitives } from "@/create-store/types/primitives";
 
 export type DeepPartial<Argument> = Argument extends Primitives | Reference

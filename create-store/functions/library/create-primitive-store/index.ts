@@ -4,13 +4,13 @@ import type { Selector } from "@/create-store/types/selector";
 import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
-import clone from "@ibnlanre/clone";
-
 import { useEffect, useState } from "react";
 
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
+
+import clone from "@ibnlanre/clone";
 
 export function createPrimitiveStore<State>(
   initialState: State
@@ -33,7 +33,7 @@ export function createPrimitiveStore<State>(
 
   function $set(value: SetPartialStateAction<State>) {
     if (isSetStateActionFunction<State>(value)) {
-      const resolvedValue = value(clone(state));
+      const resolvedValue = value(state);
       setState(replace(state, resolvedValue));
     } else setState(replace(state, value));
   }
