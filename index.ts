@@ -14,6 +14,8 @@ export type {
   SetBrowserStorage,
 } from "@/create-store/types/browser-storage-adapter";
 export type { CompositeStore } from "@/create-store/types/composite-store";
+export type { ContextInitializer } from "@/create-store/types/context-initializer";
+export type { ContextStore } from "@/create-store/types/context-store";
 export type {
   CookieStorageAdapterOptions,
   GetCookieStorage,
