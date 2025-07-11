@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { useCompare } from "@/create-store/functions/hooks/use-compare";
+import { useVersion } from "@/create-store/functions/hooks/use-version";
 
 /**
  * A custom hook that initializes a context store based on the provided context.
@@ -13,6 +13,6 @@ export function useInitializer<Context, ContextStore>(
   initializer: (context: Context) => ContextStore,
   context: Context
 ): ContextStore {
-  const dependencies = useCompare(context);
+  const dependencies = useVersion(context);
   return useMemo(() => initializer(context), dependencies);
 }

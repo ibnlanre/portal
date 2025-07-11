@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { replace } from "@/create-store/functions/helpers/replace";
-import { useCompare } from "@/create-store/functions/hooks/use-compare";
+import { useVersion } from "@/create-store/functions/hooks/use-version";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
 import clone from "@ibnlanre/clone";
@@ -46,7 +46,7 @@ export function createPrimitiveStore<State>(
     const [value, setValue] = useState(state);
     useEffect(() => $act(setValue), []);
 
-    const comparison = useCompare([value, dependencies]);
+    const comparison = useVersion([value, dependencies]);
     const resolvedValue = useMemo(() => {
       return resolveSelectorValue(value, selector);
     }, comparison);

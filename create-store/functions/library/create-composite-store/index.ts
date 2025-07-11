@@ -21,7 +21,7 @@ import { createPaths } from "@/create-store/functions/helpers/create-paths";
 import { merge } from "@/create-store/functions/helpers/merge";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { splitPath } from "@/create-store/functions/helpers/split-path";
-import { useCompare } from "@/create-store/functions/hooks/use-compare";
+import { useVersion } from "@/create-store/functions/hooks/use-version";
 import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
@@ -166,7 +166,7 @@ export function createCompositeStore<State extends Dictionary>(
     const setter = useMemo(() => set(path), [path]);
     useEffect(() => act(setValue, path), [path]);
 
-    const comparison = useCompare([value, dependencies]);
+    const comparison = useVersion([value, dependencies]);
     const resolvedValue = useMemo(() => {
       return resolveSelectorValue(value, selector);
     }, comparison);

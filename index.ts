@@ -8,6 +8,8 @@ export type {
   AsyncGetBrowserStorage,
   AsyncSetBrowserStorage,
 } from "@/create-store/types/async-browser-storage-adapter";
+export type { AsyncEffectCallback } from "@/create-store/types/async-effect-callback";
+export type { AsyncState } from "@/create-store/types/async-state";
 export type {
   BrowserStorageAdapterOptions,
   GetBrowserStorage,
@@ -56,6 +58,8 @@ export { createCookieStorageAdapter } from "@/create-store/functions/adapters/cr
 export { createLocalStorageAdapter } from "@/create-store/functions/adapters/create-local-storage-adapter";
 export { createSessionStorageAdapter } from "@/create-store/functions/adapters/create-session-storage-adapter";
 export { combine } from "@/create-store/functions/helpers/combine";
+export { useAsync } from "@/create-store/functions/hooks/use-async";
+export { useSync } from "@/create-store/functions/hooks/use-sync";
 export { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
 export { createContextStore } from "@/create-store/functions/library/create-context-store";
 export { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";

@@ -1,9 +1,12 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { Fragment } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import { createContextStore } from "./index";
-import { combine, createStore } from "@/index";
+import { createStore } from "@/create-store";
+import { combine } from "@/create-store/functions/helpers/combine";
+import { useAsync } from "@/create-store/functions/hooks/use-async";
+import { ErrorBoundary, setup } from "@/vitest.react";
 
 describe("createContextStore", () => {
   describe("Basic functionality", () => {
@@ -28,8 +31,14 @@ describe("createContextStore", () => {
         return <div>Test</div>;
       }
 
-      expect(() => render(<TestComponent />)).toThrow(
-        "useStore must be used within a StoreProvider"
+      render(
+        <ErrorBoundary>
+          <TestComponent />
+        </ErrorBoundary>
+      );
+
+      expect(screen.getByTestId("error").textContent).toBe(
+        "Error: useStore must be used within a StoreProvider"
       );
     });
 
@@ -105,7 +114,7 @@ describe("createContextStore", () => {
   });
 
   describe("Complex store scenarios", () => {
-    it("should work with stores that combine state and actions", () => {
+    it("should work with stores that combine state and actions", async () => {
       const [CountProvider, useCountStore] = createContextStore(
         (context: { initialCount: number }) => {
           const actions = {
@@ -155,7 +164,7 @@ describe("createContextStore", () => {
         );
       }
 
-      render(
+      const { user } = setup(
         <CountProvider value={{ initialCount: 5 }}>
           <Counter />
         </CountProvider>
@@ -163,17 +172,17 @@ describe("createContextStore", () => {
 
       expect(screen.getByTestId("count")).toHaveTextContent("5");
 
-      fireEvent.click(screen.getByTestId("increment"));
+      await user.click(screen.getByTestId("increment"));
       expect(screen.getByTestId("count")).toHaveTextContent("6");
 
-      fireEvent.click(screen.getByTestId("decrement"));
+      await user.click(screen.getByTestId("decrement"));
       expect(screen.getByTestId("count")).toHaveTextContent("5");
 
-      fireEvent.click(screen.getByTestId("increment"));
-      fireEvent.click(screen.getByTestId("increment"));
+      await user.click(screen.getByTestId("increment"));
+      await user.click(screen.getByTestId("increment"));
       expect(screen.getByTestId("count")).toHaveTextContent("7");
 
-      fireEvent.click(screen.getByTestId("reset"));
+      await user.click(screen.getByTestId("reset"));
       expect(screen.getByTestId("count")).toHaveTextContent("5");
     });
 
@@ -348,7 +357,7 @@ describe("createContextStore", () => {
   });
 
   describe("TypeScript integration", () => {
-    it("should maintain proper type inference", () => {
+    it("should maintain proper type inference", async () => {
       type AppContext = {
         locale: string;
         theme: "dark" | "light";
@@ -400,7 +409,7 @@ describe("createContextStore", () => {
         );
       }
 
-      render(
+      const { user } = setup(
         <AppProvider value={{ locale: "en", theme: "light" }}>
           <App />
         </AppProvider>
@@ -409,10 +418,10 @@ describe("createContextStore", () => {
       expect(screen.getByTestId("theme")).toHaveTextContent("light");
       expect(screen.getByTestId("locale")).toHaveTextContent("en");
 
-      fireEvent.click(screen.getByTestId("toggle-theme"));
+      await user.click(screen.getByTestId("toggle-theme"));
       expect(screen.getByTestId("theme")).toHaveTextContent("dark");
 
-      fireEvent.click(screen.getByTestId("set-locale"));
+      await user.click(screen.getByTestId("set-locale"));
       expect(screen.getByTestId("locale")).toHaveTextContent("fr");
     });
   });
@@ -458,6 +467,248 @@ describe("createContextStore", () => {
       );
 
       expect(screen.getByTestId("state")).toHaveTextContent("{}");
+    });
+  });
+
+  describe("Asynchronous logic", () => {
+    it("should work with useAsync in store actions", async () => {
+      const [Provider, useStore] = createContextStore(
+        (context: { baseUrl: string }) => {
+          const actions = {
+            loadData: () => {
+              const { data, error, isLoading } = useAsync(async () => {
+                await new Promise((resolve) => setTimeout(resolve, 50));
+                return { message: `Data from ${context.baseUrl}` };
+              });
+
+              return { data, error, isLoading };
+            },
+          };
+
+          return createStore(combine({ baseUrl: context.baseUrl }, actions));
+        }
+      );
+
+      function TestComponent() {
+        const store = useStore();
+        const { data, error, isLoading } = store.loadData();
+
+        if (isLoading) return <div data-testid="loading">Loading...</div>;
+        if (error) return <div data-testid="error">Error: {error.message}</div>;
+        if (data) return <div data-testid="data">{data.message}</div>;
+
+        return <div data-testid="no-data">No data</div>;
+      }
+
+      render(
+        <Provider value={{ baseUrl: "https://api.example.com" }}>
+          <TestComponent />
+        </Provider>
+      );
+
+      expect(screen.getByTestId("loading")).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("data")).toHaveTextContent(
+          "Data from https://api.example.com"
+        );
+      });
+    });
+
+    it("should handle async errors in store actions", async () => {
+      const [Provider, useStore] = createContextStore(
+        (context: { shouldFail: boolean }) => {
+          const actions = {
+            fetchData: () => {
+              const { data, error, isLoading } = useAsync(async () => {
+                await new Promise((resolve) => setTimeout(resolve, 50));
+
+                if (context.shouldFail) {
+                  throw new Error("API request failed");
+                }
+
+                return { success: true };
+              });
+
+              return { data, error, isLoading };
+            },
+          };
+
+          return createStore(combine(context, actions));
+        }
+      );
+
+      function TestComponent() {
+        const store = useStore();
+        const { data, error, isLoading } = store.fetchData();
+
+        if (isLoading) return <div data-testid="loading">Loading...</div>;
+        if (error) return <div data-testid="error">Error: {error.message}</div>;
+        if (data) return <div data-testid="success">Success!</div>;
+
+        return <div data-testid="idle">Idle</div>;
+      }
+
+      render(
+        <Provider value={{ shouldFail: true }}>
+          <TestComponent />
+        </Provider>
+      );
+
+      expect(screen.getByTestId("loading")).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("error")).toHaveTextContent(
+          "Error: API request failed"
+        );
+      });
+    });
+
+    it("should support multiple async actions with dependencies", async () => {
+      const [Provider, useStore] = createContextStore(
+        (context: { userId: string }) => {
+          const actions = {
+            loadPosts: () => {
+              const { data, error, isLoading } = useAsync(async () => {
+                await new Promise((resolve) => setTimeout(resolve, 40));
+                return [
+                  `Post 1 by ${context.userId}`,
+                  `Post 2 by ${context.userId}`,
+                ];
+              }, [context.userId]);
+
+              return {
+                posts: data,
+                postsError: error,
+                postsLoading: isLoading,
+              };
+            },
+            loadProfile: () => {
+              const { data, error, isLoading } = useAsync(async () => {
+                await new Promise((resolve) => setTimeout(resolve, 30));
+                return {
+                  email: `user${context.userId}@example.com`,
+                  name: `User ${context.userId}`,
+                };
+              }, [context.userId]);
+
+              return {
+                profile: data,
+                profileError: error,
+                profileLoading: isLoading,
+              };
+            },
+          };
+
+          return createStore(combine(context, actions));
+        }
+      );
+
+      function TestComponent() {
+        const store = useStore();
+        const { profile, profileLoading } = store.loadProfile();
+        const { posts, postsLoading } = store.loadPosts();
+
+        const profileStatus = profile ? profile.name : "No profile";
+        const postsStatus = posts ? `${posts.length} posts` : "No posts";
+
+        return (
+          <div>
+            <div data-testid="profile-status">
+              {profileLoading ? "Loading profile..." : profileStatus}
+            </div>
+
+            <div data-testid="posts-status">
+              {postsLoading ? "Loading posts..." : postsStatus}
+            </div>
+          </div>
+        );
+      }
+
+      render(
+        <Provider value={{ userId: "123" }}>
+          <TestComponent />
+        </Provider>
+      );
+
+      expect(screen.getByTestId("profile-status")).toHaveTextContent(
+        "Loading profile..."
+      );
+      expect(screen.getByTestId("posts-status")).toHaveTextContent(
+        "Loading posts..."
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("profile-status")).toHaveTextContent(
+          "User 123"
+        );
+        expect(screen.getByTestId("posts-status")).toHaveTextContent("2 posts");
+      });
+    });
+
+    it("should re-run async actions when context dependencies change", async () => {
+      const [Provider, useStore] = createContextStore(
+        (context: { searchTerm: string }) => {
+          const actions = {
+            search: () => {
+              const { data, isLoading } = useAsync(async () => {
+                await new Promise((resolve) => setTimeout(resolve, 30));
+                return `Results for: ${context.searchTerm}`;
+              }, [context.searchTerm]);
+
+              return { results: data, searching: isLoading };
+            },
+          };
+
+          return createStore(
+            combine({ searchTerm: context.searchTerm }, actions)
+          );
+        }
+      );
+
+      function TestComponent() {
+        const store = useStore();
+        const { results, searching } = store.search();
+
+        return (
+          <div>
+            <div data-testid="search-term">{store.searchTerm.$get()}</div>
+            <div data-testid="status">
+              {searching ? "Searching..." : results || "No results"}
+            </div>
+          </div>
+        );
+      }
+
+      const { rerender } = render(
+        <Provider value={{ searchTerm: "react" }}>
+          <TestComponent />
+        </Provider>
+      );
+
+      expect(screen.getByTestId("search-term")).toHaveTextContent("react");
+      expect(screen.getByTestId("status")).toHaveTextContent("Searching...");
+
+      await waitFor(() => {
+        expect(screen.getByTestId("status")).toHaveTextContent(
+          "Results for: react"
+        );
+      });
+
+      rerender(
+        <Provider value={{ searchTerm: "vue" }}>
+          <TestComponent />
+        </Provider>
+      );
+
+      expect(screen.getByTestId("search-term")).toHaveTextContent("vue");
+      expect(screen.getByTestId("status")).toHaveTextContent("Searching...");
+
+      await waitFor(() => {
+        expect(screen.getByTestId("status")).toHaveTextContent(
+          "Results for: vue"
+        );
+      });
     });
   });
 });
