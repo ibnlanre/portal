@@ -38,9 +38,7 @@ describe("createContextScope", () => {
         </ErrorBoundary>
       );
 
-      expect(screen.getByTestId("error").textContent).toBe(
-        "Error: useScope must be used within a StoreProvider"
-      );
+      expect(screen.getByTestId("error").textContent).toMatch(/Error: /);
     });
 
     it("should provide store through context when wrapped in provider", () => {

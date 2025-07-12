@@ -7,218 +7,251 @@ import { useSync } from "./index";
 import { combine } from "@/create-store/functions/helpers/combine";
 
 describe("useSync", () => {
-  it("should call effect on mount", () => {
-    const effect = vi.fn();
+  it("should call factory on mount and return result", () => {
+    const factory = vi.fn(() => "test result");
 
-    renderHook(() => useSync(effect));
+    const { result } = renderHook(() => useSync(factory));
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(result.current).toBe("test result");
   });
 
-  it("should call effect on mount with cleanup function", () => {
-    const cleanup = vi.fn();
-    const effect = vi.fn(() => cleanup);
+  it("should call factory with parameters", () => {
+    const factory = vi.fn((params: { value: number }) => params.value * 2);
+    const params = { value: 5 };
 
-    const { unmount } = renderHook(() => useSync(effect));
+    const { result } = renderHook(() => useSync(factory, params));
 
-    expect(effect).toHaveBeenCalledTimes(1);
-
-    unmount();
-
-    expect(cleanup).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledWith(params);
+    expect(result.current).toBe(10);
   });
 
-  it("should not re-run effect when dependencies don't change", () => {
-    const effect = vi.fn();
+  it("should not re-run factory when dependencies don't change", () => {
+    const factory = vi.fn(() => "test result");
     const dependencies = [1, "test", { id: 1 }];
 
-    const { rerender } = renderHook(({ deps }) => useSync(effect, deps), {
+    const { rerender } = renderHook(({ deps }) => useSync(factory, deps), {
       initialProps: { deps: dependencies },
     });
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
 
     // Re-render with same dependencies
     rerender({ deps: dependencies });
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
   });
 
-  it("should re-run effect when dependencies change", () => {
-    const effect = vi.fn();
+  it("should re-run factory when dependencies change", () => {
+    const factory = vi.fn((deps: number[]) => deps.reduce((a, b) => a + b, 0));
 
-    const { rerender } = renderHook(({ deps }) => useSync(effect, deps), {
-      initialProps: { deps: [1, 2] },
-    });
+    const { rerender, result } = renderHook(
+      ({ deps }) => useSync(factory, deps),
+      {
+        initialProps: { deps: [1, 2] },
+      }
+    );
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(result.current).toBe(3);
 
     // Change dependencies
     rerender({ deps: [1, 3] });
 
-    expect(effect).toHaveBeenCalledTimes(2);
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(result.current).toBe(4);
   });
 
   it("should handle deep equality comparison for object dependencies", () => {
-    const effect = vi.fn();
+    const factory = vi.fn(
+      (obj: { a: number; b: { c: number } }) => obj.a + obj.b.c
+    );
 
-    const { rerender } = renderHook(({ deps }) => useSync(effect, deps), {
-      initialProps: { deps: [{ a: 1, b: { c: 2 } }] },
-    });
+    const { rerender, result } = renderHook(
+      ({ deps }) => useSync(factory, deps),
+      {
+        initialProps: { deps: { a: 1, b: { c: 2 } } },
+      }
+    );
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(result.current).toBe(3);
 
     // Re-render with deeply equal object
-    rerender({ deps: [{ a: 1, b: { c: 2 } }] });
+    rerender({ deps: { a: 1, b: { c: 2 } } });
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
 
     // Re-render with different object
-    rerender({ deps: [{ a: 1, b: { c: 3 } }] });
+    rerender({ deps: { a: 1, b: { c: 3 } } });
 
-    expect(effect).toHaveBeenCalledTimes(2);
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(result.current).toBe(4);
   });
 
   it("should handle array dependencies correctly", () => {
-    const effect = vi.fn();
+    const factory = vi.fn((arr: number[]) => arr.reduce((a, b) => a + b, 0));
 
-    const { rerender } = renderHook(({ deps }) => useSync(effect, deps), {
-      initialProps: { deps: [[1, 2, 3]] },
-    });
+    const { rerender, result } = renderHook(
+      ({ deps }) => useSync(factory, deps),
+      {
+        initialProps: { deps: [1, 2, 3] },
+      }
+    );
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(result.current).toBe(6);
 
     // Re-render with same array content
-    rerender({ deps: [[1, 2, 3]] });
+    rerender({ deps: [1, 2, 3] });
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
 
     // Re-render with different array
-    rerender({ deps: [[1, 2, 4]] });
+    rerender({ deps: [1, 2, 4] });
 
-    expect(effect).toHaveBeenCalledTimes(2);
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(result.current).toBe(7);
   });
 
   it("should work without dependencies", () => {
-    const effect = vi.fn();
+    const factory = vi.fn(() => "constant result");
 
-    const { rerender } = renderHook(() => useSync(effect));
+    const { rerender, result } = renderHook(() => useSync(factory));
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(result.current).toBe("constant result");
 
-    // Re-render without dependencies should not re-run effect
+    // Re-render without dependencies should not re-run factory
     rerender();
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
   });
 
   it("should handle undefined dependencies correctly", () => {
-    const effect = vi.fn();
+    const factory = vi.fn((deps?: number[]) => deps?.length ?? 0);
 
-    const { rerender } = renderHook<void, { deps?: number[] }>(
-      ({ deps }) => useSync(effect, deps),
+    const { rerender, result } = renderHook<void, { deps?: number[] }>(
+      ({ deps }) => useSync(factory, deps),
       { initialProps: { deps: undefined } }
     );
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(result.current).toBe(0);
 
     // Re-render with undefined
     rerender({ deps: undefined });
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
 
     // Change to actual dependencies
     rerender({ deps: [1] });
 
-    expect(effect).toHaveBeenCalledTimes(2);
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(result.current).toBe(1);
   });
 
   it("should handle empty dependency array", () => {
-    const effect = vi.fn();
+    const factory = vi.fn((deps: DependencyList) => deps.length);
 
-    const { rerender } = renderHook<void, { deps: DependencyList }>(
-      ({ deps }) => useSync(effect, deps),
+    const { rerender, result } = renderHook<void, { deps: DependencyList }>(
+      ({ deps }) => useSync(factory, deps),
       { initialProps: { deps: [] } }
     );
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(result.current).toBe(0);
 
     // Re-render with empty array should not re-run
     rerender({ deps: [] });
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
 
     // Add dependency
     rerender({ deps: [1] });
 
-    expect(effect).toHaveBeenCalledTimes(2);
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(result.current).toBe(1);
   });
 
   it("should handle multiple dependency changes", () => {
-    const effect = vi.fn();
+    const factory = vi.fn(
+      (deps: [number, string, boolean]) => `${deps[0]}-${deps[1]}-${deps[2]}`
+    );
 
-    const { rerender } = renderHook(({ deps }) => useSync(effect, deps), {
-      initialProps: { deps: [1, "a", true] },
-    });
+    const { rerender, result } = renderHook(
+      ({ deps }) => useSync(factory, deps),
+      {
+        initialProps: { deps: [1, "a", true] as [number, string, boolean] },
+      }
+    );
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(result.current).toBe("1-a-true");
 
     // Change first dependency
     rerender({ deps: [2, "a", true] });
-    expect(effect).toHaveBeenCalledTimes(2);
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(result.current).toBe("2-a-true");
 
     // Change second dependency
     rerender({ deps: [2, "b", true] });
-    expect(effect).toHaveBeenCalledTimes(3);
+    expect(factory).toHaveBeenCalledTimes(3);
+    expect(result.current).toBe("2-b-true");
 
     // Change third dependency
     rerender({ deps: [2, "b", false] });
-    expect(effect).toHaveBeenCalledTimes(4);
+    expect(factory).toHaveBeenCalledTimes(4);
+    expect(result.current).toBe("2-b-false");
   });
 
-  it("should properly clean up previous effect when dependencies change", () => {
-    const cleanup1 = vi.fn();
-    const cleanup2 = vi.fn();
-    let callCount = 0;
+  it("should memoize results correctly across re-renders", () => {
+    const factory = vi.fn((value: number) => ({ computedValue: value * 2 }));
 
-    const effect = vi.fn(() => {
-      callCount++;
-      return callCount === 1 ? cleanup1 : cleanup2;
-    });
-
-    const { rerender, unmount } = renderHook(
-      ({ deps }) => useSync(effect, deps),
-      { initialProps: { deps: [1] } }
+    const { rerender, result } = renderHook(
+      ({ value }) => useSync(factory, value),
+      { initialProps: { value: 5 } }
     );
 
-    expect(effect).toHaveBeenCalledTimes(1);
-    expect(cleanup1).not.toHaveBeenCalled();
+    const firstResult = result.current;
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(firstResult.computedValue).toBe(10);
 
-    // Change dependencies - should clean up previous and run new
-    rerender({ deps: [2] });
+    // Re-render with same value should return same object reference
+    rerender({ value: 5 });
 
-    expect(cleanup1).toHaveBeenCalledTimes(1);
-    expect(effect).toHaveBeenCalledTimes(2);
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(result.current).toBe(firstResult); // Same reference
 
-    // Unmount - should clean up the latest effect
-    unmount();
+    // Change value should create new object
+    rerender({ value: 10 });
 
-    expect(cleanup2).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(result.current).not.toBe(firstResult);
+    expect(result.current.computedValue).toBe(20);
   });
 
   it("should handle complex nested object dependencies", () => {
-    const effect = vi.fn();
     const complexObj = {
       metadata: { active: true, created: new Date("2023-01-01") },
       permissions: ["read", "write"],
       user: { id: 1, profile: { name: "John", settings: { theme: "dark" } } },
     };
 
-    const { rerender } = renderHook(({ deps }) => useSync(effect, deps), {
-      initialProps: { deps: [complexObj] },
-    });
+    const factory = vi.fn(
+      (obj: typeof complexObj) =>
+        `${obj.user.profile.name}-${obj.user.profile.settings.theme}`
+    );
 
-    expect(effect).toHaveBeenCalledTimes(1);
+    const { rerender, result } = renderHook(
+      ({ deps }) => useSync(factory, deps),
+      {
+        initialProps: { deps: complexObj },
+      }
+    );
+
+    expect(factory).toHaveBeenCalledTimes(1);
+    expect(result.current).toBe("John-dark");
 
     // Deep equal object should not trigger re-run
     const equalObj = {
@@ -227,15 +260,16 @@ describe("useSync", () => {
       user: { id: 1, profile: { name: "John", settings: { theme: "dark" } } },
     };
 
-    rerender({ deps: [equalObj] });
-    expect(effect).toHaveBeenCalledTimes(1);
+    rerender({ deps: equalObj });
+    expect(factory).toHaveBeenCalledTimes(1);
 
     // Change a nested property
     const changedObj = combine(complexObj, {
       user: { profile: { name: "Jane" } },
     });
 
-    rerender({ deps: [changedObj] });
-    expect(effect).toHaveBeenCalledTimes(2);
+    rerender({ deps: changedObj });
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(result.current).toBe("Jane-dark");
   });
 });

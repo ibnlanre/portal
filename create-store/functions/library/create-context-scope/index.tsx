@@ -30,9 +30,9 @@ export function createContextScope<Context, Scope>(
   }: PropsWithChildren<{ value: Context }>) {
     const scope = useSync(factory, value);
 
-    useAsync(async ({ params, signal }) => {
-      await effect(params, signal);
-    }, scope);
+    useAsync(async ({ signal }) => {
+      await effect(scope, signal);
+    }, value);
 
     return (
       <ScopeContext.Provider value={scope}>{children}</ScopeContext.Provider>
