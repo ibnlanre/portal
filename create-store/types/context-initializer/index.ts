@@ -1,1 +1,1 @@
-export type ContextInitializer<Context, Store> = (context: Context) => Store;
+export type ContextFactory<Context, Store> = (context: Context) => Store;

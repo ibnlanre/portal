@@ -1,13 +1,13 @@
-import type { DependencyList, EffectCallback } from "react";
+import type { SyncFunction } from "@/create-store/types/sync-function";
 
-import { useEffect } from "react";
+import { type DependencyList, useMemo } from "react";
 
 import { useVersion } from "@/create-store/functions/hooks/use-version";
 
-export function useSync(
-  effect: EffectCallback,
+export function useSync<Data>(
+  factory: SyncFunction<Data>,
   dependencies: DependencyList = []
-): void {
+): Data {
   const version = useVersion(dependencies);
-  useEffect(effect, version);
+  return useMemo(factory, version);
 }

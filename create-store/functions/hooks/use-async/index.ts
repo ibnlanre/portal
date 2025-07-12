@@ -1,4 +1,4 @@
-import type { AsyncEffectCallback } from "@/create-store/types/async-effect-callback";
+import type { AsyncFunction } from "@/create-store/types/async-function";
 import type { AsyncState } from "@/create-store/types/async-state";
 
 import { type DependencyList, useEffect, useReducer } from "react";
@@ -15,7 +15,7 @@ import { useVersion } from "@/create-store/functions/hooks/use-version";
  * @returns An object containing data, loading, error states and an execute function
  */
 export function useAsync<Data>(
-  effect: AsyncEffectCallback<Data>,
+  effect: AsyncFunction<Data>,
   dependencies: DependencyList = []
 ): AsyncState<Data> {
   const comparison = useVersion(dependencies);
@@ -28,20 +28,22 @@ export function useAsync<Data>(
 
   useEffect(() => {
     const controller = new AbortController();
-
     const signal = controller.signal;
-    const active = !signal.aborted;
 
     dispatch({ type: "LOADING" });
 
     effect(signal)
       .then((payload) => {
-        if (active) dispatch({ payload, type: "SUCCESS" });
+        if (!signal.aborted) {
+          dispatch({ payload, type: "SUCCESS" });
+        }
       })
       .catch((error) => {
-        const isError = error instanceof Error;
-        const payload = isError ? error : new Error(String(error));
-        if (active) dispatch({ payload, type: "ERROR" });
+        if (!signal.aborted) {
+          const isError = error instanceof Error;
+          const payload = isError ? error : new Error(String(error));
+          dispatch({ payload, type: "ERROR" });
+        }
       });
 
     return () => {

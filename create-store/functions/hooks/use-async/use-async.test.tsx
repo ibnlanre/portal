@@ -1,6 +1,6 @@
 import type { DependencyList } from "react";
 
-import type { AsyncEffectCallback } from "@/create-store/types/async-effect-callback";
+import type { AsyncFunction } from "@/create-store/types/async-function";
 
 import { render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
@@ -11,7 +11,7 @@ import { setup } from "@/vitest.react";
 
 type AsyncTestComponentProps = {
   dependencies?: DependencyList;
-  effect: AsyncEffectCallback;
+  effect: AsyncFunction;
 };
 
 function AsyncTestComponent({ dependencies, effect }: AsyncTestComponentProps) {
@@ -24,9 +24,9 @@ function AsyncTestComponent({ dependencies, effect }: AsyncTestComponentProps) {
   return <div data-testid="no-data">No data</div>;
 }
 
-describe("useAsync (isolated)", () => {
+describe("useAsync", () => {
   it("should show loading then data on success", async () => {
-    const effect: AsyncEffectCallback = async () => {
+    const effect: AsyncFunction = async () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
       return { value: "success" };
     };
@@ -43,7 +43,7 @@ describe("useAsync (isolated)", () => {
   });
 
   it("should show error on failure", async () => {
-    const effect: AsyncEffectCallback = async () => {
+    const effect: AsyncFunction = async () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
       throw new Error("fail");
     };
@@ -61,7 +61,7 @@ describe("useAsync (isolated)", () => {
     function Wrapper() {
       const [count, setCount] = useState(0);
 
-      const effect: AsyncEffectCallback = async () => {
+      const effect: AsyncFunction = async () => {
         await new Promise((resolve) => setTimeout(resolve, 10));
         return { count };
       };
@@ -105,7 +105,7 @@ describe("useAsync (isolated)", () => {
     function Wrapper() {
       const [count, setCount] = useState(0);
 
-      const effect: AsyncEffectCallback = async (signal) => {
+      const effect: AsyncFunction = async (signal) => {
         await new Promise((resolve) => setTimeout(resolve, 30));
 
         if (signal.aborted) {
@@ -147,7 +147,7 @@ describe("useAsync (isolated)", () => {
   });
 
   it("should handle signal cancellation properly", async () => {
-    const effect: AsyncEffectCallback = async (signal) => {
+    const effect: AsyncFunction = async (signal) => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       if (signal.aborted) {
