@@ -9,10 +9,10 @@ import { useVersion } from "@/create-store/functions/hooks/use-version";
  * @param context - The context to initialize the store with.
  * @returns The initialized context store.
  */
-export function useInitializer<Context, ContextStore>(
-  initializer: (context: Context) => ContextStore,
+export function useInitializer<Context, ContextScope>(
+  initializer: (context: Context) => ContextScope,
   context: Context
-): ContextStore {
-  const dependencies = useVersion(context);
-  return useMemo(() => initializer(context), dependencies);
+): ContextScope {
+  const version = useVersion(context);
+  return useMemo(() => initializer(context), version);
 }

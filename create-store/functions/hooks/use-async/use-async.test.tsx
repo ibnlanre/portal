@@ -105,7 +105,7 @@ describe("useAsync", () => {
     function Wrapper() {
       const [count, setCount] = useState(0);
 
-      const effect: AsyncFunction = async (signal) => {
+      const effect: AsyncFunction = async ({ signal }) => {
         await new Promise((resolve) => setTimeout(resolve, 30));
 
         if (signal.aborted) {
@@ -147,7 +147,7 @@ describe("useAsync", () => {
   });
 
   it("should handle signal cancellation properly", async () => {
-    const effect: AsyncFunction = async (signal) => {
+    const effect: AsyncFunction = async ({ signal }) => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       if (signal.aborted) {

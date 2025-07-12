@@ -1,7 +1,7 @@
 import type { AsyncFunction } from "@/create-store/types/async-function";
 import type { AsyncState } from "@/create-store/types/async-state";
 
-import { type DependencyList, useEffect, useReducer } from "react";
+import { useEffect, useReducer } from "react";
 
 import { reducer } from "./reducer";
 import { useVersion } from "@/create-store/functions/hooks/use-version";
@@ -14,11 +14,11 @@ import { useVersion } from "@/create-store/functions/hooks/use-version";
  *
  * @returns An object containing data, loading, error states and an execute function
  */
-export function useAsync<Data>(
-  effect: AsyncFunction<Data>,
-  dependencies: DependencyList = []
+export function useAsync<Data, Params>(
+  effect: AsyncFunction<Data, Params>,
+  params: Params = undefined as Params
 ): AsyncState<Data> {
-  const comparison = useVersion(dependencies);
+  const comparison = useVersion(params);
 
   const [state, dispatch] = useReducer(reducer<Data>, {
     data: null,
@@ -32,7 +32,7 @@ export function useAsync<Data>(
 
     dispatch({ type: "LOADING" });
 
-    effect(signal)
+    effect({ params, signal })
       .then((payload) => {
         if (!signal.aborted) {
           dispatch({ payload, type: "SUCCESS" });

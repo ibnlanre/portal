@@ -1,4 +1,4 @@
-export type ContextEffect<Context, Store> = (
-  store: Store,
-  context: Context
+export type ContextEffect<Scope> = (
+  scope: Scope,
+  signal: AbortSignal
 ) => Promise<void> | void;
