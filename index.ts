@@ -15,6 +15,7 @@ export type {
   GetBrowserStorage,
   SetBrowserStorage,
 } from "@/create-store/types/browser-storage-adapter";
+export type { Combine } from "@/create-store/types/combine";
 export type { CompositeStore } from "@/create-store/types/composite-store";
 export type { ContextFactory } from "@/create-store/types/context-initializer";
 export type { ContextScope } from "@/create-store/types/context-scope";
@@ -23,6 +24,7 @@ export type {
   GetCookieStorage,
   SetCookieStorage,
 } from "@/create-store/types/cookie-storage";
+export type { Replace as DeepMerge } from "@/create-store/types/replace";
 export type { DeepPartial } from "@/create-store/types/deep-partial";
 export type { Dictionary } from "@/create-store/types/dictionary";
 export type { Factory } from "@/create-store/types/factory";

@@ -23,5 +23,5 @@ export function replace<Target>(
     }
   }
 
-  return source as unknown as Target;
+  return source as Target;
 }

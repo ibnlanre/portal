@@ -16,11 +16,11 @@ import clone from "@ibnlanre/clone";
  *
  * @returns A new merged object without modifying any of the inputs
  */
-export function combine<
-  Target extends Dictionary,
-  Source extends Dictionary,
-  Result = Merge<Target, Source>,
->(target: Target, source: Source, visited?: WeakMap<object, object>): Result;
+export function combine<Target extends Dictionary, Source extends Dictionary>(
+  target: Target,
+  source: Source,
+  visited?: WeakMap<object, object>
+): Merge<Target, Source>;
 
 /**
  * A simple and straightforward deep merge function that recursively merges objects.
@@ -33,16 +33,19 @@ export function combine<
  */
 export function combine<
   Target extends Dictionary,
-  Sources extends readonly Dictionary[],
-  Result = Combine<Target, Sources>,
->(target: Target, sources: Sources, visited?: WeakMap<object, object>): Result;
+  Sources extends Dictionary[],
+>(
+  target: Target,
+  sources: Sources,
+  visited?: WeakMap<object, object>
+): Combine<Target, Sources>;
 
 export function combine<
   Target extends Dictionary,
-  Source extends Dictionary | readonly Dictionary[],
+  Source extends Dictionary | Dictionary[],
 >(target: Target, source: Source, visited = new WeakMap()) {
   if (Array.isArray(source)) {
-    let result = target;
+    let result: any = target;
     for (let index = 0; index < source.length; index++) {
       result = combine(result, source[index], visited);
     }

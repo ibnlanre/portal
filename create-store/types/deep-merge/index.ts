@@ -1,13 +1,13 @@
 import type { Dictionary } from "@/create-store/types/dictionary";
+import type { Replace } from "@/create-store/types/replace";
 
-export type DeepMerge<Target extends Dictionary, Source extends Dictionary> = {
-  [Key in Exclude<keyof Source, keyof Target>]: Source[Key];
-} & {
-  [Key in Exclude<keyof Target, keyof Source>]: Target[Key];
-} & {
-  [Key in keyof Source & keyof Target]: Target[Key] extends Dictionary
-    ? Source[Key] extends Dictionary
-      ? DeepMerge<Target[Key], Source[Key]>
-      : Source[Key]
-    : Source[Key];
-};
+/**
+ * Deeply merge two items.
+ * If both are dictionaries, merge deeply.
+ * Otherwise, `Source` overrides `Target`.
+ */
+export type DeepMerge<Target, Source> = Target extends Dictionary
+  ? Source extends Dictionary
+    ? Replace<Target, Source>
+    : Source
+  : Source;
