@@ -13,6 +13,7 @@ import type { Subscriber } from "@/create-store/types/subscriber";
 
 import { useEffect, useMemo, useState } from "react";
 
+import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
@@ -29,8 +30,37 @@ import clone from "@ibnlanre/clone";
 export function createCompositeStore<State extends Dictionary>(
   initialState: State
 ): CompositeStore<State> {
-  const cache = new WeakMap<any, CompositeStore<State>>();
   let state = initialState;
+
+  const cache = new WeakMap<any, CompositeStore<State>>();
+  const originalPaths = new Set<string>();
+
+  function trackOriginalPaths(
+    obj: any,
+    currentPath = "",
+    visited = new WeakSet()
+  ): void {
+    if (isDictionary(obj)) {
+      if (currentPath) {
+        originalPaths.add(currentPath);
+      }
+
+      for (const key in obj) {
+        const fullPath = currentPath ? `${currentPath}.${key}` : key;
+        originalPaths.add(fullPath);
+      }
+
+      if (visited.has(obj)) return;
+
+      visited.add(obj);
+      for (const key in obj) {
+        const fullPath = currentPath ? `${currentPath}.${key}` : key;
+        trackOriginalPaths(obj[key], fullPath, visited);
+      }
+    }
+  }
+
+  trackOriginalPaths(initialState);
 
   const subscribers = new Map<
     Paths<State>,
@@ -214,29 +244,50 @@ export function createCompositeStore<State extends Dictionary>(
     const node = buildStore(path) as unknown as CompositeStore<State>;
 
     const proxy = new Proxy(node, {
+      defineProperty(target, prop, descriptor) {
+        return true;
+      },
+
+      deleteProperty(target, prop) {
+        return true;
+      },
+
       get(target, prop) {
         if (typeof prop === "string") {
-          if (prop in target) return target[prop];
+          if (isAccessor(target, prop)) {
+            return target[prop];
+          }
+
           const fullPath = joinPaths(path, prop);
-          return resolveProperty(fullPath);
+          const pathExistedInOriginal = originalPaths.has(fullPath);
+
+          if (pathExistedInOriginal) {
+            return resolveProperty(fullPath);
+          }
         }
         return target[prop];
       },
 
       getOwnPropertyDescriptor(target, prop) {
         if (typeof prop === "string") {
-          if (prop in target)
-            return Object.getOwnPropertyDescriptor(target, prop);
+          if (isAccessor(target, prop)) {
+            return {
+              configurable: true,
+              enumerable: false,
+              value: target[prop],
+              writable: false,
+            };
+          }
 
           const fullPath = joinPaths(path, prop);
-          const value = resolvePath(state, fullPath);
+          const pathExistedInOriginal = originalPaths.has(fullPath);
 
-          if (value !== undefined) {
+          if (pathExistedInOriginal) {
             return {
               configurable: true,
               enumerable: true,
               get: () => resolveProperty(fullPath),
-              set: (newValue) => setProperty(newValue, fullPath),
+              set: () => true,
             };
           }
         }
@@ -245,17 +296,21 @@ export function createCompositeStore<State extends Dictionary>(
 
       has(target, prop) {
         if (typeof prop === "string") {
-          if (prop in target) return true;
+          if (isAccessor(target, prop)) return true;
+
           const fullPath = joinPaths(path, prop);
-          return resolvePath(state, fullPath) !== undefined;
+          return originalPaths.has(fullPath);
         }
         return false;
       },
 
       ownKeys(target) {
-        const value = resolvePath(state, path);
-        const keys = Object.getOwnPropertyNames(target);
-        return isDictionary(value) ? [...keys, ...Object.keys(value)] : keys;
+        const currentValue = resolvePath(state, path);
+        return isDictionary(currentValue) ? Object.keys(currentValue) : [];
+      },
+
+      set(target, prop, newValue) {
+        return true;
       },
     });
 

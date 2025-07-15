@@ -77,22 +77,41 @@ export function createPrimitiveStore<State>(
   const node = buildStore() as PrimitiveStore<State>;
 
   return new Proxy(node, {
+    defineProperty(target, prop, descriptor) {
+      return true;
+    },
+
+    deleteProperty(target, prop) {
+      return true;
+    },
+
     get(target, prop) {
-      if (isAccessor(prop)) return target[prop];
-      return state;
+      if (isAccessor(target, prop)) return target[prop];
+      return undefined;
     },
 
     getOwnPropertyDescriptor(target, prop) {
-      return Object.getOwnPropertyDescriptor(target, prop);
+      if (isAccessor(target, prop)) {
+        return {
+          configurable: true,
+          enumerable: false,
+          value: target[prop],
+          writable: false,
+        };
+      }
+      return undefined;
     },
 
     has(target, prop) {
-      if (isAccessor(prop)) return false;
-      return prop in target;
+      return isAccessor(target, prop);
     },
 
     ownKeys(target) {
-      return Object.getOwnPropertyNames(target);
+      return [];
+    },
+
+    set(target, prop, value) {
+      return true;
     },
   }) as PrimitiveStore<State>;
 }
