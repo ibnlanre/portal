@@ -36,7 +36,6 @@ describe("useSync", () => {
 
     expect(factory).toHaveBeenCalledTimes(1);
 
-    // Re-render with same dependencies
     rerender({ deps: dependencies });
 
     expect(factory).toHaveBeenCalledTimes(1);
@@ -55,7 +54,6 @@ describe("useSync", () => {
     expect(factory).toHaveBeenCalledTimes(1);
     expect(result.current).toBe(3);
 
-    // Change dependencies
     rerender({ deps: [1, 3] });
 
     expect(factory).toHaveBeenCalledTimes(2);
@@ -77,12 +75,10 @@ describe("useSync", () => {
     expect(factory).toHaveBeenCalledTimes(1);
     expect(result.current).toBe(3);
 
-    // Re-render with deeply equal object
     rerender({ deps: { a: 1, b: { c: 2 } } });
 
     expect(factory).toHaveBeenCalledTimes(1);
 
-    // Re-render with different object
     rerender({ deps: { a: 1, b: { c: 3 } } });
 
     expect(factory).toHaveBeenCalledTimes(2);
@@ -102,12 +98,10 @@ describe("useSync", () => {
     expect(factory).toHaveBeenCalledTimes(1);
     expect(result.current).toBe(6);
 
-    // Re-render with same array content
     rerender({ deps: [1, 2, 3] });
 
     expect(factory).toHaveBeenCalledTimes(1);
 
-    // Re-render with different array
     rerender({ deps: [1, 2, 4] });
 
     expect(factory).toHaveBeenCalledTimes(2);
@@ -122,7 +116,6 @@ describe("useSync", () => {
     expect(factory).toHaveBeenCalledTimes(1);
     expect(result.current).toBe("constant result");
 
-    // Re-render without dependencies should not re-run factory
     rerender();
 
     expect(factory).toHaveBeenCalledTimes(1);
@@ -139,12 +132,10 @@ describe("useSync", () => {
     expect(factory).toHaveBeenCalledTimes(1);
     expect(result.current).toBe(0);
 
-    // Re-render with undefined
     rerender({ deps: undefined });
 
     expect(factory).toHaveBeenCalledTimes(1);
 
-    // Change to actual dependencies
     rerender({ deps: [1] });
 
     expect(factory).toHaveBeenCalledTimes(2);
@@ -162,12 +153,10 @@ describe("useSync", () => {
     expect(factory).toHaveBeenCalledTimes(1);
     expect(result.current).toBe(0);
 
-    // Re-render with empty array should not re-run
     rerender({ deps: [] });
 
     expect(factory).toHaveBeenCalledTimes(1);
 
-    // Add dependency
     rerender({ deps: [1] });
 
     expect(factory).toHaveBeenCalledTimes(2);
@@ -189,17 +178,14 @@ describe("useSync", () => {
     expect(factory).toHaveBeenCalledTimes(1);
     expect(result.current).toBe("1-a-true");
 
-    // Change first dependency
     rerender({ deps: [2, "a", true] });
     expect(factory).toHaveBeenCalledTimes(2);
     expect(result.current).toBe("2-a-true");
 
-    // Change second dependency
     rerender({ deps: [2, "b", true] });
     expect(factory).toHaveBeenCalledTimes(3);
     expect(result.current).toBe("2-b-true");
 
-    // Change third dependency
     rerender({ deps: [2, "b", false] });
     expect(factory).toHaveBeenCalledTimes(4);
     expect(result.current).toBe("2-b-false");
@@ -217,13 +203,11 @@ describe("useSync", () => {
     expect(factory).toHaveBeenCalledTimes(1);
     expect(firstResult.computedValue).toBe(10);
 
-    // Re-render with same value should return same object reference
     rerender({ value: 5 });
 
     expect(factory).toHaveBeenCalledTimes(1);
-    expect(result.current).toBe(firstResult); // Same reference
+    expect(result.current).toBe(firstResult);
 
-    // Change value should create new object
     rerender({ value: 10 });
 
     expect(factory).toHaveBeenCalledTimes(2);
@@ -253,7 +237,6 @@ describe("useSync", () => {
     expect(factory).toHaveBeenCalledTimes(1);
     expect(result.current).toBe("John-dark");
 
-    // Deep equal object should not trigger re-run
     const equalObj = {
       metadata: { active: true, created: new Date("2023-01-01") },
       permissions: ["read", "write"],
@@ -263,7 +246,6 @@ describe("useSync", () => {
     rerender({ deps: equalObj });
     expect(factory).toHaveBeenCalledTimes(1);
 
-    // Change a nested property
     const changedObj = combine(complexObj, {
       user: { profile: { name: "Jane" } },
     });

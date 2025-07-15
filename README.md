@@ -28,6 +28,9 @@
     - [`$use()` (React Hook)](#use-react-hook)
   - [Define actions: Functions in stores](#define-actions-functions-in-stores)
   - [Actions as hooks](#actions-as-hooks)
+  - [Asynchronous effects: `useAsync`](#asynchronous-effects-useasync)
+  - [Memoized computations: `useSync`](#effect-synchronization-usesync)
+  - [Context-based stores: `createContextScope`](#context-based-stores-createcontextscope)
   - [Combine stores and actions: `combine()`](#combine-stores-and-actions-combine)
   - [Initialize state asynchronously](#initialize-state-asynchronously)
   - [Handle circular references](#handle-circular-references)
@@ -72,6 +75,10 @@
 - **Comprehensive type safety**: Leverage full TypeScript support with robust type inference for a reliable development experience.
 - **Seamless React integration**: Connect stores to React components effortlessly using the `$use` hook, with automatic subscription management.
 - **Actions as hooks**: Create actions that can behave like React hooks, allowing you to use hooks like `useState` and `useEffect` inside your store's actions.
+- **Asynchronous effects**: Use the `useAsync` hook for handling asynchronous operations with built-in loading, error, and data states.
+- **Effect synchronization**: Leverage the `useSync` hook for memoizing computed values with deep dependency tracking, providing fine-grained control over when expensive computations re-run.
+- **Context-based stores**: Use `createContextScope` for efficient global store management through React Context, enabling prop-to-store synchronization and provider-based state sharing.
+- **Enhanced object merging**: The `combine` function supports multiple sources and provides improved type definitions for complex merging scenarios.
 - **Flexible store types**: Manage both primitive values (strings, numbers, booleans) and complex, nested objects within a unified system.
 - **State persistence**: Persist state across sessions with built-in adapters for Local Storage, Session Storage, and Cookie Storage.
 - **Flexible persistence**: Use the `createAsyncBrowserStorageAdapter` for more control over how state is transformed before being stored or used.
@@ -711,6 +718,7 @@ const unsubscribeTheme = appStore
   .$act((newTheme) => {
     console.log("Theme via $key:", newTheme);
   });
+
 appStore.user.preferences.theme.$set("blue"); // Triggers the subscription
 unsubscribeTheme();
 ```
@@ -742,11 +750,11 @@ $use<R>(
 1.  **Basic usage in a React component:**
 
     ```tsx
-    // src/stores/counterStore.ts
+    // src/stores/counter-store.ts
     import { createStore } from "@ibnlanre/portal";
     export const counterStore = createStore(0);
 
-    // src/components/Counter.tsx
+    // src/components/counter.tsx
     import React from "react";
     import { counterStore } from "../stores/counterStore";
 
@@ -785,9 +793,13 @@ $use<R>(
 
     ```tsx
     import React, { useState } from "react";
-    import { someStore } from "../stores/someStore"; // Assume someStore holds a string
+    import { someStore } from "../stores/some-store.ts"; // Assume some-store holds a string
 
-    function DisplayValue({ prefixFromProp }: { prefixFromProp: string }) {
+    interface DisplayValueProps {
+      prefixFromProp: string;
+    }
+
+    function DisplayValue({ prefixFromProp }: DisplayValueProps) {
       const [displayValue, setValueInStore] = someStore.$use(
         (storeValue) => `${prefixFromProp}${storeValue}`,
         [prefixFromProp] // Selector re-runs if prefixFromProp changes
@@ -818,7 +830,7 @@ $use<R>(
       city: "Anytown",
     });
 
-    // Component.tsx
+    // user-profile.tsx
     import React from "react";
     import { userStore } from "./store";
 
@@ -992,27 +1004,273 @@ In this example, `useAutoResetMessage` encapsulates its own state and side effec
 - Co-locate logic with the state it touches
 - Maintain a clean separation of concern between logic and UI
 
+### Asynchronous effects: `useAsync`
+
+The `useAsync` hook provides a robust solution for handling asynchronous operations within your store actions. It automatically manages loading states, error handling, and data states, making it easy to work with promises and async functions.
+
+**Key Features:**
+
+- **Automatic state management**: Tracks `loading`, `error`, and `data` states
+- **Error handling**: Catches and manages errors automatically
+- **Dependency tracking**: Re-runs when dependencies change
+- **Promise support**: Works with any promise-returning function
+
+**Basic Usage:**
+
+```typescript
+import { createStore, useAsync } from "@ibnlanre/portal";
+
+type UserProfile = {
+  id: string;
+  name: string;
+  email: string;
+};
+
+const userStore = createStore({
+  users: [] as UserProfile[],
+  profile: null as UserProfile | null,
+  useUsers: async () => {
+    const { data, loading, error } = useAsync(
+      async ({ signal }) => {
+        const response = await fetch("/api/users", { signal });
+
+        if (!response.ok) throw new Error("Failed to fetch users");
+        return response.json() as UserProfile[];
+      } // No dependencies, runs once on mount
+    );
+
+    if (data) userStore.users.$set(data);
+    return { userLoading: loading, userError: error };
+  },
+  useProfile: (userId: string) => {
+    const { data, loading, error } = useAsync(
+      async ({ params, signal }) => {
+        if (!params.userId) throw new Error("User ID is required");
+
+        const response = await fetch(`/api/users/${params.userId}`, { signal });
+
+        if (!response.ok) throw new Error("Failed to fetch user");
+        return response.json() as UserProfile;
+      },
+      { userId } // Dependencies can be any shape
+    );
+
+    if (data) userStore.profile.$set(data);
+    return { profileLoading: loading, profileError: error };
+  },
+});
+```
+
+**Usage in React component:**
+
+```tsx
+
+interface UserProfileComponentProps {
+  userId: string;
+}
+
+function UserProfileComponent({ userId }: UserProfileComponentProps) {
+  const { profile, loading, error } = userStore.useLoadUserProfile(userId);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+  if (!profile) return <div>No profile found</div>;
+
+  return (
+    <div>
+      <h1>{profile.name}</h1>
+      <p>{profile.email}</p>
+    </div>
+  );
+}
+```
+
+### Memoized computations: `useSync`
+
+The `useSync` hook provides a `useMemo` implementation with deep dependency verification. It's designed to compute and memoize values based on complex dependencies, with automatic re-computation when any part of the dependency tree changes.
+
+**Key Features:**
+
+- **Deep dependency tracking**: Performs deep equality checks on complex objects and arrays
+- **Automatic memoization**: Only re-computes when dependencies actually change
+- **Complex object support**: Handles nested objects, arrays, and circular references
+- **Type safety**: Full TypeScript support with proper type inference
+- **Performance optimized**: Avoids unnecessary re-computations
+
+**Basic Usage:**
+
+```tsx
+import { createStore, useSync } from "@ibnlanre/portal";
+
+const settingsStore = createStore({
+  fontSize: 16,
+  theme: "light" as "light" | "dark",
+  language: "en",
+  useDisplaySettings: () => {
+    const [theme] = settingsStore.theme.$use();
+    const [fontSize] = settingsStore.fontSize.$use();
+    const [language] = settingsStore.language.$use();
+
+    const dependencies = { theme, fontSize, language };
+
+    // This will only re-compute when theme, fontSize, or language change
+    return useSync(({ theme, fontSize, language }) => {
+      return {
+        cssVariables: {
+          "--theme": theme,
+          "--font-size": `${fontSize}px`,
+          "--language": language,
+        },
+        className: `theme-${theme} lang-${language}`,
+        styleObject: {
+          fontSize: fontSize,
+          colorScheme: theme,
+        },
+      };
+    }, dependencies);
+  },
+});
+
+function ThemedComponent() {
+  const { className, styledObject, cssVariables } =
+    settingsStore.useDisplaySettings();
+
+  return (
+    <div className={className} style={styleObject}>
+      <p>Theme: {cssVariables["--theme"]}</p>
+    </div>
+  );
+}
+```
+
+### Context-based stores: `createContextScope`
+
+The `createContextScope` function enables efficient global store management through React Context. It provides a powerful pattern for creating provider-based stores that can be initialized with external data and shared across component trees.
+
+**Key Features:**
+
+- **Provider-based**: Creates React Context providers for store sharing
+- **Dynamic initialization**: Initialize stores with props or external data
+- **Type safety**: Full TypeScript support with proper type inference
+- **Efficient updates**: Only re-renders components that use the specific store parts
+- **Nested providers**: Support for multiple independent or nested providers
+
+**Basic Usage:**
+
+```tsx
+import { combine, createStore, createContextScope } from "@ibnlanre/portal";
+
+// Define the context type
+type AppContext = {
+  userId: string;
+  theme: "light" | "dark";
+  locale: string;
+};
+
+// Create the context scope
+const [AppProvider, useAppStore] = createContextScope((context: AppContext) => {
+  const initialState = {
+    user: {
+      id: context.userId,
+      preferences: {
+        theme: context.theme,
+        locale: context.locale,
+      },
+    },
+  };
+
+  const actions = {
+    toggleTheme: () => {
+      store.user.preferences.theme.$set((previousTheme) => {
+        return previousTheme === "light" ? "dark" : "light";
+      });
+    },
+    updateTheme: (newTheme: "light" | "dark") => {
+      store.user.preferences.theme.$set(newTheme);
+    },
+    updateLocale: (newLocale: string) => {
+      store.user.preferences.locale.$set(newLocale);
+    },
+  };
+
+  const store = createStore(combine(initialState, actions));
+  return store;
+});
+```
+
+**Using the context-based store in a React application:**
+
+```tsx
+function App() {
+  const appContext: AppContext = {
+    userId: "user-123",
+    theme: "light",
+    locale: "en",
+  };
+
+  return (
+    <AppProvider value={appContext}>
+      <UserProfile />
+      <Settings />
+    </AppProvider>
+  );
+}
+
+function UserProfile() {
+  const store = useAppStore();
+
+  const [userId] = store.user.id.$use();
+  const [theme] = store.user.preferences.theme.$use();
+
+  return (
+    <div className={`profile theme-${theme}`}>
+      <h1>User ID: {userId}</h1>
+    </div>
+  );
+}
+
+function Settings() {
+  const store = useAppStore();
+  const [theme] = store.user.preferences.theme.$use();
+
+  return (
+    <div>
+      <button onClick={store.toggleTheme}>
+        Toggle Theme (Current: {theme})
+      </button>
+    </div>
+  );
+}
+```
+
 ### Combine stores and actions: `combine()`
 
-The `combine()` utility performs a deep merge between two objects. It's useful for unifying your initial state and actions into one cohesive structure before passing it into createStore.
+The `combine()` utility performs a deep merge between objects and now supports multiple sources for complex merging scenarios. It's useful for unifying your initial state and actions into one cohesive structure before passing it into createStore.
 
 Unlike shallow merging (such as Object.assign or object spread), `combine()`:
 
 - Recursively merges nested objects
 - Preserves store instances within deeply nested structures
 - Handles circular references safely
+- **Supports multiple sources** with later sources taking precedence
+- **Enhanced type definitions** for better TypeScript experience
 
 **Syntax:**
 
 ```typescript
+// Single source merge
 combine<Target extends Dictionary, Source>(target: Target, source: Source): Merge<Target, Source>
+
+// Multiple sources merge
+combine<Target extends Dictionary, Sources extends Dictionary[]>(target: Target, sources: Sources): Combine<Target, Sources>
 ```
 
 - **`target`**: Base state or object.
 - **`source`**: Object containing actions or additional properties to merge.
-- **Returns**:A new, deeply merged object with references preserved.
+- **`sources`**: Array of objects to merge in sequence, with later sources taking precedence.
+- **Returns**: A new, deeply merged object with references preserved.
 
-**Example:**
+**Single Source Example:**
 
 Let's define state and actions separately and then combine them into a single store.
 
@@ -1032,11 +1290,8 @@ const initialState = {
 const actions = {
   login(email: string) {
     userStore.$set({
+      profile: { email },
       isLoggedIn: true,
-      profile: {
-        ...userStore.profile.$get(),
-        email,
-      },
     });
   },
   logout() {
@@ -1052,6 +1307,73 @@ const actions = {
 
 // Combine initial state and actions into a single object
 export const userStore = createStore(combine(initialState, actions));
+```
+
+**Multiple Sources Example:**
+
+For more complex scenarios, you can merge multiple sources at once:
+
+```typescript
+import { createStore, combine } from "@ibnlanre/portal";
+
+// Base configuration
+const baseConfig = {
+  api: {
+    baseUrl: "https://api.example.com",
+    timeout: 5000,
+  },
+  ui: {
+    theme: "light",
+    language: "en",
+  },
+};
+
+// Environment-specific overrides
+const developmentConfig = {
+  api: {
+    baseUrl: "https://dev-api.example.com",
+    debug: true,
+  },
+  ui: {
+    showDebugInfo: true,
+  },
+};
+
+// User preferences
+const userPreferences = {
+  ui: {
+    theme: "dark",
+    fontSize: 16,
+  },
+  notifications: {
+    email: true,
+    push: false,
+  },
+};
+
+// Combine all sources - later sources override earlier ones
+const appConfig = combine(baseConfig, [developmentConfig, userPreferences]);
+
+// Result will be:
+// {
+//   api: {
+//     baseUrl: "https://dev-api.example.com", // from developmentConfig
+//     timeout: 5000,                          // from baseConfig
+//     debug: true                             // from developmentConfig
+//   },
+//   ui: {
+//     theme: "dark",                          // from userPreferences (overrides others)
+//     language: "en",                         // from baseConfig
+//     showDebugInfo: true,                    // from developmentConfig
+//     fontSize: 16                            // from userPreferences
+//   },
+//   notifications: {                          // entirely from userPreferences
+//     email: true,
+//     push: false
+//   }
+// }
+
+const configStore = createStore(appConfig);
 ```
 
 The action functions (e.g., `login`, `logout`) reference the `userStore` variable to update the state. This pattern is possible because the functions are defined in the same scope as the `userStore` constant. When these actions are called, `userStore` has already been initialized, giving them access to the store's methods like `$set`. Type inferrence ensures that the actions are aware of the store's structure, allowing for type-safe updates.

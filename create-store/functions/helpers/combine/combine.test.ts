@@ -262,8 +262,7 @@ describe("combine", () => {
         updated: Date;
       };
 
-      expect(result.created).not.toBe(date);
-      expect(result.created).toEqual(date);
+      expect(result.created).toBe(date);
       expect(result.updated).toEqual(new Date("2023-01-02"));
     });
 
@@ -277,8 +276,7 @@ describe("combine", () => {
         pattern: RegExp;
       };
 
-      expect(result.pattern).not.toBe(regex);
-      expect(result.pattern).toEqual(regex);
+      expect(result.pattern).toBe(regex);
       expect(result.flags).toBe("added");
     });
 
@@ -493,6 +491,231 @@ describe("combine", () => {
       expect(result.prop999).toBe(999);
       expect(result.prop500).toBe(500);
       expect(result.prop1499).toBe(1499);
+    });
+  });
+
+  describe("Multiple Sources", () => {
+    it("should merge multiple sources into target", () => {
+      const target = { a: 1 };
+      const source1 = { b: 2 };
+      const source2 = { c: 3 };
+      const source3 = { d: 4 };
+
+      const result = combine(target, [source1, source2, source3]);
+
+      expect(result).toEqual({ a: 1, b: 2, c: 3, d: 4 });
+      expect(result).not.toBe(target);
+      expect(result).not.toBe(source1);
+      expect(result).not.toBe(source2);
+      expect(result).not.toBe(source3);
+    });
+
+    it("should handle overlapping properties with later sources taking precedence", () => {
+      const target = { a: 1, b: 2 };
+      const source1 = { b: 10, c: 3 };
+      const source2 = { c: 20, d: 4 };
+      const source3 = { a: 100, d: 40 };
+
+      const result = combine(target, [source1, source2, source3]);
+
+      expect(result).toEqual({ a: 100, b: 10, c: 20, d: 40 });
+    });
+
+    it("should handle deep merging with multiple sources", () => {
+      const target = {
+        config: {
+          features: {
+            auth: true,
+          },
+          theme: "light",
+        },
+      };
+
+      const source1 = {
+        config: {
+          features: {
+            notifications: false,
+          },
+          timeout: 5000,
+        },
+      };
+
+      const source2 = {
+        config: {
+          features: {
+            analytics: true,
+            auth: false,
+          },
+          theme: "dark",
+        },
+      };
+
+      const result = combine(target, [source1, source2]);
+
+      expect(result).toEqual({
+        config: {
+          features: {
+            analytics: true,
+            auth: false,
+            notifications: false,
+          },
+          theme: "dark",
+          timeout: 5000,
+        },
+      });
+    });
+
+    it("should handle empty sources array", () => {
+      const target = { a: 1, b: 2 };
+      const result = combine(target, []);
+
+      expect(result).toEqual({ a: 1, b: 2 });
+      expect(result).toBe(target);
+    });
+
+    it("should handle array with single source", () => {
+      const target = { a: 1 };
+      const source = { b: 2 };
+
+      const result = combine(target, [source]);
+
+      expect(result).toEqual({ a: 1, b: 2 });
+    });
+
+    it("should handle circular references in multiple sources", () => {
+      const target = { a: 1 };
+
+      const source1: any = { b: 2 };
+      source1.self = source1;
+
+      const source2: any = { c: 3 };
+      source2.ref = source1;
+
+      const result = combine(target, [source1, source2]);
+
+      expect(result.a).toBe(1);
+      expect(result.b).toBe(2);
+      expect(result.c).toBe(3);
+      expect(result.self.b).toBe(2);
+      expect(result.ref.b).toBe(2);
+      expect(result.self).toBe(result.self);
+    });
+
+    it("should handle functions in multiple sources", () => {
+      const fn1 = () => "function1";
+      const fn2 = () => "function2";
+      const fn3 = () => "function3";
+
+      const target = { func: fn1 };
+      const source1 = { func: fn2, helper: fn1 };
+      const source2 = { func: fn3, utility: fn2 };
+
+      const result = combine(target, [source1, source2]) as {
+        func: () => string;
+        helper: () => string;
+        utility: () => string;
+      };
+
+      expect(result.func).toBe(fn3);
+      expect(result.helper).toBe(fn1);
+      expect(result.utility).toBe(fn2);
+      expect(result.func()).toBe("function3");
+      expect(result.helper()).toBe("function1");
+      expect(result.utility()).toBe("function2");
+    });
+
+    it("should preserve function references in multiple sources", () => {
+      const sharedFunction = () => "shared";
+
+      const target = { action1: sharedFunction };
+      const source1 = { action2: sharedFunction };
+      const source2 = { action3: sharedFunction };
+
+      const result = combine(target, [source1, source2]) as {
+        action1: () => string;
+        action2: () => string;
+        action3: () => string;
+      };
+
+      expect(result.action1).toBe(sharedFunction);
+      expect(result.action2).toBe(sharedFunction);
+      expect(result.action3).toBe(sharedFunction);
+      expect(result.action1).toBe(result.action2);
+      expect(result.action2).toBe(result.action3);
+    });
+
+    it("should handle mixed data types across multiple sources", () => {
+      const date = new Date("2023-01-01");
+      const regex = /test/i;
+      const fn = () => "test";
+
+      const target = { str: "hello" };
+      const source1 = { date, num: 42 };
+      const source2 = { bool: true, regex };
+      const source3 = { arr: [1, 2, 3], func: fn };
+
+      const result = combine(target, [source1, source2, source3]) as {
+        arr: number[];
+        bool: boolean;
+        date: Date;
+        func: () => string;
+        num: number;
+        regex: RegExp;
+        str: string;
+      };
+
+      expect(result.str).toBe("hello");
+      expect(result.num).toBe(42);
+      expect(result.date).toEqual(date);
+      expect(result.bool).toBe(true);
+      expect(result.regex).toEqual(regex);
+      expect(result.func).toBe(fn);
+      expect(result.arr).toEqual([1, 2, 3]);
+    });
+
+    it("should handle very large number of sources", () => {
+      const target = { base: 0 };
+      const sources = Array.from({ length: 100 }, (_, i) => ({
+        [`prop${i}`]: i,
+      }));
+
+      const result = combine(target, sources);
+
+      expect(result.base).toBe(0);
+      expect(Object.keys(result)).toHaveLength(101);
+      expect(result.prop0).toBe(0);
+      expect(result.prop99).toBe(99);
+    });
+
+    it("should not modify original sources when using multiple sources", () => {
+      const target = { a: 1 };
+      const source1 = { b: 2, nested: { x: 10 } };
+      const source2 = { c: 3, nested: { y: 20 } };
+
+      const source1Copy = JSON.parse(JSON.stringify(source1));
+      const source2Copy = JSON.parse(JSON.stringify(source2));
+
+      combine(target, [source1, source2]);
+
+      expect(source1).toEqual(source1Copy);
+      expect(source2).toEqual(source2Copy);
+    });
+
+    it("should handle symbol properties across multiple sources", () => {
+      const sym1 = Symbol("sym1");
+      const sym2 = Symbol("sym2");
+      const sym3 = Symbol("sym3");
+
+      const target = { regular: "prop", [sym1]: "target" };
+      const source1 = { [sym2]: "source1" };
+      const source2 = { [sym1]: "overridden", [sym3]: "source2" };
+
+      const result = combine(target, [source1, source2]);
+
+      expect(result.regular).toBe("prop");
+      expect(result[sym1]).toBe("overridden");
+      expect(result[sym2]).toBe("source1");
+      expect(result[sym3]).toBe("source2");
     });
   });
 });

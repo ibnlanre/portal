@@ -43,8 +43,6 @@ export function combine<
   Target extends Dictionary,
   Source extends Dictionary | Dictionary[],
 >(target: Target, source?: Source, visited = new WeakMap()) {
-  // if (!source && isDictionary(target)) return target;
-
   if (Array.isArray(source)) {
     let result: any = target;
     for (let index = 0; index < source.length; index++) {
