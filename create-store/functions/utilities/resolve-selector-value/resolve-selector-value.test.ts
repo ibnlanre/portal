@@ -1,10 +1,8 @@
-import { describe, expect, it, vi, vitest } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { resolveSelectorValue } from "./index";
 
-import clone from "@ibnlanre/clone";
-
-vitest.mock("@ibnlanre/clone", { spy: true });
+import * as helpers from "@/create-store/functions/helpers/clone";
 
 type State = { count: number; nested?: { value: string } };
 
@@ -13,7 +11,7 @@ describe("resolveSelectorValue", () => {
     const state: State = { count: 1, nested: { value: "a" } };
     const result = resolveSelectorValue(state);
     expect(result).toEqual(state);
-    expect(result).not.toBe(state); // Should be a clone
+    expect(result).not.toBe(state);
   });
 
   it("returns the selector result when selector is a function", () => {
@@ -25,6 +23,8 @@ describe("resolveSelectorValue", () => {
 
   it("calls clone with the state", () => {
     const state: State = { count: 3 };
+
+    const clone = vi.spyOn(helpers, "clone");
 
     resolveSelectorValue(state);
     expect(clone).toHaveBeenCalledWith(state);
@@ -59,6 +59,6 @@ describe("resolveSelectorValue", () => {
     const result1 = resolveSelectorValue(state, selector);
     const result2 = resolveSelectorValue(state, selector);
 
-    expect(result1).toBe(result2); // Should return the same value
+    expect(result1).toBe(result2);
   });
 });

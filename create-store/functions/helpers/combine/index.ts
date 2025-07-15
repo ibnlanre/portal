@@ -4,8 +4,7 @@ import type { Replace } from "@/create-store/types/replace";
 
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isPrimitive } from "@/create-store/functions/assertions/is-primitive";
-
-import clone from "@ibnlanre/clone";
+import { clone } from "@/create-store/functions/helpers/clone";
 
 /**
  * A simple and straightforward deep merge function that recursively merges objects.

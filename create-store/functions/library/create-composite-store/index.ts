@@ -17,6 +17,7 @@ import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
+import { clone } from "@/create-store/functions/helpers/clone";
 import { createPathComponents } from "@/create-store/functions/helpers/create-path-components";
 import { createPaths } from "@/create-store/functions/helpers/create-paths";
 import { replace } from "@/create-store/functions/helpers/replace";
@@ -24,8 +25,6 @@ import { splitPath } from "@/create-store/functions/helpers/split-path";
 import { useVersion } from "@/create-store/functions/hooks/use-version";
 import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
-
-import clone from "@ibnlanre/clone";
 
 export function createCompositeStore<State extends Dictionary>(
   initialState: State

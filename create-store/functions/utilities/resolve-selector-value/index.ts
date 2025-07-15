@@ -1,8 +1,7 @@
 import type { Selector } from "@/create-store/types/selector";
 
 import { isFunction } from "@/create-store/functions/assertions/is-function";
-
-import clone from "@ibnlanre/clone";
+import { clone } from "@/create-store/functions/helpers/clone";
 
 export function resolveSelectorValue<State, Value = State>(
   state: State,

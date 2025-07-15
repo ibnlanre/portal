@@ -8,11 +8,10 @@ import { useEffect, useMemo, useState } from "react";
 
 import { isAccessor } from "../../assertions/is-accessor";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
+import { clone } from "@/create-store/functions/helpers/clone";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { useVersion } from "@/create-store/functions/hooks/use-version";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
-
-import clone from "@ibnlanre/clone";
 
 export function createPrimitiveStore<State>(
   initialState: State
