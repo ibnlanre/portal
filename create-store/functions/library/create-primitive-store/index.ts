@@ -6,6 +6,7 @@ import type { Subscriber } from "@/create-store/types/subscriber";
 
 import { useEffect, useMemo, useState } from "react";
 
+import { isAccessor } from "../../assertions/is-accessor";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { useVersion } from "@/create-store/functions/hooks/use-version";
@@ -22,51 +23,76 @@ export function createPrimitiveStore<State>(
   function setState(value: State) {
     state = value;
     notifySubscribers(value);
+    return true;
   }
 
   function notifySubscribers(value: State) {
     subscribers.forEach((subscriber) => subscriber(value));
   }
 
-  function $get<Value = State>(selector?: Selector<State, Value>) {
-    return resolveSelectorValue(state, selector);
-  }
+  function buildStore() {
+    function $get<Value = State>(selector?: Selector<State, Value>) {
+      return resolveSelectorValue(state, selector);
+    }
 
-  function $set(action: SetPartialStateAction<State>) {
-    const next = isSetStateActionFunction<State>(action)
-      ? action(clone(state))
-      : action;
-    setState(replace(state, next));
-  }
+    function $set(action: SetPartialStateAction<State>) {
+      const next = isSetStateActionFunction<State>(action)
+        ? action(clone(state))
+        : action;
+      setState(replace(state, next));
+    }
 
-  function $use<Value = State>(
-    selector?: Selector<State, Value>,
-    dependencies?: unknown[]
-  ): PartialStateManager<State, Value> {
-    const [value, setValue] = useState(state);
-    useEffect(() => $act(setValue), []);
+    function $use<Value = State>(
+      selector?: Selector<State, Value>,
+      dependencies?: unknown[]
+    ): PartialStateManager<State, Value> {
+      const [value, setValue] = useState(state);
+      useEffect(() => $act(setValue), []);
 
-    const comparison = useVersion([value, dependencies]);
-    const resolvedValue = useMemo(() => {
-      return resolveSelectorValue(value, selector);
-    }, comparison);
+      const comparison = useVersion([value, dependencies]);
+      const resolvedValue = useMemo(() => {
+        return resolveSelectorValue(value, selector);
+      }, comparison);
 
-    return [resolvedValue, $set];
-  }
+      return [resolvedValue, $set];
+    }
 
-  function $act(subscriber: Subscriber<State>, immediate = true) {
-    subscribers.add(subscriber);
-    if (immediate) subscriber(state);
+    function $act(subscriber: Subscriber<State>, immediate = true) {
+      subscribers.add(subscriber);
+      if (immediate) subscriber(state);
 
-    return () => {
-      subscribers.delete(subscriber);
+      return () => {
+        subscribers.delete(subscriber);
+      };
+    }
+
+    return {
+      $act,
+      $get,
+      $set,
+      $use,
     };
   }
 
-  return {
-    $act,
-    $get,
-    $set,
-    $use,
-  };
+  const node = buildStore() as PrimitiveStore<State>;
+
+  return new Proxy(node, {
+    get(target, prop) {
+      if (isAccessor(prop)) return target[prop];
+      return state;
+    },
+
+    getOwnPropertyDescriptor(target, prop) {
+      return Object.getOwnPropertyDescriptor(target, prop);
+    },
+
+    has(target, prop) {
+      if (isAccessor(prop)) return false;
+      return prop in target;
+    },
+
+    ownKeys(target) {
+      return Object.getOwnPropertyNames(target);
+    },
+  }) as PrimitiveStore<State>;
 }

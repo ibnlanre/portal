@@ -29,10 +29,8 @@ import clone from "@ibnlanre/clone";
 export function createCompositeStore<State extends Dictionary>(
   initialState: State
 ): CompositeStore<State> {
+  const cache = new WeakMap<any, CompositeStore<State>>();
   let state = initialState;
-
-  // Global cache for created proxies to handle circular references
-  const proxyCache = new WeakMap<any, CompositeStore<State>>();
 
   const subscribers = new Map<
     Paths<State>,
@@ -175,7 +173,7 @@ export function createCompositeStore<State extends Dictionary>(
     if (isFunction(value)) return value;
 
     if (isDictionary(value)) {
-      if (proxyCache.has(value)) return proxyCache.get(value);
+      if (cache.has(value)) return cache.get(value);
       return createProxy(fullPath);
     }
 
@@ -206,19 +204,17 @@ export function createCompositeStore<State extends Dictionary>(
     };
   }
 
-  function createProxy<Path extends Paths<State>>(
-    path?: Path
-  ): CompositeStore<State> {
+  function createProxy<Path extends Paths<State>>(path?: Path) {
     const value = resolvePath(state, path);
 
-    if (isDictionary(value) && proxyCache.has(value)) {
-      return proxyCache.get(value)!;
+    if (isDictionary(value) && cache.has(value)) {
+      return cache.get(value)!;
     }
 
-    const node: any = buildStore(path);
+    const node = buildStore(path) as unknown as CompositeStore<State>;
 
     const proxy = new Proxy(node, {
-      get(target, prop: string | symbol) {
+      get(target, prop) {
         if (typeof prop === "string") {
           if (prop in target) return target[prop];
           const fullPath = joinPaths(path, prop);
@@ -227,7 +223,7 @@ export function createCompositeStore<State extends Dictionary>(
         return target[prop];
       },
 
-      getOwnPropertyDescriptor(target, prop: string | symbol) {
+      getOwnPropertyDescriptor(target, prop) {
         if (typeof prop === "string") {
           if (prop in target)
             return Object.getOwnPropertyDescriptor(target, prop);
@@ -247,7 +243,7 @@ export function createCompositeStore<State extends Dictionary>(
         return undefined;
       },
 
-      has(target, prop: string | symbol) {
+      has(target, prop) {
         if (typeof prop === "string") {
           if (prop in target) return true;
           const fullPath = joinPaths(path, prop);
@@ -258,23 +254,15 @@ export function createCompositeStore<State extends Dictionary>(
 
       ownKeys(target) {
         const value = resolvePath(state, path);
-        const storeKeys = Object.getOwnPropertyNames(target);
-        return isDictionary(value)
-          ? [...storeKeys, ...Object.keys(value)]
-          : storeKeys;
+        const keys = Object.getOwnPropertyNames(target);
+        return isDictionary(value) ? [...keys, ...Object.keys(value)] : keys;
       },
+    });
 
-      set(target, prop: string | symbol, value) {
-        if (typeof prop === "string" && !(prop in target)) {
-          const fullPath = joinPaths(path, prop);
-          setProperty(value, fullPath);
-          return true;
-        }
-        return false;
-      },
-    }) as CompositeStore<State>;
+    if (isDictionary(value)) {
+      cache.set(value, proxy);
+    }
 
-    if (isDictionary(value)) proxyCache.set(value, proxy);
     return proxy;
   }
 
