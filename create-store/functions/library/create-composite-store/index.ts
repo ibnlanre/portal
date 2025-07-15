@@ -233,31 +233,72 @@ export function createCompositeStore<State extends Dictionary>(
   ): CompositeStore<State> {
     if (visited.has(node)) return visited.get(node);
 
-    const proxy = connect(node, chain);
+    // Create a proxy that preserves the original object but adds store methods
+    const storeMethodsSymbol = Symbol("storeMethods");
+    const storeMethods = buildStore(chain);
+
+    const proxy = new Proxy(node as any, {
+      get(target, prop, receiver) {
+        // If it's a store method (starts with $), return from storeMethods
+        if (typeof prop === "string" && prop.startsWith("$")) {
+          return storeMethods[prop as keyof typeof storeMethods];
+        }
+
+        // Otherwise, return the original property or its traversed version
+        const originalValue = Reflect.get(target, prop, receiver);
+
+        if (typeof prop === "string" && prop in target) {
+          const property = target[prop] as Value;
+          const path = [chain, prop].filter(Boolean).join(".") as Path;
+
+          if (seen.has(property)) {
+            return visited.get(property) ?? buildStore(path);
+          }
+
+          if (isFunction(property)) {
+            return property;
+          } else if (isDictionary(property)) {
+            seen.add(property);
+            const traversed = traverse(property, path, visited, seen);
+            return traversed;
+          } else {
+            return buildStore(path);
+          }
+        }
+
+        return originalValue;
+      },
+
+      getOwnPropertyDescriptor(target, prop) {
+        if (typeof prop === "string" && prop.startsWith("$")) {
+          return {
+            configurable: true,
+            enumerable: true,
+            value: storeMethods[prop as keyof typeof storeMethods],
+          };
+        }
+        return Reflect.getOwnPropertyDescriptor(target, prop);
+      },
+
+      has(target, prop) {
+        // Include store methods in 'in' checks
+        if (typeof prop === "string" && prop.startsWith("$")) {
+          return prop in storeMethods;
+        }
+        return Reflect.has(target, prop);
+      },
+
+      ownKeys(target) {
+        // Include store method keys
+        const originalKeys = Reflect.ownKeys(target);
+        const storeKeys = Object.keys(storeMethods);
+        return [...originalKeys, ...storeKeys];
+      },
+    });
+
     visited.set(node, proxy);
-
-    for (const key in node) {
-      const property = node[key] as Value;
-      const path = [chain, key].filter(Boolean).join(".") as Path;
-
-      if (seen.has(property)) {
-        proxy[key] = visited.get(property) ?? buildStore(path);
-        continue;
-      }
-
-      if (isFunction(property)) {
-        proxy[key] = property;
-      } else if (isDictionary(property)) {
-        seen.add(property);
-        proxy[key] = traverse(property, path, visited, seen) as any;
-      } else {
-        proxy[key] = buildStore(path) as any;
-      }
-    }
-
     return proxy;
   }
 
-  console.log("initialState", initialState);
   return traverse(initialState);
 }
