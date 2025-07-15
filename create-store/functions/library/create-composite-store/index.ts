@@ -18,7 +18,6 @@ import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { createPathComponents } from "@/create-store/functions/helpers/create-path-components";
 import { createPaths } from "@/create-store/functions/helpers/create-paths";
-import { merge } from "@/create-store/functions/helpers/merge";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { splitPath } from "@/create-store/functions/helpers/split-path";
 import { useVersion } from "@/create-store/functions/hooks/use-version";
@@ -31,6 +30,9 @@ export function createCompositeStore<State extends Dictionary>(
   initialState: State
 ): CompositeStore<State> {
   let state = initialState;
+
+  // Global cache for created proxies to handle circular references
+  const proxyCache = new WeakMap<any, CompositeStore<State>>();
 
   const subscribers = new Map<
     Paths<State>,
@@ -46,7 +48,6 @@ export function createCompositeStore<State extends Dictionary>(
 
   function notifySubscribers(state: State, path?: Paths<State>) {
     const resolvedValue = resolvePath(state, path);
-
     const valuePaths = createPaths(resolvedValue);
     const pathComponents = createPathComponents(path);
     const paths = new Set([...pathComponents, ...valuePaths]);
@@ -78,14 +79,14 @@ export function createCompositeStore<State extends Dictionary>(
 
     let current: any = snapshot;
     for (const key of keys) current = current[key];
-
     current[pivot] = value;
+
     setState(snapshot, path);
   }
 
   function get<
     Path extends Paths<State>,
-    Value extends StatePath<State, Path>,
+    Value = StatePath<State, Path>,
     Result = Value,
   >(path?: Path, selector?: Selector<Value, Result>): Result {
     const value = resolvePath(state, path);
@@ -118,8 +119,7 @@ export function createCompositeStore<State extends Dictionary>(
       const next = isSetStateActionFunction(action)
         ? action(clone(current))
         : action;
-      const value = replace(current, next);
-      setProperty(value, path);
+      setProperty(replace(current, next), path);
     };
   }
 
@@ -136,21 +136,6 @@ export function createCompositeStore<State extends Dictionary>(
     return () => {
       subscribers.delete(subscriber);
     };
-  }
-
-  function key<Path extends Paths<State>>(path: Path, parent?: Path) {
-    const chain = [parent, path].filter(Boolean).join(".") as Path;
-    const value = resolvePath(state, path);
-
-    if (isFunction(value)) {
-      return value as CompositeStore<State>;
-    }
-
-    if (isDictionary(value)) {
-      return traverse(clone(value), chain);
-    }
-
-    return buildStore(chain);
   }
 
   function use<
@@ -175,6 +160,28 @@ export function createCompositeStore<State extends Dictionary>(
     return [resolvedValue, setter];
   }
 
+  function joinPaths<Path extends Paths<State>>(
+    basePath?: Path,
+    property?: string
+  ): Path {
+    if (!basePath) return property as Path;
+    if (!property) return basePath;
+    return `${basePath}.${property}` as Path;
+  }
+
+  function resolveProperty<Path extends Paths<State>>(fullPath: Path) {
+    const value = resolvePath(state, fullPath);
+
+    if (isFunction(value)) return value;
+
+    if (isDictionary(value)) {
+      if (proxyCache.has(value)) return proxyCache.get(value);
+      return createProxy(fullPath);
+    }
+
+    return createProxy(fullPath);
+  }
+
   function buildStore<Path extends Paths<State>>(chain?: Path) {
     return {
       $act(subscriber: Subscriber<State>, immediate = true) {
@@ -184,7 +191,8 @@ export function createCompositeStore<State extends Dictionary>(
         return get(chain, selector);
       },
       $key(path: Path) {
-        return key(path, chain);
+        const fullPath = joinPaths(chain, path);
+        return resolveProperty(fullPath);
       },
       $set(value: PartialStatePath<State, Path>) {
         return set(chain)(value);
@@ -198,107 +206,77 @@ export function createCompositeStore<State extends Dictionary>(
     };
   }
 
-  function connect<
-    Path extends Paths<State>,
-    Value extends ResolvePath<State, Path>,
-  >(state: Value, path?: Path) {
-    return merge(state, buildStore(path)) as CompositeStore<State>;
-  }
-
-  function traverse<Path extends Paths<State> = never>(
-    state: State,
-    chain?: Path,
-    visited?: WeakMap<object, any>,
-    seen?: WeakSet<object>
-  ): CompositeStore<State>;
-
-  function traverse<
-    Path extends Paths<State>,
-    Value extends ResolvePath<State, Path>,
-  >(
-    state: Value,
-    chain?: Path,
-    visited?: WeakMap<object, any>,
-    seen?: WeakSet<object>
-  ): CompositeStore<State>;
-
-  function traverse<
-    Path extends Paths<State>,
-    Value extends ResolvePath<State, Path>,
-  >(
-    node: Value,
-    chain?: Path,
-    visited = new WeakMap(),
-    seen = new WeakSet()
+  function createProxy<Path extends Paths<State>>(
+    path?: Path
   ): CompositeStore<State> {
-    if (visited.has(node)) return visited.get(node);
+    const value = resolvePath(state, path);
 
-    // Create a proxy that preserves the original object but adds store methods
-    const storeMethodsSymbol = Symbol("storeMethods");
-    const storeMethods = buildStore(chain);
+    if (isDictionary(value) && proxyCache.has(value)) {
+      return proxyCache.get(value)!;
+    }
 
-    const proxy = new Proxy(node as any, {
-      get(target, prop, receiver) {
-        // If it's a store method (starts with $), return from storeMethods
-        if (typeof prop === "string" && prop.startsWith("$")) {
-          return storeMethods[prop as keyof typeof storeMethods];
+    const node: any = buildStore(path);
+
+    const proxy = new Proxy(node, {
+      get(target, prop: string | symbol) {
+        if (typeof prop === "string") {
+          if (prop in target) return target[prop];
+          const fullPath = joinPaths(path, prop);
+          return resolveProperty(fullPath);
         }
-
-        // Otherwise, return the original property or its traversed version
-        const originalValue = Reflect.get(target, prop, receiver);
-
-        if (typeof prop === "string" && prop in target) {
-          const property = target[prop] as Value;
-          const path = [chain, prop].filter(Boolean).join(".") as Path;
-
-          if (seen.has(property)) {
-            return visited.get(property) ?? buildStore(path);
-          }
-
-          if (isFunction(property)) {
-            return property;
-          } else if (isDictionary(property)) {
-            seen.add(property);
-            const traversed = traverse(property, path, visited, seen);
-            return traversed;
-          } else {
-            return buildStore(path);
-          }
-        }
-
-        return originalValue;
+        return target[prop];
       },
 
-      getOwnPropertyDescriptor(target, prop) {
-        if (typeof prop === "string" && prop.startsWith("$")) {
-          return {
-            configurable: true,
-            enumerable: true,
-            value: storeMethods[prop as keyof typeof storeMethods],
-          };
+      getOwnPropertyDescriptor(target, prop: string | symbol) {
+        if (typeof prop === "string") {
+          if (prop in target)
+            return Object.getOwnPropertyDescriptor(target, prop);
+
+          const fullPath = joinPaths(path, prop);
+          const value = resolvePath(state, fullPath);
+
+          if (value !== undefined) {
+            return {
+              configurable: true,
+              enumerable: true,
+              get: () => resolveProperty(fullPath),
+              set: (newValue) => setProperty(newValue, fullPath),
+            };
+          }
         }
-        return Reflect.getOwnPropertyDescriptor(target, prop);
+        return undefined;
       },
 
-      has(target, prop) {
-        // Include store methods in 'in' checks
-        if (typeof prop === "string" && prop.startsWith("$")) {
-          return prop in storeMethods;
+      has(target, prop: string | symbol) {
+        if (typeof prop === "string") {
+          if (prop in target) return true;
+          const fullPath = joinPaths(path, prop);
+          return resolvePath(state, fullPath) !== undefined;
         }
-        return Reflect.has(target, prop);
+        return false;
       },
 
       ownKeys(target) {
-        // Include store method keys
-        const originalKeys = Reflect.ownKeys(target);
-        const storeKeys = Object.keys(storeMethods);
-        return [...originalKeys, ...storeKeys];
+        const value = resolvePath(state, path);
+        const storeKeys = Object.getOwnPropertyNames(target);
+        return isDictionary(value)
+          ? [...storeKeys, ...Object.keys(value)]
+          : storeKeys;
       },
-    });
 
-    visited.set(node, proxy);
+      set(target, prop: string | symbol, value) {
+        if (typeof prop === "string" && !(prop in target)) {
+          const fullPath = joinPaths(path, prop);
+          setProperty(value, fullPath);
+          return true;
+        }
+        return false;
+      },
+    }) as CompositeStore<State>;
+
+    if (isDictionary(value)) proxyCache.set(value, proxy);
     return proxy;
   }
 
-  return traverse(initialState);
+  return createProxy();
 }
