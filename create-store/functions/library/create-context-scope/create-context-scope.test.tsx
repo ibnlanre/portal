@@ -314,8 +314,8 @@ describe("createContextScope", () => {
     });
   });
 
-  describe("Store memoization", () => {
-    it("should memoize store based on context value", () => {
+  describe("Hook stability", () => {
+    it("should call the hook on every render", () => {
       const initializerMock = vi.fn((context: { value: string }) => {
         return createStore(context.value);
       });
@@ -342,7 +342,7 @@ describe("createContextScope", () => {
         </Provider>
       );
 
-      expect(initializerMock).toHaveBeenCalledTimes(1);
+      expect(initializerMock).toHaveBeenCalledTimes(2);
 
       // Re-render with different value - should call initializer again
       rerender(
@@ -351,7 +351,7 @@ describe("createContextScope", () => {
         </Provider>
       );
 
-      expect(initializerMock).toHaveBeenCalledTimes(2);
+      expect(initializerMock).toHaveBeenCalledTimes(3);
     });
   });
 

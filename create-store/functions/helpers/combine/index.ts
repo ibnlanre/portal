@@ -1,6 +1,6 @@
 import type { Combine } from "@/create-store/types/combine";
 import type { Dictionary } from "@/create-store/types/dictionary";
-import type { Merge } from "@/create-store/types/merge";
+import type { Replace } from "@/create-store/types/replace";
 
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isPrimitive } from "@/create-store/functions/assertions/is-primitive";
@@ -18,9 +18,9 @@ import clone from "@ibnlanre/clone";
  */
 export function combine<Target extends Dictionary, Source extends Dictionary>(
   target: Target,
-  source: Source,
+  source?: Source,
   visited?: WeakMap<object, object>
-): Merge<Target, Source>;
+): Source extends Dictionary ? Replace<Target, Source> : Target;
 
 /**
  * A simple and straightforward deep merge function that recursively merges objects.
@@ -43,7 +43,9 @@ export function combine<
 export function combine<
   Target extends Dictionary,
   Source extends Dictionary | Dictionary[],
->(target: Target, source: Source, visited = new WeakMap()) {
+>(target: Target, source?: Source, visited = new WeakMap()) {
+  // if (!source && isDictionary(target)) return target;
+
   if (Array.isArray(source)) {
     let result: any = target;
     for (let index = 0; index < source.length; index++) {
@@ -57,7 +59,8 @@ export function combine<
   }
 
   if (visited.has(target)) return visited.get(target);
-  const result: Dictionary = clone(target, visited);
+
+  const result = clone(target, visited);
   visited.set(target, result);
 
   const properties = Object.getOwnPropertyNames(source);

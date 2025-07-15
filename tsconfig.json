@@ -9,7 +9,7 @@
     "emitDeclarationOnly": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "module": "ES2022",
     "moduleResolution": "node",
@@ -25,7 +25,7 @@
     "skipLibCheck": true,
     "strict": true,
     "strictNullChecks": true,
-    "target": "ES2024",
+    "target": "es2022",
     "verbatimModuleSyntax": true
   },
   "exclude": ["node_modules", "dist", "build", "coverage", "examples"],

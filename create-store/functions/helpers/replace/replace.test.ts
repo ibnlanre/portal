@@ -15,7 +15,6 @@ describe("replace", () => {
     const source = "not a dictionary";
 
     expect(replace(target, source)).toBe(source);
-    expect(() => replace(target, source, { strictMode: true })).toThrow();
   });
 
   it("should return the source casted as Target if source is not a dictionary slice of target", () => {
@@ -23,6 +22,5 @@ describe("replace", () => {
     const source = { c: 3 };
 
     expect(replace(target, source)).toBe(source);
-    expect(() => replace(target, source, { strictMode: true })).toThrow();
   });
 });

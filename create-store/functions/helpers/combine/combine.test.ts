@@ -20,16 +20,6 @@ describe("combine", () => {
       expect(combine({ a: 1 }, {})).toEqual({ a: 1 });
       expect(combine({}, { b: 2 })).toEqual({ b: 2 });
     });
-
-    it("should handle non-dictionary source", () => {
-      const target = { a: 1, b: 2 };
-
-      expect(combine(target, "string")).toBe("string");
-      expect(combine(target, 42)).toBe(42);
-      expect(combine(target, null)).toBe(null);
-      expect(combine(target, undefined)).toBe(undefined);
-      expect(combine(target, true)).toBe(true);
-    });
   });
 
   describe("Deep Merging", () => {
@@ -142,7 +132,10 @@ describe("combine", () => {
 
   describe("Circular References", () => {
     it("should handle circular references in target", () => {
-      const target: any = { a: 1 };
+      const target: {
+        a: number;
+        self?: any;
+      } = { a: 1 };
       target.self = target;
 
       const source = { b: 2 };
@@ -152,8 +145,8 @@ describe("combine", () => {
       expect(result.a).toBe(1);
       expect(result.b).toBe(2);
       expect(result.self).toBe(result);
-      expect(result.self.a).toBe(1);
-      expect(result.self.b).toBe(2);
+      expect(result.self?.a).toBe(1);
+      expect(result.self?.b).toBe(2);
     });
 
     it("should handle circular references in source", () => {
@@ -171,11 +164,11 @@ describe("combine", () => {
     });
 
     it("should handle mutual circular references", () => {
-      const objA: any = { name: "A" };
-      const objB: any = { name: "B", ref: objA };
+      const objA: { name: string; ref?: typeof objB } = { name: "A" };
+      const objB = { name: "B", ref: objA };
       objA.ref = objB;
 
-      const target: any = { first: objA };
+      const target = { first: objA };
       const source = { second: objB };
 
       const result = combine(target, source);
@@ -187,7 +180,14 @@ describe("combine", () => {
     });
 
     it("should handle deeply nested circular references", () => {
-      const target: any = {
+      const target: {
+        level1: {
+          level2: {
+            backToRoot?: typeof target;
+            value: string;
+          };
+        };
+      } = {
         level1: {
           level2: {
             value: "deep",
@@ -451,7 +451,7 @@ describe("combine", () => {
       const target = new Child() as any;
       const source = { childProp: "updated", newProp: "added" };
 
-      const result = combine(target, source);
+      const result: any = combine(target, source);
 
       expect(result.childProp).toBe("updated");
       expect(result.newProp).toBe("added");

@@ -118,7 +118,7 @@ export function createCompositeStore<State extends Dictionary>(
       const next = isSetStateActionFunction(action)
         ? action(clone(current))
         : action;
-      const value = replace(current, next, { strictMode: true });
+      const value = replace(current, next);
       setProperty(value, path);
     };
   }
@@ -258,5 +258,6 @@ export function createCompositeStore<State extends Dictionary>(
     return proxy;
   }
 
-  return traverse(clone(initialState));
+  console.log("initialState", initialState);
+  return traverse(initialState);
 }

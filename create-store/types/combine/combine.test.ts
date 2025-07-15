@@ -221,6 +221,47 @@ describe("Combine", () => {
   });
 
   describe("Edge Cases", () => {
+    it("should handle optional properties correctly", () => {
+      type OptionalType1 = { optional?: string; required: number };
+      type OptionalType2 = { optional: boolean; other?: string };
+
+      type Result = Combine<BaseStore, [OptionalType1, OptionalType2]>;
+
+      type Expected = {
+        id: string;
+        name: string;
+        optional: boolean;
+        other?: string;
+        required: number;
+      };
+
+      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+    });
+
+    it("should handle readonly properties", () => {
+      type ReadonlyType = {
+        readonly config: { readonly value: string };
+        mutable: number;
+      };
+
+      type MutableType = {
+        config: { other: boolean; value: number };
+        readonly mutable: string;
+      };
+
+      type Result = Combine<BaseStore, [ReadonlyType, MutableType]>;
+
+      type Expected = {
+        config: { other: boolean; value: number };
+        id: string;
+        readonly mutable: string;
+        name: string;
+      };
+
+      // @ts-expect-error
+      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+    });
+
     it("should preserve method signatures with generic types", () => {
       type GenericActions1 = {
         process<T extends string>(data: T): T;

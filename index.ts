@@ -17,14 +17,13 @@ export type {
 } from "@/create-store/types/browser-storage-adapter";
 export type { Combine } from "@/create-store/types/combine";
 export type { CompositeStore } from "@/create-store/types/composite-store";
-export type { ContextFactory } from "@/create-store/types/context-initializer";
 export type { ContextScope } from "@/create-store/types/context-scope";
+export type { ContextValue } from "@/create-store/types/context-value";
 export type {
   CookieStorageAdapterOptions,
   GetCookieStorage,
   SetCookieStorage,
 } from "@/create-store/types/cookie-storage";
-export type { Replace as DeepMerge } from "@/create-store/types/replace";
 export type { DeepPartial } from "@/create-store/types/deep-partial";
 export type { Dictionary } from "@/create-store/types/dictionary";
 export type { Factory } from "@/create-store/types/factory";
@@ -39,6 +38,7 @@ export type { PartialStateManager } from "@/create-store/types/partial-state-man
 export type { PartialStateSetter } from "@/create-store/types/partial-state-setter";
 export type { Paths } from "@/create-store/types/paths";
 export type { PrimitiveStore } from "@/create-store/types/primitive-store";
+export type { Replace } from "@/create-store/types/replace";
 export type { ResolvePath } from "@/create-store/types/resolve-path";
 export type { Selector } from "@/create-store/types/selector";
 export type {
