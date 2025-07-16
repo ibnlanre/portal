@@ -10,5 +10,4 @@ export default defineConfig({
   platform: "browser",
   sourcemap: true,
   splitting: false,
-  target: "es2015",
 });
