@@ -6,7 +6,7 @@ import type { Subscriber } from "@/create-store/types/subscriber";
 
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 
-import { isAccessor } from "../../assertions/is-accessor";
+import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { clone } from "@/create-store/functions/helpers/clone";
 import { replace } from "@/create-store/functions/helpers/replace";
@@ -113,5 +113,5 @@ export function createPrimitiveStore<State>(
     set(target, prop, value) {
       return true;
     },
-  }) as PrimitiveStore<State>;
+  });
 }

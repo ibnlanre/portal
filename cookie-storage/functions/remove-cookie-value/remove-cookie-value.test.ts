@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { removeCookieValue } from "./index";
 import { setCookieValue } from "@/cookie-storage/functions/set-cookie-value";
+
+import { removeCookieValue } from "./index";
 
 vi.mock("@/cookie-storage/functions/set-cookie-value");
 

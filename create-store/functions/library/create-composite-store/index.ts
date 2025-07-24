@@ -9,6 +9,7 @@ import type { ResolvePath } from "@/create-store/types/resolve-path";
 import type { Selector } from "@/create-store/types/selector";
 import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
 import type { StatePath } from "@/create-store/types/state-path";
+import type { StoreValueResolver } from "@/create-store/types/store-value-resolver";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
 import { useCallback, useMemo, useSyncExternalStore } from "react";
@@ -224,7 +225,9 @@ export function createCompositeStore<State extends Dictionary>(
       },
       $key(path: Path) {
         const fullPath = joinPaths(chain, path);
-        return resolveProperty(fullPath);
+        return resolveProperty(fullPath) as StoreValueResolver<
+          ResolvePath<State, Path>
+        >;
       },
       $set(value: PartialStatePath<State, Path>) {
         return set(chain)(value);
@@ -245,7 +248,7 @@ export function createCompositeStore<State extends Dictionary>(
       return cache.get(value)!;
     }
 
-    const node = buildStore(path) as unknown as CompositeStore<State>;
+    const node = buildStore(path) as CompositeStore<State>;
 
     const proxy = new Proxy(node, {
       defineProperty(target, prop, descriptor) {

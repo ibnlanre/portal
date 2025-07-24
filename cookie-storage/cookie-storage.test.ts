@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { cookieStorage } from "./index";
 import { clearCookieStorage } from "@/cookie-storage/functions/clear-cookie-storage";
 import { getCookieByIndex } from "@/cookie-storage/functions/get-cookie-by-index";
 import { getCookieStorageLength } from "@/cookie-storage/functions/get-cookie-storage-length";
@@ -9,6 +8,8 @@ import { removeCookieValue } from "@/cookie-storage/functions/remove-cookie-valu
 import { setCookieValue } from "@/cookie-storage/functions/set-cookie-value";
 import { signCookie } from "@/cookie-storage/functions/sign-cookie";
 import { unsignCookie } from "@/cookie-storage/functions/unsign-cookie";
+
+import { cookieStorage } from "./index";
 
 vi.mock("@/cookie-storage/functions/clear-cookie-storage");
 vi.mock("@/cookie-storage/functions/get-cookie-by-index");

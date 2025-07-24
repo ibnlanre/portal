@@ -2,8 +2,9 @@ import type { CookieOptions } from "@/cookie-storage/types/cookie-options";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { setCookieValue } from "./index";
 import { formatCookieOptions } from "@/cookie-storage/helpers/format-cookie-options";
+
+import { setCookieValue } from "./index";
 
 vi.mock("@/cookie-storage/helpers/format-cookie-options");
 

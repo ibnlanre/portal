@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { clearCookieStorage } from "./index";
 import { removeCookieValue } from "@/cookie-storage/functions/remove-cookie-value";
+
+import { clearCookieStorage } from "./index";
 
 vi.mock("@/cookie-storage/functions/remove-cookie-value");
 

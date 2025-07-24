@@ -3,8 +3,9 @@ import type { DependencyList } from "react";
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { useSync } from "./index";
 import { combine } from "@/create-store/functions/helpers/combine";
+
+import { useSync } from "./index";
 
 describe("useSync", () => {
   it("should call factory on mount and return result", () => {

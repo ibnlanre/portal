@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createCookieStorageAdapter } from "./index";
 import { cookieStorage } from "@/cookie-storage";
+
+import { createCookieStorageAdapter } from "./index";
 
 const getItem = vi.spyOn(cookieStorage, "getItem");
 const setItem = vi.spyOn(cookieStorage, "setItem");

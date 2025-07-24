@@ -10,11 +10,12 @@ import {
   vi,
 } from "vitest";
 
-import { createContextStore } from "./index";
 import { createStore } from "@/create-store";
 import { combine } from "@/create-store/functions/helpers/combine";
 import { useAsync } from "@/create-store/functions/hooks/use-async";
 import { ErrorBoundary, setup } from "@/vitest.react";
+
+import { createContextStore } from "./index";
 
 describe("createContextStore", () => {
   describe("Basic functionality", () => {

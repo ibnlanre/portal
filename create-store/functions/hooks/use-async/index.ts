@@ -5,8 +5,9 @@ import type { AsyncState } from "@/create-store/types/async-state";
 
 import { useEffect, useReducer } from "react";
 
-import { reducer } from "./reducer";
 import { useVersion } from "@/create-store/functions/hooks/use-version";
+
+import { reducer } from "./reducer";
 
 /**
  * A custom hook for handling asynchronous effects with loading, error, and data states.

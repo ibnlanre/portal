@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { isDictionarySlice } from "./index";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
+
+import { isDictionarySlice } from "./index";
 
 vi.mock("@/create-store/functions/assertions/is-dictionary", () => ({
   isDictionary: vi.fn(),
