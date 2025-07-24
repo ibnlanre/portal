@@ -26,7 +26,7 @@ Whether you're building a small React component or a large-scale application, `@
   - [What is a store?](#what-is-a-store)
   - [Store types: Primitive and Composite](#store-types-primitive-and-composite)
   - [Immutability and reactivity](#immutability-and-reactivity)
-  - [⚠️ Important: Use Types, Not Interfaces](#⚠️-important-use-types-not-interfaces)
+  - [⚠️ Important: Use Types, Not Interfaces](#%EF%B8%8F-important-use-types-not-interfaces)
 - [Configure your stores](#configure-your-stores)
 - [Use the API: Reference and examples](#use-the-api-reference-and-examples)
   - [Create stores: `createStore()`](#create-stores-createstore)
@@ -485,7 +485,8 @@ function UserProfile() {
 
   return (
     <div style={{ background: theme === "dark" ? "#333" : "#fff" }}>
-      User ID: {userId}
+      <p>User ID: {userId}</p>
+      <p>Theme: {theme}</p>
     </div>
   );
 }
@@ -523,8 +524,9 @@ const [CounterProvider, useCounterStore] = createContextStore(
       },
     };
 
-    const store = createStore(
-      combine({ count: context.initialCount }, actions)
+    const store = useSync(
+      () => createStore(combine({ count: context.initialCount }, actions)),
+      [context.initialCount]
     );
 
     return store;
@@ -554,22 +556,15 @@ function App() {
 }
 ```
 
-**Key Features:**
+**Key Benefits:**
 
-- **Dynamic Initialization**: Initialize stores with runtime values from props, context, or API responses
-- **Type Safety**: Full TypeScript support with proper type inference for context and store
-- **React Integration**: Works seamlessly with React's component lifecycle and context system
-- **Memoization**: Store instances are memoized based on context value to prevent unnecessary re-creation
-- **Nested Providers**: Support for multiple independent providers and nested providers of the same type
-- **Error Handling**: Clear error messages when `useStore` is called outside of the provider
+- **Dynamic Store Creation**: Initialize stores with runtime values from context, props, or API responses
+- **Type-Safe Integration**: Full TypeScript support with proper type inference
+- **Maximum Flexibility**: Full control over store initialization and memoization strategies
+- **Flexible Architecture**: Support for nested providers and multi-tenant applications
+- **Developer Experience**: Clear error messages and seamless React integration
 
-**Use Cases:**
-
-- **User-specific stores**: Initialize stores with user data from authentication context
-- **Feature flags**: Create stores based on feature flag configuration
-- **Multi-tenant applications**: Initialize stores with tenant-specific configuration
-- **Server-side rendering**: Initialize stores with server-rendered data
-- **Theme providers**: Create theme-aware stores with runtime theme configuration
+> **Note:** The factory function passed to `createContextStore` runs on every render. You're responsible for memoizing values if needed. This design gives you complete freedom to use any hooks or memoization strategy within the factory function.
 
 ### Use store instance methods
 
