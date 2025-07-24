@@ -1017,29 +1017,29 @@ When defining actions, to update state, you must use the variable that holds the
       | { type: "DECREMENT"; payload: number }
       | { type: "RESET" };
 
-    const dispatchingCounterStore = createStore({
+    const counterStore = createStore({
       value: 0,
       dispatch(action: CounterAction) {
         switch (action.type) {
           case "INCREMENT":
-            // Use 'dispatchingCounterStore.value' to access $set
-            dispatchingCounterStore.value.$set((prev) => prev + action.payload);
+            // Use 'counterStore.value' to access $set
+            counterStore.value.$set((prev) => prev + action.payload);
             break;
           case "DECREMENT":
-            dispatchingCounterStore.value.$set((prev) => prev - action.payload);
+            counterStore.value.$set((prev) => prev - action.payload);
             break;
           case "RESET":
-            dispatchingCounterStore.value.$set(0);
+            counterStore.value.$set(0);
             break;
         }
       },
     });
 
-    dispatchingCounterStore.dispatch({ type: "INCREMENT", payload: 5 });
-    console.log(dispatchingCounterStore.value.$get()); // 5
+    counterStore.dispatch({ type: "INCREMENT", payload: 5 });
+    console.log(counterStore.value.$get()); // 5
 
-    dispatchingCounterStore.dispatch({ type: "RESET" });
-    console.log(dispatchingCounterStore.value.$get()); // 0
+    counterStore.dispatch({ type: "RESET" });
+    console.log(counterStore.value.$get()); // 0
     ```
 
 ### Actions as hooks
@@ -1520,7 +1520,7 @@ const appConfig = combine(baseConfig, [developmentConfig, userPreferences]);
 //     showDebugInfo: true,                    // from developmentConfig
 //     fontSize: 16                            // from userPreferences
 //   },
-//   notifications: {                           // from userPreferences
+//   notifications: {                          // from userPreferences
 //     email: true,
 //     push: false
 //   }
@@ -2052,7 +2052,8 @@ Both adapters return a tuple: `[getStateFunction, setStateFunction]`.
 - `getStateFunction(): S | null`: Retrieves the state from storage. Returns `null` if no state is found for the key.
 - `setStateFunction(newState: S): void`: Saves the new state to storage.
 
-**1. `createLocalStorageAdapter`**
+#### `createLocalStorageAdapter`
+
 Persists state in `localStorage`. Data remains until explicitly cleared or removed by the user/browser.
 
 **Example:**
@@ -2082,7 +2083,8 @@ persistentCounterStore.$set(10); // State is now 10 and saved to Local Storage
 persistentCounterStore.$set((prev) => prev + 5); // State is 15 and saved
 ```
 
-**2. `createSessionStorageAdapter`**
+#### `createSessionStorageAdapter`
+
 Persists state in `sessionStorage`. Data remains for the duration of the page session (until the browser tab is closed).
 
 **Example:**
