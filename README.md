@@ -4,22 +4,17 @@
 [![Build Status](https://img.shields.io/github/actions/workflow/status/ibnlanre/portal/pages/pages-build-deployment?branch=master)](https://github.com/ibnlanre/portal/actions)
 [![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD--3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
----
+`@ibnlanre/portal` is a state management library designed to bridge the gap between simple state hooks and complex state machines. It provides an intuitive, type-safe approach to state management that grows with your application's needs.
 
-## Why use @ibnlanre/portal?
+Perfect for teams that:
 
-> **@ibnlanre/portal** is built for developers who want:
->
-> - **Type safety** and deep TypeScript integration
-> - **Intuitive API** for both primitive and complex state
-> - **Seamless React integration** with hooks and context
-> - **Advanced features** like deep merging, circular reference support, and async initialization
-> - **Flexible persistence** (local/session/cookie storage)
-> - **Actions as hooks** for co-locating logic and state
->
-> If you want a state library that feels natural in TypeScript and React, and scales from simple counters to complex app state, this is for you.
+- Need a consistent state management pattern across their application
+- Want to leverage TypeScript's type system for safer code
+- Build complex React applications with nested state requirements
+- Require flexible state persistence options
+- Value code organization and maintainability
 
----
+Whether you're building a small React component or a large-scale application, `@ibnlanre/portal` adapts to your needs without forcing specific architectural patterns or unnecessary complexity.
 
 ## Table of contents
 
@@ -31,7 +26,7 @@
   - [What is a store?](#what-is-a-store)
   - [Store types: Primitive and Composite](#store-types-primitive-and-composite)
   - [Immutability and reactivity](#immutability-and-reactivity)
-  - [⚠️ Important: Use Types, Not Interfaces](#important-use-types-not-interfaces)
+  - [⚠️ Important: Use Types, Not Interfaces](#⚠️-important-use-types-not-interfaces)
 - [Configure your stores](#configure-your-stores)
 - [Use the API: Reference and examples](#use-the-api-reference-and-examples)
   - [Create stores: `createStore()`](#create-stores-createstore)
@@ -180,8 +175,6 @@ For projects that don't use a package manager (e.g., simple HTML pages or online
 <!-- The library will be available globally, e.g., window.Portal.createStore -->
 ```
 
----
-
 ## Understand core concepts
 
 Understanding these core concepts will help you use `@ibnlanre/portal` effectively.
@@ -216,8 +209,6 @@ Both store types share a consistent API for getting, setting, and subscribing to
 `@ibnlanre/portal` embraces immutability. When you update the state, the library creates a new state object instead of modifying the existing one. This helps prevent bugs and makes state changes predictable.
 
 > **Tip:** Stores are reactive. When a store's state changes, any components or subscribers listening to that store (or its parts) are notified, allowing your UI to update automatically.
-
----
 
 ### ⚠️ Important: Use Types, Not Interfaces
 
@@ -303,8 +294,6 @@ const apiData: Normalize<APIResponse> = {
 const store = createStore(apiData);
 ```
 
----
-
 ## Configure your stores
 
 `@ibnlanre/portal` is designed to work with minimal configuration. The primary configuration points are:
@@ -313,8 +302,6 @@ const store = createStore(apiData);
 2.  **Persistence Adapters**: If you use state persistence, you configure adapters with options like storage keys and serialization functions.
 
 Refer to the [Persist state](#persist-state) section for detailed configuration of each adapter.
-
----
 
 ## Use the API: Reference and examples
 
@@ -583,8 +570,6 @@ function App() {
 - **Multi-tenant applications**: Initialize stores with tenant-specific configuration
 - **Server-side rendering**: Initialize stores with server-rendered data
 - **Theme providers**: Create theme-aware stores with runtime theme configuration
-
----
 
 ### Use store instance methods
 
@@ -1054,8 +1039,6 @@ When defining actions, to update state, you must use the variable that holds the
     console.log(dispatchingCounterStore.value.$get()); // 0
     ```
 
----
-
 ### Actions as hooks
 
 `@ibnlanre/portal` allows you to define functions within your store that can be used as React custom hooks. This powerful feature enables you to co-locate complex, stateful logic—including side effects managed by `useEffect` or component-level state from `useState` directly with the store it relates to.
@@ -1064,7 +1047,7 @@ To create an action that functions as a hook, simply follow React's convention: 
 
 This pattern leverages React's own rules for hooks. It doesn't prevent the function from being recreated on re-renders (which is normal React behavior), but it provides an excellent way to organize and attach reusable hook logic to your store instance.
 
-> ⚠️ Note: These functions are not automatically memoized. To prevent recreating hook logic on every render, define your store at the module level whenever possible. If you need to create a store inside a React component, use the `useMemo` hook to ensure the store is created based on stable dependencies.
+> ⚠️ **Note:** These functions are not automatically memoized. To prevent recreating hook logic on every render, define your store at the module level whenever possible. If you need to create a store inside a React component, use the `useMemo` hook to ensure the store is created based on stable dependencies.
 
 **Example:**
 
@@ -1130,8 +1113,6 @@ In this example, `useAutoResetMessage` encapsulates its own state and side effec
 - Reuse complex hook logic across components
 - Co-locate logic with the state it touches
 - Maintain a clean separation of concern between logic and UI
-
----
 
 ### Asynchronous effects: `useAsync`
 
@@ -1213,8 +1194,6 @@ function UserProfileComponent({ userId }: UserProfileComponentProps) {
 }
 ```
 
----
-
 ### Memoized computations: `useSync`
 
 The `useSync` hook provides a `useMemo` implementation with deep dependency verification. It's designed to compute and memoize values based on complex dependencies, with automatic re-computation when any part of the dependency tree changes.
@@ -1271,8 +1250,6 @@ function ThemedComponent() {
 }
 ```
 
----
-
 ### Deep dependency tracking: `useVersion`
 
 The `useVersion` hook provides deep dependency comparison through deep equality checking, making it ideal for complex state management scenarios. It allows you to track changes in deeply nested objects and arrays, providing both deep equality checking and version tracking for React hooks. It's the foundational hook used internally by `useAsync` and `useSync`, but can also be used directly when you want to build custom hooks with deep dependency checking using native React hooks like `useMemo` or `useEffect`.
@@ -1312,13 +1289,9 @@ const settingsStore = createStore({
 });
 ```
 
-The `useVersion` hook is particularly useful when you want to maintain control over your hook implementation while getting deep comparison benefits.
+The `useVersion` hook is particularly useful when you want deep dependency tracking for custom hooks, or when native React hooks (`useMemo`, `useEffect`, `useCallback`) need to respond to changes in complex objects or arrays.
 
-> **When should I use `useVersion`?**
->
-> Use `useVersion` when you want deep dependency tracking for custom hooks, or when native React hooks (`useMemo`, `useEffect`, `useCallback`) need to respond to changes in complex objects or arrays. It's especially useful for optimizing performance and avoiding unnecessary re-computations.
-
----
+> **Tip:** Rather than using `useEffect` to sync the store state to an external service, consider using `$act` for more efficient updates. This allows you to subscribe to changes in the store and react accordingly, while also providing a way to unsubscribe when no longer needed.
 
 ### Context-based stores: `createContextScope`
 
@@ -1419,8 +1392,6 @@ function Settings() {
   );
 }
 ```
-
----
 
 ### Combine stores and actions: `combine()`
 
@@ -1551,8 +1522,6 @@ const appConfig = combine(baseConfig, [developmentConfig, userPreferences]);
 const configStore = createStore(appConfig);
 ```
 
----
-
 ### Initialize state asynchronously
 
 You can initialize a store with state fetched asynchronously by passing an `async` function (that returns a `Promise`) to `createStore`. The store will initially be empty (or hold the unresolved Promise object itself, depending on internal handling) until the Promise resolves.
@@ -1631,8 +1600,6 @@ async function loadAppData() {
 
 loadAppData();
 ```
-
----
 
 ### Handle circular references
 
@@ -1725,8 +1692,6 @@ console.log(nodeB.name); // "Node Beta"
 
 > **Warning:** Circular references are supported, but be mindful of performance with very large or deeply nested graphs.
 
----
-
 ### Handle arrays in stores
 
 When your store's state includes arrays, `@ibnlanre/portal` treats them in a specific way:
@@ -1812,8 +1777,6 @@ const itemStores = createStore({
 // Now itemStores.item_1 is a store, itemStores.item_1.name is a store, etc.
 ```
 
----
-
 ### Normalize objects: `normalizeObject()`
 
 The `normalizeObject()` function converts interface-typed objects (like `window`, DOM elements, or complex API responses that might not be plain JavaScript objects) into dictionary types (`Record<PropertyKey, unknown>`) compatible with composite stores. This is important when an object's structure includes methods, symbols, or other non-serializable parts that shouldn't be part of the reactive state, or when TypeScript's type system for interfaces doesn't align with the expected structure for a composite store.
@@ -1897,8 +1860,6 @@ normalizeObject<T extends object>(obj: T): Record<PropertyKey, unknown> // Simpl
     // userProfileStore.getFullName is undefined (method was stripped)
     // userProfileStore.internalConfig is undefined (symbol key was excluded)
     ```
-
----
 
 ### Infer state types: `InferType`
 
@@ -2056,8 +2017,6 @@ InferType<Store, Path?>;
 
 The `InferType` utility ensures type safety when working with store data outside of the reactive context, making it easier to integrate Portal stores with other parts of your TypeScript application.
 
----
-
 ## Persist state
 
 `@ibnlanre/portal` allows you to persist store state across sessions using storage adapters. These adapters provide `getState` and `setState` functions that you integrate with your store.
@@ -2143,8 +2102,6 @@ sessionDataStore.$set({ guestId: "guest-123", lastPage: "/products" });
 // This data will be cleared when the tab is closed.
 ```
 
----
-
 ### Cookie Storage adapter
 
 Use `createCookieStorageAdapter` for persisting state in browser cookies.
@@ -2215,8 +2172,6 @@ prefsStore.$set({ theme: "dark" }); // State saved to a signed cookie
 
 **Signed cookies**: If you provide a `secret`, cookies are automatically signed before being set and verified when retrieved. This helps protect against client-side tampering.
 
----
-
 ### Browser Storage adapter
 
 For custom storage mechanisms (e.g., IndexedDB, a remote API, `chrome.storage`), use `createBrowserStorageAdapter`.
@@ -2280,8 +2235,6 @@ const customDataStore = createStore(initialCustomData);
 customDataStore.$act(setCustomState, false);
 customDataStore.$set({ lastSync: new Date().toISOString() });
 ```
-
----
 
 ### Async Browser Storage adapter
 
@@ -2357,8 +2310,6 @@ store.$act(setEncryptedState, false);
 
 // When the store is initialized, the data will be decrypted.
 ```
-
----
 
 ## Cookie Storage
 
@@ -2540,8 +2491,6 @@ Retrieves the total number of cookies accessible to the current document.
   console.log(`There are ${numberOfCookies} cookies.`);
   ```
 
----
-
 ## Optimize performance
 
 `@ibnlanre/portal` is designed for performance, but here are some tips for optimal usage in complex applications:
@@ -2641,8 +2590,6 @@ Retrieves the total number of cookies accessible to the current document.
 
 - **Profile and measure**: Use React DevTools Profiler and browser performance tools to identify actual performance bottlenecks rather than premature optimization.
 
----
-
 ## Understand limitations
 
 While `@ibnlanre/portal` is versatile, it's important to be aware of its limitations:
@@ -2652,8 +2599,6 @@ While `@ibnlanre/portal` is versatile, it's important to be aware of its limitat
 - **Reactivity scope**: Reactivity is triggered by changes to store values. If you mutate an object or array obtained via `$get()` directly (without using `$set()`), the store will not detect the change, and subscribers (including React components using `$use()`) will not update. Always use `$set()` or the updater function from `$use()` to modify state.
 - **Promise resolution in `createStore`**: When `createStore` is initialized with a Promise, the resolved value is treated as a single entity. If the Promise resolves to an object, this object becomes the state of a primitive-like store, not a composite store with automatically created nested properties. To achieve a nested structure from async data, initialize the store with a placeholder and use `$set` after data fetching.
 - **Server-Side Rendering (SSR)**: While stores can be used in Node.js environments, managing state hydration and consistency in SSR setups requires careful consideration. The library itself doesn't provide out-of-the-box SSR-specific utilities beyond its core functionality.
-
----
 
 ## Follow best practices
 
