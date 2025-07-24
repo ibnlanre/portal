@@ -26,7 +26,7 @@ function AsyncTestComponent({ dependencies, effect }: AsyncTestComponentProps) {
 
 describe("useAsync", () => {
   it("should show loading then data on success", async () => {
-    const effect: AsyncFunction = async () => {
+    const effect: AsyncFunction<{ value: string }> = async () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
       return { value: "success" };
     };
@@ -43,7 +43,7 @@ describe("useAsync", () => {
   });
 
   it("should show error on failure", async () => {
-    const effect: AsyncFunction = async () => {
+    const effect: AsyncFunction<never> = async () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
       throw new Error("fail");
     };
@@ -61,7 +61,7 @@ describe("useAsync", () => {
     function Wrapper() {
       const [count, setCount] = useState(0);
 
-      const effect: AsyncFunction = async () => {
+      const effect: AsyncFunction<{ count: number }> = async () => {
         await new Promise((resolve) => setTimeout(resolve, 10));
         return { count };
       };
@@ -105,7 +105,7 @@ describe("useAsync", () => {
     function Wrapper() {
       const [count, setCount] = useState(0);
 
-      const effect: AsyncFunction = async ({ signal }) => {
+      const effect: AsyncFunction<{ count: number }> = async (signal) => {
         await new Promise((resolve) => setTimeout(resolve, 30));
 
         if (signal.aborted) {
@@ -147,7 +147,7 @@ describe("useAsync", () => {
   });
 
   it("should handle signal cancellation properly", async () => {
-    const effect: AsyncFunction = async ({ signal }) => {
+    const effect: AsyncFunction<{ message: string }> = async (signal) => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       if (signal.aborted) {

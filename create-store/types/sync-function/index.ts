@@ -1,3 +1,1 @@
-export type SyncFunction<Data = unknown, Params = unknown> = (
-  params: Params
-) => Data;
+export type SyncFunction<Data = unknown> = () => Data;

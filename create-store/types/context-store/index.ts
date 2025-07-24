@@ -1,6 +1,6 @@
 import type { FC, PropsWithChildren } from "react";
 
-export type ContextScope<Context, Scope> = [
+export type ContextStore<Context, Store> = [
   FC<PropsWithChildren<{ value: Context }>>,
-  () => Scope,
+  () => Store,
 ];

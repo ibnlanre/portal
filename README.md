@@ -378,13 +378,18 @@ createContextStore<Context, ContextStore>(
 
 **Basic Example:**
 
-```typescript
+```tsx
 import { createContextStore, createStore } from "@ibnlanre/portal";
 
+interface UserProps {
+  userId: string;
+  theme: "light" | "dark";
+}
+
 // Create a context store for user settings
-const [UserProvider, useUserStore] = createContextStore(
-  (context: { userId: string; theme: "light" | "dark" }) => {
-    return createStore(context)
+const [UserProvider, useUserStore] = createContextScope(
+  (context: UserProps) => {
+    return createStore(context);
   }
 );
 
@@ -399,18 +404,21 @@ function UserProfile() {
   );
 }
 
-function App() {
+function App(props: UserProps) {
   return (
-    <UserProvider value={{ userId: "123", theme: "dark" }}>
+    <UserProvider value={props}>
+      {/* The UserProfile component can now access the userId and theme from the context */}
       <UserProfile />
     </UserProvider>
   );
 }
+
+<App userId="123" theme="dark" />;
 ```
 
 **Advanced Example with Actions:**
 
-```typescript
+```tsx
 import { createContextStore, createStore, combine } from "@ibnlanre/portal";
 
 type CounterContext = { initialCount: number };
@@ -419,14 +427,14 @@ const [CounterProvider, useCounterStore] = createContextStore(
   (context: CounterContext) => {
     const actions = {
       increment: () => {
-        store.count.$set(prev => prev + 1);
+        store.count.$set((prev) => prev + 1);
       },
       decrement: () => {
-        store.count.$set(prev => prev - 1);
+        store.count.$set((prev) => prev - 1);
       },
       reset: () => {
         store.count.$set(context.initialCount);
-      }
+      },
     };
 
     const store = createStore(
@@ -653,6 +661,8 @@ $act(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () =
     }, false); // `false` prevents immediate call
 
     statusStore.$set("active"); // Logs: "Status updated to: active"
+
+    // Unsubscribe to stop listening
     unsubscribeNonImmediate();
     ```
 
@@ -660,14 +670,17 @@ $act(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () =
 
     ```typescript
     const settingsStore = createStore({ theme: "light", volume: 70 });
+
+    // Setting up subscription to changes in settings
     const unsubscribeSettings = settingsStore.$act((newSettings) => {
       console.log("Settings updated:", newSettings);
     });
-    // Immediately logs: Settings updated: { theme: "light", volume: 70 }
 
+    // Changing the theme triggers the subscription
     settingsStore.theme.$set("dark");
+
     // Logs: Settings updated: { theme: "dark", volume: 70 }
-    unsubscribeSettings();
+    unsubscribeSettings(); // Stop listening to changes
     ```
 
 #### `$key()`
@@ -702,14 +715,25 @@ const appStore = createStore({
 
 // Access nested stores using $key
 const themeStore = appStore.$key("user.preferences.theme");
+
+// Immediately get the current theme
 console.log(themeStore.$get()); // "dark"
 
+// Instantly update the theme
 themeStore.$set("light");
-console.log(appStore.user.preferences.theme.$get()); // "light" (state is synced)
 
-// $key can be used on intermediate stores as well
+// The update is reflected in the original store
+console.log(appStore.user.preferences.theme.$get()); // "light"
+```
+
+`$key` can be used on intermediate stores as well. For example, if you want to access a nested property like `user.preferences.language`, you can do so directly:
+
+```typescript
+// Accessing a nested store using $key
 const preferencesStore = appStore.user.$key("preferences");
-const languageStore = preferencesStore.$key("language"); // Equivalent to appStore.$key("user.preferences.language")
+
+// Equivalent to appStore.$key("user.preferences.language")
+const languageStore = preferencesStore.$key("language");
 console.log(languageStore.$get()); // "en"
 
 // Using methods on the store returned by $key
@@ -719,7 +743,8 @@ const unsubscribeTheme = appStore
     console.log("Theme via $key:", newTheme);
   });
 
-appStore.user.preferences.theme.$set("blue"); // Triggers the subscription
+// Triggers the subscription
+appStore.user.preferences.theme.$set("blue");
 unsubscribeTheme();
 ```
 
@@ -755,7 +780,6 @@ $use<R>(
     export const counterStore = createStore(0);
 
     // src/components/counter.tsx
-    import React from "react";
     import { counterStore } from "../stores/counterStore";
 
     function Counter() {
@@ -776,6 +800,7 @@ $use<R>(
     ```
 
 2.  **Using a selector with `$use`:**
+    Selectors compute derived values from the store state without modifying the original state. The selector is only re-evaluated when necessary, optimizing performance.
 
     ```tsx
     // In your component:
@@ -790,19 +815,20 @@ $use<R>(
     ```
 
 3.  **Using a selector with dependencies:**
+    This is useful when the selector depends on props or other state values. The dependencies can be any value, including primitive values, objects, or arrays. If the dependencies change, the selector will re-run to compute a new value.
 
     ```tsx
-    import React, { useState } from "react";
-    import { someStore } from "../stores/some-store.ts"; // Assume some-store holds a string
+    import { useState } from "react";
+    import { displayStore } from "./store";
 
     interface DisplayValueProps {
       prefixFromProp: string;
     }
 
     function DisplayValue({ prefixFromProp }: DisplayValueProps) {
-      const [displayValue, setValueInStore] = someStore.$use(
-        (storeValue) => `${prefixFromProp}${storeValue}`,
-        [prefixFromProp] // Selector re-runs if prefixFromProp changes
+      const [displayValue, setDisplayValue] = displayStore.$use(
+        (value) => `${prefixFromProp}${value}`,
+        [prefixFromProp] // Dependencies array
       );
 
       return (
@@ -810,8 +836,8 @@ $use<R>(
           <p>{displayValue}</p>
           <input
             type="text"
-            value={someStore.$get()} // For controlled input, get raw value
-            onChange={(e) => setValueInStore(e.target.value)}
+            value={displayValue}
+            onChange={(e) => setDisplayValue(e.target.value)}
           />
         </div>
       );
@@ -824,6 +850,7 @@ $use<R>(
     ```tsx
     // store.ts
     import { createStore } from "@ibnlanre/portal";
+
     export const userStore = createStore({
       name: "Alex",
       age: 30,
@@ -831,7 +858,6 @@ $use<R>(
     });
 
     // user-profile.tsx
-    import React from "react";
     import { userStore } from "./store";
 
     function UserProfile() {
@@ -1031,7 +1057,7 @@ const userStore = createStore({
   profile: null as UserProfile | null,
   useUsers: async () => {
     const { data, loading, error } = useAsync(
-      async ({ signal }) => {
+      async (signal) => {
         const response = await fetch("/api/users", { signal });
 
         if (!response.ok) throw new Error("Failed to fetch users");
@@ -1044,15 +1070,15 @@ const userStore = createStore({
   },
   useProfile: (userId: string) => {
     const { data, loading, error } = useAsync(
-      async ({ params, signal }) => {
-        if (!params.userId) throw new Error("User ID is required");
+      async (signal) => {
+        if (!userId) throw new Error("User ID is required");
 
-        const response = await fetch(`/api/users/${params.userId}`, { signal });
+        const response = await fetch(`/api/users/${userId}`, { signal });
 
         if (!response.ok) throw new Error("Failed to fetch user");
         return response.json() as UserProfile;
       },
-      { userId } // Dependencies can be any shape
+      [userId] // Dependency included in a list
     );
 
     if (data) userStore.profile.$set(data);
@@ -1064,7 +1090,6 @@ const userStore = createStore({
 **Usage in React component:**
 
 ```tsx
-
 interface UserProfileComponentProps {
   userId: string;
 }
@@ -1111,10 +1136,8 @@ const settingsStore = createStore({
     const [fontSize] = settingsStore.fontSize.$use();
     const [language] = settingsStore.language.$use();
 
-    const dependencies = { theme, fontSize, language };
-
     // This will only re-compute when theme, fontSize, or language change
-    return useSync(({ theme, fontSize, language }) => {
+    return useSync(() => {
       return {
         cssVariables: {
           "--theme": theme,
@@ -1127,7 +1150,7 @@ const settingsStore = createStore({
           colorScheme: theme,
         },
       };
-    }, dependencies);
+    }, [theme, fontSize, language]);
   },
 });
 

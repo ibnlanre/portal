@@ -1,4 +1,3 @@
-export type AsyncFunction<Data = unknown, Params = unknown> = (options: {
-  params: Params;
-  signal: AbortSignal;
-}) => Promise<Data>;
+export type AsyncFunction<Data = unknown> = (
+  signal: AbortSignal
+) => Promise<Data>;

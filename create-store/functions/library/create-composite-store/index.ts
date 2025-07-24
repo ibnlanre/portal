@@ -11,7 +11,7 @@ import type { SetPartialStateAction } from "@/create-store/types/set-partial-sta
 import type { StatePath } from "@/create-store/types/state-path";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
@@ -165,6 +165,10 @@ export function createCompositeStore<State extends Dictionary>(
     };
   }
 
+  function createSubscribe<Path extends Paths<State>>(path?: Path) {
+    return (callback: () => void) => act(callback, path);
+  }
+
   function use<
     Value extends StatePath<State, Path>,
     Path extends Paths<State>,
@@ -172,12 +176,13 @@ export function createCompositeStore<State extends Dictionary>(
   >(
     path?: Path,
     selector?: Selector<Value, Result>,
-    dependencies: unknown[] = []
+    dependencies?: unknown
   ): PartialStateManager<State, Result> {
-    const [value, setValue] = useState(() => resolvePath(state, path));
+    const getSnapshot = useCallback(() => resolvePath(state, path), [path]);
+    const subscribe = useCallback(createSubscribe(path), [path]);
 
+    const value = useSyncExternalStore(subscribe, getSnapshot);
     const setter = useMemo(() => set(path), [path]);
-    useEffect(() => act(setValue, path), [path]);
 
     const comparison = useVersion([value, dependencies]);
     const resolvedValue = useMemo(() => {

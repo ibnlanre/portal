@@ -1,1 +1,1 @@
-export type ContextValue<Context, Scope> = (context: Context) => Scope;
+export type ContextValue<Context, Store> = (context: Context) => Store;

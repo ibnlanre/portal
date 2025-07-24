@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@ibnlanre/clone':
+        specifier: ^0.5.1
+        version: 0.5.1
     devDependencies:
       '@arethetypeswrong/cli':
         specifier: ^0.18.2
@@ -588,6 +592,9 @@ packages:
   '@humanwhocodes/retry@0.4.3':
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
+
+  '@ibnlanre/clone@0.5.1':
+    resolution: {integrity: sha512-eBkYIXIMwcbXDZq2B4vC4MTEEjW36AEqJApI/KFR56c712vOF8FvK9mREmxPCH6uUjgke28EFs8awNCItd/ksA==}
 
   '@isaacs/balanced-match@4.0.1':
     resolution: {integrity: sha512-yzMTt9lEb8Gv7zRioUilSglI0c0smZ9k5D65677DLWLtWJaXIS3CqcGyUFByYKlnUj6TkjLVs54fBl6+TiGQDQ==}
@@ -4062,6 +4069,8 @@ snapshots:
   '@humanwhocodes/retry@0.3.1': {}
 
   '@humanwhocodes/retry@0.4.3': {}
+
+  '@ibnlanre/clone@0.5.1': {}
 
   '@isaacs/balanced-match@4.0.1': {}
 

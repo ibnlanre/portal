@@ -2,33 +2,33 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { Fragment } from "react";
 import { describe, expect, it, vi } from "vitest";
 
-import { createContextScope } from "./index";
+import { createContextStore } from "./index";
 import { createStore } from "@/create-store";
 import { combine } from "@/create-store/functions/helpers/combine";
 import { useAsync } from "@/create-store/functions/hooks/use-async";
 import { ErrorBoundary, setup } from "@/vitest.react";
 
-describe("createContextScope", () => {
+describe("createContextStore", () => {
   describe("Basic functionality", () => {
-    it("should create a provider and useScope hook", () => {
-      const [Provider, useScope] = createContextScope(
+    it("should create a provider and useStore hook", () => {
+      const [Provider, useStore] = createContextStore(
         (context: { value: string }) => createStore(context)
       );
 
       expect(Provider).toBeDefined();
-      expect(useScope).toBeDefined();
+      expect(useStore).toBeDefined();
 
       expect(typeof Provider).toBe("function");
-      expect(typeof useScope).toBe("function");
+      expect(typeof useStore).toBe("function");
     });
 
-    it("should throw error when useScope is called outside provider", () => {
-      const [, useScope] = createContextScope((context: { value: string }) => {
+    it("should throw error when useStore is called outside provider", () => {
+      const [, useStore] = createContextStore((context: { value: string }) => {
         return createStore(context.value);
       });
 
       function TestComponent() {
-        useScope();
+        useStore();
         return <div data-testid="test">Test</div>;
       }
 
@@ -42,12 +42,12 @@ describe("createContextScope", () => {
     });
 
     it("should provide store through context when wrapped in provider", () => {
-      const [Provider, useScope] = createContextScope(
+      const [Provider, useStore] = createContextStore(
         (context: { value: string }) => createStore(context.value)
       );
 
       function TestComponent() {
-        const store = useScope();
+        const store = useStore();
         const value = store.$get();
         return <div data-testid="value">{value}</div>;
       }
@@ -64,12 +64,12 @@ describe("createContextScope", () => {
 
   describe("Store initialization with context", () => {
     it("should initialize store with context value", () => {
-      const [Provider, useScope] = createContextScope(
+      const [Provider, useStore] = createContextStore(
         (context: { count: number }) => createStore(context.count)
       );
 
       function TestComponent() {
-        const store = useScope();
+        const store = useStore();
         const count = store.$get();
         return <div data-testid="count">{count}</div>;
       }
@@ -84,12 +84,12 @@ describe("createContextScope", () => {
     });
 
     it("should reinitialize store when context value changes", () => {
-      const [Provider, useScope] = createContextScope(
+      const [Provider, useStore] = createContextStore(
         (context: { count: number }) => createStore(context.count)
       );
 
       function TestComponent() {
-        const store = useScope();
+        const store = useStore();
         const count = store.$get();
         return <div data-testid="count">{count}</div>;
       }
@@ -114,7 +114,7 @@ describe("createContextScope", () => {
 
   describe("Complex store scenarios", () => {
     it("should work with stores that combine state and actions", async () => {
-      const [CountProvider, useCountStore] = createContextScope(
+      const [CountProvider, useCountStore] = createContextStore(
         (context: { initialCount: number }) => {
           const actions = {
             decrement: () => {
@@ -197,7 +197,7 @@ describe("createContextScope", () => {
         };
       };
 
-      const [UserProvider, useUserStore] = createContextScope(
+      const [UserProvider, useUserStore] = createContextStore(
         (context: UserContext) => createStore(context)
       );
 
@@ -243,10 +243,10 @@ describe("createContextScope", () => {
 
   describe("Multiple providers", () => {
     it("should support multiple independent providers", () => {
-      const [ValueProvider, useValueStore] = createContextScope(
+      const [ValueProvider, useValueStore] = createContextStore(
         (context: { value: string }) => createStore(context.value)
       );
-      const [CountProvider, useCountStore] = createContextScope(
+      const [CountProvider, useCountStore] = createContextStore(
         (context: { count: number }) => createStore(context.count)
       );
 
@@ -278,19 +278,19 @@ describe("createContextScope", () => {
     });
 
     it("should support nested providers of the same type", () => {
-      const [LevelProvider, useLevelScope] = createContextScope(
+      const [LevelProvider, useLevelStore] = createContextStore(
         (context: { level: number }) => createStore(context.level)
       );
 
       function InnerComponent() {
-        const store = useLevelScope();
+        const store = useLevelStore();
         const level = store.$get();
 
         return <div data-testid="inner-level">{level}</div>;
       }
 
       function OuterComponent() {
-        const store = useLevelScope();
+        const store = useLevelStore();
         const level = store.$get();
 
         return (
@@ -319,10 +319,10 @@ describe("createContextScope", () => {
       const initializerMock = vi.fn((context: { value: string }) => {
         return createStore(context.value);
       });
-      const [Provider, useScope] = createContextScope(initializerMock);
+      const [Provider, useStore] = createContextStore(initializerMock);
 
       function TestComponent() {
-        const store = useScope();
+        const store = useStore();
         const value = store.$get();
         return <div data-testid="value">{value}</div>;
       }
@@ -362,7 +362,7 @@ describe("createContextScope", () => {
         theme: "dark" | "light";
       };
 
-      const [AppProvider, useAppScope] = createContextScope(
+      const [AppProvider, useAppStore] = createContextStore(
         (context: AppContext) => {
           const actions = {
             setLocale: (locale: string) => {
@@ -381,7 +381,7 @@ describe("createContextScope", () => {
       );
 
       function App() {
-        const store = useAppScope();
+        const store = useAppStore();
 
         const [theme] = store.theme.$use();
         const [locale] = store.locale.$use();
@@ -427,12 +427,12 @@ describe("createContextScope", () => {
 
   describe("Edge cases", () => {
     it("should handle undefined context values", () => {
-      const [Provider, useScope] = createContextScope(
+      const [Provider, useStore] = createContextStore(
         (context: { value?: string }) => createStore(context.value)
       );
 
       function TestComponent() {
-        const store = useScope();
+        const store = useStore();
         const value = store.$get((value = "undefined") => value);
 
         return <div data-testid="value">{value}</div>;
@@ -448,12 +448,12 @@ describe("createContextScope", () => {
     });
 
     it("should handle empty object context", () => {
-      const [Provider, useScope] = createContextScope((context: {}) => {
+      const [Provider, useStore] = createContextStore((context: {}) => {
         return createStore(context);
       });
 
       function TestComponent() {
-        const store = useScope();
+        const store = useStore();
         const state = store.$get();
 
         return <div data-testid="state">{JSON.stringify(state)}</div>;
@@ -471,7 +471,7 @@ describe("createContextScope", () => {
 
   describe("Asynchronous logic", () => {
     it("should work with useAsync in store actions", async () => {
-      const [Provider, useScope] = createContextScope(
+      const [Provider, useStore] = createContextStore(
         (context: { baseUrl: string }) => {
           const actions = {
             loadData: () => {
@@ -489,7 +489,7 @@ describe("createContextScope", () => {
       );
 
       function TestComponent() {
-        const store = useScope();
+        const store = useStore();
         const { data, error, isLoading } = store.loadData();
 
         if (isLoading) return <div data-testid="loading">Loading...</div>;
@@ -515,7 +515,7 @@ describe("createContextScope", () => {
     });
 
     it("should handle async errors in store actions", async () => {
-      const [Provider, useScope] = createContextScope(
+      const [Provider, useStore] = createContextStore(
         (context: { shouldFail: boolean }) => {
           const actions = {
             fetchData: () => {
@@ -538,7 +538,7 @@ describe("createContextScope", () => {
       );
 
       function TestComponent() {
-        const store = useScope();
+        const store = useStore();
         const { data, error, isLoading } = store.fetchData();
 
         if (isLoading) return <div data-testid="loading">Loading...</div>;
@@ -564,7 +564,7 @@ describe("createContextScope", () => {
     });
 
     it("should support multiple async actions with dependencies", async () => {
-      const [Provider, useScope] = createContextScope(
+      const [Provider, useStore] = createContextStore(
         (context: { userId: string }) => {
           const actions = {
             loadPosts: () => {
@@ -604,7 +604,7 @@ describe("createContextScope", () => {
       );
 
       function TestComponent() {
-        const store = useScope();
+        const store = useStore();
         const { profile, profileLoading } = store.loadProfile();
         const { posts, postsLoading } = store.loadPosts();
 
@@ -646,7 +646,7 @@ describe("createContextScope", () => {
     });
 
     it("should re-run async actions when context dependencies change", async () => {
-      const [Provider, useScope] = createContextScope(
+      const [Provider, useStore] = createContextStore(
         (context: { searchTerm: string }) => {
           const actions = {
             search: () => {
@@ -666,7 +666,7 @@ describe("createContextScope", () => {
       );
 
       function TestComponent() {
-        const store = useScope();
+        const store = useStore();
         const { results, searching } = store.search();
 
         return (

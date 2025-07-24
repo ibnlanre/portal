@@ -17,7 +17,7 @@ export type {
 } from "@/create-store/types/browser-storage-adapter";
 export type { Combine } from "@/create-store/types/combine";
 export type { CompositeStore } from "@/create-store/types/composite-store";
-export type { ContextScope } from "@/create-store/types/context-scope";
+export type { ContextStore } from "@/create-store/types/context-store";
 export type { ContextValue } from "@/create-store/types/context-value";
 export type {
   CookieStorageAdapterOptions,
@@ -63,6 +63,6 @@ export { combine } from "@/create-store/functions/helpers/combine";
 export { useAsync } from "@/create-store/functions/hooks/use-async";
 export { useSync } from "@/create-store/functions/hooks/use-sync";
 export { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
-export { createContextScope } from "@/create-store/functions/library/create-context-scope";
+export { createContextStore } from "@/create-store/functions/library/create-context-store";
 export { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
 export { normalizeObject } from "@/create-store/functions/library/normalize-object";

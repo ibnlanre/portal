@@ -4,7 +4,7 @@ import type { Selector } from "@/create-store/types/selector";
 import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 import { isAccessor } from "../../assertions/is-accessor";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
@@ -43,11 +43,12 @@ export function createPrimitiveStore<State>(
 
     function $use<Value = State>(
       selector?: Selector<State, Value>,
-      dependencies?: unknown[]
+      dependencies?: unknown
     ): PartialStateManager<State, Value> {
-      const [value, setValue] = useState(state);
-      useEffect(() => $act(setValue), []);
+      const getSnapshot = useCallback($get, []);
+      const subscribe = useCallback($act, []);
 
+      const value = useSyncExternalStore(subscribe, getSnapshot);
       const comparison = useVersion([value, dependencies]);
       const resolvedValue = useMemo(() => {
         return resolveSelectorValue(value, selector);
