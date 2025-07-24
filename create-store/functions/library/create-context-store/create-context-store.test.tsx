@@ -1,6 +1,14 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { Fragment } from "react";
-import { describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import { createContextStore } from "./index";
 import { createStore } from "@/create-store";
@@ -22,7 +30,9 @@ describe("createContextStore", () => {
       expect(typeof useStore).toBe("function");
     });
 
-    it("should throw error when useStore is called outside provider", () => {
+    it("should throw error when useStore is called outside provider", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+
       const [, useStore] = createContextStore((context: { value: string }) => {
         return createStore(context.value);
       });
@@ -470,6 +480,18 @@ describe("createContextStore", () => {
   });
 
   describe("Asynchronous logic", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.clearAllTimers();
+    });
+
+    afterAll(() => {
+      vi.useRealTimers();
+    });
+
     it("should work with useAsync in store actions", async () => {
       const [Provider, useStore] = createContextStore(
         (context: { baseUrl: string }) => {
@@ -504,8 +526,10 @@ describe("createContextStore", () => {
           <TestComponent />
         </Provider>
       );
+      vi.advanceTimersByTime(50);
 
       expect(screen.getByTestId("loading")).toBeInTheDocument();
+      vi.runAllTimersAsync();
 
       await waitFor(() => {
         expect(screen.getByTestId("data")).toHaveTextContent(
@@ -553,8 +577,10 @@ describe("createContextStore", () => {
           <TestComponent />
         </Provider>
       );
+      vi.advanceTimersByTime(50);
 
       expect(screen.getByTestId("loading")).toBeInTheDocument();
+      vi.runAllTimersAsync();
 
       await waitFor(() => {
         expect(screen.getByTestId("error")).toHaveTextContent(
@@ -629,6 +655,7 @@ describe("createContextStore", () => {
           <TestComponent />
         </Provider>
       );
+      vi.advanceTimersByTime(50);
 
       expect(screen.getByTestId("profile-status")).toHaveTextContent(
         "Loading profile..."
@@ -636,6 +663,8 @@ describe("createContextStore", () => {
       expect(screen.getByTestId("posts-status")).toHaveTextContent(
         "Loading posts..."
       );
+
+      vi.runAllTimersAsync();
 
       await waitFor(() => {
         expect(screen.getByTestId("profile-status")).toHaveTextContent(
@@ -684,9 +713,12 @@ describe("createContextStore", () => {
           <TestComponent />
         </Provider>
       );
+      vi.advanceTimersByTime(50);
 
       expect(screen.getByTestId("search-term")).toHaveTextContent("react");
       expect(screen.getByTestId("status")).toHaveTextContent("Searching...");
+
+      vi.runAllTimersAsync();
 
       await waitFor(() => {
         expect(screen.getByTestId("status")).toHaveTextContent(
@@ -699,9 +731,12 @@ describe("createContextStore", () => {
           <TestComponent />
         </Provider>
       );
+      vi.advanceTimersByTime(50);
 
       expect(screen.getByTestId("search-term")).toHaveTextContent("vue");
       expect(screen.getByTestId("status")).toHaveTextContent("Searching...");
+
+      vi.runAllTimersAsync();
 
       await waitFor(() => {
         expect(screen.getByTestId("status")).toHaveTextContent(

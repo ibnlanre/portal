@@ -4,7 +4,15 @@ import type { AsyncFunction } from "@/create-store/types/async-function";
 
 import { render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
-import { describe, expect, it } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import { useAsync } from "@/create-store/functions/hooks/use-async";
 import { setup } from "@/vitest.react";
@@ -25,6 +33,18 @@ function AsyncTestComponent({ dependencies, effect }: AsyncTestComponentProps) {
 }
 
 describe("useAsync", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.clearAllTimers();
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
   it("should show loading then data on success", async () => {
     const effect: AsyncFunction<{ value: string }> = async () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
@@ -32,8 +52,10 @@ describe("useAsync", () => {
     };
 
     render(<AsyncTestComponent effect={effect} />);
+    vi.advanceTimersByTime(50);
 
     expect(screen.getByTestId("loading")).toBeInTheDocument();
+    vi.runAllTimersAsync();
 
     await waitFor(() => {
       expect(screen.getByTestId("data")).toHaveTextContent(
@@ -49,8 +71,10 @@ describe("useAsync", () => {
     };
 
     render(<AsyncTestComponent effect={effect} />);
+    vi.advanceTimersByTime(50);
 
     expect(screen.getByTestId("loading")).toBeInTheDocument();
+    vi.runAllTimersAsync();
 
     await waitFor(() => {
       expect(screen.getByTestId("error")).toHaveTextContent("Error: fail");
@@ -62,7 +86,7 @@ describe("useAsync", () => {
       const [count, setCount] = useState(0);
 
       const effect: AsyncFunction<{ count: number }> = async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 50));
         return { count };
       };
 
@@ -81,8 +105,10 @@ describe("useAsync", () => {
     }
 
     const { user } = setup(<Wrapper />);
+    vi.advanceTimersByTime(50);
 
     expect(screen.getByTestId("loading")).toBeInTheDocument();
+    vi.runAllTimersAsync();
 
     await waitFor(() => {
       expect(screen.getByTestId("data")).toHaveTextContent(
@@ -91,6 +117,10 @@ describe("useAsync", () => {
     });
 
     await user.click(screen.getByTestId("increment"));
+
+    expect(screen.getByTestId("loading")).toBeInTheDocument();
+    vi.advanceTimersByTime(50);
+    vi.runAllTimersAsync();
 
     await waitFor(() => {
       expect(screen.getByTestId("data")).toHaveTextContent(
@@ -106,12 +136,11 @@ describe("useAsync", () => {
       const [count, setCount] = useState(0);
 
       const effect: AsyncFunction<{ count: number }> = async ({ signal }) => {
-        await new Promise((resolve) => setTimeout(resolve, 30));
-
-        if (signal.aborted) {
+        signal.addEventListener("abort", () => {
           aborted = true;
-          throw new Error("aborted");
-        }
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 30));
 
         return { count };
       };
@@ -132,8 +161,10 @@ describe("useAsync", () => {
     }
 
     const { user } = setup(<Wrapper />);
+    vi.advanceTimersByTime(30);
 
     expect(screen.getByTestId("loading")).toBeInTheDocument();
+    vi.runAllTimersAsync();
 
     await user.click(screen.getByTestId("increment"));
 
@@ -158,8 +189,10 @@ describe("useAsync", () => {
     };
 
     render(<AsyncTestComponent effect={effect} />);
+    vi.advanceTimersByTime(10);
 
     expect(screen.getByTestId("loading")).toBeInTheDocument();
+    vi.runAllTimersAsync();
 
     await waitFor(() => {
       expect(screen.getByTestId("data")).toHaveTextContent(
