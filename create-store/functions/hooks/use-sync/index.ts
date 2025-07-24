@@ -19,5 +19,5 @@ export function useSync<Data>(
   dependencyList: DependencyList = []
 ): Data {
   const version = useVersion(dependencyList);
-  return useMemo(factory, version);
+  return useMemo(factory, [version]);
 }

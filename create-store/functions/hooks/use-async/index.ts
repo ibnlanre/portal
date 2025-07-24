@@ -20,7 +20,7 @@ export function useAsync<Data>(
   effect: AsyncFunction<Data>,
   dependencyList: DependencyList = []
 ): AsyncState<Data> {
-  const comparison = useVersion(dependencyList);
+  const version = useVersion(dependencyList);
 
   const [state, dispatch] = useReducer(reducer<Data>, {
     data: null,
@@ -34,7 +34,7 @@ export function useAsync<Data>(
 
     dispatch({ type: "LOADING" });
 
-    effect(signal)
+    effect(controller)
       .then((payload) => {
         if (!signal.aborted) {
           dispatch({ payload, type: "SUCCESS" });
@@ -51,7 +51,7 @@ export function useAsync<Data>(
     return () => {
       controller.abort();
     };
-  }, comparison);
+  }, [version]);
 
   return state;
 }

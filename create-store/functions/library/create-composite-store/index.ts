@@ -184,10 +184,10 @@ export function createCompositeStore<State extends Dictionary>(
     const value = useSyncExternalStore(subscribe, getSnapshot);
     const setter = useMemo(() => set(path), [path]);
 
-    const comparison = useVersion([value, dependencies]);
+    const version = useVersion([value, dependencies]);
     const resolvedValue = useMemo(() => {
       return resolveSelectorValue(value, selector);
-    }, comparison);
+    }, [version]);
 
     return [resolvedValue, setter];
   }

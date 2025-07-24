@@ -30,6 +30,7 @@
   - [Actions as hooks](#actions-as-hooks)
   - [Asynchronous effects: `useAsync`](#asynchronous-effects-useasync)
   - [Memoized computations: `useSync`](#effect-synchronization-usesync)
+  - [Deep dependency tracking: `useVersion`](#deep-dependency-tracking-useversion)
   - [Context-based stores: `createContextScope`](#context-based-stores-createcontextscope)
   - [Combine stores and actions: `combine()`](#combine-stores-and-actions-combine)
   - [Initialize state asynchronously](#initialize-state-asynchronously)
@@ -1057,7 +1058,7 @@ const userStore = createStore({
   profile: null as UserProfile | null,
   useUsers: async () => {
     const { data, loading, error } = useAsync(
-      async (signal) => {
+      async ({ signal }) => {
         const response = await fetch("/api/users", { signal });
 
         if (!response.ok) throw new Error("Failed to fetch users");
@@ -1070,7 +1071,7 @@ const userStore = createStore({
   },
   useProfile: (userId: string) => {
     const { data, loading, error } = useAsync(
-      async (signal) => {
+      async ({ signal }) => {
         if (!userId) throw new Error("User ID is required");
 
         const response = await fetch(`/api/users/${userId}`, { signal });
@@ -1166,6 +1167,49 @@ function ThemedComponent() {
 }
 ```
 
+### Deep dependency tracking: `useVersion`
+
+The `useVersion` hook provides deep dependency comparison through deep equality checking, making it ideal for complex state management scenarios. It allows you to track changes in deeply nested objects and arrays, providing both deep equality checking and version tracking for React hooks. It's the foundational hook used internally by `useAsync` and `useSync`, but can also be used directly when you want to build custom hooks with deep dependency checking using native React hooks like `useMemo` or `useEffect`.
+
+**Key Features:**
+
+- **Deep equality checking**: Performs deep comparison of complex objects, arrays, and nested structures
+- **Version tracking**: Returns an incrementing version number that changes only when dependencies actually change
+- **Performance optimized**: Avoids unnecessary re-computations by detecting true changes
+- **Circular reference support**: Safely handles objects with circular references
+- **Type safety**: Full TypeScript support with proper type inference
+
+**Basic Usage:**
+
+```tsx
+import { createStore, useVersion } from "@ibnlanre/portal";
+import { useEffect } from "react";
+
+const settingsStore = createStore({
+  theme: "light",
+  preferences: {
+    language: "en",
+    notifications: { email: true, push: false },
+  },
+
+  // Custom hook action using useVersion for deep dependency tracking
+  useWatchPreferences() {
+    const preferences = settingsStore.preferences.$get();
+    const version = useVersion(preferences);
+
+    useEffect(() => {
+      console.log("Preferences changed:", preferences);
+      // Sync preferences to external service
+      syncPreferencesToServer(preferences);
+    }, [version]);
+
+    return preferences;
+  },
+});
+```
+
+The `useVersion` hook is particularly useful when you want to maintain control over your hook implementation while getting deep comparison benefits.
+
 ### Context-based stores: `createContextScope`
 
 The `createContextScope` function enables efficient global store management through React Context. It provides a powerful pattern for creating provider-based stores that can be initialized with external data and shared across component trees.
@@ -1222,6 +1266,8 @@ const [AppProvider, useAppStore] = createContextScope((context: AppContext) => {
 ```
 
 **Using the context-based store in a React application:**
+
+Once you have defined your context scope, you can use the `AppProvider` to wrap your application or specific components, and then access the store using the `useAppStore` hook.
 
 ```tsx
 function App() {

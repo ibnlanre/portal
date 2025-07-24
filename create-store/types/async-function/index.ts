@@ -1,3 +1,3 @@
 export type AsyncFunction<Data = unknown> = (
-  signal: AbortSignal
+  controller: AbortController
 ) => Promise<Data>;

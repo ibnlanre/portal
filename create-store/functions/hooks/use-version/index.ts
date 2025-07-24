@@ -11,7 +11,7 @@ import { compare } from "@/create-store/functions/helpers/compare";
  *
  * @returns An array containing the current version number.
  */
-export function useVersion(input?: unknown): [number] {
+export function useVersion(input?: unknown): number {
   const ref = useRef<unknown>();
   const version = useRef(0);
 
@@ -20,5 +20,5 @@ export function useVersion(input?: unknown): [number] {
     version.current += 1;
   }
 
-  return [version.current];
+  return version.current;
 }

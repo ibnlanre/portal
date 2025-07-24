@@ -49,10 +49,10 @@ export function createPrimitiveStore<State>(
       const subscribe = useCallback($act, []);
 
       const value = useSyncExternalStore(subscribe, getSnapshot);
-      const comparison = useVersion([value, dependencies]);
+      const version = useVersion([value, dependencies]);
       const resolvedValue = useMemo(() => {
         return resolveSelectorValue(value, selector);
-      }, comparison);
+      }, [version]);
 
       return [resolvedValue, $set];
     }
