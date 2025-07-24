@@ -222,7 +222,7 @@ Both store types share a consistent API for getting, setting, and subscribing to
 
 **✅ Recommended - Use type aliases:**
 
-```typescript
+```ts
 // ✅ Good: Use type aliases
 type UserState = {
   name: string;
@@ -245,7 +245,7 @@ const userStore = createStore<UserState>({
 
 **❌ Avoid - Interfaces can cause type issues:**
 
-```typescript
+```ts
 // ❌ Problematic: Interfaces can lead to unexpected type inference issues
 interface UserState {
   name: string;
@@ -265,7 +265,7 @@ const userStore = createStore<UserState>({
 **Alternative for interfaces:**
 If you must work with existing interfaces (e.g., from APIs), use the `normalizeObject()` utility to convert them to dictionary-compatible types:
 
-```typescript
+```ts
 interface APIResponse {
   id: number;
   data: { value: string };
@@ -280,7 +280,7 @@ const store = createStore(normalizedData);
 
 Alternatively, you can use the `Normalize` type utility directly on the interface to convert it to a dictionary type:
 
-```typescript
+```ts
 import { Normalize } from "@ibnlanre/portal";
 
 interface APIResponse {
@@ -315,7 +315,7 @@ The `createStore()` function is the primary way to initialize a new store. For s
 
 **Syntax:**
 
-```typescript
+```ts
 createStore<S>(initialState: S | Promise<S>): Store<S>
 ```
 
@@ -329,7 +329,7 @@ createStore<S>(initialState: S | Promise<S>): Store<S>
 
 1.  **Creating a primitive store:**
 
-    ```typescript
+    ```ts
     import { createStore } from "@ibnlanre/portal";
 
     const countStore = createStore(0);
@@ -341,7 +341,7 @@ createStore<S>(initialState: S | Promise<S>): Store<S>
 
 2.  **Creating a composite store:**
 
-    ```typescript
+    ```ts
     import { createStore } from "@ibnlanre/portal";
 
     const userStore = createStore({
@@ -360,7 +360,7 @@ createStore<S>(initialState: S | Promise<S>): Store<S>
 
 3.  **Creating a store with asynchronous initialization:**
 
-    ```typescript
+    ```ts
     import { createStore } from "@ibnlanre/portal";
 
     async function fetchUserData(): Promise<{ id: number; name: string }> {
@@ -383,7 +383,7 @@ Creates a store specifically for a single, primitive value (string, number, bool
 
 **Syntax:**
 
-```typescript
+```ts
 createPrimitiveStore<S extends Primitives>(initialState: S): PrimitiveStore<S>
 ```
 
@@ -397,7 +397,7 @@ createPrimitiveStore<S extends Primitives>(initialState: S): PrimitiveStore<S>
 
 **Example:**
 
-```typescript
+```ts
 import { createPrimitiveStore } from "@ibnlanre/portal";
 
 const isActiveStore = createPrimitiveStore(false);
@@ -410,7 +410,7 @@ Creates a store specifically for an object, enabling nested state structures.
 
 **Syntax:**
 
-```typescript
+```ts
 createCompositeStore<S extends GenericObject>(initialState: S): CompositeStore<S>
 ```
 
@@ -424,7 +424,7 @@ createCompositeStore<S extends GenericObject>(initialState: S): CompositeStore<S
 
 **Example:**
 
-```typescript
+```ts
 import { createCompositeStore } from "@ibnlanre/portal";
 
 const userDetailsStore = createCompositeStore({
@@ -442,6 +442,14 @@ userDetailsStore.permissions.write.$set(true);
 
 The `createContextStore()` function creates React Context-based stores that solve a common problem: initializing stores with dynamic values that come from props or external sources. This is particularly useful when you need to create stores that depend on runtime data rather than static initial values.
 
+**Key Benefits:**
+
+- **Dynamic Store Creation**: Initialize stores with runtime values from context, props, or API responses
+- **Type-Safe Integration**: Full TypeScript support with proper type inference
+- **Maximum Flexibility**: Full control over store initialization and memoization strategies
+- **Flexible Architecture**: Support for nested providers and multi-tenant applications
+- **Developer Experience**: Clear error messages and seamless React integration
+
 **The Problem it Solves:**
 
 Global stores are typically created outside of the React component lifecycle, so they can't be initialized with values from props or context. With a global store, you'd need to:
@@ -453,7 +461,7 @@ Global stores are typically created outside of the React component lifecycle, so
 
 **Syntax:**
 
-```typescript
+```ts
 createContextStore<Context, ContextStore>(
   initializer: (context: Context) => ContextStore
 ): [StoreProvider, useStore]
@@ -556,13 +564,13 @@ function App() {
 }
 ```
 
-**Key Benefits:**
+**Use Cases:**
 
-- **Dynamic Store Creation**: Initialize stores with runtime values from context, props, or API responses
-- **Type-Safe Integration**: Full TypeScript support with proper type inference
-- **Maximum Flexibility**: Full control over store initialization and memoization strategies
-- **Flexible Architecture**: Support for nested providers and multi-tenant applications
-- **Developer Experience**: Clear error messages and seamless React integration
+- **User-specific stores**: Initialize stores with user data from authentication context
+- **Feature flags**: Create stores based on feature flag configuration
+- **Multi-tenant applications**: Initialize stores with tenant-specific configuration
+- **Server-side rendering**: Initialize stores with server-rendered data
+- **Theme providers**: Create theme-aware stores with runtime theme configuration
 
 > **Note:** The factory function passed to `createContextStore` runs on every render. You're responsible for memoizing values if needed. This design gives you complete freedom to use any hooks or memoization strategy within the factory function.
 
@@ -576,7 +584,7 @@ Retrieves the current state of the store. Optionally, you can provide a selector
 
 **Syntax:**
 
-```typescript
+```ts
 $get(): S
 $get<R>(selector: (currentState: S) => R): R
 ```
@@ -588,7 +596,7 @@ $get<R>(selector: (currentState: S) => R): R
 
 1.  **Getting the current state:**
 
-    ```typescript
+    ```ts
     const countStore = createStore(10);
     const currentCount = countStore.$get(); // 10
 
@@ -599,7 +607,7 @@ $get<R>(selector: (currentState: S) => R): R
 
 2.  **Getting a derived value using a selector:**
 
-    ```typescript
+    ```ts
     const countStore = createStore(10);
     const doubledCount = countStore.$get((count) => count * 2); // 20
     console.log(countStore.$get()); // 10 (original state is unchanged)
@@ -618,7 +626,7 @@ For composite stores holding objects, `$set` performs a deep partial update. Thi
 
 **Syntax:**
 
-```typescript
+```ts
 $set(newValue: S): void
 $set(updater: (prevState: S) => S): void
 ```
@@ -631,7 +639,7 @@ $set(updater: (prevState: S) => S): void
 
 1.  **Setting a new value directly (Primitive Store):**
 
-    ```typescript
+    ```ts
     const countStore = createStore(0);
     countStore.$set(5);
     console.log(countStore.$get()); // 5
@@ -639,7 +647,7 @@ $set(updater: (prevState: S) => S): void
 
 2.  **Updating using a function (Primitive Store):**
 
-    ```typescript
+    ```ts
     const countStore = createStore(5);
     countStore.$set((prevCount) => prevCount + 1);
     console.log(countStore.$get()); // 6
@@ -647,7 +655,7 @@ $set(updater: (prevState: S) => S): void
 
 3.  **Partial update on a Composite Store:**
 
-    ```typescript
+    ```ts
     const settingsStore = createStore({
       theme: "light",
       fontSize: 12,
@@ -668,7 +676,7 @@ $set(updater: (prevState: S) => S): void
 
 4.  **Updating nested properties in a Composite Store:**
 
-    ```typescript
+    ```ts
     const userStore = createStore({
       profile: { name: "Alex", age: 30 },
       role: "user",
@@ -685,7 +693,7 @@ $set(updater: (prevState: S) => S): void
 
 **Note on arrays:** When a part of your state is an array, and you use `$set` on the parent object containing that array, the entire array will be replaced if it's part of the update object. To modify array elements (e.g., add or remove items), access the array store directly or use functional updates on that specific array store.
 
-```typescript
+```ts
 const listStore = createStore({ items: [1, 2, 3], name: "My List" });
 
 // This replaces the entire 'items' array but preserves 'name'.
@@ -705,7 +713,7 @@ By default, the callback is invoked immediately with the current state upon subs
 
 **Syntax:**
 
-```typescript
+```ts
 $act(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () => void
 ```
 
@@ -717,7 +725,7 @@ $act(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () =
 
 1.  **Basic subscription:**
 
-    ```typescript
+    ```ts
     const nameStore = createStore("Alex");
 
     const unsubscribe = nameStore.$act((newName, oldName) => {
@@ -734,7 +742,7 @@ $act(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () =
 
 2.  **Subscription without immediate callback execution:**
 
-    ```typescript
+    ```ts
     const statusStore = createStore("idle");
 
     const unsubscribeNonImmediate = statusStore.$act((newStatus) => {
@@ -749,7 +757,7 @@ $act(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () =
 
 3.  **Subscribing to a composite store:**
 
-    ```typescript
+    ```ts
     const settingsStore = createStore({ theme: "light", volume: 70 });
 
     // Setting up subscription to changes in settings
@@ -770,7 +778,7 @@ $act(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () =
 
 **Syntax:**
 
-```typescript
+```ts
 $key<N extends Store<any>>(path: string): N
 ```
 
@@ -779,7 +787,7 @@ $key<N extends Store<any>>(path: string): N
 
 **Examples:**
 
-```typescript
+```ts
 const appStore = createStore({
   user: {
     profile: {
@@ -809,7 +817,7 @@ console.log(appStore.user.preferences.theme.$get()); // "light"
 
 `$key` can be used on intermediate stores as well. For example, if you want to access a nested property like `user.preferences.language`, you can do so directly:
 
-```typescript
+```ts
 // Accessing a nested store using $key
 const preferencesStore = appStore.user.$key("preferences");
 
@@ -835,7 +843,7 @@ The `$use` hook automatically subscribes the component to store changes and unsu
 
 **Syntax:**
 
-```typescript
+```ts
 $use(): [S, (newValue: S | ((prevState: S) => S)) => void]
 $use<R>(
   selector: (currentState: S) => R,
@@ -971,7 +979,7 @@ When defining actions, to update state, you must use the variable that holds the
 
 1.  **Counter with actions:**
 
-    ```typescript
+    ```ts
     import { createStore } from "@ibnlanre/portal";
 
     const counterStore = createStore({
@@ -1001,7 +1009,7 @@ When defining actions, to update state, you must use the variable that holds the
 2.  **Reducer pattern:**
     You can structure actions to follow a reducer pattern if that fits your application's architecture.
 
-    ```typescript
+    ```ts
     import { createStore } from "@ibnlanre/portal";
 
     type CounterAction =
@@ -1038,7 +1046,11 @@ When defining actions, to update state, you must use the variable that holds the
 
 `@ibnlanre/portal` allows you to define functions within your store that can be used as React custom hooks. This powerful feature enables you to co-locate complex, stateful logic—including side effects managed by `useEffect` or component-level state from `useState` directly with the store it relates to.
 
-To create an action that functions as a hook, simply follow React's convention: prefix the function name with `use`, place it directly within the object you pass to `createStore`, then use it like any regular custom hook in your React components.
+To create an action that functions as a hook, simply follow React's convention:
+
+- prefix the function name with `use`
+- place it directly within the object you pass to `createStore`
+- then use it like any regular custom hook in your React components.
 
 This pattern leverages React's own rules for hooks. It doesn't prevent the function from being recreated on re-renders (which is normal React behavior), but it provides an excellent way to organize and attach reusable hook logic to your store instance.
 
@@ -1048,7 +1060,7 @@ This pattern leverages React's own rules for hooks. It doesn't prevent the funct
 
 Let's create a store with an action that uses `useState` and `useEffect` to automatically reset a message after a delay.
 
-```typescript
+```ts
 import { createStore } from "@ibnlanre/portal";
 import { useState, useEffect } from "react";
 
@@ -1122,7 +1134,7 @@ The `useAsync` hook provides a robust solution for handling asynchronous operati
 
 **Basic Usage:**
 
-```typescript
+```ts
 import { createStore, useAsync } from "@ibnlanre/portal";
 
 type UserProfile = {
@@ -1402,7 +1414,7 @@ Unlike shallow merging (such as Object.assign or object spread), `combine()`:
 
 **Syntax:**
 
-```typescript
+```ts
 // Single source merge
 combine<Target extends Dictionary, Source>(target: Target, source: Source): Merge<Target, Source>
 
@@ -1417,7 +1429,7 @@ combine<Target extends Dictionary, Sources extends Dictionary[]>(target: Target,
 
 **Single Source Example:**
 
-```typescript
+```ts
 import { createStore, combine } from "@ibnlanre/portal";
 
 // Define the initial state
@@ -1454,7 +1466,7 @@ export const userStore = createStore(combine(initialState, actions));
 
 **Multiple Sources Example:**
 
-```typescript
+```ts
 import { createStore, combine } from "@ibnlanre/portal";
 
 // Base configuration
@@ -1529,7 +1541,7 @@ You can initialize a store with state fetched asynchronously by passing an `asyn
 
 **Example:**
 
-```typescript
+```ts
 import { createStore } from "@ibnlanre/portal";
 
 interface UserData {
@@ -1560,7 +1572,7 @@ userStore.$set({ id: 2, name: "Alex", email: "alex@example.com" });
 
 If you need a nested store structure from asynchronously loaded data, initialize the store with a placeholder structure (or `null`) and then update it using `$set` once the data is fetched. This allows the composite store structure to be established correctly.
 
-```typescript
+```ts
 import { createStore } from "@ibnlanre/portal";
 
 interface AppData {
@@ -1602,7 +1614,7 @@ loadAppData();
 
 **Example:**
 
-```typescript
+```ts
 import { createStore } from "@ibnlanre/portal";
 
 // Define a type for clarity
@@ -1693,7 +1705,7 @@ When your store's state includes arrays, `@ibnlanre/portal` treats them in a spe
 
 - **Arrays as store properties**: If an array is a direct property of your initial state object (e.g., `items: [1, 2, 3]` in `createStore({ items: [...] })`), then `store.items` becomes a store instance that manages this array. You can use `$get()`, `$set()`, and `$act()` on `store.items` to interact with the entire array.
 
-  ```typescript
+  ```ts
   const store = createStore({ tags: ["typescript", "state-management"] });
   const currentTags = store.tags.$get(); // ['typescript', 'state-management']
   store.tags.$set(["javascript", "react"]); // Replaces the array
@@ -1701,7 +1713,7 @@ When your store's state includes arrays, `@ibnlanre/portal` treats them in a spe
 
 - **Elements within arrays are not individual stores**: Objects or other values _inside_ an array are treated as plain data. They are not automatically wrapped as individual store instances. This means you cannot call store methods like `$get()` or `$set()` directly on an array element, even if that element is an object.
 
-  ```typescript
+  ```ts
   const store = createStore({
     users: [
       { id: 1, name: "Alice" },
@@ -1721,14 +1733,14 @@ When your store's state includes arrays, `@ibnlanre/portal` treats them in a spe
 - **Updating arrays**:
 
   - To replace the entire array, use `$set()` on the array's store property:
-    ```typescript
+    ```ts
     const listStore = createStore({ items: [1, 2, 3] });
     listStore.items.$set([4, 5, 6]);
     console.log(listStore.items.$get()); // Output: [4, 5, 6]
     ```
   - To modify the array (e.g., add, remove, or update elements), use a functional update with `$set()` on the array's store property. This ensures immutability by creating a new array.
 
-    ```typescript
+    ```ts
     const userListStore = createStore({
       users: [{ id: 1, name: "Alex", details: { age: 30 } }],
     });
@@ -1757,14 +1769,14 @@ When your store's state includes arrays, `@ibnlanre/portal` treats them in a spe
 
 - **Arrays of primitive values**: These are handled straightforwardly. The array itself is the store property.
 
-  ```typescript
+  ```ts
   const numberListStore = createStore({ ids: [101, 102, 103] });
   numberListStore.ids.$set((prevIds) => [...prevIds, 104]);
   ```
 
 This behavior ensures that arrays are managed predictably as collections, while direct object properties of a store are augmented for more granular control. If you require each item in a collection to have full store capabilities, consider structuring your state as an object mapping IDs to individual stores, rather than an array of items. For example:
 
-```typescript
+```ts
 const itemStores = createStore({
   item_1: { name: "Item A", stock: 10 },
   item_2: { name: "Item B", stock: 5 },
@@ -1788,7 +1800,7 @@ The `normalizeObject()` function converts interface-typed objects (like `window`
 
 **Syntax:**
 
-```typescript
+```ts
 normalizeObject<T extends object>(obj: T): Record<PropertyKey, unknown> // Simplified, actual return might be more specific
 ```
 
@@ -1799,7 +1811,7 @@ normalizeObject<T extends object>(obj: T): Record<PropertyKey, unknown> // Simpl
 
 1.  **Normalizing the browser's `window` object:**
 
-    ```typescript
+    ```ts
     import { createStore, normalizeObject } from "@ibnlanre/portal";
 
     // The 'window' object is complex and has an interface type.
@@ -1817,7 +1829,7 @@ normalizeObject<T extends object>(obj: T): Record<PropertyKey, unknown> // Simpl
 
 2.  **Normalizing a custom interface with methods and symbols:**
 
-    ```typescript
+    ```ts
     import { createStore, normalizeObject } from "@ibnlanre/portal";
 
     interface UserProfileAPI {
@@ -1862,7 +1874,7 @@ The `InferType` utility type allows you to extract TypeScript types from your Po
 
 **Syntax:**
 
-```typescript
+```ts
 InferType<Store, Path?>;
 ```
 
@@ -1877,7 +1889,7 @@ InferType<Store, Path?>;
 
 1. **Infer the complete state type:**
 
-   ```typescript
+   ```ts
    import { createStore, InferType } from "@ibnlanre/portal";
 
    const userStore = createStore({
@@ -1906,7 +1918,7 @@ InferType<Store, Path?>;
 
 2. **Infer specific nested types:**
 
-   ```typescript
+   ```ts
    import { createStore, InferType } from "@ibnlanre/portal";
 
    const appStore = createStore({
@@ -1948,7 +1960,7 @@ InferType<Store, Path?>;
 
 3. **Use with primitive stores:**
 
-   ```typescript
+   ```ts
    import { createStore, InferType } from "@ibnlanre/portal";
 
    const countStore = createStore(0);
@@ -1971,7 +1983,7 @@ InferType<Store, Path?>;
 
 4. **Integration with forms and validation:**
 
-   ```typescript
+   ```ts
    import { createStore, InferType } from "@ibnlanre/portal";
 
    const formStore = createStore({
@@ -2022,7 +2034,7 @@ Use `createLocalStorageAdapter` or `createSessionStorageAdapter` to persist in t
 
 **Syntax:**
 
-```typescript
+```ts
 createLocalStorageAdapter<State>(key: string, options?: StorageAdapterOptions<State>)
 createSessionStorageAdapter<State>(key: string, options?: StorageAdapterOptions<State>)
 ```
@@ -2045,7 +2057,7 @@ Persists state in `localStorage`. Data remains until explicitly cleared or remov
 
 **Example:**
 
-```typescript
+```ts
 import { createStore, createLocalStorageAdapter } from "@ibnlanre/portal";
 
 const localStorageAdapter = createLocalStorageAdapter<number>("app-counter", {
@@ -2075,7 +2087,7 @@ Persists state in `sessionStorage`. Data remains for the duration of the page se
 
 **Example:**
 
-```typescript
+```ts
 import { createStore, createSessionStorageAdapter } from "@ibnlanre/portal";
 
 const [getStoredSessionData, setStoredSessionData] =
@@ -2103,7 +2115,7 @@ Use `createCookieStorageAdapter` for persisting state in browser cookies.
 
 **Syntax:**
 
-```typescript
+```ts
 createCookieStorageAdapter<State>(key: string, options?: CookieStorageAdapterOptions<State>)
 ```
 
@@ -2131,7 +2143,7 @@ createCookieStorageAdapter<State>(key: string, options?: CookieStorageAdapterOpt
 
 **Example:**
 
-```typescript
+```ts
 import { createStore, createCookieStorageAdapter } from "@ibnlanre/portal";
 
 const cookieAdapter = createCookieStorageAdapter<{
@@ -2173,7 +2185,7 @@ For custom storage mechanisms (e.g., IndexedDB, a remote API, `chrome.storage`),
 
 **Syntax:**
 
-```typescript
+```ts
 createBrowserStorageAdapter<State, StoredState>(
   key: string,
   options: BrowserStorageAdapterOptions<State, StoredState>
@@ -2204,7 +2216,7 @@ createBrowserStorageAdapter<State, StoredState>(
 
 **Example (using a simple in-memory object as custom storage):**
 
-```typescript
+```ts
 import { createStore, createBrowserStorageAdapter } from "@ibnlanre/portal";
 
 const customStorage = {
@@ -2239,7 +2251,7 @@ The adapter provides two functions: one for getting the state from storage and a
 
 **Syntax:**
 
-```typescript
+```ts
 createAsyncBrowserStorageAdapter<State, StoredState>(
   key: string,
   options: AsyncBrowserStorageAdapterOptions<State, StoredState>
@@ -2272,7 +2284,7 @@ createAsyncBrowserStorageAdapter<State, StoredState>(
 
 Let's create an adapter that simulates async encryption and decryption.
 
-```typescript
+```ts
 import { createAsyncBrowserStorageAdapter } from "@ibnlanre/portal";
 
 const [getEncryptedState, setEncryptedState] = createAsyncBrowserStorageAdapter<
@@ -2316,7 +2328,7 @@ These utilities are particularly helpful for tasks like signing/unsigning cookie
 
 To use these utilities, import `cookieStorage`:
 
-```typescript
+```ts
 import { cookieStorage } from "@ibnlanre/portal";
 ```
 
@@ -2332,7 +2344,7 @@ Signs a string value using a secret key. This is useful for creating tamper-proo
 - **Returns**: `string` - The signed string.
 - **Example**:
 
-  ```typescript
+  ```ts
   const originalValue = "user-session-data";
   const secretKey = "your-super-secret-key";
 
@@ -2350,7 +2362,7 @@ Verifies and unsigns a previously signed string using the corresponding secret k
 - **Returns**: `string | false` - The original string if the signature is valid, or `false` if tampering is detected or the secret is incorrect.
 - **Example**:
 
-  ```typescript
+  ```ts
   const potentiallyTamperedValue = "user-session-data.asdfjklsemf...";
   const secretKey = "your-super-secret-key";
 
@@ -2375,7 +2387,7 @@ Retrieves the value of a cookie by its name (key).
 - **Returns**: `string | null` - The cookie's value, or `null` if the cookie is not found.
 - **Example**:
 
-  ```typescript
+  ```ts
   const themePreference = cookieStorage.getItem("userTheme");
 
   if (themePreference) {
@@ -2394,7 +2406,7 @@ Sets or updates a cookie's value. You can also provide cookie options.
 - **Returns**: `void`
 - **Example**:
 
-  ```typescript
+  ```ts
   cookieStorage.setItem("userToken", "abc123xyz789", {
     secure: true,
     path: "/",
@@ -2412,7 +2424,7 @@ Removes a cookie by its name.
 - **Returns**: `void`
 - **Example**:
 
-  ```typescript
+  ```ts
   cookieStorage.removeItem("userToken", { path: "/" });
   ```
 
@@ -2423,7 +2435,7 @@ Attempts to clear all cookies accessible to the current document's path and doma
 - **Returns**: `void`
 - **Example**:
 
-  ```typescript
+  ```ts
   cookieStorage.clear(); // Clears cookies for the current path/domain
   ```
 
@@ -2445,7 +2457,7 @@ Constructs a standardized cookie name string based on a set of provided options.
 - **Returns**: `string` - The generated cookie name.
 - **Example**:
 
-  ```typescript
+  ```ts
   const authTokenKey = cookieStorage.createKey({
     cookieFragmentDescription: "Authentication Token",
     cookiePrefix: "__Secure-",
@@ -2466,7 +2478,7 @@ Retrieves the name (key) of a cookie at a specific index in the document's cooki
 - **Returns**: `string | null` - The cookie name at the specified index, or `null` if the index is out of bounds.
 - **Example**:
 
-  ```typescript
+  ```ts
   const firstCookieName = cookieStorage.key(0);
 
   if (firstCookieName) {
@@ -2481,7 +2493,7 @@ Retrieves the total number of cookies accessible to the current document.
 - **Type**: `number`
 - **Example**:
 
-  ```typescript
+  ```ts
   const numberOfCookies = cookieStorage.length;
   console.log(`There are ${numberOfCookies} cookies.`);
   ```
@@ -2492,7 +2504,7 @@ Retrieves the total number of cookies accessible to the current document.
 
 - **Use selectors for reactive derived data**: When you need derived state that should update when dependencies change, use selectors with `$use()` that depend on the actual store state, not external variables.
 
-  ```typescript
+  ```ts
   // ✅ Correct: Selector depends on store state - updates reactively
   const [userItems] = appStore.$use((state) =>
     state.items.filter((item) => item.ownedBy === state.selectedUserId)
@@ -2506,7 +2518,7 @@ Retrieves the total number of cookies accessible to the current document.
 
 - **Leverage dependency arrays for expensive computations**: When using selectors with `$use()`, provide a dependency array for expensive computations to prevent unnecessary recalculations.
 
-  ```typescript
+  ```ts
   // Expensive calculation with proper dependencies
   const [processedData] = store.$use(
     (state) => expensiveDataProcessing(state.rawData, complexConfig),
@@ -2516,7 +2528,7 @@ Retrieves the total number of cookies accessible to the current document.
 
 - **Choose the right approach for derived state**: Use different patterns based on your reactivity needs:
 
-  ```typescript
+  ```ts
   // For reactive derived state (updates components automatically)
   const [totalPrice] = cartStore.$use((cart) =>
     cart.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -2539,7 +2551,7 @@ Retrieves the total number of cookies accessible to the current document.
 
 - **Structure state for optimal updates**: Organize your state to minimize unnecessary re-renders:
 
-  ```typescript
+  ```ts
   // ✅ Good: Related data grouped together
   const uiStore = createStore({
     modals: { loginVisible: false, cartVisible: false },
@@ -2557,7 +2569,7 @@ Retrieves the total number of cookies accessible to the current document.
 
 - **Use granular subscriptions**: Subscribe only to the specific parts of state your component needs:
 
-  ```typescript
+  ```ts
   // ✅ Subscribe only to theme
   const [theme] = uiStore.theme.$use();
 
@@ -2568,7 +2580,7 @@ Retrieves the total number of cookies accessible to the current document.
 
 - **Batch related updates**: When making multiple related changes, batch them to prevent intermediate re-renders. This is especially important in React, where each state change can trigger a re-render:
 
-  ```typescript
+  ```ts
   // ✅ Single update for related changes
   userStore.$set((prevUser) => ({
     ...prevUser,
@@ -2606,7 +2618,7 @@ To make the most of `@ibnlanre/portal`, consider these best practices:
 - **Embrace immutability**: Always use `$set()` or the updater from `$use()` to change state. Avoid direct mutations.
 - **Co-locate actions**: Define actions (functions) within your composite stores to keep state logic close to the state it manages. This improves encapsulation and maintainability.
 - **Use selectors for derived data**: Prevent redundant state and keep your stores lean by computing derived values on the fly.
-  ```typescript
+  ```ts
   const cartStore = createStore({ items: [{ price: 10, quantity: 2 }] });
   const totalCost = cartStore.$get((state) =>
     state.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
