@@ -1,16 +1,19 @@
+import type { DependencyList } from "react";
+
 import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
 import type { Selector } from "@/create-store/types/selector";
 import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 
 import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
+import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { clone } from "@/create-store/functions/helpers/clone";
 import { replace } from "@/create-store/functions/helpers/replace";
-import { useVersion } from "@/create-store/functions/hooks/use-version";
+import { useSync } from "@/create-store/functions/hooks/use-sync";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
 export function createPrimitiveStore<State>(
@@ -18,6 +21,7 @@ export function createPrimitiveStore<State>(
 ): PrimitiveStore<State> {
   let state = initialState;
   const subscribers = new Set<Subscriber<State>>();
+  const cache = new WeakMap<object, any>();
 
   function setState(value: State) {
     state = value;
@@ -31,28 +35,24 @@ export function createPrimitiveStore<State>(
 
   function buildStore() {
     function $get<Value = State>(selector?: Selector<State, Value>) {
-      return resolveSelectorValue(state, selector);
+      return resolveSelectorValue(state, selector, cache);
     }
 
     function $set(action: SetPartialStateAction<State>) {
       const next = isSetStateActionFunction<State>(action)
-        ? action(clone(state))
+        ? action(clone(state, cache))
         : action;
       setState(replace(state, next));
     }
 
     function $use<Value = State>(
       selector?: Selector<State, Value>,
-      dependencies?: unknown
+      dependencies?: DependencyList
     ): PartialStateManager<State, Value> {
-      const getSnapshot = useCallback($get, []);
-      const subscribe = useCallback($act, []);
-
-      const value = useSyncExternalStore(subscribe, getSnapshot);
-      const version = useVersion([value, dependencies]);
-      const resolvedValue = useMemo(() => {
+      const value = useSyncExternalStore($act, $get);
+      const resolvedValue = useSync(() => {
         return resolveSelectorValue(value, selector);
-      }, [version]);
+      }, [value, dependencies]);
 
       return [resolvedValue, $set];
     }
@@ -77,11 +77,11 @@ export function createPrimitiveStore<State>(
   const node = buildStore() as PrimitiveStore<State>;
 
   return new Proxy(node, {
-    defineProperty(target, prop, descriptor) {
+    defineProperty() {
       return true;
     },
 
-    deleteProperty(target, prop) {
+    deleteProperty() {
       return true;
     },
 
@@ -106,11 +106,11 @@ export function createPrimitiveStore<State>(
       return isAccessor(target, prop);
     },
 
-    ownKeys(target) {
-      return [];
+    ownKeys() {
+      return isDictionary(state) ? Reflect.ownKeys(state) : [];
     },
 
-    set(target, prop, value) {
+    set() {
       return true;
     },
   });

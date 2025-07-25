@@ -18,7 +18,7 @@ import { clone } from "@/create-store/functions/helpers/clone";
 export function combine<Target extends Dictionary, Source extends Dictionary>(
   target: Target,
   source?: Source,
-  visited?: WeakMap<object, object>
+  cache?: WeakMap<object, object>
 ): Source extends Dictionary ? Replace<Target, Source> : Target;
 
 /**
@@ -36,17 +36,17 @@ export function combine<
 >(
   target: Target,
   sources: Sources,
-  visited?: WeakMap<object, object>
+  cache?: WeakMap<object, object>
 ): Combine<Target, Sources>;
 
 export function combine<
   Target extends Dictionary,
   Source extends Dictionary | Dictionary[],
->(target: Target, source?: Source, visited = new WeakMap()) {
+>(target: Target, source?: Source, cache = new WeakMap()) {
   if (Array.isArray(source)) {
     let result: any = target;
     for (let index = 0; index < source.length; index++) {
-      result = combine(result, source[index], visited);
+      result = combine(result, source[index], cache);
     }
     return result;
   }
@@ -55,16 +55,16 @@ export function combine<
     return source;
   }
 
-  if (visited.has(target)) return visited.get(target);
+  if (cache.has(target)) return cache.get(target);
 
-  const result = clone(target, visited);
-  visited.set(target, result);
+  const result = clone(target, cache);
+  cache.set(target, result);
 
   const properties = Object.getOwnPropertyNames(source);
   const symbols = Object.getOwnPropertySymbols(source);
 
-  copyProperties(result, properties, source, visited);
-  copyProperties(result, symbols, source, visited);
+  copyProperties(result, properties, source, cache);
+  copyProperties(result, symbols, source, cache);
 
   return result;
 }
@@ -77,13 +77,13 @@ export function combine<
  * @param result The target dictionary to copy properties into
  * @param keys The keys to copy from the source dictionary
  * @param source The source dictionary from which to copy properties
- * @param visited A WeakMap to track visited objects for cyclic references
+ * @param cache A WeakMap to track cache objects for cyclic references
  */
 export function copyProperties(
   result: Dictionary,
   keys: Array<PropertyKey>,
   source: Dictionary,
-  visited: WeakMap<object, object>
+  cache: WeakMap<object, object>
 ): void {
   for (let index = 0; index < keys.length; index++) {
     const key = keys[index];
@@ -92,7 +92,7 @@ export function copyProperties(
     const sourceValue = source[key];
 
     if (isDictionary(targetValue) && isDictionary(sourceValue)) {
-      result[key] = combine(targetValue, sourceValue, visited);
+      result[key] = combine(targetValue, sourceValue, cache);
     } else result[key] = sourceValue;
   }
 }

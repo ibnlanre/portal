@@ -1,4 +1,4 @@
-import type { Dispatch } from "react";
+import type { DependencyList, Dispatch } from "react";
 
 import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { Dictionary } from "@/create-store/types/dictionary";
@@ -12,7 +12,7 @@ import type { StatePath } from "@/create-store/types/state-path";
 import type { StoreValueResolver } from "@/create-store/types/store-value-resolver";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
@@ -23,7 +23,7 @@ import { createPathComponents } from "@/create-store/functions/helpers/create-pa
 import { createPaths } from "@/create-store/functions/helpers/create-paths";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { splitPath } from "@/create-store/functions/helpers/split-path";
-import { useVersion } from "@/create-store/functions/hooks/use-version";
+import { useSync } from "@/create-store/functions/hooks/use-sync";
 import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
@@ -177,18 +177,16 @@ export function createCompositeStore<State extends Dictionary>(
   >(
     path?: Path,
     selector?: Selector<Value, Result>,
-    dependencies?: unknown
+    dependencies?: DependencyList
   ): PartialStateManager<State, Result> {
     const getSnapshot = useCallback(() => resolvePath(state, path), [path]);
     const subscribe = useCallback(createSubscribe(path), [path]);
+    const setter = useCallback(set(path), [path]);
 
     const value = useSyncExternalStore(subscribe, getSnapshot);
-    const setter = useMemo(() => set(path), [path]);
-
-    const version = useVersion([value, dependencies]);
-    const resolvedValue = useMemo(() => {
+    const resolvedValue = useSync(() => {
       return resolveSelectorValue(value, selector);
-    }, [version]);
+    }, [value, dependencies]);
 
     return [resolvedValue, setter];
   }
@@ -234,7 +232,7 @@ export function createCompositeStore<State extends Dictionary>(
       },
       $use(
         selector?: Selector<State, ResolvePath<State, Path>>,
-        dependencies?: unknown[]
+        dependencies?: DependencyList
       ) {
         return use(chain, selector, dependencies);
       },
@@ -251,11 +249,11 @@ export function createCompositeStore<State extends Dictionary>(
     const node = buildStore(path) as CompositeStore<State>;
 
     const proxy = new Proxy(node, {
-      defineProperty(target, prop, descriptor) {
+      defineProperty() {
         return true;
       },
 
-      deleteProperty(target, prop) {
+      deleteProperty() {
         return true;
       },
 
@@ -311,12 +309,12 @@ export function createCompositeStore<State extends Dictionary>(
         return false;
       },
 
-      ownKeys(target) {
-        const currentValue = resolvePath(state, path);
-        return isDictionary(currentValue) ? Object.keys(currentValue) : [];
+      ownKeys() {
+        const value = resolvePath(state, path);
+        return isDictionary(value) ? Reflect.ownKeys(value) : [];
       },
 
-      set(target, prop, newValue) {
+      set() {
         return true;
       },
     });

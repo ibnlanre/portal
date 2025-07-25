@@ -10,14 +10,14 @@ import { useVersion } from "@/create-store/functions/hooks/use-version";
  * A custom hook that computes data synchronously based on a factory function and optional dependencies.
  *
  * @param factory A function that produces the synchronous data.
- * @param dependencyList An optional list of dependencies that, when changed, will trigger a re-computation of the data.
+ * @param dependencies An optional list of dependencies that, when changed, will trigger a re-computation of the data.
  *
  * @returns The computed data from the factory function.
  */
 export function useSync<Data>(
   factory: SyncFunction<Data>,
-  dependencyList: DependencyList = []
+  dependencies: DependencyList = []
 ): Data {
-  const version = useVersion(dependencyList);
+  const version = useVersion(dependencies);
   return useMemo(factory, [version]);
 }

@@ -1,3 +1,5 @@
+import type { DependencyList } from "react";
+
 import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 import type { PartialStateSetter } from "@/create-store/types/partial-state-setter";
 import type { Selector } from "@/create-store/types/selector";
@@ -12,6 +14,6 @@ export type PrimitiveStore<State> = {
   readonly $set: PartialStateSetter<State>;
   readonly $use: <Value = State>(
     selector?: Selector<State, Value>,
-    dependencies?: unknown[]
+    dependencies?: DependencyList
   ) => PartialStateManager<State, Value>;
 };

@@ -27,7 +27,7 @@ describe("resolveSelectorValue", () => {
     const clone = vi.spyOn(helpers, "clone");
 
     resolveSelectorValue(state);
-    expect(clone).toHaveBeenCalledWith(state);
+    expect(clone).toHaveBeenCalledWith(state, undefined);
   });
 
   it("calls selector with the cloned state", () => {

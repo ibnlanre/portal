@@ -19,9 +19,9 @@ import { reducer } from "./reducer";
  */
 export function useAsync<Data>(
   effect: AsyncFunction<Data>,
-  dependencyList: DependencyList = []
+  dependencies: DependencyList = []
 ): AsyncState<Data> {
-  const version = useVersion(dependencyList);
+  const version = useVersion(dependencies);
 
   const [state, dispatch] = useReducer(reducer<Data>, {
     data: null,
