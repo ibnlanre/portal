@@ -9,17 +9,13 @@ import { createContext, useContext } from "react";
  * Initializes a context store with a provider and a hook for accessing its value.
  *
  * @param use A hook function that generates the store from the given context.
- * @param displayName An optional display name for the context, used for debugging.
- *                    Defaults to "StoreContext" if not provided.
- *
  * @returns A tuple with the StoreProvider component and the useStore hook.
  */
 export function createContextStore<Context, Store>(
-  use: ContextValue<Context, Store>,
-  displayName: string = "StoreContext"
+  use: ContextValue<Context, Store>
 ): ContextStore<Context, Store> {
   const StoreContext = createContext<null | Store>(null);
-  StoreContext.displayName = displayName;
+  StoreContext.displayName = "StoreContext";
 
   function StoreProvider({
     children,
@@ -36,7 +32,7 @@ export function createContextStore<Context, Store>(
 
     if (store === null) {
       throw new Error(
-        `Make sure your component is wrapped in <${displayName}.Provider>`
+        `Make sure your component is wrapped in <${StoreContext.displayName}.Provider>`
       );
     }
 
