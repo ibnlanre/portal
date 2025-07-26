@@ -6,8 +6,9 @@ export default defineConfig({
   entry: ["index.ts"],
   external: ["react", "react-dom"],
   format: ["esm", "cjs"],
+  minify: true,
+  minifyWhitespace: true,
   outDir: "dist",
   platform: "browser",
   sourcemap: true,
-  splitting: false,
 });
