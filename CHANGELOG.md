@@ -1,4 +1,13 @@
-## [5.2.2](https://github.com/ibnlanre/portal/compare/v5.2.1...v5.2.2) (2025-07-26)
+## [5.2.3](https://github.com/ibnlanre/portal/compare/v5.2.2...v5.2.3) (2025-07-26)
+
+
+### Bug Fixes
+
+* correct function name from createContextScope to createContextStore in documentation ([e1368b3](https://github.com/ibnlanre/portal/commit/e1368b3d250348a3bf2db410dea5eaaf97e9a930))
+
+
+
+## [5.2.1](https://github.com/ibnlanre/portal/compare/v5.2.0...v5.2.1) (2025-07-26)
 
 
 
