@@ -31,7 +31,7 @@ Whether you're building a small React component or a large-scale application, `@
 - [Use the API: Reference and examples](#use-the-api-reference-and-examples)
   - [Create stores: `createStore()`](#create-stores-createstore)
     - [Using `createStore()`](#using-createstore)
-    - [Using `createPrimitiveStore()`](#using-primitivestore)
+    - [Using `createPrimitiveStore()`](#using-createprimitivestore)
     - [Using `createCompositeStore()`](#using-compositestore)
   - [Create context stores: `createContextStore()`](#create-context-stores-createcontextstore)
   - [Use store instance methods](#use-store-instance-methods)
@@ -103,9 +103,7 @@ Whether you're building a small React component or a large-scale application, `@
 - **🛠️ Advanced Capabilities**
   - Async operations with built-in loading states
   - Deep dependency tracking for computed values
-  - Interface normalization for complex objectsombine` to simplify merging state and actions.
-- **Asynchronous initialization**: Initialize stores with data fetched from APIs or other asynchronous sources.
-- **Context Store creation**: Use `createContextStore` to create React Context-based stores that can be initialized with props or external data, solving the problem of prop-to-store synchronization.
+  - Interface normalization for complex objects
 
 ## Get started
 
@@ -481,7 +479,7 @@ interface UserProps {
 }
 
 // Create a context store for user settings
-const [UserProvider, useUserStore] = createContextScope(
+const [UserProvider, useUserStore] = createContextStore(
   (context: UserProps) => {
     return createStore(context);
   }
@@ -520,22 +518,24 @@ type CounterContext = { initialCount: number };
 
 const [CounterProvider, useCounterStore] = createContextStore(
   (context: CounterContext) => {
-    const actions = {
-      increment: () => {
-        store.count.$set((prev) => prev + 1);
-      },
-      decrement: () => {
-        store.count.$set((prev) => prev - 1);
-      },
-      reset: () => {
-        store.count.$set(context.initialCount);
-      },
-    };
+    const store = useSync(() => {
+      const initialState = { count: context.initialCount };
 
-    const store = useSync(
-      () => createStore(combine({ count: context.initialCount }, actions)),
-      [context.initialCount]
-    );
+      const actions = {
+        increment: () => {
+          counterStore.count.$set((prev) => prev + 1);
+        },
+        decrement: () => {
+          counterStore.count.$set((prev) => prev - 1);
+        },
+        reset: () => {
+          counterStore.count.$set(context.initialCount);
+        },
+      };
+
+      const counterStore = createStore(combine(initialState, actions));
+      return counterStore;
+    }, [context.initialCount]);
 
     return store;
   }
@@ -1186,7 +1186,9 @@ interface UserProfileComponentProps {
 }
 
 function UserProfileComponent({ userId }: UserProfileComponentProps) {
-  const { profile, loading, error } = userStore.useLoadUserProfile(userId);
+  const { profileLoading: loading, profileError: error } =
+    userStore.useProfile(userId);
+  const [profile] = userStore.profile.$use();
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
@@ -1300,9 +1302,9 @@ The `useVersion` hook is particularly useful when you want deep dependency track
 
 > **Tip:** Rather than using `useEffect` to sync the store state to an external service, consider using `$act` for more efficient updates. This allows you to subscribe to changes in the store and react accordingly, while also providing a way to unsubscribe when no longer needed.
 
-### Context-based stores: `createContextScope`
+### Context-based stores: `createContextStore`
 
-The `createContextScope` function enables efficient global store management through React Context. It provides a powerful pattern for creating provider-based stores that can be initialized with external data and shared across component trees.
+The `createContextStore` function enables efficient global store management through React Context. It provides a powerful pattern for creating provider-based stores that can be initialized with external data and shared across component trees.
 
 **Key Features:**
 
@@ -1315,7 +1317,7 @@ The `createContextScope` function enables efficient global store management thro
 **Basic Usage:**
 
 ```tsx
-import { combine, createStore, createContextScope } from "@ibnlanre/portal";
+import { combine, createStore, createContextStore } from "@ibnlanre/portal";
 
 // Define the context type
 type AppContext = {
@@ -1325,7 +1327,7 @@ type AppContext = {
 };
 
 // Create the context scope
-const [AppProvider, useAppStore] = createContextScope((context: AppContext) => {
+const [AppProvider, useAppStore] = createContextStore((context: AppContext) => {
   const initialState = {
     user: {
       id: context.userId,
