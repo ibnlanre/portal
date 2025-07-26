@@ -23,13 +23,13 @@ const [getStoredProfile, setStoredProfile] = createIndexedDBAdapter<
   UserProfile,
   StoredUserProfile
 >("userProfile", {
-  storageTransform(profile) {
+  beforeStorage(profile) {
     return {
       ...profile,
       lastLogin: profile.lastLogin.toISOString(),
     };
   },
-  usageTransform(profile) {
+  beforeUsage(profile) {
     return {
       ...profile,
       lastLogin: new Date(profile.lastLogin),

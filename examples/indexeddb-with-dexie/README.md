@@ -193,13 +193,13 @@ const adapter = createIndexedDBAdapter("myKey", {
 
 ```typescript
 const adapter = createIndexedDBAdapter("myKey", {
-  storageTransform: (value) => {
+  beforeStorage: (value) => {
     if (value instanceof Date) {
       return value.toISOString(); // Serialize Date to string
     }
     return value; // Default serialization
   },
-  usageTransform: (value) => {
+  beforeUsage: (value) => {
     if (typeof value === "string" && !isNaN(Date.parse(value))) {
       return new Date(value); // Deserialize string back to Date
     }

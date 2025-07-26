@@ -35,7 +35,7 @@ export interface AsyncBrowserStorageTransforms<State, StoredState = State> {
    * @param value The value to transform.
    * @returns The transformed value.
    */
-  storageTransform?: (value: State) => StoredState;
+  beforeStorage?: (value: State) => StoredState;
 
   /**
    * A function to transform the value after getting it from storage.
@@ -44,7 +44,7 @@ export interface AsyncBrowserStorageTransforms<State, StoredState = State> {
    * @param value The value to transform.
    * @returns The transformed value.
    */
-  usageTransform?: (value: StoredState) => State;
+  beforeUsage?: (value: StoredState) => State;
 }
 
 export interface AsyncGetBrowserStorage<State> {

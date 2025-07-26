@@ -15,13 +15,7 @@ export function createIndexedDBAdapter<State, StoredState = State>(
   key: string,
   options: IndexedDBAdapterOptions<State, StoredState> = {}
 ) {
-  const {
-    databaseName = "PortalStore",
-    storageTransform,
-    usageTransform,
-    version = 1,
-  } = options;
-
+  const { databaseName = "PortalStore", version = 1, ...transforms } = options;
   const db = new StoreDatabase<State, StoredState>(databaseName, version);
 
   db.open().catch((error) => {
@@ -29,6 +23,7 @@ export function createIndexedDBAdapter<State, StoredState = State>(
   });
 
   return createAsyncBrowserStorageAdapter<State, StoredState>(key, {
+    ...transforms,
     getItem: async (key) => {
       try {
         const result = await db.stores.get(key);
@@ -57,7 +52,5 @@ export function createIndexedDBAdapter<State, StoredState = State>(
         console.error("Failed to set state in IndexedDB:", error);
       }
     },
-    storageTransform,
-    usageTransform,
   });
 }

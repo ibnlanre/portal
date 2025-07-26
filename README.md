@@ -2254,7 +2254,7 @@ The adapter provides two functions: one for getting the state from storage and a
 **Syntax:**
 
 ```ts
-createAsyncBrowserStorageAdapter<State, StoredState>(
+createAsyncBrowserStorageAdapter<State, StoredState = State>(
   key: string,
   options: AsyncBrowserStorageAdapterOptions<State, StoredState>
 ): [
@@ -2270,17 +2270,17 @@ createAsyncBrowserStorageAdapter<State, StoredState>(
   - `getItem: (key: string) => Promise<string | null> | string | null`: Function to retrieve an item.
   - `setItem: (key: string, value: string) => Promise<void> | void`: Function to save an item.
   - `removeItem: (key: string) => Promise<void> | void`: Function to remove an item.
-  - `usageTransform`: A function that transforms the data **from** storage before it's used in your application.
-  - `storageTransform`: A function that transforms the data **to** be stored.
+  - `beforeUsage?`: A function that transforms the data **from** storage before it's used in your application.
+  - `beforeStorage?`: A function that transforms the data **to** be stored.
 
 **Return Value:**
 `[getStorageState, setStorageState]`
 
 - `getStorageState(fallback?: State): Promise<State | undefined>`
-  - Retrieves the state from storage, applying the `usageTransform` function.
+  - Retrieves the state from storage, applying the `beforeUsage` function.
   - If no state is found, it returns the provided fallback value.
 - `setStorageState(value?: State): Promise<void>`
-  - Saves the state to storage, applying the `storageTransform` function.
+  - Saves the state to storage, applying the `beforeStorage` function.
 
 **Example:**
 
@@ -2302,22 +2302,22 @@ const [getEncryptedState, setEncryptedState] = createAsyncBrowserStorageAdapter<
   setItem(key, value) {
     return localStorage.setItem(key, value);
   },
-  storageTransform(data) {
+  beforeStorage(data) {
     return btoa(JSON.stringify(data)); // Encrypt before storing
   },
-  usageTransform(data) {
+  beforeUsage(data) {
     return JSON.parse(atob(data)); // Decrypt when retrieving
   },
 });
 
 // Now, you can use these functions to persist a store
 const result = await getEncryptedState({ sensitive: "data" });
+
+// When the store is initialized, the data will be decrypted.
 const store = createStore(result);
 
 // When you set the state, it will be encrypted before being stored.
 store.$act(setEncryptedState, false);
-
-// When the store is initialized, the data will be decrypted.
 ```
 
 ## Cookie Storage

@@ -128,11 +128,11 @@ describe("createAsyncBrowserStorageAdapter", () => {
         StoredUser
       >("test-key", {
         ...mockStorage,
-        storageTransform: (user) => ({
+        beforeStorage: (user) => ({
           ...user,
           createdAt: user.createdAt.toISOString(),
         }),
-        usageTransform: (stored) => ({
+        beforeUsage: (stored) => ({
           ...stored,
           createdAt: new Date(stored.createdAt),
         }),
@@ -165,11 +165,11 @@ describe("createAsyncBrowserStorageAdapter", () => {
         StoredUser
       >("test-key", {
         ...mockStorage,
-        storageTransform: (user) => ({
+        beforeStorage: (user) => ({
           ...user,
           createdAt: user.createdAt.toISOString(),
         }),
-        usageTransform: (stored) => ({
+        beforeUsage: (stored) => ({
           ...stored,
           createdAt: new Date(stored.createdAt),
         }),
@@ -225,7 +225,7 @@ describe("createAsyncBrowserStorageAdapter", () => {
           "test-key",
           {
             ...mockStorage,
-            storageTransform: (state) => ({
+            beforeStorage: (state) => ({
               metadata: {
                 ...state.metadata,
                 lastUpdated: state.metadata.lastUpdated.toISOString(),
@@ -235,7 +235,7 @@ describe("createAsyncBrowserStorageAdapter", () => {
                 createdAt: user.createdAt.toISOString(),
               })),
             }),
-            usageTransform: (stored) => ({
+            beforeUsage: (stored) => ({
               metadata: {
                 ...stored.metadata,
                 lastUpdated: new Date(stored.metadata.lastUpdated),
@@ -330,7 +330,7 @@ describe("createAsyncBrowserStorageAdapter", () => {
 
       const [getStorageState] = createAsyncBrowserStorageAdapter("test-key", {
         ...mockStorage,
-        usageTransform: () => {
+        beforeUsage: () => {
           throw new Error("Transform error");
         },
       });
