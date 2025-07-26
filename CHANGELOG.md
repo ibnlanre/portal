@@ -1,4 +1,8 @@
-## [5.2.1](https://github.com/ibnlanre/portal/compare/v5.2.0...v5.2.1) (2025-07-26)
+## [5.2.2](https://github.com/ibnlanre/portal/compare/v5.2.1...v5.2.2) (2025-07-26)
+
+
+
+# [5.2.0](https://github.com/ibnlanre/portal/compare/v5.1.2...v5.2.0) (2025-07-26)
 
 
 ### Bug Fixes
