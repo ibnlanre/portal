@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      '@ibnlanre/clone':
-        specifier: ^0.5.1
-        version: 0.5.1
     devDependencies:
       '@arethetypeswrong/cli':
         specifier: ^0.18.2
@@ -21,6 +17,9 @@ importers:
       '@eslint-react/eslint-plugin':
         specifier: ^1.52.2
         version: 1.52.2(eslint@9.29.0(jiti@2.4.2))(ts-api-utils@2.1.0(typescript@5.8.3))(typescript@5.8.3)
+      '@ibnlanre/clone':
+        specifier: ^0.5.1
+        version: 0.5.1
       '@stylistic/eslint-plugin':
         specifier: ^4.4.1
         version: 4.4.1(eslint@9.29.0(jiti@2.4.2))(typescript@5.8.3)
