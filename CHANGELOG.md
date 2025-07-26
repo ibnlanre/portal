@@ -1,4 +1,25 @@
+# [5.2.0](https://github.com/ibnlanre/portal/compare/v5.1.2...v5.2.0) (2025-07-26)
+
+
+### Bug Fixes
+
+* update variable names for consistency in counter store example ([d44a620](https://github.com/ibnlanre/portal/commit/d44a620c6370b4152c398160e65665c51417195b))
+
+
+### Features
+
+* add createContextStore for context-based state management ([033bc2e](https://github.com/ibnlanre/portal/commit/033bc2ee5787810d8387234e36d18042e3a8e90b))
+* add useSync hook with comprehensive tests ([e77b190](https://github.com/ibnlanre/portal/commit/e77b190fa068519e09320f85ba21e630a63b20d4))
+* implement useAsync hook for handling asynchronous effects with loading, error, and data states ([d7ca669](https://github.com/ibnlanre/portal/commit/d7ca6692988361569a787e3525d3e172baa97f35))
+* introduce useVersion hook for deep dependency tracking and update related hooks and tests ([7b2469e](https://github.com/ibnlanre/portal/commit/7b2469e804a2e869c703ddace4e5e61f4c0308b9))
+
+
+
 ## [5.1.2](https://github.com/ibnlanre/portal/compare/v5.1.1...v5.1.2) (2025-07-04)
+
+
+
+## [5.1.1](https://github.com/ibnlanre/portal/compare/v5.1.0...v5.1.1) (2025-07-04)
 
 
 
