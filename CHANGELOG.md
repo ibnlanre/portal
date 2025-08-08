@@ -1,9 +1,22 @@
+## [5.2.4](https://github.com/ibnlanre/portal/compare/v5.2.3...v5.2.4) (2025-08-08)
+
+
+### Bug Fixes
+
+* correct DOCTYPE declaration and update browserslist in package.json ([e9b16d8](https://github.com/ibnlanre/portal/commit/e9b16d8de406594c60b1707bbaf036809c832c8f))
+
+
+
 ## [5.2.3](https://github.com/ibnlanre/portal/compare/v5.2.2...v5.2.3) (2025-07-26)
 
 
 ### Bug Fixes
 
 * correct function name from createContextScope to createContextStore in documentation ([e1368b3](https://github.com/ibnlanre/portal/commit/e1368b3d250348a3bf2db410dea5eaaf97e9a930))
+
+
+
+## [5.2.2](https://github.com/ibnlanre/portal/compare/v5.2.1...v5.2.2) (2025-07-26)
 
 
 
