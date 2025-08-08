@@ -108,7 +108,10 @@
     "prepublishOnly": "npm run bundle",
     "pretest": "npm run typecheck",
     "preversion": "npm run test",
-    "test": "vitest run --typecheck",
+    "test": "npm run test:browser && npm run test:ssr",
+    "test:ci": "vitest run --coverage --typecheck",
+    "test:browser": "vitest run --config vitest.config.mts",
+    "test:ssr": "vitest run --config vitest.ssr.config.mts",
     "typecheck": "tsc --pretty --noEmit",
     "version": "npm run commit"
   },

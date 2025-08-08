@@ -49,7 +49,7 @@ export function createPrimitiveStore<State>(
       selector?: Selector<State, Value>,
       dependencies?: DependencyList
     ): PartialStateManager<State, Value> {
-      const value = useSyncExternalStore($act, $get);
+      const value = useSyncExternalStore($act, $get, $get);
       const resolvedValue = useSync(() => {
         return resolveSelectorValue(value, selector);
       }, [value, dependencies]);

@@ -183,7 +183,7 @@ export function createCompositeStore<State extends Dictionary>(
     const subscribe = useCallback(createSubscribe(path), [path]);
     const setter = useCallback(set(path), [path]);
 
-    const value = useSyncExternalStore(subscribe, getSnapshot);
+    const value = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
     const resolvedValue = useSync(() => {
       return resolveSelectorValue(value, selector);
     }, [value, dependencies]);
