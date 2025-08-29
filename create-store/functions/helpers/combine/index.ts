@@ -66,8 +66,8 @@ export function combine<
   const properties = Object.getOwnPropertyNames(source);
   const symbols = Object.getOwnPropertySymbols(source);
 
-  copyProperties(result, properties, source, cache);
-  copyProperties(result, symbols, source, cache);
+  combineHelper(result, properties, source, cache);
+  combineHelper(result, symbols, source, cache);
 
   return result;
 }
@@ -82,11 +82,11 @@ export function combine<
  * @param source The source dictionary from which to copy properties
  * @param cache A WeakMap to track cache objects for cyclic references
  */
-export function copyProperties(
+export function combineHelper(
   result: GenericObject,
   keys: Array<PropertyKey>,
   source: GenericObject,
-  cache: WeakMap<object, object>
+  cache: WeakMap<object, object> = new WeakMap()
 ): void {
   for (let index = 0; index < keys.length; index++) {
     const key = keys[index];

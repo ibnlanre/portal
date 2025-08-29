@@ -26,6 +26,7 @@ describe("ResolvePath", () => {
       id: number;
       name: string;
     };
+
     expectTypeOf<Result>().toEqualTypeOf<Expected>();
   });
 
@@ -46,6 +47,7 @@ describe("ResolvePath", () => {
       | {
           44: string;
         };
+
     expectTypeOf<Result>().toEqualTypeOf<Expected>();
   });
 
@@ -64,6 +66,7 @@ describe("ResolvePath", () => {
       id: number;
       name: string;
     }[];
+
     expectTypeOf<Result>().toEqualTypeOf<Expected>();
   });
 });
