@@ -132,15 +132,15 @@ describe("Combine", () => {
     });
 
     it("should handle complex nested types", () => {
-      type NestedType1 = {
+      interface NestedType1 {
         config: { size: number; theme: "light" };
         methods: { save: () => void };
-      };
+      }
 
-      type NestedType2 = {
+      interface NestedType2 {
         config: { margin: string; theme: "dark" };
         methods: { load: () => void };
-      };
+      }
 
       type Result = Combine<BaseStore, [NestedType1, NestedType2]>;
 

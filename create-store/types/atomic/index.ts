@@ -1,11 +1,6 @@
 import type { Atom } from "@/create-store/types/atom";
 import type { GenericObject } from "@/create-store/types/generic-object";
 import type { Prettify } from "@/create-store/types/prettify";
-import type { Replace } from "@/create-store/types/replace";
-
-import { createStore } from "@/create-store";
-import { combine } from "@/create-store/functions/helpers/combine";
-import { atom } from "@/create-store/functions/library/atom";
 
 /**
  * An atomic store is a store that is treated as a single unit.

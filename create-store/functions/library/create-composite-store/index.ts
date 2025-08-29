@@ -206,8 +206,7 @@ export function createCompositeStore<State extends GenericObject>(
 
     if (isFunction(value)) return value;
 
-    if (isDictionary(value)) {
-      if (isAtomic(value)) return value;
+    if (isDictionary(value) && !isAtomic(value)) {
       if (cache.has(value)) return cache.get(value);
       return createProxy(fullPath);
     }

@@ -1,6 +1,5 @@
-import type { Primitives } from "@/create-store/types/primitives";
-import type { Reference } from "@/create-store/types/reference";
+import type { BuiltIn } from "@/create-store/types/built-in";
 
-export type Normalize<Value> = Value extends Primitives | Reference
+export type Normalize<Value> = Value extends BuiltIn
   ? Value
   : { [K in keyof Value]: Normalize<Value[K]> };
