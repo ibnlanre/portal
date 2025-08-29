@@ -239,10 +239,7 @@ describe("combine", () => {
       const target = { data: arr };
       const source = { metadata: "info" };
 
-      const result = combine(target, source) as {
-        data: any[];
-        metadata: string;
-      };
+      const result = combine(target, source);
 
       expect(result.data[0]).toBe(1);
       expect(result.data[1]).toBe(2);
@@ -257,10 +254,7 @@ describe("combine", () => {
       const target = { created: date };
       const source = { updated: new Date("2023-01-02") };
 
-      const result = combine(target, source) as {
-        created: Date;
-        updated: Date;
-      };
+      const result = combine(target, source);
 
       expect(result.created).toBe(date);
       expect(result.updated).toEqual(new Date("2023-01-02"));
@@ -271,10 +265,7 @@ describe("combine", () => {
       const target = { pattern: regex };
       const source = { flags: "added" };
 
-      const result = combine(target, source) as {
-        flags: string;
-        pattern: RegExp;
-      };
+      const result = combine(target, source);
 
       expect(result.pattern).toBe(regex);
       expect(result.flags).toBe("added");
@@ -293,12 +284,7 @@ describe("combine", () => {
         d: null,
       };
 
-      const result = combine(target, source) as {
-        a: string;
-        b: string;
-        c: string;
-        d: null;
-      };
+      const result = combine(target, source);
 
       expect(result).toEqual({
         a: "not null",
@@ -315,10 +301,7 @@ describe("combine", () => {
       const target = { func: fn1 };
       const source = { func: fn2, newFunc: fn1 };
 
-      const result = combine(target, source) as {
-        func: () => string;
-        newFunc: () => string;
-      };
+      const result = combine(target, source);
 
       expect(result.func).toBe(fn2);
       expect(result.newFunc).toBe(fn1);
@@ -382,7 +365,6 @@ describe("combine", () => {
       };
 
       combine(target, source);
-
       expect(target).toEqual(targetCopy);
     });
 
@@ -398,7 +380,6 @@ describe("combine", () => {
       const sourceCopy = JSON.parse(JSON.stringify(source));
 
       combine(target, source);
-
       expect(source).toEqual(sourceCopy);
     });
 
@@ -419,14 +400,7 @@ describe("combine", () => {
         },
       };
 
-      const result = combine(target, source) as {
-        config: {
-          settings: {
-            retries: number;
-            timeout: number;
-          };
-        };
-      };
+      const result = combine(target, source);
 
       result.config.settings.timeout = 9999;
       result.config.settings.retries = 9999;
@@ -449,7 +423,7 @@ describe("combine", () => {
       const target = new Child() as any;
       const source = { childProp: "updated", newProp: "added" };
 
-      const result: any = combine(target, source);
+      const result = combine(target, source);
 
       expect(result.childProp).toBe("updated");
       expect(result.newProp).toBe("added");
@@ -517,7 +491,6 @@ describe("combine", () => {
       const source3 = { a: 100, d: 40 };
 
       const result = combine(target, [source1, source2, source3]);
-
       expect(result).toEqual({ a: 100, b: 10, c: 20, d: 40 });
     });
 
@@ -610,11 +583,7 @@ describe("combine", () => {
       const source1 = { func: fn2, helper: fn1 };
       const source2 = { func: fn3, utility: fn2 };
 
-      const result = combine(target, [source1, source2]) as {
-        func: () => string;
-        helper: () => string;
-        utility: () => string;
-      };
+      const result = combine(target, [source1, source2]);
 
       expect(result.func).toBe(fn3);
       expect(result.helper).toBe(fn1);
@@ -631,11 +600,7 @@ describe("combine", () => {
       const source1 = { action2: sharedFunction };
       const source2 = { action3: sharedFunction };
 
-      const result = combine(target, [source1, source2]) as {
-        action1: () => string;
-        action2: () => string;
-        action3: () => string;
-      };
+      const result = combine(target, [source1, source2]);
 
       expect(result.action1).toBe(sharedFunction);
       expect(result.action2).toBe(sharedFunction);
@@ -654,15 +619,7 @@ describe("combine", () => {
       const source2 = { bool: true, regex };
       const source3 = { arr: [1, 2, 3], func: fn };
 
-      const result = combine(target, [source1, source2, source3]) as {
-        arr: number[];
-        bool: boolean;
-        date: Date;
-        func: () => string;
-        num: number;
-        regex: RegExp;
-        str: string;
-      };
+      const result = combine(target, [source1, source2, source3]);
 
       expect(result.str).toBe("hello");
       expect(result.num).toBe(42);

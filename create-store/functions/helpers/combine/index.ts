@@ -1,5 +1,5 @@
 import type { Combine } from "@/create-store/types/combine";
-import type { Dictionary } from "@/create-store/types/dictionary";
+import type { GenericObject } from "@/create-store/types/generic-object";
 import type { Replace } from "@/create-store/types/replace";
 
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
@@ -11,37 +11,40 @@ import { clone } from "@/create-store/functions/helpers/clone";
  * Handles cyclic references to prevent infinite recursion.
  *
  * @param target The target object that will receive the merged values
- * @param source The source object to merge into the target
- *
- * @returns A new merged object without modifying any of the inputs
- */
-export function combine<Target extends Dictionary, Source extends Dictionary>(
-  target: Target,
-  source?: Source,
-  cache?: WeakMap<object, object>
-): Source extends Dictionary ? Replace<Target, Source> : Target;
-
-/**
- * A simple and straightforward deep merge function that recursively merges objects.
- * Handles cyclic references to prevent infinite recursion.
- *
- * @param target The target object that will receive the merged values
  * @param sources An array of source objects to merge into the target
  *
  * @returns A new merged object without modifying any of the inputs
  */
 export function combine<
-  Target extends Dictionary,
-  Sources extends Dictionary[],
+  Target extends GenericObject,
+  Sources extends GenericObject[],
 >(
   target: Target,
   sources: Sources,
   cache?: WeakMap<object, object>
 ): Combine<Target, Sources>;
 
+/**
+ * A simple and straightforward deep merge function that recursively merges objects.
+ * Handles cyclic references to prevent infinite recursion.
+ *
+ * @param target The target object that will receive the merged values
+ * @param source The source object to merge into the target
+ *
+ * @returns A new merged object without modifying any of the inputs
+ */
 export function combine<
-  Target extends Dictionary,
-  Source extends Dictionary | Dictionary[],
+  Target extends GenericObject,
+  Source extends GenericObject,
+>(
+  target: Target,
+  source?: Source,
+  cache?: WeakMap<object, object>
+): Source extends GenericObject ? Replace<Target, Source> : Target;
+
+export function combine<
+  Target extends GenericObject,
+  Source extends GenericObject | GenericObject[],
 >(target: Target, source?: Source, cache = new WeakMap()) {
   if (Array.isArray(source)) {
     let result: any = target;
@@ -80,9 +83,9 @@ export function combine<
  * @param cache A WeakMap to track cache objects for cyclic references
  */
 export function copyProperties(
-  result: Dictionary,
+  result: GenericObject,
   keys: Array<PropertyKey>,
-  source: Dictionary,
+  source: GenericObject,
   cache: WeakMap<object, object>
 ): void {
   for (let index = 0; index < keys.length; index++) {

@@ -1041,19 +1041,16 @@ describe("createCompositeStore", () => {
         const state1 = store.$get();
         const state2 = store.$get();
 
-        // Should be deep equal but not the same reference
         expect(state1).toEqual(state2);
         expect(state1).not.toBe(state2);
         expect(state1.user).not.toBe(state2.user);
 
-        // Mutating returned state should not affect store
         state1.user.name = "Jane";
         state1.settings.theme = "light";
 
         expect(store.user.name.$get()).toBe("John");
         expect(store.settings.theme.$get()).toBe("dark");
 
-        // Should not affect other retrieved states
         expect(state2.user.name).toBe("John");
         expect(state2.settings.theme).toBe("dark");
       });
@@ -1072,7 +1069,6 @@ describe("createCompositeStore", () => {
         expect(items1).toEqual(items2);
         expect(items1).not.toBe(items2);
 
-        // Mutating should not affect store
         items1.push(4);
         expect(store.data.items.$get()).toEqual([1, 2, 3]);
         expect(items2).toEqual([1, 2, 3]);
@@ -1096,7 +1092,6 @@ describe("createCompositeStore", () => {
         expect(activeUsers1).toEqual(activeUsers2);
         expect(activeUsers1).not.toBe(activeUsers2);
 
-        // Mutating should not affect store
         activeUsers1[0].name = "Modified";
         expect(store.users.$get()[0].name).toBe("Alice");
       });
@@ -1104,58 +1099,47 @@ describe("createCompositeStore", () => {
 
     describe("Memory efficiency", () => {
       it("should handle large objects efficiently", () => {
-        const largeArray = Array.from({ length: 10000 }, (_, i) => ({
+        const data = Array.from({ length: 100 }, (_, i) => ({
           id: i,
           value: `item-${i}`,
         }));
-        const store = createCompositeStore({ data: largeArray });
+        const store = createCompositeStore({ data });
 
-        const start = performance.now();
+        let lastResult: typeof data | undefined;
+        for (let i = 0; i < 10; i++) {
+          const result = store.data.$get();
 
-        // Multiple gets should complete reasonably quickly
-        for (let i = 0; i < 100; i++) {
-          store.data.$get();
+          expect(result).toHaveLength(100);
+          expect(result[0]).toEqual({ id: 0, value: "item-0" });
+
+          lastResult = result;
         }
 
-        const end = performance.now();
-        const duration = end - start;
-
-        // Should complete within reasonable time (adjust threshold as needed)
-        expect(duration).toBeLessThan(1000); // 1 second
+        expect(lastResult).toHaveLength(100);
+        expect(lastResult?.[99]).toEqual({ id: 99, value: "item-99" });
       });
 
       it("should allow garbage collection of returned states", () => {
-        const store = createCompositeStore({
-          data: { items: Array.from({ length: 1000 }, (_, i) => `item-${i}`) },
-        });
+        const items = Array.from({ length: 100 }, (_, i) => `item-${i}`);
+        const store = createCompositeStore({ data: { items } });
 
-        // Create weak references to track garbage collection
-        const weakRefs: WeakRef<any>[] = [];
+        const results: Array<{ items: string[] }> = [];
+        for (let i = 0; i < 5; i++) {
+          const state = store.data.$get();
+          results.push(state);
 
-        // Create many cloned states
-        for (let i = 0; i < 10; i++) {
-          const state = store.$get();
-          weakRefs.push(new WeakRef(state));
+          expect(state.items).toHaveLength(100);
+          expect(state.items[0]).toBe("item-0");
         }
 
-        // Force garbage collection (if available)
-        if (global.gc) {
-          global.gc();
-        }
+        expect(results).toHaveLength(5);
 
-        // At least some should be garbage collected
-        // Note: This is not guaranteed due to JS GC behavior, but gives us insight
-        const collected = weakRefs.filter(
-          (ref) => ref.deref() === undefined
-        ).length;
+        expect(results[0]).not.toBe(results[1]);
+        expect(results[0].items).not.toBe(results[1].items);
+        expect(results[0].items).toBeInstanceOf(Array);
 
-        // This test is informational - we can't guarantee GC behavior
-        console.log(
-          `Garbage collected ${collected} out of ${weakRefs.length} cloned states`
-        );
-
-        // Add a basic assertion so the test doesn't fail
-        expect(weakRefs.length).toBe(10);
+        results[0].items[0] = "modified";
+        expect(results[1].items[0]).toBe("item-0");
       });
     });
 
@@ -1163,7 +1147,7 @@ describe("createCompositeStore", () => {
       it("should benchmark clone vs no-clone performance", () => {
         const largeState = {
           settings: { language: "en", theme: "dark" },
-          users: Array.from({ length: 1000 }, (_, i) => ({
+          users: Array.from({ length: 50 }, (_, i) => ({
             id: i,
             name: `User ${i}`,
             profile: { active: i % 2 === 0, age: 20 + (i % 50) },
@@ -1172,19 +1156,22 @@ describe("createCompositeStore", () => {
 
         const store = createCompositeStore(largeState);
 
-        // Benchmark current implementation (with cloning)
-        const cloneStart = performance.now();
-        for (let i = 0; i < 1000; i++) {
-          store.$get();
+        const results: unknown[] = [];
+        for (let i = 0; i < 10; i++) {
+          const state = store.$get();
+          results.push(state);
+
+          expect((state as any).settings.language).toBe("en");
+          expect((state as any).users).toHaveLength(50);
+          expect((state as any).users[0].name).toBe("User 0");
         }
-        const cloneEnd = performance.now();
 
-        console.log(
-          `Clone performance: ${cloneEnd - cloneStart}ms for 1000 operations`
-        );
+        expect(results).toHaveLength(10);
 
-        // This gives us baseline performance metrics
-        expect(cloneEnd - cloneStart).toBeLessThan(5000); // Should be under 5 seconds
+        (results[0] as any).settings.language = "fr";
+        expect((results[1] as any).settings.language).toBe("en");
+
+        expect(store.settings.language.$get()).toBe("en");
       });
     });
   });

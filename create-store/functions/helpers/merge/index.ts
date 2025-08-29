@@ -1,4 +1,4 @@
-import type { Dictionary } from "@/create-store/types/dictionary";
+import type { GenericObject } from "@/create-store/types/generic-object";
 import type { Merge } from "@/create-store/types/merge";
 
 /**
@@ -9,7 +9,7 @@ import type { Merge } from "@/create-store/types/merge";
  *
  * @returns A new merged object without modifying any of the inputs
  */
-export function merge<Target extends Dictionary, Source>(
+export function merge<Target extends GenericObject, Source>(
   target: Target,
   source: Source
 ): Merge<Target, Source> {

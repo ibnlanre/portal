@@ -226,13 +226,289 @@ describe("Paths type", () => {
       | "navigator"
       | "navigator.userAgent"
     >();
-    expectTypeOf<Result>().toMatchTypeOf<
-      | "document"
-      | "location"
-      | "location.href"
-      | "location.pathname"
-      | "navigator"
-      | "navigator.userAgent"
-    >();
+  });
+
+  describe("Edge cases", () => {
+    it("should handle empty objects", () => {
+      type Result = Paths<{}>;
+      expectTypeOf<Result>().toEqualTypeOf<never>();
+    });
+
+    it("should handle objects with only primitive values", () => {
+      type Result = Paths<{
+        active: boolean;
+        age: number;
+        name: string;
+      }>;
+
+      type Expected = "active" | "age" | "name";
+      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+    });
+
+    it("should handle objects with function properties", () => {
+      type Result = Paths<{
+        getData: () => string;
+        nested: {
+          compute: (x: number) => number;
+          value: string;
+        };
+      }>;
+
+      type Expected = "getData" | "nested" | "nested.compute" | "nested.value";
+      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+    });
+
+    it("should handle objects with null and undefined values", () => {
+      type Result = Paths<{
+        nested: {
+          value: string;
+        };
+        nullable: null;
+        optional: undefined;
+      }>;
+
+      type Expected = "nested" | "nested.value" | "nullable" | "optional";
+      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+    });
+
+    it("should handle deeply nested objects", () => {
+      type Result = Paths<{
+        level1: {
+          level2: {
+            level3: {
+              level4: {
+                level5: {
+                  deepValue: string;
+                };
+              };
+            };
+          };
+        };
+      }>;
+
+      type Expected =
+        | "level1"
+        | "level1.level2"
+        | "level1.level2.level3"
+        | "level1.level2.level3.level4"
+        | "level1.level2.level3.level4.level5"
+        | "level1.level2.level3.level4.level5.deepValue";
+      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+    });
+
+    it("should handle mixed data types as leaf nodes", () => {
+      type Result = Paths<{
+        array: string[];
+        nested: {
+          value: string;
+        };
+        primitive: number;
+        tuple: [number, string];
+      }>;
+
+      type Expected =
+        | "array"
+        | "nested"
+        | "nested.value"
+        | "primitive"
+        | "tuple";
+      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+    });
+
+    it("should handle union types in object properties", () => {
+      type Result = Paths<{
+        always: {
+          value: string;
+        };
+        data: string | { nested: number };
+      }>;
+
+      type Expected = "always" | "always.value" | "data";
+      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+    });
+
+    it("should handle intersection types", () => {
+      type BaseType = {
+        base: string;
+      };
+
+      type ExtendedType = {
+        extended: {
+          value: number;
+        };
+      };
+
+      type Result = Paths<BaseType & ExtendedType>;
+
+      type Expected = "base" | "extended" | "extended.value";
+      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+    });
+
+    it("should handle readonly properties", () => {
+      type Result = Paths<{
+        readonly config: {
+          readonly apiUrl: string;
+          timeout: number;
+        };
+        readonly id: string;
+        mutable: string;
+      }>;
+
+      type Expected =
+        | "config"
+        | "config.apiUrl"
+        | "config.timeout"
+        | "id"
+        | "mutable";
+      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+    });
+
+    it("should handle objects with computed property names", () => {
+      const KEY = "dynamicKey" as const;
+
+      type Result = Paths<{
+        [KEY]: {
+          nested: string;
+        };
+        static: number;
+      }>;
+
+      type Expected = "dynamicKey" | "dynamicKey.nested" | "static";
+      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+    });
+  });
+
+  describe("Custom delimiters", () => {
+    it("should work with custom delimiter", () => {
+      type Result = Paths<
+        {
+          a: {
+            b: {
+              c: string;
+            };
+          };
+        },
+        "/"
+      >;
+
+      type Expected = "a" | "a/b" | "a/b/c";
+      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+    });
+
+    it("should work with underscore delimiter", () => {
+      type Result = Paths<
+        {
+          user: {
+            profile: {
+              name: string;
+            };
+          };
+        },
+        "_"
+      >;
+
+      type Expected = "user" | "user_profile" | "user_profile_name";
+      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+    });
+
+    it("should work with arrow delimiter", () => {
+      type Result = Paths<
+        {
+          state: {
+            nested: {
+              value: number;
+            };
+          };
+        },
+        "->"
+      >;
+
+      type Expected = "state" | "state->nested" | "state->nested->value";
+      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+    });
+  });
+
+  describe("Performance and complexity", () => {
+    it("should handle wide objects (many properties)", () => {
+      type WideObject = {
+        nested: {
+          value: string;
+        };
+        prop1: string;
+        prop2: string;
+        prop3: string;
+        prop4: string;
+        prop5: string;
+        prop6: string;
+        prop7: string;
+        prop8: string;
+        prop9: string;
+        prop10: string;
+      };
+
+      type Result = Paths<WideObject>;
+
+      expectTypeOf<Result>().toBeString();
+      expectTypeOf<Result>().toMatchTypeOf<
+        | "nested"
+        | "nested.value"
+        | "prop1"
+        | "prop2"
+        | "prop3"
+        | "prop4"
+        | "prop5"
+        | "prop6"
+        | "prop7"
+        | "prop8"
+        | "prop9"
+        | "prop10"
+      >();
+    });
+
+    it("should handle objects with both string and number keys", () => {
+      type Result = Paths<{
+        0: string;
+        1: number;
+        name: string;
+        nested: {
+          0: boolean;
+          value: string;
+        };
+      }>;
+
+      type Expected =
+        | "0"
+        | "1"
+        | "name"
+        | "nested"
+        | "nested.0"
+        | "nested.value";
+      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+    });
+  });
+
+  describe("Type relationships with toExtend", () => {
+    it("should test extends relationships", () => {
+      type SimplePaths = Paths<{ a: { b: string } }>;
+      type ComplexPaths = Paths<{ a: { b: string; c: number }; d: boolean }>;
+
+      expectTypeOf<SimplePaths>().toExtend<string>();
+      expectTypeOf<ComplexPaths>().toExtend<string>();
+
+      expectTypeOf<"a">().toExtend<SimplePaths>();
+      expectTypeOf<"a.b">().toExtend<SimplePaths>();
+
+      expectTypeOf<"a">().toExtend<ComplexPaths>();
+      expectTypeOf<"a.b">().toExtend<ComplexPaths>();
+      expectTypeOf<"a.c">().toExtend<ComplexPaths>();
+      expectTypeOf<"d">().toExtend<ComplexPaths>();
+    });
+
+    it("should handle never type appropriately", () => {
+      type EmptyPaths = Paths<{}>;
+
+      expectTypeOf<EmptyPaths>().toEqualTypeOf<never>();
+      expectTypeOf<never>().toExtend<EmptyPaths>();
+    });
   });
 });

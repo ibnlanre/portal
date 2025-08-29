@@ -13,7 +13,7 @@ describe("Normalize", () => {
     }
     type Result = Normalize<Input>;
     type Expected = { active: boolean; age: number; name: string };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle objects with string keys", () => {
@@ -23,7 +23,7 @@ describe("Normalize", () => {
     }
     type Result = Normalize<Input>;
     type Expected = { bar: number; foo: string };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle objects with number keys", () => {
@@ -33,7 +33,7 @@ describe("Normalize", () => {
     }
     type Result = Normalize<Input>;
     type Expected = { [key: number]: string; regularKey: boolean };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle objects with mixed key types", () => {
@@ -48,7 +48,7 @@ describe("Normalize", () => {
       [key: string]: any;
       stringKey: string;
     };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle nested objects", () => {
@@ -67,7 +67,7 @@ describe("Normalize", () => {
         settings: { theme: string };
       };
     };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle optional properties", () => {
@@ -82,7 +82,7 @@ describe("Normalize", () => {
       optional?: number;
       required: string;
     };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle arrays as property values", () => {
@@ -97,7 +97,7 @@ describe("Normalize", () => {
       numbers: number[];
       users: { id: number; name: string }[];
     };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle complex union types", () => {
@@ -110,14 +110,14 @@ describe("Normalize", () => {
       data: { permissions: string[]; type: "admin" } | { type: "user" };
       value: boolean | number | string;
     };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle empty objects", () => {
     interface Input {}
     type Result = Normalize<Input>;
     type Expected = {};
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should be assignable to Dictionary", () => {
@@ -126,7 +126,7 @@ describe("Normalize", () => {
       name: string;
     }
     type Result = Normalize<Input>;
-    expectTypeOf<Result>().toMatchTypeOf<Dictionary>();
+    expectTypeOf<Result>().toExtend<Dictionary>();
   });
 
   it("should preserve the original GenericObject structure", () => {
@@ -134,7 +134,7 @@ describe("Normalize", () => {
       [key: string]: any;
     }
     type Result = Normalize<Input>;
-    expectTypeOf<Result>().toMatchTypeOf<GenericObject>();
+    expectTypeOf<Result>().toExtend<GenericObject>();
   });
 
   it("should handle objects with function properties", () => {
@@ -149,7 +149,7 @@ describe("Normalize", () => {
       name: string;
       process: (input: string) => boolean;
     };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle objects with symbol keys", () => {
@@ -162,7 +162,7 @@ describe("Normalize", () => {
       [key: symbol]: any;
       regularKey: string;
     };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle readonly properties", () => {
@@ -177,7 +177,7 @@ describe("Normalize", () => {
       readonly id: string;
       mutable: string;
     };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle interface-like objects", () => {
@@ -199,7 +199,7 @@ describe("Normalize", () => {
         theme: "dark" | "light";
       };
     };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle objects extending other types", () => {
@@ -212,14 +212,14 @@ describe("Normalize", () => {
       id: string;
       name: string;
     };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle Record types", () => {
     type Input = Record<string, number> & { specificKey: string };
     type Result = Normalize<Input>;
     type Expected = Record<string, number> & { specificKey: string };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle objects with index signatures", () => {
@@ -234,7 +234,7 @@ describe("Normalize", () => {
       [key: string]: number | string;
       specificProp: string;
     };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle objects with computed keys", () => {
@@ -246,7 +246,7 @@ describe("Normalize", () => {
       computedKey: string;
       normalKey: number;
     };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should preserve never types", () => {
@@ -259,7 +259,7 @@ describe("Normalize", () => {
       neverKey: never;
       validKey: string;
     };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 
   it("should handle circular references in type definitions", () => {
@@ -273,6 +273,6 @@ describe("Normalize", () => {
     }
     type Result = Normalize<Input>;
     type Expected = { root: Node };
-    expectTypeOf<Result>().toMatchTypeOf<Expected>();
+    expectTypeOf<Result>().toExtend<Expected>();
   });
 });

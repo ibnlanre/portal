@@ -1,9 +1,9 @@
 import type { DeepPartial } from "@/create-store/types/deep-partial";
-import type { Dictionary } from "@/create-store/types/dictionary";
+import type { GenericObject } from "@/create-store/types/generic-object";
 
 import { isPrimitive } from "@/create-store/functions/assertions/is-primitive";
 
-export function isDictionarySlice<Target extends Dictionary>(
+export function isDictionarySlice<Target extends GenericObject>(
   target: Target,
   source: unknown
 ): source is DeepPartial<Target> {

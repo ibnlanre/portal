@@ -1,9 +1,9 @@
 import type { DependencyList } from "react";
 
+import type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
 import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
 import type { Selector } from "@/create-store/types/selector";
-import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
 import { useSyncExternalStore } from "react";
@@ -16,9 +16,7 @@ import { replace } from "@/create-store/functions/helpers/replace";
 import { useSync } from "@/create-store/functions/hooks/use-sync";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
-export function createPrimitiveStore<State>(
-  initialState: State
-): PrimitiveStore<State> {
+export function createPrimitiveStore<State>(initialState: State) {
   let state = initialState;
   const subscribers = new Set<Subscriber<State>>();
   const cache = new WeakMap<object, any>();
@@ -38,7 +36,7 @@ export function createPrimitiveStore<State>(
       return resolveSelectorValue(state, selector, cache);
     }
 
-    function $set(action: SetPartialStateAction<State>) {
+    function $set(action: PartialSetStateAction<State>) {
       const next = isSetStateActionFunction<State>(action)
         ? action(clone(state, cache))
         : action;
@@ -107,7 +105,8 @@ export function createPrimitiveStore<State>(
     },
 
     ownKeys() {
-      return isDictionary(state) ? Reflect.ownKeys(state) : [];
+      if (!isDictionary(state)) return [];
+      return Reflect.ownKeys(state);
     },
 
     set() {

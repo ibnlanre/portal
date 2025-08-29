@@ -1,4 +1,4 @@
-import type { Dictionary } from "@/create-store/types/dictionary";
+import type { GenericObject } from "@/create-store/types/generic-object";
 
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 
@@ -14,7 +14,7 @@ import { isDictionary } from "@/create-store/functions/assertions/is-dictionary"
  *
  * @returns An array of strings representing the paths in the store object.
  */
-export function createPaths<Store extends Dictionary>(
+export function createPaths<Store extends GenericObject>(
   store: Store,
   prefix: string[] = [],
   visited = new WeakSet()

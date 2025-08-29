@@ -1,5 +1,3 @@
-import type { Dictionary } from "@/create-store/types/dictionary";
-
 import { describe, expect, it } from "vitest";
 
 import { resolveSegment } from "./index";
@@ -24,7 +22,7 @@ describe("resolveSegment", () => {
   });
 
   it("should handle empty keys array", () => {
-    const state: Dictionary = { a: 1, b: 2 };
+    const state = { a: 1, b: 2 };
     const result = resolveSegment(state, <any>[]);
     expect(result).toEqual(state);
   });

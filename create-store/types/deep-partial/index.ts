@@ -1,39 +1,9 @@
-import type { Dictionary } from "@/create-store/types/dictionary";
+import type { GenericObject } from "@/create-store/types/generic-object";
 import type { Primitives } from "@/create-store/types/primitives";
+import type { Reference } from "@/create-store/types/reference";
 
 export type DeepPartial<Argument> = Argument extends Primitives | Reference
   ? Argument
-  : Argument extends Dictionary
+  : Argument extends GenericObject
     ? { [Key in keyof Argument]?: DeepPartial<Argument[Key]> }
-    : never;
-
-type Reference =
-  | Array<any>
-  | ArrayBuffer
-  | Atomics
-  | BigInt64Array
-  | BigUint64Array
-  | DataView
-  | Date
-  | Error
-  | Float32Array
-  | Float64Array
-  | Function
-  | Int8Array
-  | Int16Array
-  | Int32Array
-  | Map<any, any>
-  | Promise<any>
-  | ReadonlyArray<any>
-  | ReadonlyMap<any, any>
-  | ReadonlySet<any>
-  | RegExp
-  | Set<any>
-  | SharedArrayBuffer
-  | SharedArrayBufferConstructor
-  | Uint8Array
-  | Uint8ClampedArray
-  | Uint16Array
-  | Uint32Array
-  | WeakMap<WeakKey, any>
-  | WeakSet<WeakKey>;
+    : Argument;

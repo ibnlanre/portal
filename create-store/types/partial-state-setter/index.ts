@@ -1,5 +1,5 @@
 import type { Dispatch } from "react";
 
-import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
+import type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
 
-export type PartialStateSetter<State> = Dispatch<SetPartialStateAction<State>>;
+export type PartialStateSetter<State> = Dispatch<PartialSetStateAction<State>>;

@@ -1,5 +1,8 @@
-import type { SetPartial } from "@/create-store/types/set-partial";
+import type { DeepPartial } from "@/create-store/types/deep-partial";
 
+/**
+ * @deprecated Use `PartialSetStateAction` instead.
+ */
 export type SetPartialStateAction<State> =
-  | ((prevState: State) => SetPartial<State>)
-  | SetPartial<State>;
+  | ((prevState: State) => DeepPartial<State>)
+  | DeepPartial<State>;

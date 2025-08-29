@@ -1,5 +1,1 @@
-export type Dictionary = {
-  [k: number]: unknown;
-  [k: string]: unknown;
-  [k: symbol]: unknown;
-};
+export type Dictionary = Record<PropertyKey, unknown>;

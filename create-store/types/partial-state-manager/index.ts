@@ -1,8 +1,8 @@
 import type { Dispatch } from "react";
 
-import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
+import type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
 
 export type PartialStateManager<State, Value = State> = [
   state: Value,
-  dispatcher: Dispatch<SetPartialStateAction<State>>,
+  dispatcher: Dispatch<PartialSetStateAction<State>>,
 ];

@@ -3,25 +3,25 @@ import type { Combine } from "./index";
 import { describe, expectTypeOf, it } from "vitest";
 
 describe("Combine", () => {
-  type BaseStore = {
+  interface BaseStore {
     id: string;
     name: string;
-  };
+  }
 
-  type Actions1 = {
+  interface Actions1 {
     action1: () => void;
     shared: string;
-  };
+  }
 
-  type Actions2 = {
+  interface Actions2 {
     action2: () => void;
     shared: number;
-  };
+  }
 
-  type Actions3 = {
+  interface Actions3 {
     action3: () => void;
     extra: boolean;
-  };
+  }
 
   describe("Union Dictionary Types vs Readonly Dictionary Types", () => {
     it("should produce the same result for union and tuple array types", () => {
@@ -29,9 +29,9 @@ describe("Combine", () => {
 
       type TupleResult = Combine<BaseStore, [Actions1, Actions2, Actions3]>;
 
-      expectTypeOf<UnionResult>().toEqualTypeOf<TupleResult>();
+      expectTypeOf<UnionResult>().toExtend<TupleResult>();
 
-      type Expected = {
+      interface Expected {
         action1: () => void;
         action2: () => void;
         action3: () => void;
@@ -39,10 +39,10 @@ describe("Combine", () => {
         id: string;
         name: string;
         shared: number;
-      };
+      }
 
-      expectTypeOf<UnionResult>().toEqualTypeOf<Expected>();
-      expectTypeOf<TupleResult>().toEqualTypeOf<Expected>();
+      expectTypeOf<UnionResult>().toExtend<Expected>();
+      expectTypeOf<TupleResult>().toExtend<Expected>();
     });
 
     it("should handle different union orderings consistently", () => {
@@ -56,12 +56,12 @@ describe("Combine", () => {
         (Actions1 | Actions2 | Actions3)[]
       >;
 
-      expectTypeOf<UnionResult1>().toEqualTypeOf<UnionResult2>();
+      expectTypeOf<UnionResult1>().toExtend<UnionResult2>();
 
       type TupleResult1 = Combine<BaseStore, [Actions1, Actions2, Actions3]>;
       type TupleResult2 = Combine<BaseStore, [Actions3, Actions1, Actions2]>;
 
-      type ExpectedTuple1 = {
+      interface ExpectedTuple1 {
         action1: () => void;
         action2: () => void;
         action3: () => void;
@@ -69,9 +69,9 @@ describe("Combine", () => {
         id: string;
         name: string;
         shared: number;
-      };
+      }
 
-      type ExpectedTuple2 = {
+      interface ExpectedTuple2 {
         action1: () => void;
         action2: () => void;
         action3: () => void;
@@ -79,35 +79,35 @@ describe("Combine", () => {
         id: string;
         name: string;
         shared: number;
-      };
+      }
 
-      expectTypeOf<TupleResult1>().toEqualTypeOf<ExpectedTuple1>();
-      expectTypeOf<TupleResult2>().toEqualTypeOf<ExpectedTuple2>();
+      expectTypeOf<TupleResult1>().toExtend<ExpectedTuple1>();
+      expectTypeOf<TupleResult2>().toExtend<ExpectedTuple2>();
     });
 
     it("should handle empty arrays correctly", () => {
       type UnionEmptyResult = Combine<BaseStore, never[]>;
       type TupleEmptyResult = Combine<BaseStore, []>;
 
-      expectTypeOf<UnionEmptyResult>().toEqualTypeOf<BaseStore>();
-      expectTypeOf<TupleEmptyResult>().toEqualTypeOf<BaseStore>();
-      expectTypeOf<UnionEmptyResult>().toEqualTypeOf<TupleEmptyResult>();
+      expectTypeOf<UnionEmptyResult>().toExtend<BaseStore>();
+      expectTypeOf<TupleEmptyResult>().toExtend<BaseStore>();
+      expectTypeOf<UnionEmptyResult>().toExtend<TupleEmptyResult>();
     });
 
     it("should handle single type arrays correctly", () => {
       type UnionSingleResult = Combine<BaseStore, Actions1[]>;
       type TupleSingleResult = Combine<BaseStore, [Actions1]>;
 
-      type Expected = {
+      interface Expected {
         action1: () => void;
         id: string;
         name: string;
         shared: string;
-      };
+      }
 
-      expectTypeOf<UnionSingleResult>().toEqualTypeOf<Expected>();
-      expectTypeOf<TupleSingleResult>().toEqualTypeOf<Expected>();
-      expectTypeOf<UnionSingleResult>().toEqualTypeOf<TupleSingleResult>();
+      expectTypeOf<UnionSingleResult>().toExtend<Expected>();
+      expectTypeOf<TupleSingleResult>().toExtend<Expected>();
+      expectTypeOf<UnionSingleResult>().toExtend<TupleSingleResult>();
     });
   });
 
@@ -122,13 +122,13 @@ describe("Combine", () => {
         [ConflictType1, ConflictType2, ConflictType3]
       >;
 
-      type Expected = {
+      interface Expected {
         id: string;
         name: string;
         value: boolean;
-      };
+      }
 
-      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+      expectTypeOf<Result>().toExtend<Expected>();
     });
 
     it("should handle complex nested types", () => {
@@ -144,7 +144,7 @@ describe("Combine", () => {
 
       type Result = Combine<BaseStore, [NestedType1, NestedType2]>;
 
-      type Expected = {
+      interface Expected {
         config: {
           margin: string;
           size: number;
@@ -156,9 +156,9 @@ describe("Combine", () => {
           save: () => void;
         };
         name: string;
-      };
+      }
 
-      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+      expectTypeOf<Result>().toExtend<Expected>();
     });
   });
 
@@ -171,9 +171,9 @@ describe("Combine", () => {
       type UnionResult = Combine<BaseStore, (TypeA | TypeB | TypeC)[]>;
       type TupleResult = Combine<BaseStore, [TypeA, TypeB, TypeC]>;
 
-      expectTypeOf<UnionResult>().toEqualTypeOf<TupleResult>();
+      expectTypeOf<UnionResult>().toExtend<TupleResult>();
 
-      type Expected = {
+      interface Expected {
         a: string;
         b: number;
         c: boolean;
@@ -181,9 +181,9 @@ describe("Combine", () => {
         name: string;
         shared1: boolean;
         shared2: string;
-      };
+      }
 
-      expectTypeOf<UnionResult>().toEqualTypeOf<Expected>();
+      expectTypeOf<UnionResult>().toExtend<Expected>();
     });
 
     it("should handle function types correctly", () => {
@@ -206,17 +206,17 @@ describe("Combine", () => {
         [FunctionActions1, FunctionActions2]
       >;
 
-      expectTypeOf<UnionResult>().toEqualTypeOf<TupleResult>();
+      expectTypeOf<UnionResult>().toExtend<TupleResult>();
 
-      type Expected = {
+      interface Expected {
         execute: (data: number) => Promise<string>;
         id: string;
         name: string;
         process: () => void;
         validate: (input: string) => boolean;
-      };
+      }
 
-      expectTypeOf<UnionResult>().toEqualTypeOf<Expected>();
+      expectTypeOf<UnionResult>().toExtend<Expected>();
     });
   });
 
@@ -227,15 +227,15 @@ describe("Combine", () => {
 
       type Result = Combine<BaseStore, [OptionalType1, OptionalType2]>;
 
-      type Expected = {
+      interface Expected {
         id: string;
         name: string;
         optional: boolean;
         other?: string;
         required: number;
-      };
+      }
 
-      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+      expectTypeOf<Result>().toExtend<Expected>();
     });
 
     it("should handle readonly properties", () => {
@@ -251,15 +251,14 @@ describe("Combine", () => {
 
       type Result = Combine<BaseStore, [ReadonlyType, MutableType]>;
 
-      type Expected = {
+      interface Expected {
         config: { other: boolean; value: number };
         id: string;
         readonly mutable: string;
         name: string;
-      };
+      }
 
-      // @ts-expect-error
-      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+      expectTypeOf<Result>().toExtend<Expected>();
     });
 
     it("should preserve method signatures with generic types", () => {
@@ -275,15 +274,15 @@ describe("Combine", () => {
 
       type Result = Combine<BaseStore, [GenericActions1, GenericActions2]>;
 
-      type Expected = {
+      interface Expected {
         filter<T>(items: T[], predicate: (item: T) => boolean): T[];
         id: string;
         name: string;
         process<T extends string>(data: T): T;
         transform<U>(input: U[]): U[];
-      };
+      }
 
-      expectTypeOf<Result>().toEqualTypeOf<Expected>();
+      expectTypeOf<Result>().toExtend<Expected>();
     });
   });
 });

@@ -1,13 +1,13 @@
 import type { DependencyList, Dispatch } from "react";
 
 import type { CompositeStore } from "@/create-store/types/composite-store";
-import type { Dictionary } from "@/create-store/types/dictionary";
+import type { GenericObject } from "@/create-store/types/generic-object";
+import type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
 import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 import type { PartialStatePath } from "@/create-store/types/partial-state-path";
 import type { Paths } from "@/create-store/types/paths";
 import type { ResolvePath } from "@/create-store/types/resolve-path";
 import type { Selector } from "@/create-store/types/selector";
-import type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
 import type { StatePath } from "@/create-store/types/state-path";
 import type { StoreValueResolver } from "@/create-store/types/store-value-resolver";
 import type { Subscriber } from "@/create-store/types/subscriber";
@@ -15,6 +15,7 @@ import type { Subscriber } from "@/create-store/types/subscriber";
 import { useCallback, useSyncExternalStore } from "react";
 
 import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
+import { isAtomic } from "@/create-store/functions/assertions/is-atomic";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
@@ -27,9 +28,9 @@ import { useSync } from "@/create-store/functions/hooks/use-sync";
 import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
-export function createCompositeStore<State extends Dictionary>(
+export function createCompositeStore<State extends GenericObject>(
   initialState: State
-): CompositeStore<State> {
+) {
   let state = initialState;
 
   const cache = new WeakMap<any, CompositeStore<State>>();
@@ -124,15 +125,15 @@ export function createCompositeStore<State extends Dictionary>(
   function set<
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>,
-  >(path: Path): Dispatch<SetPartialStateAction<Value>>;
+  >(path: Path): Dispatch<PartialSetStateAction<Value>>;
 
   function set<Path extends Paths<State> = never>(
     path?: Path
-  ): Dispatch<SetPartialStateAction<State>>;
+  ): Dispatch<PartialSetStateAction<State>>;
 
   function set<Path extends Paths<State>>(path?: Path) {
     if (!path) {
-      return (action: SetPartialStateAction<State>) => {
+      return (action: PartialSetStateAction<State>) => {
         const next = isSetStateActionFunction<State>(action)
           ? action(clone(state))
           : action;
@@ -141,7 +142,7 @@ export function createCompositeStore<State extends Dictionary>(
     }
 
     return <Value extends ResolvePath<State, Path>>(
-      action: SetPartialStateAction<Value>
+      action: PartialSetStateAction<Value>
     ) => {
       const current = resolvePath(state, path);
       const next = isSetStateActionFunction(action)
@@ -206,6 +207,7 @@ export function createCompositeStore<State extends Dictionary>(
     if (isFunction(value)) return value;
 
     if (isDictionary(value)) {
+      if (isAtomic(value)) return value;
       if (cache.has(value)) return cache.get(value);
       return createProxy(fullPath);
     }
@@ -311,7 +313,8 @@ export function createCompositeStore<State extends Dictionary>(
 
       ownKeys() {
         const value = resolvePath(state, path);
-        return isDictionary(value) ? Reflect.ownKeys(value) : [];
+        if (!isDictionary(value)) return [];
+        return Reflect.ownKeys(value);
       },
 
       set() {

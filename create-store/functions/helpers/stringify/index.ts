@@ -1,5 +1,4 @@
-import type { Dictionary } from "@/create-store/types/dictionary";
-
+import { assertIsDictionary } from "@/create-store/functions//assertions/is-dictionary";
 import { sort } from "@/create-store/functions/helpers/sort";
 
 /**
@@ -104,7 +103,7 @@ export function stringify(value: unknown): string {
         return result + "]";
       }
 
-      isDictionary(value);
+      assertIsDictionary(value);
       const keys = Object.keys(value);
       if (!keys.length) return "{}";
 
@@ -129,8 +128,4 @@ export function stringify(value: unknown): string {
   const result = format(value);
   circularMap.clear();
   return result;
-}
-
-function isDictionary(value: unknown): asserts value is Dictionary {
-  if (typeof value !== "object") throw new TypeError("Should be an object");
 }

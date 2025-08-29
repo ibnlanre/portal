@@ -1,4 +1,4 @@
-import { stringify } from "../stringify";
+import { stringify } from "@/create-store/functions/helpers/stringify";
 
 export function compare(left?: unknown, right?: unknown): boolean {
   if (left === right) return true;

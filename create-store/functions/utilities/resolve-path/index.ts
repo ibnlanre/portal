@@ -1,4 +1,4 @@
-import type { Dictionary } from "@/create-store/types/dictionary";
+import type { GenericObject } from "@/create-store/types/generic-object";
 import type { Paths } from "@/create-store/types/paths";
 import type { ResolvePath } from "@/create-store/types/resolve-path";
 
@@ -19,7 +19,7 @@ import { splitPath } from "@/create-store/functions/helpers/split-path";
  * @returns The value at the resolved path, or undefined if the path does not exist.
  */
 export function resolvePath<
-  State extends Dictionary,
+  State extends GenericObject,
   Path extends Paths<State> = never,
 >(state: State, path?: Path): ResolvePath<State, Path> {
   if (!path) return state as ResolvePath<State, Path>;

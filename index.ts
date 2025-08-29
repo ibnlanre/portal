@@ -34,6 +34,7 @@ export type {
   SetLocalStorage,
 } from "@/create-store/types/local-storage";
 export type { Normalize } from "@/create-store/types/normalize";
+export type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
 export type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 export type { PartialStateSetter } from "@/create-store/types/partial-state-setter";
 export type { Paths } from "@/create-store/types/paths";

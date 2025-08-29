@@ -17,10 +17,10 @@ describe("replace", () => {
     expect(replace(target, source)).toBe(source);
   });
 
-  it("should return the source casted as Target if source is not a dictionary slice of target", () => {
+  it("should merge the source and target if they are both dictionaries", () => {
     const target = { a: 1, b: 2 };
     const source = { c: 3 };
 
-    expect(replace(target, source)).toBe(source);
+    expect(replace(target, source)).toEqual({ a: 1, b: 2, c: 3 });
   });
 });
