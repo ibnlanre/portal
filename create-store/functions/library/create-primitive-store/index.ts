@@ -47,7 +47,7 @@ export function createPrimitiveStore<State>(initialState: State) {
       selector?: Selector<State, Value>,
       dependencies?: DependencyList
     ): PartialStateManager<State, Value> {
-      const value = useSyncExternalStore($act, $get, $get);
+      const value = useSyncExternalStore($sub, $get, $get);
       const resolvedValue = useSync(() => {
         return resolveSelectorValue(value, selector);
       }, [value, dependencies]);
@@ -55,7 +55,7 @@ export function createPrimitiveStore<State>(initialState: State) {
       return [resolvedValue, $set];
     }
 
-    function $act(subscriber: Subscriber<State>, immediate = true) {
+    function $sub(subscriber: Subscriber<State>, immediate = true) {
       subscribers.add(subscriber);
       if (immediate) subscriber(state);
 
@@ -65,9 +65,10 @@ export function createPrimitiveStore<State>(initialState: State) {
     }
 
     return {
-      $act,
+      $act: $sub,
       $get,
       $set,
+      $sub,
       $use,
     };
   }

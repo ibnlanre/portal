@@ -8,14 +8,14 @@ import type { Selector } from "@/create-store/types/selector";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
 export interface AtomicStore<State> {
-  readonly $act: (
-    subscriber: Subscriber<State>,
-    immediate?: boolean
-  ) => () => void;
   readonly $get: <Value = DeepPartial<State>>(
     selector?: PartialSelector<State, Value>
   ) => Value;
   readonly $set: AtomicStateSetter<State>;
+  readonly $sub: (
+    subscriber: Subscriber<State>,
+    immediate?: boolean
+  ) => () => void;
   readonly $use: <Value = State>(
     selector?: Selector<State, Value>,
     dependencies?: DependencyList

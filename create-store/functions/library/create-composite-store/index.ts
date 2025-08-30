@@ -152,7 +152,7 @@ export function createCompositeStore<State extends GenericObject>(
     };
   }
 
-  function act<
+  function sub<
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>,
   >(subscriber: (value: Value) => void, path?: Path, immediate?: boolean) {
@@ -168,7 +168,7 @@ export function createCompositeStore<State extends GenericObject>(
   }
 
   function createSubscribe<Path extends Paths<State>>(path?: Path) {
-    return (callback: () => void) => act(callback, path);
+    return (callback: () => void) => sub(callback, path);
   }
 
   function use<
@@ -217,7 +217,7 @@ export function createCompositeStore<State extends GenericObject>(
   function buildStore<Path extends Paths<State>>(chain?: Path) {
     return {
       $act(subscriber: Subscriber<State>, immediate = true) {
-        return act(subscriber, chain, immediate);
+        return sub(subscriber, chain, immediate);
       },
       $get(selector?: Selector<StatePath<State, Path>>) {
         return get(chain, selector);
@@ -230,6 +230,9 @@ export function createCompositeStore<State extends GenericObject>(
       },
       $set(value: PartialStatePath<State, Path>) {
         return set(chain)(value);
+      },
+      $sub(subscriber: Subscriber<State>, immediate = true) {
+        return sub(subscriber, chain, immediate);
       },
       $use(
         selector?: Selector<State, ResolvePath<State, Path>>,

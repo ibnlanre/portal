@@ -72,6 +72,10 @@ const vitestConfig = tseslint.config({
     globals: globals.vitest,
   },
   plugins: { vitest: vitestPlugin },
+  rules: {
+    ...vitestPlugin.configs.recommended.rules,
+    "vitest/expect-expect": false,
+  },
 });
 
 const importConfig = tseslint.config({

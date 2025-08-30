@@ -2,6 +2,8 @@ import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 
+import { atom } from "@/create-store/functions/library/atom";
+
 import { createPrimitiveStore } from "./index";
 
 describe("createPrimitiveStore", () => {
@@ -35,7 +37,7 @@ describe("createPrimitiveStore", () => {
     const store = createPrimitiveStore(initialState);
 
     const subscriber = vi.fn();
-    store.$act(subscriber);
+    store.$sub(subscriber);
     expect(subscriber).toHaveBeenCalledWith(initialState);
 
     store.$set("new value");
@@ -47,7 +49,7 @@ describe("createPrimitiveStore", () => {
     const store = createPrimitiveStore(initialState);
 
     const subscriber = vi.fn();
-    const unsubscribe = store.$act(subscriber);
+    const unsubscribe = store.$sub(subscriber);
 
     unsubscribe();
     store.$set("new value");
@@ -100,7 +102,7 @@ describe("createPrimitiveStore", () => {
     expect(keys).not.toContain("$get");
     expect(keys).not.toContain("$set");
     expect(keys).not.toContain("$use");
-    expect(keys).not.toContain("$act");
+    expect(keys).not.toContain("$sub");
   });
 
   it("should return empty array for ownKeys when state is not a dictionary", () => {
@@ -224,9 +226,9 @@ describe("createPrimitiveStore", () => {
       const subscriber2 = vi.fn();
       const subscriber3 = vi.fn();
 
-      store.$act(subscriber1);
-      store.$act(subscriber2);
-      store.$act(subscriber3);
+      store.$sub(subscriber1);
+      store.$sub(subscriber2);
+      store.$sub(subscriber3);
 
       expect(subscriber1).toHaveBeenCalledWith("initial");
       expect(subscriber2).toHaveBeenCalledWith("initial");
@@ -243,7 +245,7 @@ describe("createPrimitiveStore", () => {
       const store = createPrimitiveStore("initial");
       const subscriber = vi.fn();
 
-      store.$act(subscriber, false);
+      store.$sub(subscriber, false);
       expect(subscriber).not.toHaveBeenCalled();
 
       store.$set("updated");
@@ -257,8 +259,8 @@ describe("createPrimitiveStore", () => {
       const subscriber1 = vi.fn();
       const subscriber2 = vi.fn();
 
-      const unsubscribe1 = store.$act(subscriber1);
-      store.$act(subscriber2);
+      const unsubscribe1 = store.$sub(subscriber1);
+      store.$sub(subscriber2);
 
       unsubscribe1();
       store.$set("updated");
@@ -311,6 +313,291 @@ describe("createPrimitiveStore", () => {
     });
   });
 
+  describe("Atomic Objects in Primitive Stores", () => {
+    it("should handle atomic objects with complete replacement", () => {
+      const store = createPrimitiveStore(
+        atom({
+          language: "en",
+          theme: "dark",
+        })
+      );
+
+      expect(store.$get()).toEqual({ language: "en", theme: "dark" });
+
+      store.$set({ theme: "light" });
+
+      expect(store.$get()).toEqual({ theme: "light" });
+      expect(store.$get().language).toBeUndefined();
+    });
+
+    it("should handle partial updates on atomic objects", () => {
+      const store = createPrimitiveStore(
+        atom<{
+          notifications: boolean;
+          theme: string;
+          fontSize: number;
+        }>({
+          notifications: true,
+          theme: "dark",
+        })
+      );
+
+      store.$set({ theme: "light", fontSize: 14 });
+
+      expect(store.$get()).toEqual({ theme: "light", fontSize: 14 });
+      expect(store.$get().notifications).toBeUndefined();
+    });
+
+    it("should handle function-based updates on atomic objects", () => {
+      const store = createPrimitiveStore(
+        atom({
+          count: 0,
+          multiplier: 2,
+        })
+      );
+
+      store.$set((current) => {
+        expect(current).toEqual({ count: 0, multiplier: 2 });
+        return { count: current.count + 5 };
+      });
+
+      expect(store.$get()).toEqual({ count: 5 });
+      expect(store.$get().multiplier).toBeUndefined();
+    });
+
+    it("should notify subscribers when atomic objects change", () => {
+      const store = createPrimitiveStore(
+        atom({
+          language: "en",
+          theme: "dark",
+        })
+      );
+
+      const subscriber = vi.fn();
+      store.$sub(subscriber);
+
+      subscriber.mockClear();
+
+      store.$set({ theme: "light" });
+
+      expect(subscriber).toHaveBeenCalledWith({ theme: "light" });
+      expect(subscriber).toHaveBeenCalledTimes(1);
+    });
+
+    it("should work with React hooks for atomic objects", () => {
+      const store = createPrimitiveStore(
+        atom<{
+          language: string;
+          theme: string;
+          fontSize: number;
+        }>({
+          language: "en",
+          theme: "dark",
+        })
+      );
+
+      const { result } = renderHook(() => store.$use());
+      const [state, setState] = result.current;
+
+      expect(state).toEqual({ language: "en", theme: "dark" });
+
+      act(() => {
+        setState({ theme: "light", fontSize: 16 });
+      });
+
+      expect(result.current[0]).toEqual({ theme: "light", fontSize: 16 });
+      expect(store.$get()).toEqual({ theme: "light", fontSize: 16 });
+    });
+
+    it("should handle atomic objects with selectors", () => {
+      const store = createPrimitiveStore(
+        atom<{
+          user: { name: string; age: number };
+          settings: { theme: string; notifications: boolean };
+          profile: { id: number; email: string };
+        }>({
+          user: {
+            name: "John",
+            age: 30,
+          },
+          settings: {
+            theme: "dark",
+            notifications: true,
+          },
+        })
+      );
+
+      expect(store.$get((state) => state.user.name)).toBe("John");
+      expect(store.$get((state) => state.settings.theme)).toBe("dark");
+
+      store.$set({
+        profile: {
+          id: 123,
+          email: "john@example.com",
+        },
+      });
+
+      expect(store.$get((state) => state.profile?.id)).toBe(123);
+      expect(store.$get((state) => state.user)).toBeUndefined();
+      expect(store.$get((state) => state.settings)).toBeUndefined();
+    });
+
+    it("should handle empty atomic objects", () => {
+      const store = createPrimitiveStore(atom<{ newProperty: string }>({}));
+
+      expect(store.$get()).toEqual({});
+
+      store.$set({ newProperty: "value" });
+
+      expect(store.$get()).toEqual({ newProperty: "value" });
+    });
+
+    it("should handle complex nested atomic objects", () => {
+      const store = createPrimitiveStore(
+        atom<{
+          config: {
+            api: { timeout: number; retries: number };
+            ui: { theme: string; sidebar: string };
+          };
+          metadata: { version: string; features: string[] };
+          settings: { theme: string };
+          info: { build: string };
+        }>({
+          config: {
+            api: {
+              timeout: 5000,
+              retries: 3,
+            },
+            ui: {
+              theme: "dark",
+              sidebar: "collapsed",
+            },
+          },
+          metadata: {
+            version: "1.0",
+            features: ["feature1", "feature2"],
+          },
+        })
+      );
+
+      expect(store.$get().config.api.timeout).toBe(5000);
+      expect(store.$get().metadata.features).toEqual(["feature1", "feature2"]);
+
+      store.$set({
+        settings: {
+          theme: "light",
+        },
+        info: {
+          build: "123",
+        },
+      });
+
+      expect(store.$get()).toEqual({
+        settings: { theme: "light" },
+        info: { build: "123" },
+      });
+      expect(store.$get().config).toBeUndefined();
+      expect(store.$get().metadata).toBeUndefined();
+    });
+
+    it("should maintain atom behavior across multiple updates", () => {
+      const store = createPrimitiveStore(
+        atom<{
+          step: number;
+          value: number;
+          extra: string;
+          final: number;
+        }>({
+          step: 1,
+          value: 0,
+        })
+      );
+
+      store.$set({ value: 10 });
+      expect(store.$get()).toEqual({ value: 10 });
+
+      store.$set({ step: 5, value: 20, extra: "data" });
+      expect(store.$get()).toEqual({ step: 5, value: 20, extra: "data" });
+
+      store.$set((current) => ({ final: current.value + current.step }));
+      expect(store.$get()).toEqual({ final: 25 });
+    });
+
+    it("should handle subscription with multiple atomic object changes", () => {
+      const store = createPrimitiveStore(
+        atom<{
+          count: number;
+          name: string;
+          extra: boolean;
+        }>({
+          count: 0,
+          name: "test",
+        })
+      );
+
+      const subscriber = vi.fn();
+      store.$sub(subscriber);
+      subscriber.mockClear();
+
+      store.$set({ count: 1 });
+      store.$set({ name: "updated" });
+      store.$set({ count: 5, name: "final", extra: true });
+
+      expect(subscriber).toHaveBeenCalledTimes(3);
+      expect(subscriber).toHaveBeenNthCalledWith(1, { count: 1 });
+      expect(subscriber).toHaveBeenNthCalledWith(2, { name: "updated" });
+      expect(subscriber).toHaveBeenNthCalledWith(3, {
+        count: 5,
+        name: "final",
+        extra: true,
+      });
+    });
+
+    it("should handle atomic objects with different property types", () => {
+      const store = createPrimitiveStore(
+        atom<{
+          booleanProp: boolean;
+          numberProp: number;
+          stringProp: string;
+          arrayProp: number[];
+          objectProp: { nested: string };
+          nullProp: null;
+          undefinedProp: undefined;
+          newString: string;
+          newNumber: number;
+          newArray: string[];
+          newObject: { different: string };
+        }>({
+          booleanProp: true,
+          numberProp: 42,
+          stringProp: "hello",
+          arrayProp: [1, 2, 3],
+          objectProp: { nested: "value" },
+          nullProp: null,
+          undefinedProp: undefined,
+        })
+      );
+
+      store.$set({
+        newString: "world",
+        newNumber: 100,
+        newArray: ["a", "b"],
+        newObject: { different: "structure" },
+      });
+
+      expect(store.$get()).toEqual({
+        newString: "world",
+        newNumber: 100,
+        newArray: ["a", "b"],
+        newObject: { different: "structure" },
+      });
+
+      expect(store.$get().booleanProp).toBeUndefined();
+      expect(store.$get().stringProp).toBeUndefined();
+      expect(store.$get().arrayProp).toBeUndefined();
+    });
+  });
+
   describe("Proxy Behavior", () => {
     it("should handle proxy defineProperty trap", () => {
       const store = createPrimitiveStore({ test: "value" });
@@ -342,7 +629,7 @@ describe("createPrimitiveStore", () => {
       expect("$get" in store).toBe(true);
       expect("$set" in store).toBe(true);
       expect("$use" in store).toBe(true);
-      expect("$act" in store).toBe(true);
+      expect("$sub" in store).toBe(true);
 
       expect("prop1" in store).toBe(false);
       expect("prop2" in store).toBe(false);

@@ -26,7 +26,6 @@ Whether you're building a small React component or a large-scale application, `@
   - [What is a store?](#what-is-a-store)
   - [Store types: Primitive and Composite](#store-types-primitive-and-composite)
   - [Immutability and reactivity](#immutability-and-reactivity)
-  - [⚠️ Important: Use Types, Not Interfaces](#%EF%B8%8F-important-use-types-not-interfaces)
 - [Configure your stores](#configure-your-stores)
 - [Use the API: Reference and examples](#use-the-api-reference-and-examples)
   - [Create stores: `createStore()`](#create-stores-createstore)
@@ -47,7 +46,6 @@ Whether you're building a small React component or a large-scale application, `@
   - [Deep dependency tracking: `useVersion`](#deep-dependency-tracking-useversion)
   - [Handle circular references](#handle-circular-references)
   - [Handle arrays in stores](#handle-arrays-in-stores)
-  - [Normalize objects: `normalizeObject()`](#normalize-objects-normalizeobject)
   - [Infer state types: `InferType`](#infer-state-types-infertype)
 - [Persist state](#persist-state)
   - [Web Storage adapters](#web-storage-adapters)
@@ -207,90 +205,6 @@ Both store types share a consistent API for getting, setting, and subscribing to
 `@ibnlanre/portal` embraces immutability. When you update the state, the library creates a new state object instead of modifying the existing one. This helps prevent bugs and makes state changes predictable.
 
 > **Tip:** Stores are reactive. When a store's state changes, any components or subscribers listening to that store (or its parts) are notified, allowing your UI to update automatically.
-
-### ⚠️ Important: Use Types, Not Interfaces
-
-`@ibnlanre/portal` works best with **type aliases** rather than **interfaces** when defining your state structure. This is because `createStore()` expects a dictionary type (`Record<string, unknown>`), and interfaces don't automatically extend this constraint.
-
-**Why this matters:**
-
-- Interfaces and dictionary types have different structural characteristics in TypeScript
-- Using interfaces can break type inference for composite stores
-- Arrays and other object types are properly typed as `Record<string, any>`, but interfaces would disrupt this consistency
-
-**✅ Recommended - Use type aliases:**
-
-```ts
-// ✅ Good: Use type aliases
-type UserState = {
-  name: string;
-  email: string;
-  settings: {
-    theme: "light" | "dark";
-    notifications: boolean;
-  };
-};
-
-const userStore = createStore<UserState>({
-  name: "Alex",
-  email: "alex@example.com",
-  settings: {
-    theme: "light",
-    notifications: true,
-  },
-});
-```
-
-**❌ Avoid - Interfaces can cause type issues:**
-
-```ts
-// ❌ Problematic: Interfaces can lead to unexpected type inference issues
-interface UserState {
-  name: string;
-  email: string;
-  settings: {
-    theme: "light" | "dark";
-    notifications: boolean;
-  };
-}
-
-// This would be inferred as a PrimitiveStore instead of a CompositeStore
-const userStore = createStore<UserState>({
-  /* ... */
-});
-```
-
-**Alternative for interfaces:**
-If you must work with existing interfaces (e.g., from APIs), use the `normalizeObject()` utility to convert them to dictionary-compatible types:
-
-```ts
-interface APIResponse {
-  id: number;
-  data: { value: string };
-}
-
-const apiData: APIResponse = {
-  /* ... */
-};
-const normalizedData = normalizeObject(apiData);
-const store = createStore(normalizedData);
-```
-
-Alternatively, you can use the `Normalize` type utility directly on the interface to convert it to a dictionary type:
-
-```ts
-import { Normalize } from "@ibnlanre/portal";
-
-interface APIResponse {
-  id: number;
-  data: { value: string };
-}
-
-const apiData: Normalize<APIResponse> = {
-  /* ... */
-};
-const store = createStore(apiData);
-```
 
 ## Configure your stores
 
@@ -1539,7 +1453,6 @@ You can initialize a store with state fetched asynchronously by passing an `asyn
 
 - The store's methods (`$get`, `$set`, `$act`, `$use`) will operate on the unresolved Promise or an initial empty state until resolution.
 - If the Promise resolves to an object, this object is treated as a single (primitive-like) value within the store. To achieve a nested structure from async data, initialize the store with a placeholder structure (or `null`) and then update it using `$set` once the data is fetched.
-- For complex or relational data, consider normalizing the data shape or using `normalizeObject` before store initialization.
 
 **Example:**
 
@@ -1785,90 +1698,6 @@ const itemStores = createStore({
 });
 // Now itemStores.item_1 is a store, itemStores.item_1.name is a store, etc.
 ```
-
-### Normalize objects: `normalizeObject()`
-
-The `normalizeObject()` function converts interface-typed objects (like `window`, DOM elements, or complex API responses that might not be plain JavaScript objects) into dictionary types (`Record<PropertyKey, unknown>`) compatible with composite stores. This is important when an object's structure includes methods, symbols, or other non-serializable parts that shouldn't be part of the reactive state, or when TypeScript's type system for interfaces doesn't align with the expected structure for a composite store.
-
-`normalizeObject` helps by:
-
-- Converting interface types to store-compatible dictionary types.
-- Safely handling circular references within the object during normalization.
-- Filtering out non-data properties like functions and Symbols.
-- Only preserving properties with string or number keys (symbol keys are excluded).
-- Preserving the accessible data structure of the original object.
-
-**Important**: The normalized object will only contain properties with string or number keys. Symbol keys are excluded during normalization.
-
-**Syntax:**
-
-```ts
-normalizeObject<T extends object>(obj: T): Record<PropertyKey, unknown> // Simplified, actual return might be more specific
-```
-
-- **`obj`**: The object to normalize.
-- **Returns**: A new object that is a "plain" JavaScript object representation of `obj`, suitable for `createStore`.
-
-**Examples:**
-
-1.  **Normalizing the browser's `window` object:**
-
-    ```ts
-    import { createStore, normalizeObject } from "@ibnlanre/portal";
-
-    // The 'window' object is complex and has an interface type.
-    // Normalizing it makes it suitable for a composite store.
-    const normalizedWindow = normalizeObject(window);
-    const browserInfoStore = createStore(normalizedWindow);
-
-    // Now you can access properties like browserInfoStore.navigator.userAgent.$get()
-    // Note: Functions on window (like alert) would typically be excluded by normalization.
-    console.log(browserInfoStore.location.href.$get());
-
-    // This might work if 'document' is data-like
-    console.log(browserInfoStore.document.title.$get());
-    ```
-
-2.  **Normalizing a custom interface with methods and symbols:**
-
-    ```ts
-    import { createStore, normalizeObject } from "@ibnlanre/portal";
-
-    interface UserProfileAPI {
-      id: number;
-      getFullName(): string; // A method
-      lastLogin: Date;
-      internalConfig: symbol; // A symbol
-      data: { value: string };
-    }
-
-    const apiResponse: UserProfileAPI = {
-      id: 123,
-      getFullName: () => "Alex Doe",
-      lastLogin: new Date(),
-      internalConfig: Symbol("config"),
-      data: { value: "test" },
-    };
-
-    const normalizedUserProfile = normalizeObject(apiResponse);
-    /*
-      normalizedUserProfile will be:
-      {
-        id: 123,
-        lastLogin: // Date object (preserved as it's data-like)
-        data: { value: "test" }
-      }
-      // The getFullName method and internalConfig symbol are removed by normalization,
-      // as functions and symbol keys are filtered out.
-    */
-
-    const userProfileStore = createStore(normalizedUserProfile);
-    console.log(userProfileStore.id.$get()); // 123
-    console.log(userProfileStore.data.value.$get()); // "test"
-
-    // userProfileStore.getFullName is undefined (method was stripped)
-    // userProfileStore.internalConfig is undefined (symbol key was excluded)
-    ```
 
 ### Infer state types: `InferType`
 
@@ -2606,10 +2435,54 @@ Retrieves the total number of cookies accessible to the current document.
 While `@ibnlanre/portal` is versatile, it's important to be aware of its limitations:
 
 - **Serialization for persistence**: When using persistence adapters (localStorage, sessionStorage, cookies), the state must be serializable. Functions, Symbols, `undefined` (in some parts of objects when using `JSON.stringify`), or complex class instances might not serialize/deserialize correctly by default. Customize `stringify` and `parse` options in adapters for complex scenarios. Functions within stores (actions) are not persisted.
-- **`normalizeObject()` behavior**: The `normalizeObject()` utility is designed to convert complex objects into plain data structures suitable for stores. It strips out functions and symbol keys, keeping only properties with string or number keys. If you need to retain functions or symbol properties, this utility is not suitable, and you'll need to handle them separately or use a different approach.
+
+```ts
+const store = createStore({
+  name: "Alice",
+  lastLogin: new Date(), // Date objects need custom serialization
+  preferences: {
+    theme: "dark",
+    notifications: true,
+  },
+});
+
+const [getState, setState] = createLocalStorageAdapter("user-store", {
+  stringify: (state) =>
+    JSON.stringify({
+      ...state,
+      lastLogin: state.lastLogin.toISOString(), // Convert Date to string
+    }),
+  parse: (storedString) => {
+    const parsed = JSON.parse(storedString);
+    return {
+      ...parsed,
+      lastLogin: new Date(parsed.lastLogin), // Convert string back to Date
+    };
+  },
+});
+```
+
 - **Reactivity scope**: Reactivity is triggered by changes to store values. If you mutate an object or array obtained via `$get()` directly (without using `$set()`), the store will not detect the change, and subscribers (including React components using `$use()`) will not update. Always use `$set()` or the updater function from `$use()` to modify state.
+
+```ts
+// ❌ Direct mutation - won't trigger reactivity
+const user = userStore.$get();
+user.name = "New Name"; // No reactivity triggered
+
+// ✅ Correct way - triggers reactivity
+userStore.$set((prev) => ({ ...prev, name: "New Name" }));
+```
+
 - **Promise resolution in `createStore`**: When `createStore` is initialized with a Promise, the resolved value is treated as a single entity. If the Promise resolves to an object, this object becomes the state of a primitive-like store, not a composite store with automatically created nested properties. To achieve a nested structure from async data, initialize the store with a placeholder and use `$set` after data fetching.
-- **Server-Side Rendering (SSR)**: While stores can be used in Node.js environments, managing state hydration and consistency in SSR setups requires careful consideration. The library itself doesn't provide out-of-the-box SSR-specific utilities beyond its core functionality.
+
+  ```ts
+  // ❌ This creates a primitive-like store with the resolved object as its value
+  const userStore = createStore(fetchUserData()); // fetchUserData returns Promise<{ name: string; age: number; }>
+
+  // ✅ This creates a composite store with nested properties
+  const userStore = createStore({ name: "", age: 0 });
+  fetchUserData().then((data) => userStore.$set(data));
+  ```
 
 ## Follow best practices
 

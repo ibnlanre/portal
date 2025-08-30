@@ -1,4 +1,4 @@
-type Accessor = "$act" | "$get" | "$set" | "$use";
+type Accessor = "$act" | "$get" | "$set" | "$sub" | "$use";
 
 export function isAccessor<Target extends Record<string, any>>(
   target: Target,

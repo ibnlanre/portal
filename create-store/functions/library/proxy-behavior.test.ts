@@ -27,7 +27,7 @@ describe("Proxy Behavior Tests", () => {
       expect(store.$get).toBeTypeOf("function");
       expect(store.$set).toBeTypeOf("function");
       expect(store.$use).toBeTypeOf("function");
-      expect(store.$act).toBeTypeOf("function");
+      expect(store.$sub).toBeTypeOf("function");
       expect(store.$key).toBeTypeOf("function");
 
       expect(store.user.$get).toBeTypeOf("function");
@@ -55,7 +55,7 @@ describe("Proxy Behavior Tests", () => {
       expect(keys).not.toContain("$get");
       expect(keys).not.toContain("$set");
       expect(keys).not.toContain("$use");
-      expect(keys).not.toContain("$act");
+      expect(keys).not.toContain("$sub");
       expect(keys).not.toContain("$key");
     });
 
@@ -71,7 +71,7 @@ describe("Proxy Behavior Tests", () => {
       expect("$get" in store).toBe(true);
       expect("$set" in store).toBe(true);
       expect("$use" in store).toBe(true);
-      expect("$act" in store).toBe(true);
+      expect("$sub" in store).toBe(true);
       expect("$key" in store).toBe(true);
 
       expect("nonExistent" in store).toBe(false);
@@ -190,7 +190,7 @@ describe("Proxy Behavior Tests", () => {
       expect(store.$get).toBeTypeOf("function");
       expect(store.$set).toBeTypeOf("function");
       expect(store.$use).toBeTypeOf("function");
-      expect(store.$act).toBeTypeOf("function");
+      expect(store.$sub).toBeTypeOf("function");
 
       expect(store.$get()).toBe("initial value");
       expect(() => store.$set("new value")).not.toThrow();
@@ -220,7 +220,7 @@ describe("Proxy Behavior Tests", () => {
       expect("$get" in store).toBe(true);
       expect("$set" in store).toBe(true);
       expect("$use" in store).toBe(true);
-      expect("$act" in store).toBe(true);
+      expect("$sub" in store).toBe(true);
 
       expect("value" in store).toBe(false);
 
@@ -325,7 +325,7 @@ describe("Proxy Behavior Tests", () => {
       expect(typeof primitiveStore.$get).toBe(typeof compositeStore.$get);
       expect(typeof primitiveStore.$set).toBe(typeof compositeStore.$set);
       expect(typeof primitiveStore.$use).toBe(typeof compositeStore.$use);
-      expect(typeof primitiveStore.$act).toBe(typeof compositeStore.$act);
+      expect(typeof primitiveStore.$sub).toBe(typeof compositeStore.$sub);
     });
 
     it("should handle nested primitive-like values in composite store", () => {

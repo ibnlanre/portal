@@ -40,7 +40,7 @@ describe("createPrimitiveStore - Server-Side Rendering (Node Environment)", () =
     const store = createPrimitiveStore("initial");
     const updates: string[] = [];
 
-    const unsubscribe = store.$act((value) => {
+    const unsubscribe = store.$sub((value) => {
       updates.push(value);
     });
 
@@ -71,7 +71,7 @@ describe("createPrimitiveStore - Server-Side Rendering (Node Environment)", () =
 
     expect(typeof store.$get).toBe("function");
     expect(typeof store.$set).toBe("function");
-    expect(typeof store.$act).toBe("function");
+    expect(typeof store.$sub).toBe("function");
 
     expect((store as any).value).toBeUndefined();
     expect(Object.keys(store)).toEqual([]);
@@ -93,8 +93,8 @@ describe("createPrimitiveStore - Server-Side Rendering (Node Environment)", () =
     const updates1: number[] = [];
     const updates2: number[] = [];
 
-    const unsubscribe1 = store.$act((value) => updates1.push(value));
-    const unsubscribe2 = store.$act((value) => updates2.push(value));
+    const unsubscribe1 = store.$sub((value) => updates1.push(value));
+    const unsubscribe2 = store.$sub((value) => updates2.push(value));
 
     expect(updates1).toEqual([0]);
     expect(updates2).toEqual([0]);

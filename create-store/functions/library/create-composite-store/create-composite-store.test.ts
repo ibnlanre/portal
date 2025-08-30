@@ -326,14 +326,14 @@ describe("createCompositeStore", () => {
       });
     });
 
-    describe("$act() method", () => {
+    describe("$sub() method", () => {
       beforeEach(() => {
         store.$set(state);
       });
 
       it("calls subscribers with initial state", () => {
         const subscriber = vi.fn();
-        store.$act(subscriber);
+        store.$sub(subscriber);
         expect(subscriber).toHaveBeenCalledWith(store.$get());
       });
 
@@ -342,9 +342,9 @@ describe("createCompositeStore", () => {
         const countSubscriber = vi.fn();
         const userSubscriber = vi.fn();
 
-        store.$act(rootSubscriber);
-        store.count.$act(countSubscriber);
-        store.user.$act(userSubscriber);
+        store.$sub(rootSubscriber);
+        store.count.$sub(countSubscriber);
+        store.user.$sub(userSubscriber);
 
         rootSubscriber.mockClear();
         countSubscriber.mockClear();
@@ -376,7 +376,7 @@ describe("createCompositeStore", () => {
 
       it("allows unsubscribing from state changes", () => {
         const subscriber = vi.fn();
-        const unsubscribe = store.$act(subscriber, false);
+        const unsubscribe = store.$sub(subscriber, false);
 
         subscriber.mockClear();
 
@@ -827,13 +827,12 @@ describe("createCompositeStore", () => {
         const preferences = store.preferences;
         const settings = store.settings;
 
-        // Atomic objects should still have proxy methods like primitives
         expect(preferences.$get()).toEqual({ language: "en", theme: "dark" });
         expect(settings.$get()).toEqual({ volume: 50 });
 
         expect(typeof preferences).toBe("object");
-        expect("$get" in preferences).toBe(true); // Atomic objects should have $get
-        expect("$set" in preferences).toBe(true); // Atomic objects should have $set
+        expect("$get" in preferences).toBe(true);
+        expect("$set" in preferences).toBe(true);
 
         expect("$get" in settings).toBe(true);
         expect("$set" in settings).toBe(true);
@@ -969,7 +968,143 @@ describe("createCompositeStore", () => {
           theme: "light",
         });
       });
+
+      it("notifies root store subscribers when atomic objects change", () => {
+        const store = createCompositeStore({
+          count: 0,
+          preferences: atom({
+            language: "en",
+            theme: "dark",
+          }),
+          settings: {
+            volume: 50,
+            brightness: 80,
+          },
+        });
+
+        const rootSubscriber = vi.fn();
+        const preferencesSubscriber = vi.fn();
+        const settingsSubscriber = vi.fn();
+
+        store.$sub(rootSubscriber);
+        store.preferences.$sub(preferencesSubscriber);
+        store.settings.$sub(settingsSubscriber);
+
+        rootSubscriber.mockClear();
+        preferencesSubscriber.mockClear();
+        settingsSubscriber.mockClear();
+
+        store.preferences.$set({ theme: "light" });
+
+        expect(rootSubscriber).toHaveBeenCalledWith(
+          expect.objectContaining({
+            preferences: { theme: "light" },
+          })
+        );
+        expect(preferencesSubscriber).toHaveBeenCalledWith({ theme: "light" });
+        expect(settingsSubscriber).not.toHaveBeenCalled();
+
+        rootSubscriber.mockClear();
+        preferencesSubscriber.mockClear();
+
+        store.settings.$set({ volume: 75 });
+
+        expect(rootSubscriber).toHaveBeenCalledWith(
+          expect.objectContaining({
+            settings: expect.objectContaining({ volume: 75 }),
+          })
+        );
+        expect(settingsSubscriber).toHaveBeenCalledWith(
+          expect.objectContaining({ volume: 75 })
+        );
+        expect(preferencesSubscriber).not.toHaveBeenCalled();
+      });
+
+      it("notifies parent store when nested atomic objects change", () => {
+        const store = createCompositeStore({
+          user: {
+            name: "John",
+            preferences: atom({
+              language: "en",
+              theme: "dark",
+            }),
+            settings: {
+              notifications: true,
+              volume: 50,
+            },
+          },
+        });
+
+        const rootSubscriber = vi.fn();
+        const userSubscriber = vi.fn();
+        const preferencesSubscriber = vi.fn();
+
+        store.$sub(rootSubscriber);
+        store.user.$sub(userSubscriber);
+        store.user.preferences.$sub(preferencesSubscriber);
+
+        rootSubscriber.mockClear();
+        userSubscriber.mockClear();
+        preferencesSubscriber.mockClear();
+
+        store.user.preferences.$set({ theme: "light", language: "fr" });
+
+        expect(rootSubscriber).toHaveBeenCalledWith(
+          expect.objectContaining({
+            user: expect.objectContaining({
+              preferences: { theme: "light", language: "fr" },
+            }),
+          })
+        );
+        expect(userSubscriber).toHaveBeenCalledWith(
+          expect.objectContaining({
+            preferences: { theme: "light", language: "fr" },
+          })
+        );
+        expect(preferencesSubscriber).toHaveBeenCalledWith({
+          theme: "light",
+          language: "fr",
+        });
+      });
+
+      it("maintains subscription isolation between atomic and regular objects", () => {
+        const store = createCompositeStore({
+          atomicData: atom({
+            value1: "a",
+            value2: "b",
+          }),
+          regularData: {
+            value1: "x",
+            value2: "y",
+          },
+        });
+
+        const atomicSubscriber = vi.fn();
+        const regularSubscriber = vi.fn();
+
+        store.atomicData.$sub(atomicSubscriber);
+        store.regularData.$sub(regularSubscriber);
+
+        atomicSubscriber.mockClear();
+        regularSubscriber.mockClear();
+
+        store.atomicData.$set({ value1: "new" });
+
+        expect(atomicSubscriber).toHaveBeenCalledWith({ value1: "new" });
+        expect(regularSubscriber).not.toHaveBeenCalled();
+
+        atomicSubscriber.mockClear();
+
+        store.regularData.$set({ value1: "updated" });
+
+        expect(regularSubscriber).toHaveBeenCalledWith({
+          value1: "updated",
+          value2: "y",
+        });
+        expect(atomicSubscriber).not.toHaveBeenCalled();
+      });
     });
+
     describe("Selector Functions", () => {
       const store = createCompositeStore({
         filters: { showActive: true },
@@ -1361,7 +1496,7 @@ describe("createCompositeStore", () => {
         const subscribers = [];
 
         for (let i = 0; i < 10; i++) {
-          const unsubscribe = store.count.$act(() => {});
+          const unsubscribe = store.count.$sub(() => {});
           subscribers.push(unsubscribe);
         }
 
