@@ -26,6 +26,7 @@ Whether you're building a small React component or a large-scale application, `@
   - [What is a store?](#what-is-a-store)
   - [Store types: Primitive and Composite](#store-types-primitive-and-composite)
   - [Immutability and reactivity](#immutability-and-reactivity)
+  - [Atomic objects: Control object update behavior](#atomic-objects-control-object-update-behavior)
 - [Configure your stores](#configure-your-stores)
 - [Use the API: Reference and examples](#use-the-api-reference-and-examples)
   - [Create stores: `createStore()`](#create-stores-createstore)
@@ -205,6 +206,265 @@ Both store types share a consistent API for getting, setting, and subscribing to
 `@ibnlanre/portal` embraces immutability. When you update the state, the library creates a new state object instead of modifying the existing one. This helps prevent bugs and makes state changes predictable.
 
 > **Tip:** Stores are reactive. When a store's state changes, any components or subscribers listening to that store (or its parts) are notified, allowing your UI to update automatically.
+
+### Atomic objects: Control object update behavior
+
+By default, when you update objects in `@ibnlanre/portal`, the library performs **partial updates** (merging). This means only the properties you specify are changed, while other properties remain unchanged. However, sometimes you want to treat an object as a **single value** that should be completely replaced when updated.
+
+The `atom()` function allows you to mark objects as **atomic**, which changes their update behavior from merging to complete replacement.
+
+#### Understanding the difference
+
+**Regular objects (default behavior - merging):**
+
+```ts
+import { createStore } from "@ibnlanre/portal";
+
+const settingsStore = createStore({
+  theme: "dark",
+  fontSize: 16,
+  notifications: true,
+});
+
+// Partial update - only changes the theme, keeps other properties
+settingsStore.$set({ theme: "light" });
+
+console.log(settingsStore.$get());
+// Output: { theme: "light", fontSize: 16, notifications: true }
+```
+
+**Atomic objects (complete replacement):**
+
+```ts
+import { createStore, atom } from "@ibnlanre/portal";
+
+const preferencesStore = createStore({
+  userSettings: atom({
+    theme: "dark",
+    fontSize: 16,
+    notifications: true,
+  }),
+});
+
+// Complete replacement - replaces the entire object
+preferencesStore.userSettings.$set({ theme: "light" });
+
+console.log(preferencesStore.userSettings.$get());
+// Output: { theme: "light" }
+// Note: fontSize and notifications are gone
+```
+
+#### When to use atomic objects
+
+Atomic objects are particularly useful for:
+
+1. **Configuration objects** that should be treated as complete units
+2. **API response data** that represents a complete entity
+3. **Form state** where you want to reset to a specific configuration
+4. **Immutable data structures** where partial updates don't make conceptual sense
+5. **Performance optimization** when you know you always want to replace the entire object
+
+#### Using `atom()`
+
+**Syntax:**
+
+```ts
+atom<T extends object>(value: T): T
+```
+
+- **`value`**: The object to mark as atomic
+- **Returns**: The same object, but marked as atomic for update behavior
+
+**Basic Example:**
+
+```ts
+import { createStore, atom } from "@ibnlanre/portal";
+
+const appStore = createStore({
+  // Regular object - supports partial updates
+  user: {
+    name: "Alice",
+    email: "alice@example.com",
+    age: 30,
+  },
+
+  // Atomic object - complete replacement only
+  apiConfig: atom({
+    baseUrl: "https://api.example.com",
+    timeout: 5000,
+    retries: 3,
+  }),
+});
+
+// Partial update on regular object
+appStore.user.$set({ name: "Bob" });
+console.log(appStore.user.$get());
+// Output: { name: "Bob", email: "alice@example.com", age: 30 }
+
+// Complete replacement on atomic object
+appStore.apiConfig.$set({ baseUrl: "https://api.dev.com" });
+console.log(appStore.apiConfig.$get());
+// Output: { baseUrl: "https://api.dev.com" }
+// Note: timeout and retries are removed
+```
+
+#### Advanced atomic object patterns
+
+**1. Mixed regular and atomic objects:**
+
+```ts
+import { createStore, atom } from "@ibnlanre/portal";
+
+const gameStore = createStore({
+  player: {
+    name: "Player1",
+    score: 100,
+    inventory: {
+      gold: 50,
+      items: ["sword", "potion"],
+    },
+  },
+
+  // Game settings are treated as a complete unit
+  gameSettings: atom({
+    difficulty: "medium",
+    soundEnabled: true,
+    graphicsQuality: "high",
+  }),
+});
+
+// Partial update on player (merges with existing data)
+gameStore.player.$set({ score: 150 });
+// player.name and player.inventory remain unchanged
+
+// Complete replacement of game settings
+gameStore.gameSettings.$set({ difficulty: "hard" });
+// soundEnabled and graphicsQuality are removed
+```
+
+**2. Atomic objects with functional updates:**
+
+```ts
+import { createStore, atom } from "@ibnlanre/portal";
+
+const themeStore = createStore({
+  currentTheme: atom({
+    primary: "#007bff",
+    secondary: "#6c757d",
+    background: "#ffffff",
+  }),
+});
+
+// Use functional updates for conditional logic
+themeStore.currentTheme.$set((currentTheme) => {
+  if (currentTheme.background === "#ffffff") {
+    // Switch to dark theme (complete replacement)
+    return {
+      primary: "#0d6efd",
+      secondary: "#495057",
+      background: "#212529",
+    };
+  } else {
+    // Switch to light theme (complete replacement)
+    return {
+      primary: "#007bff",
+      secondary: "#6c757d",
+      background: "#ffffff",
+    };
+  }
+});
+```
+
+**3. Nested atomic objects:**
+
+```ts
+import { createStore, atom } from "@ibnlanre/portal";
+
+const userStore = createStore({
+  profile: {
+    name: "John Doe",
+
+    // Preferences are atomic - complete replacement
+    preferences: atom({
+      language: "en",
+      timezone: "UTC",
+      notifications: true,
+    }),
+
+    // Regular object - partial updates
+    contact: {
+      email: "john@example.com",
+      phone: "+1234567890",
+    },
+  },
+});
+
+// Partial update on contact
+userStore.profile.contact.$set({ email: "newemail@example.com" });
+// phone number remains unchanged
+
+// Complete replacement of preferences
+userStore.profile.preferences.$set({ language: "fr", timezone: "CET" });
+// notifications setting is removed
+```
+
+#### Important characteristics
+
+**1. `atom()` is idempotent:**
+
+```ts
+import { atom } from "@ibnlanre/portal";
+
+const config = { api: "https://api.com", version: "v1" };
+const atomic1 = atom(config);
+const atomic2 = atom(atomic1); // Safe to call multiple times
+
+console.log(atomic1 === atomic2); // true
+```
+
+**2. Atomic objects preserve normal JavaScript behavior:**
+
+```ts
+import { atom } from "@ibnlanre/portal";
+
+const settings = atom({
+  theme: "dark",
+  lang: "en",
+});
+
+// Normal object operations work as expected
+console.log(Object.keys(settings)); // ["theme", "lang"]
+console.log(settings.theme); // "dark"
+console.log(JSON.stringify(settings)); // '{"theme":"dark","lang":"en"}'
+```
+
+**3. Atomic behavior affects subscriptions:**
+
+```ts
+import { createStore, atom } from "@ibnlanre/portal";
+
+const store = createStore({
+  regularData: { a: 1, b: 2 },
+  atomicData: atom({ x: 10, y: 20 }),
+});
+
+store.regularData.$sub((data) => {
+  console.log("Regular data changed:", data);
+});
+
+store.atomicData.$sub((data) => {
+  console.log("Atomic data changed:", data);
+});
+
+store.regularData.$set({ a: 5 });
+// Logs: "Regular data changed: { a: 5, b: 2 }"
+
+store.atomicData.$set({ x: 50 });
+// Logs: "Atomic data changed: { x: 50 }"
+// Note: y property is gone
+```
+
+Understanding atomic objects helps you control exactly how your data updates, leading to more predictable state management and fewer bugs related to unexpected partial updates.
 
 ## Configure your stores
 
