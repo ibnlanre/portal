@@ -3,6 +3,12 @@ import { describe, expect, it } from "vitest";
 import { createCompositeStore } from "./index";
 
 describe("createCompositeStore - Server-Side Rendering (Node Environment)", () => {
+  it("should confirm we're running in Node environment (SSR)", () => {
+    expect(typeof window).toBe("undefined");
+    expect(typeof global).toBe("object");
+    expect(typeof process).toBe("object");
+  });
+
   it("should create a store with proper initial state in SSR", () => {
     const initialState = { counter: 0, name: "test" };
     const store = createCompositeStore(initialState);
@@ -31,7 +37,7 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
     store.$set({ count: 42, name: "updated" });
     expect(store.$get()).toEqual({ count: 42, name: "updated" });
 
-    store.$set((prev) => ({ ...prev, count: prev.count + 10 }));
+    store.$set((prev) => ({ count: prev.count + 10 }));
     expect(store.$get()).toEqual({ count: 52, name: "updated" });
   });
 
@@ -41,22 +47,17 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
       user: { id: 1, profile: { age: 30, name: "John" } },
     });
 
-    store.$set((prev) => ({
-      ...prev,
-      user: {
-        ...prev.user,
-        profile: { ...prev.user.profile, age: 31 },
-      },
-    }));
+    store.$set({ user: { profile: { age: 31 } } });
 
     expect(store.$get().user.profile.age).toBe(31);
+    expect(store.$get().user.id).toBe(1);
     expect(store.$get().user.profile.name).toBe("John");
     expect(store.$get().settings.theme).toBe("light");
   });
 
   it("should handle subscription in SSR without errors", () => {
     const store = createCompositeStore({ value: "initial" });
-    const updates: { value: string }[] = [];
+    const updates: Array<{ value: string }> = [];
 
     const unsubscribe = store.$sub((state) => {
       updates.push(state);
@@ -94,7 +95,7 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
     );
     expect(total).toBe(12);
 
-    store.$set((prev) => ({ ...prev, multiplier: 3 }));
+    store.$set((prev) => ({ multiplier: 3 }));
     const newTotal = store.$get((state) =>
       state.items.reduce((sum, item) => sum + item * state.multiplier, 0)
     );
@@ -103,8 +104,8 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
 
   it("should handle multiple subscribers in SSR", () => {
     const store = createCompositeStore({ counter: 0 });
-    const updates1: { counter: number }[] = [];
-    const updates2: { counter: number }[] = [];
+    const updates1: Array<{ counter: number }> = [];
+    const updates2: Array<{ counter: number }> = [];
 
     const unsubscribe1 = store.$sub((state) => updates1.push(state));
     const unsubscribe2 = store.$sub((state) => updates2.push(state));
@@ -133,7 +134,6 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
     expect(store.$get()).toEqual({ count: 2, items: ["a", "b"] });
 
     store.$set((prev) => ({
-      ...prev,
       count: prev.count + 1,
       items: [...prev.items, "c"],
     }));
@@ -141,7 +141,6 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
     expect(store.$get()).toEqual({ count: 3, items: ["a", "b", "c"] });
 
     store.$set((prev) => ({
-      ...prev,
       count: prev.count - 1,
       items: prev.items.filter((item) => item !== "b"),
     }));
@@ -159,17 +158,15 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
     });
 
     store.$set((prev) => ({
-      ...prev,
-      todos: prev.todos.map((todo) =>
-        todo.id === 1 ? { ...todo, completed: !todo.completed } : todo
-      ),
+      todos: prev.todos.map((todo) => {
+        return todo.id === 1 ? { ...todo, completed: !todo.completed } : todo;
+      }),
     }));
 
     expect(store.$get().todos[0].completed).toBe(true);
     expect(store.$get().todos[1].completed).toBe(true);
 
     store.$set((prev) => ({
-      ...prev,
       todos: [...prev.todos, { completed: false, id: 3, text: "Task 3" }],
     }));
 
@@ -198,7 +195,7 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
 
   it("should handle rapid state changes in SSR", () => {
     const store = createCompositeStore({ counter: 0 });
-    const updates: { counter: number }[] = [];
+    const updates: Array<{ counter: number }> = [];
 
     store.$sub((state) => updates.push(state));
 
@@ -226,10 +223,7 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
 
     const stateBefore = store.$get();
 
-    store.$set((prev) => ({
-      ...prev,
-      user: { ...prev.user, age: 31 },
-    }));
+    store.$set({ user: { age: 31 } });
 
     const stateAfter = store.$get();
 
@@ -238,11 +232,5 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
     expect(stateBefore).not.toBe(stateAfter);
     expect(stateBefore.user).not.toBe(stateAfter.user);
     expect(stateBefore.settings).toStrictEqual(stateAfter.settings);
-  });
-
-  it("should confirm we're running in Node environment (SSR)", () => {
-    expect(typeof window).toBe("undefined");
-    expect(typeof global).toBe("object");
-    expect(typeof process).toBe("object");
   });
 });

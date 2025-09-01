@@ -67,4 +67,5 @@ export { useVersion } from "@/create-store/functions/hooks/use-version";
 export { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
 export { createContextStore } from "@/create-store/functions/library/create-context-store";
 export { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
+export { fallback } from "@/create-store/functions/library/fallback";
 export { normalizeObject } from "@/create-store/functions/library/normalize-object";

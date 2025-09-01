@@ -7,116 +7,245 @@ import { atom } from "@/create-store/functions/library/atom";
 import { createPrimitiveStore } from "./index";
 
 describe("createPrimitiveStore", () => {
-  it("should create a store with no initial state", () => {
-    const store = createPrimitiveStore(undefined);
-    expect(store).toBeDefined();
-    const stateValue = store.$get();
-    expect(stateValue).toBeUndefined();
-  });
+  describe("Proxy Shape", () => {
+    it("should expose only store methods", () => {
+      const store = createPrimitiveStore("initial value");
+      const storeKeys = Object.keys(store).filter((key) => key.startsWith("$"));
 
-  it("should create a store with initial state", () => {
-    const initialState = "value";
-    const store = createPrimitiveStore(initialState);
-    const stateValue = store.$get();
-    expect(stateValue).toBe(initialState);
-  });
+      expect(storeKeys).toEqual([]);
 
-  it("should set a new state value", () => {
-    const initialState = "value";
-    const store = createPrimitiveStore(initialState);
+      expect(store.$get).toBeTypeOf("function");
+      expect(store.$set).toBeTypeOf("function");
+      expect(store.$use).toBeTypeOf("function");
+      expect(store.$sub).toBeTypeOf("function");
 
-    store.$set("new value");
-    expect(store.$get((value) => value.toUpperCase())).toBe("NEW VALUE");
+      expect(store.$get()).toBe("initial value");
+      expect(() => store.$set("new value")).not.toThrow();
+      expect(store.$get()).toBe("new value");
 
-    store.$set((value) => value.toUpperCase());
-    expect(store.$get((value) => value.toLowerCase())).toBe("new value");
-  });
-
-  it("should subscribe to state changes", () => {
-    const initialState = "value";
-    const store = createPrimitiveStore(initialState);
-
-    const subscriber = vi.fn();
-    store.$sub(subscriber);
-    expect(subscriber).toHaveBeenCalledWith(initialState);
-
-    store.$set("new value");
-    expect(subscriber).toHaveBeenCalledWith("new value");
-  });
-
-  it("should unsubscribe from state changes", () => {
-    const initialState = "value";
-    const store = createPrimitiveStore(initialState);
-
-    const subscriber = vi.fn();
-    const unsubscribe = store.$sub(subscriber);
-
-    unsubscribe();
-    store.$set("new value");
-    expect(subscriber).toHaveBeenCalledOnce();
-  });
-
-  it("should use the state value in a React component", () => {
-    const initialState = "value";
-    const store = createPrimitiveStore(initialState);
-
-    const { result } = renderHook(() => store.$use());
-    const [stateValue] = result.current;
-    expect(stateValue).toBe(initialState);
-  });
-
-  it("should update the state value in a React component", () => {
-    const initialState = "value";
-    const store = createPrimitiveStore(initialState);
-
-    const { result } = renderHook(() => store.$use());
-    const [, setStateValue] = result.current;
-
-    act(() => {
-      setStateValue("new value");
+      expect((store as any).value).toBeUndefined();
     });
 
-    const [updatedStateValue] = result.current;
-    expect(updatedStateValue).toBe("new value");
+    it("should make store methods non-enumerable", () => {
+      const store = createPrimitiveStore("test");
+
+      const keys = Object.keys(store);
+      expect(keys).toEqual([]);
+
+      const forInKeys: string[] = [];
+      for (const key in store) {
+        forInKeys.push(key);
+      }
+      expect(forInKeys).toEqual([]);
+
+      expect(store.$get()).toBe("test");
+    });
+
+    it("should handle 'in' operator for primitive store", () => {
+      const store = createPrimitiveStore("test");
+
+      expect("$get" in store).toBe(true);
+      expect("$set" in store).toBe(true);
+      expect("$use" in store).toBe(true);
+      expect("$sub" in store).toBe(true);
+
+      expect("value" in store).toBe(false);
+
+      expect("nonExistent" in store).toBe(false);
+    });
+
+    it("should handle property descriptors for primitive store", () => {
+      const store = createPrimitiveStore("test value");
+
+      const getDescriptor = Object.getOwnPropertyDescriptor(store, "$get");
+      expect(getDescriptor).toBeDefined();
+      expect(getDescriptor?.enumerable).toBe(false);
+      expect(getDescriptor?.configurable).toBe(true);
+      expect(getDescriptor?.writable).toBe(false);
+
+      const valueDescriptor = Object.getOwnPropertyDescriptor(store, "value");
+      expect(valueDescriptor).toBeUndefined();
+    });
+
+    it("should handle different primitive types", () => {
+      const stringStore = createPrimitiveStore("hello");
+      const numberStore = createPrimitiveStore(42);
+      const booleanStore = createPrimitiveStore(true);
+      const nullStore = createPrimitiveStore(null);
+      const undefinedStore = createPrimitiveStore(undefined);
+
+      expect(stringStore.$get).toBeTypeOf("function");
+      expect(numberStore.$get).toBeTypeOf("function");
+      expect(booleanStore.$get).toBeTypeOf("function");
+      expect(nullStore.$get).toBeTypeOf("function");
+      expect(undefinedStore.$get).toBeTypeOf("function");
+
+      expect(stringStore.$get()).toBe("hello");
+      expect(numberStore.$get()).toBe(42);
+      expect(booleanStore.$get()).toBe(true);
+      expect(nullStore.$get()).toBe(null);
+      expect(undefinedStore.$get()).toBe(undefined);
+
+      expect((stringStore as any).value).toBeUndefined();
+      expect((numberStore as any).value).toBeUndefined();
+      expect((booleanStore as any).value).toBeUndefined();
+      expect((nullStore as any).value).toBeUndefined();
+      expect((undefinedStore as any).value).toBeUndefined();
+    });
+
+    it("should prevent overriding store methods", () => {
+      const store = createPrimitiveStore("test");
+      const original$get = store.$get;
+      const original$set = store.$set;
+
+      expect(() => {
+        (store as any).$get = "should not work";
+      }).not.toThrow();
+
+      expect(store.$get).toBe(original$get);
+
+      expect(() => {
+        (store as any).$set = "should not work";
+      }).not.toThrow();
+
+      expect(store.$set).toBe(original$set);
+    });
+
+    it("should prevent property definition and deletion", () => {
+      const store = createPrimitiveStore(100);
+
+      expect(() => {
+        (store as any).newProperty = "value";
+      }).not.toThrow();
+      expect((store as any).newProperty).toBeUndefined();
+
+      expect(() => {
+        Object.defineProperty(store, "customProp", {
+          enumerable: true,
+          value: "test",
+        });
+      }).not.toThrow();
+      expect((store as any).customProp).toBeUndefined();
+
+      expect(() => {
+        delete (store as any).$get;
+      }).not.toThrow();
+      expect(typeof store.$get).toBe("function");
+    });
   });
 
-  it("should handle ownKeys with string and symbol properties", () => {
-    const sym1 = Symbol("test1");
-    const sym2 = Symbol("test2");
+  describe("Basic Functionality", () => {
+    it("should create a store with no initial state", () => {
+      const store = createPrimitiveStore(undefined);
+      expect(store).toBeDefined();
+      const stateValue = store.$get();
+      expect(stateValue).toBeUndefined();
+    });
 
-    const initialState = {
-      anotherString: "value2",
-      stringProp: "value",
-      [sym1]: "symbol1",
-      [sym2]: "symbol2",
-    };
+    it("should create a store with initial state", () => {
+      const initialState = "value";
+      const store = createPrimitiveStore(initialState);
+      const stateValue = store.$get();
+      expect(stateValue).toBe(initialState);
+    });
 
-    const store = createPrimitiveStore(initialState);
-    const keys = Reflect.ownKeys(store);
+    it("should set a new state value", () => {
+      const initialState = "value";
+      const store = createPrimitiveStore(initialState);
 
-    expect(keys).toContain("stringProp");
-    expect(keys).toContain("anotherString");
-    expect(keys).toContain(sym1);
-    expect(keys).toContain(sym2);
+      store.$set("new value");
+      expect(store.$get((value) => value.toUpperCase())).toBe("NEW VALUE");
 
-    expect(keys).not.toContain("$get");
-    expect(keys).not.toContain("$set");
-    expect(keys).not.toContain("$use");
-    expect(keys).not.toContain("$sub");
-  });
+      store.$set((value) => value.toUpperCase());
+      expect(store.$get((value) => value.toLowerCase())).toBe("new value");
+    });
 
-  it("should return empty array for ownKeys when state is not a dictionary", () => {
-    const primitiveStore = createPrimitiveStore("primitive value");
-    const keys = Reflect.ownKeys(primitiveStore);
-    expect(keys).toEqual([]);
+    it("should subscribe to state changes", () => {
+      const initialState = "value";
+      const store = createPrimitiveStore(initialState);
 
-    const numberStore = createPrimitiveStore(42);
-    const numberKeys = Reflect.ownKeys(numberStore);
-    expect(numberKeys).toEqual([]);
+      const subscriber = vi.fn();
+      store.$sub(subscriber);
+      expect(subscriber).toHaveBeenCalledWith(initialState);
 
-    const nullStore = createPrimitiveStore(null);
-    const nullKeys = Reflect.ownKeys(nullStore);
-    expect(nullKeys).toEqual([]);
+      store.$set("new value");
+      expect(subscriber).toHaveBeenCalledWith("new value");
+    });
+
+    it("should unsubscribe from state changes", () => {
+      const initialState = "value";
+      const store = createPrimitiveStore(initialState);
+
+      const subscriber = vi.fn();
+      const unsubscribe = store.$sub(subscriber);
+
+      unsubscribe();
+      store.$set("new value");
+      expect(subscriber).toHaveBeenCalledOnce();
+    });
+
+    it("should use the state value in a React component", () => {
+      const initialState = "value";
+      const store = createPrimitiveStore(initialState);
+
+      const { result } = renderHook(() => store.$use());
+      const [stateValue] = result.current;
+      expect(stateValue).toBe(initialState);
+    });
+
+    it("should update the state value in a React component", () => {
+      const initialState = "value";
+      const store = createPrimitiveStore(initialState);
+
+      const { result } = renderHook(() => store.$use());
+      const [, setStateValue] = result.current;
+
+      act(() => {
+        setStateValue("new value");
+      });
+
+      const [updatedStateValue] = result.current;
+      expect(updatedStateValue).toBe("new value");
+    });
+
+    it("should handle ownKeys with string and symbol properties", () => {
+      const sym1 = Symbol("test1");
+      const sym2 = Symbol("test2");
+
+      const initialState = {
+        anotherString: "value2",
+        stringProp: "value",
+        [sym1]: "symbol1",
+        [sym2]: "symbol2",
+      };
+
+      const store = createPrimitiveStore(initialState);
+      const keys = Reflect.ownKeys(store);
+
+      expect(keys).toContain("stringProp");
+      expect(keys).toContain("anotherString");
+      expect(keys).toContain(sym1);
+      expect(keys).toContain(sym2);
+
+      expect(keys).not.toContain("$get");
+      expect(keys).not.toContain("$set");
+      expect(keys).not.toContain("$use");
+      expect(keys).not.toContain("$sub");
+    });
+
+    it("should return empty array for ownKeys when state is not a dictionary", () => {
+      const primitiveStore = createPrimitiveStore("primitive value");
+      const keys = Reflect.ownKeys(primitiveStore);
+      expect(keys).toEqual([]);
+
+      const numberStore = createPrimitiveStore(42);
+      const numberKeys = Reflect.ownKeys(numberStore);
+      expect(numberKeys).toEqual([]);
+
+      const nullStore = createPrimitiveStore(null);
+      const nullKeys = Reflect.ownKeys(nullStore);
+      expect(nullKeys).toEqual([]);
+    });
   });
 
   describe("Selector Functions", () => {
