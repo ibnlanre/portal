@@ -47,6 +47,7 @@ Whether you're building a small React component or a large-scale application, `@
   - [Deep dependency tracking: `useVersion`](#deep-dependency-tracking-useversion)
   - [Handle circular references](#handle-circular-references)
   - [Handle arrays in stores](#handle-arrays-in-stores)
+  - [Provide fallback values: `fallback()`](#provide-fallback-values-fallback)
   - [Infer state types: `InferType`](#infer-state-types-infertype)
 - [Persist state](#persist-state)
   - [Web Storage adapters](#web-storage-adapters)
@@ -269,11 +270,13 @@ Atomic objects are particularly useful for:
 **Syntax:**
 
 ```ts
-atom<T extends object>(value: T): T
+atom<State extends object>(value: DeepPartial<State>): Atomic<State>
 ```
 
-- **`value`**: The object to mark as atomic
-- **Returns**: The same object, but marked as atomic for update behavior
+- **`value`**: The partial object to mark as atomic (can be incomplete)
+- **Returns**: The same object, but marked as atomic for complete replacement behavior
+
+> **Note:** Since atomic objects support complete replacement, they can be cleared of their values, which is why `atom()` accepts `DeepPartial<State>`. When accessing atomic objects via `$get()`, the result might have missing properties. Use the `fallback()` function to provide default values and restore complete types.
 
 **Basic Example:**
 
@@ -306,9 +309,97 @@ appStore.apiConfig.$set({ baseUrl: "https://api.dev.com" });
 console.log(appStore.apiConfig.$get());
 // Output: { baseUrl: "https://api.dev.com" }
 // Note: timeout and retries are removed
+
+// Atomic objects can be completely cleared
+appStore.apiConfig.$set({});
+console.log(appStore.apiConfig.$get());
+// Output: {} - all properties are gone
 ```
 
-#### Advanced atomic object patterns
+#### Handling cleared atomic objects with `fallback()`
+
+Since atomic objects can be cleared of their values, accessing them might return incomplete data. The `fallback()` function helps provide default values and restore complete types:
+
+```ts
+import { createStore, atom, fallback } from "@ibnlanre/portal";
+
+const configStore = createStore({
+  settings: atom({
+    theme: "light" as "light" | "dark",
+    fontSize: 16,
+    notifications: true,
+  }),
+});
+
+// Define default settings
+const defaultSettings = {
+  theme: "light" as "light" | "dark",
+  fontSize: 16,
+  notifications: true,
+};
+
+// Settings might be partially cleared
+configStore.settings.$set({ theme: "dark" }); // Only theme is set
+
+// Use fallback to ensure we have complete settings
+const completeSettings = configStore.settings.$get(fallback(defaultSettings));
+console.log(completeSettings);
+// Output: { theme: "dark", fontSize: 16, notifications: true }
+// fallback provides missing fontSize and notifications
+
+// Without fallback, we'd get incomplete data
+const incompleteSettings = configStore.settings.$get();
+console.log(incompleteSettings);
+// Output: { theme: "dark" } - missing fontSize and notifications
+```
+
+**Advanced fallback usage:**
+
+````ts
+import { createStore, atom, fallback } from "@ibnlanre/portal";
+
+interface UserPreferences {
+  theme: "light" | "dark";
+  language: string;
+  notifications: {
+    email: boolean;
+    push: boolean;
+  };
+  layout: {
+    sidebar: "collapsed" | "expanded";
+    density: "compact" | "comfortable";
+  };
+}
+
+const userStore = createStore({
+  preferences: atom<UserPreferences>({}), // Start with empty atomic object
+});
+
+// Define comprehensive defaults
+const defaultPreferences: UserPreferences = {
+  theme: "light",
+  language: "en",
+  notifications: {
+    email: true,
+    push: false,
+  },
+  layout: {
+    sidebar: "expanded",
+    density: "comfortable",
+  },
+};
+
+// User updates only theme
+userStore.preferences.$set({ theme: "dark" });
+
+// Get preferences with fallback for missing values
+const preferences = userStore.preferences.$get(fallback(defaultPreferences));
+console.log(preferences);
+// Output: Complete UserPreferences object with theme: "dark" and all defaults
+
+// Type safety: preferences is typed as UserPreferences (not partial)
+preferences.notifications.email; // ✅ TypeScript knows this exists
+```#### Advanced atomic object patterns
 
 **1. Mixed regular and atomic objects:**
 
@@ -340,7 +431,7 @@ gameStore.player.$set({ score: 150 });
 // Complete replacement of game settings
 gameStore.gameSettings.$set({ difficulty: "hard" });
 // soundEnabled and graphicsQuality are removed
-```
+````
 
 **2. Atomic objects with functional updates:**
 
@@ -438,7 +529,28 @@ console.log(settings.theme); // "dark"
 console.log(JSON.stringify(settings)); // '{"theme":"dark","lang":"en"}'
 ```
 
-**3. Atomic behavior affects subscriptions:**
+**3. `atom()` accepts partial objects by design:**
+
+The `atom()` function intentionally accepts `DeepPartial<State>`, allowing you to create atomic objects with incomplete data. This design enables flexible initialization and clearing patterns:
+
+```ts
+import { createStore, atom } from "@ibnlanre/portal";
+
+// Start with partial data
+const configStore = createStore({
+  settings: atom({ theme: "dark" }), // Only theme is provided
+});
+
+// Can be completely cleared
+configStore.settings.$set({}); // All properties removed
+
+// Can be selectively updated
+configStore.settings.$set({ theme: "light", fontSize: 14 }); // Replace with new data
+```
+
+**4. Atomic behavior enforces complete replacement:**
+
+When you update an atomic object, the entire object is replaced, not merged:
 
 ```ts
 import { createStore, atom } from "@ibnlanre/portal";
@@ -448,20 +560,44 @@ const store = createStore({
   atomicData: atom({ x: 10, y: 20 }),
 });
 
-store.regularData.$sub((data) => {
+store.regularData.$act((data) => {
   console.log("Regular data changed:", data);
 });
 
-store.atomicData.$sub((data) => {
+store.atomicData.$act((data) => {
   console.log("Atomic data changed:", data);
 });
 
 store.regularData.$set({ a: 5 });
 // Logs: "Regular data changed: { a: 5, b: 2 }"
+// Note: Property 'b' is preserved through merging
 
 store.atomicData.$set({ x: 50 });
 // Logs: "Atomic data changed: { x: 50 }"
-// Note: y property is gone
+// Note: Property 'y' is gone due to complete replacement
+```
+
+**5. Use `fallback()` for safe access to atomic objects:**
+
+Since atomic objects can contain partial data, always use `fallback()` when you need guaranteed complete objects:
+
+```ts
+import { createStore, atom, fallback } from "@ibnlanre/portal";
+
+const store = createStore({
+  config: atom({ theme: "dark" }), // Partial atomic object
+});
+
+// Define complete defaults
+const defaults = { theme: "light", fontSize: 16, animations: true };
+
+// Safe access with fallback
+const config = store.config.$get(fallback(defaults));
+// Result: { theme: "dark", fontSize: 16, animations: true }
+
+// Direct access might be incomplete
+const directConfig = store.config.$get();
+// Result: { theme: "dark" } - missing fontSize and animations
 ```
 
 Understanding atomic objects helps you control exactly how your data updates, leading to more predictable state management and fewer bugs related to unexpected partial updates.
@@ -1958,6 +2094,191 @@ const itemStores = createStore({
 });
 // Now itemStores.item_1 is a store, itemStores.item_1.name is a store, etc.
 ```
+
+### Provide fallback values: `fallback()`
+
+The `fallback()` function acts as a selector that provides default values for missing properties. This is particularly useful when working with atomic objects that might have been cleared of their values, or any scenario where you want to ensure complete data structures.
+
+**Syntax:**
+
+```ts
+fallback<State extends object>(outerState: State): (innerState: object) => State
+```
+
+- **`outerState`**: The complete object containing default values
+- **Returns**: A selector function that combines the inner state with the fallback values
+
+**Key Features:**
+
+- **Type restoration**: Converts partial data back to complete types
+- **Deep merging**: Combines nested objects intelligently
+- **Atomic object support**: Perfect for handling cleared atomic objects
+- **Flexible usage**: Can be used as a regular function or as a `$get()` selector
+
+**Basic Example:**
+
+```ts
+import { createStore, atom, fallback } from "@ibnlanre/portal";
+
+const userStore = createStore({
+  profile: atom({
+    name: "John",
+    theme: "light" as "light" | "dark",
+    notifications: true,
+  }),
+});
+
+// Define defaults for when profile is cleared
+const defaultProfile = {
+  name: "Guest",
+  theme: "light" as "light" | "dark",
+  notifications: false,
+};
+
+// Clear the atomic profile (simulating data loss)
+userStore.profile.$set({});
+
+// Without fallback - incomplete data
+const incomplete = userStore.profile.$get();
+console.log(incomplete); // {} - empty object
+
+// With fallback - complete data with proper types
+const complete = userStore.profile.$get(fallback(defaultProfile));
+console.log(complete);
+// { name: "Guest", theme: "light", notifications: false }
+
+// Partial updates still work with fallback
+userStore.profile.$set({ name: "Alice" });
+const updated = userStore.profile.$get(fallback(defaultProfile));
+console.log(updated);
+// { name: "Alice", theme: "light", notifications: false }
+```
+
+**Advanced Fallback Patterns:**
+
+```ts
+import { createStore, atom, fallback } from "@ibnlanre/portal";
+
+interface AppConfig {
+  api: {
+    baseUrl: string;
+    timeout: number;
+    retries: number;
+  };
+  ui: {
+    theme: "light" | "dark";
+    language: string;
+    features: {
+      beta: boolean;
+      analytics: boolean;
+    };
+  };
+}
+
+const configStore = createStore({
+  settings: atom<AppConfig>({}), // Start empty
+});
+
+// Comprehensive default configuration
+const defaultConfig: AppConfig = {
+  api: {
+    baseUrl: "https://api.example.com",
+    timeout: 5000,
+    retries: 3,
+  },
+  ui: {
+    theme: "light",
+    language: "en",
+    features: {
+      beta: false,
+      analytics: true,
+    },
+  },
+};
+
+// User sets only partial config
+configStore.settings.$set({
+  ui: {
+    theme: "dark",
+  },
+});
+
+// Get complete config with fallback
+const config = configStore.settings.$get(fallback(defaultConfig));
+
+// TypeScript knows this is a complete AppConfig
+console.log(config.api.baseUrl); // "https://api.example.com" (from fallback)
+console.log(config.ui.theme); // "dark" (from user setting)
+console.log(config.ui.features.analytics); // true (from fallback)
+```
+
+**Using with React Components:**
+
+```tsx
+import { createStore, atom, fallback } from "@ibnlanre/portal";
+
+const themeStore = createStore({
+  preferences: atom({
+    primaryColor: "#007bff",
+    fontSize: 16,
+    darkMode: false,
+  }),
+});
+
+const defaultTheme = {
+  primaryColor: "#007bff",
+  fontSize: 16,
+  darkMode: false,
+};
+
+function ThemedComponent() {
+  // Always get complete theme data, even if preferences were cleared
+  const [theme] = themeStore.preferences.$use(fallback(defaultTheme));
+
+  return (
+    <div
+      style={{
+        color: theme.primaryColor,
+        fontSize: theme.fontSize,
+        backgroundColor: theme.darkMode ? "#333" : "#fff",
+      }}
+    >
+      Theme: {theme.darkMode ? "Dark" : "Light"}
+    </div>
+  );
+}
+```
+
+**Fallback with Dynamic Defaults:**
+
+```ts
+import { createStore, atom, fallback } from "@ibnlanre/portal";
+
+const gameStore = createStore({
+  playerSettings: atom({
+    difficulty: "medium" as "easy" | "medium" | "hard",
+    volume: 0.8,
+  }),
+  currentLevel: 1,
+});
+
+// Dynamic defaults based on other store state
+function getPlayerDefaults() {
+  const level = gameStore.currentLevel.$get();
+
+  return {
+    difficulty: level > 10 ? ("hard" as const) : ("medium" as const),
+    volume: 0.5,
+    controls: "standard" as const,
+  };
+}
+
+// Use dynamic fallback
+const settings = gameStore.playerSettings.$get(fallback(getPlayerDefaults()));
+console.log(settings); // Defaults adjust based on current level
+```
+
+The `fallback()` function ensures you always have complete, well-typed data structures, making your application more robust and predictable when dealing with potentially incomplete state.
 
 ### Infer state types: `InferType`
 
