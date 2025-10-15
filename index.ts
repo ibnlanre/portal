@@ -64,6 +64,7 @@ export { combine } from "@/create-store/functions/helpers/combine";
 export { useAsync } from "@/create-store/functions/hooks/use-async";
 export { useSync } from "@/create-store/functions/hooks/use-sync";
 export { useVersion } from "@/create-store/functions/hooks/use-version";
+export { createAtom } from "@/create-store/functions/library/create-atom";
 export { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
 export { createContextStore } from "@/create-store/functions/library/create-context-store";
 export { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";

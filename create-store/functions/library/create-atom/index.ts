@@ -8,12 +8,12 @@ import { atomic } from "@/create-store/constants/atomic";
  * Marks an object as atomic by adding a hidden, immutable symbol property.
  *
  * @param value - The object to be marked as atomic.
- * @returns
+ * @returns The same object with the atomic symbol property added.
  */
-export function atom<State extends GenericObject>(
+export function createAtom<State extends GenericObject>(
   value: DeepPartial<State>
-): Atomic<State> {
-  if (atomic in value) return value as Atomic<State>;
+): Atomic<DeepPartial<State>> {
+  if (atomic in value) return value as Atomic<DeepPartial<State>>;
 
   Object.defineProperty(value, atomic, {
     configurable: false,
@@ -22,5 +22,5 @@ export function atom<State extends GenericObject>(
     writable: false,
   });
 
-  return value as Atomic<State>;
+  return value as Atomic<DeepPartial<State>>;
 }

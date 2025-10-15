@@ -2,7 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { act, useMemo } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { atom } from "@/create-store/functions/library/atom";
+import { createAtom } from "@/create-store/functions/library/create-atom";
 
 import { createCompositeStore } from "./index";
 
@@ -1009,22 +1009,22 @@ describe("createCompositeStore", () => {
     describe("Atomic object values", () => {
       it("marks an object as a value object", () => {
         const obj = { language: "en", theme: "dark" };
-        const marked = atom(obj);
+        const marked = createAtom(obj);
 
         expect(marked).toBe(obj);
       });
 
       it("is idempotent - calling atomic multiple times is safe", () => {
         const obj = { theme: "dark" };
-        const marked1 = atom(obj);
-        const marked2 = atom(marked1);
+        const marked1 = createAtom(obj);
+        const marked2 = createAtom(marked1);
 
         expect(marked1).toBe(marked2);
       });
 
       it("does not affect object enumeration", () => {
         const obj = { language: "en", theme: "dark" };
-        const marked = atom(obj);
+        const marked = createAtom(obj);
 
         expect(Object.keys(marked)).toEqual(
           expect.arrayContaining(["language", "theme"])
@@ -1052,7 +1052,7 @@ describe("createCompositeStore", () => {
 
       it("does complete replacement for value objects", () => {
         const store = createCompositeStore({
-          preferences: atom({
+          preferences: createAtom({
             language: "en",
             notifications: true,
             theme: "dark",
@@ -1070,7 +1070,7 @@ describe("createCompositeStore", () => {
         const store = createCompositeStore({
           user: {
             name: "John",
-            preferences: atom({
+            preferences: createAtom({
               language: "en",
               notifications: true,
               theme: "dark",
@@ -1099,7 +1099,7 @@ describe("createCompositeStore", () => {
 
       it("returns value objects directly, not as store proxies", () => {
         const store = createCompositeStore({
-          preferences: atom({
+          preferences: createAtom({
             language: "en",
             theme: "dark",
           }),
@@ -1124,7 +1124,7 @@ describe("createCompositeStore", () => {
 
       it("should allow direct property access on value objects", () => {
         const store = createCompositeStore({
-          preferences: atom({
+          preferences: createAtom({
             language: "en",
             theme: "dark",
           }),
@@ -1141,7 +1141,7 @@ describe("createCompositeStore", () => {
           user: {
             profile: {
               name: "John",
-              preferences: atom({
+              preferences: createAtom({
                 language: "en",
                 theme: "dark",
               }),
@@ -1152,7 +1152,7 @@ describe("createCompositeStore", () => {
         store.user.profile.name.$get();
         store.user.profile.preferences.$get().theme;
 
-        store.user.profile.preferences.$set(atom({ theme: "light" }));
+        store.user.profile.preferences.$set(createAtom({ theme: "light" }));
 
         expect(store.user.profile.preferences.$get()).toEqual({
           theme: "light",
@@ -1163,7 +1163,7 @@ describe("createCompositeStore", () => {
 
       it("should handle value objects containing regular objects", () => {
         const store = createCompositeStore({
-          config: atom({
+          config: createAtom({
             api: {
               timeout: 5000,
             },
@@ -1189,7 +1189,7 @@ describe("createCompositeStore", () => {
 
       it("should work with function-based updates for value objects", () => {
         const store = createCompositeStore({
-          preferences: atom({
+          preferences: createAtom({
             language: "en",
             theme: "dark",
           }),
@@ -1227,18 +1227,18 @@ describe("createCompositeStore", () => {
 
       it("should handle empty value objects", () => {
         const store = createCompositeStore({
-          empty: atom({}),
+          empty: createAtom({}),
         });
 
         expect(store.empty.$get()).toEqual({});
 
-        store.empty.$set(atom({ newProp: "value" }));
+        store.empty.$set(createAtom({ newProp: "value" }));
         expect(store.empty.$get()).toEqual({ newProp: "value" });
       });
 
       it("should handle setting non-value object to value object path", () => {
         const store = createCompositeStore({
-          preferences: atom<{
+          preferences: createAtom<{
             language: string;
             theme: string;
           }>({}),
@@ -1256,7 +1256,7 @@ describe("createCompositeStore", () => {
       it("notifies root store subscribers when atomic objects change", () => {
         const store = createCompositeStore({
           count: 0,
-          preferences: atom({
+          preferences: createAtom({
             language: "en",
             theme: "dark",
           }),
@@ -1308,7 +1308,7 @@ describe("createCompositeStore", () => {
         const store = createCompositeStore({
           user: {
             name: "John",
-            preferences: atom({
+            preferences: createAtom({
               language: "en",
               theme: "dark",
             }),
@@ -1353,7 +1353,7 @@ describe("createCompositeStore", () => {
 
       it("maintains subscription isolation between atomic and regular objects", () => {
         const store = createCompositeStore({
-          atomicData: atom({
+          atomicData: createAtom({
             value1: "a",
             value2: "b",
           }),

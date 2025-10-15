@@ -7,6 +7,7 @@ describe("merge", () => {
     const target = { a: 1 };
     const source = { b: 2 };
     const result = merge(target, source);
+
     expect(result).toEqual({ a: 1, b: 2 });
   });
 
@@ -14,6 +15,7 @@ describe("merge", () => {
     const target = { a: 1, b: 2 };
     const source = { b: 3 };
     const result = merge(target, source);
+
     expect(result).toEqual({ a: 1, b: 3 });
   });
 
@@ -21,6 +23,7 @@ describe("merge", () => {
     const target = { a: 1 };
     const source = { b: 2 };
     merge(target, source);
+
     expect(source).toEqual({ b: 2 });
   });
 
@@ -38,6 +41,7 @@ describe("merge", () => {
     const target = {};
     const source = { b: 2 };
     const result = merge(target, source);
+
     expect(result).toEqual({ b: 2 });
   });
 
@@ -45,6 +49,7 @@ describe("merge", () => {
     const target = { a: 1 };
     const source = {};
     const result = merge(target, source);
+
     expect(result).toEqual({ a: 1 });
   });
 
@@ -52,6 +57,7 @@ describe("merge", () => {
     const target = {};
     const source = {};
     const result = merge(target, source);
+
     expect(result).toEqual({});
   });
 

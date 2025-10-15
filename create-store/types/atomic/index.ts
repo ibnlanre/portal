@@ -1,6 +1,5 @@
 import type { Atom } from "@/create-store/types/atom";
 import type { GenericObject } from "@/create-store/types/generic-object";
-import type { Prettify } from "@/create-store/types/prettify";
 
 /**
  * An atomic store is a store that is treated as a single unit.
@@ -14,10 +13,10 @@ import type { Prettify } from "@/create-store/types/prettify";
  *
  * @example
  * ```ts
- * import { atom } from "@ibnlanre/portal";
+ * import { createAtom } from "@ibnlanre/portal";
  *
  * type CountStore = Atomic<{ count: number }>;
- * const countStore = createStore<CountStore>(atom({ count: 0 }));
+ * const countStore = createStore<CountStore>(createAtom({ count: 0 }));
  *
  * // The entire object is treated as a single unit.
  * const [state, setState] = countStore.$use();
@@ -29,4 +28,4 @@ import type { Prettify } from "@/create-store/types/prettify";
  * const [count, setCount] = countStore.count.$use(); // ❌ Error
  * ```
  */
-export type Atomic<State extends GenericObject> = Prettify<[Atom, State]>;
+export type Atomic<State extends GenericObject> = Atom & State;
