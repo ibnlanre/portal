@@ -134,7 +134,7 @@ export function createCompositeStore<State extends GenericObject>(
   function set<Path extends Paths<State>>(path?: Path) {
     if (!path) {
       return (action: PartialSetStateAction<State>) => {
-        const next = isSetStateActionFunction<State>(action)
+        const next = isSetStateActionFunction(action)
           ? action(clone(state))
           : action;
         setState(replace(state, next));

@@ -37,7 +37,7 @@ export function createPrimitiveStore<State>(initialState: State) {
     }
 
     function $set(action: PartialSetStateAction<State>) {
-      const next = isSetStateActionFunction<State>(action)
+      const next = isSetStateActionFunction(action)
         ? action(clone(state, cache))
         : action;
       setState(replace(state, next));

@@ -5,8 +5,8 @@
  * @param {unknown} value The value to be checked.
  * @returns {boolean} `true` if the value is a SetStateAction function, otherwise `false`.
  */
-export function isSetStateActionFunction<Value>(
-  value: unknown
-): value is (prev: Value) => Value {
+export function isSetStateActionFunction<Value, Previous = Value>(
+  value: ((prev: Previous) => Value) | Value
+): value is (prev: Previous) => Value {
   return typeof value === "function";
 }
