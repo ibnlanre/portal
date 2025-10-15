@@ -1,12 +1,9 @@
-type Accessor = "$act" | "$get" | "$set" | "$sub" | "$use";
+import type { Accessor } from "@/create-store/types/accessor";
 
 export function isAccessor<Target extends Record<string, any>>(
   target: Target,
   prop: string | symbol
 ): prop is Accessor {
-  if (typeof prop === "string") {
-    return prop.startsWith("$") && prop in target;
-  }
-
-  return false;
+  if (typeof prop === "symbol") return false;
+  return prop.startsWith("$") && prop in target;
 }
