@@ -1,6 +1,7 @@
 import type { GenericObject } from "@/create-store/types/generic-object";
-import type { Prettify } from "@/create-store/types/prettify";
+import type { Replace } from "@/create-store/types/replace";
 
-export type Merge<Target, Source> = Source extends GenericObject
-  ? Prettify<[Source, Target]>
-  : Source;
+export type Merge<
+  Target extends GenericObject,
+  Source,
+> = Source extends GenericObject ? Replace<Target, Source> : Source;

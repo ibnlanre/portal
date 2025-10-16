@@ -12,7 +12,7 @@ import type { Merge } from "@/create-store/types/merge";
 export function merge<Target extends GenericObject, Source>(
   target: Target,
   source: Source
-): Merge<Target, Source> {
+) {
   return Object.defineProperties(
     target,
     Object.getOwnPropertyDescriptors(source)

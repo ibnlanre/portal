@@ -6,10 +6,10 @@ import type { PartialSetStateAction } from "@/create-store/types/partial-set-sta
 import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 import type { PartialStatePath } from "@/create-store/types/partial-state-path";
 import type { Paths } from "@/create-store/types/paths";
+import type { Property } from "@/create-store/types/property";
 import type { ResolvePath } from "@/create-store/types/resolve-path";
 import type { Selector } from "@/create-store/types/selector";
 import type { StatePath } from "@/create-store/types/state-path";
-import type { StoreValueResolver } from "@/create-store/types/store-value-resolver";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
 import { useCallback, useSyncExternalStore } from "react";
@@ -224,9 +224,7 @@ export function createCompositeStore<State extends GenericObject>(
       },
       $key(path: Path) {
         const fullPath = joinPaths(chain, path);
-        return resolveProperty(fullPath) as StoreValueResolver<
-          ResolvePath<State, Path>
-        >;
+        return resolveProperty(fullPath) as Property<State, Path>;
       },
       $set(value: PartialStatePath<State, Path>) {
         return set(chain)(value);

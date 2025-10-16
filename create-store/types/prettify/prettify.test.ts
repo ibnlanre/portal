@@ -1,342 +1,214 @@
 import type { Prettify } from "./index";
 
-import { describe, it } from "vitest";
-import { expectTypeOf } from "vitest";
+import { describe, expectTypeOf, it } from "vitest";
 
-describe("Prettify Type", () => {
-  describe("Basic functionality", () => {
-    it("should handle empty array", () => {
-      type Result = Prettify<[]>;
+describe("Prettify", () => {
+  it("should flatten intersected types", () => {
+    type A = { a: string };
+    type B = { b: number };
+    type Result = Prettify<A & B>;
 
-      expectTypeOf<Result>().toEqualTypeOf<{}>();
-    });
-
-    it("should handle single object", () => {
-      type Input = [{ a: string }];
-      type Result = Prettify<Input>;
-
-      expectTypeOf<Result>().toEqualTypeOf<{ a: string }>();
-    });
-
-    it("should merge two objects with different properties", () => {
-      type Input = [{ a: string }, { b: number }];
-      type Result = Prettify<Input>;
-
-      expectTypeOf<Result>().toEqualTypeOf<{ a: string; b: number }>();
-    });
-
-    it("should merge three objects with different properties", () => {
-      type Input = [{ a: string }, { b: number }, { c: boolean }];
-      type Result = Prettify<Input>;
-
-      expectTypeOf<Result>().toEqualTypeOf<{
-        a: string;
-        b: number;
-        c: boolean;
-      }>();
-    });
+    expectTypeOf<Result>().toEqualTypeOf<{ a: string; b: number }>();
   });
 
-  describe("Property intersection behavior", () => {
-    it("should create intersection for conflicting properties", () => {
-      type Input = [{ a: string }, { a: number }];
-      type Result = Prettify<Input>;
+  it("should preserve primitive types", () => {
+    type Result = Prettify<{ active: boolean; age: number; name: string }>;
 
-      expectTypeOf<Result>().toEqualTypeOf<{ a: never }>();
-    });
-
-    it("should handle compatible intersections", () => {
-      type Input = [{ a: number | string }, { a: string }];
-      type Result = Prettify<Input>;
-
-      expectTypeOf<Result>().toEqualTypeOf<{ a: string }>();
-    });
-
-    it("should handle object intersections", () => {
-      type Input = [{ user: { name: string } }, { user: { age: number } }];
-      type Result = Prettify<Input>;
-
-      expectTypeOf<Result>().toEqualTypeOf<{
-        user: { age: number } & { name: string };
-      }>();
-    });
+    expectTypeOf<Result>().toEqualTypeOf<{
+      active: boolean;
+      age: number;
+      name: string;
+    }>();
   });
 
-  describe("Complex intersections", () => {
-    it("should handle nested object merging", () => {
-      type Input = [
-        { config: { api: string } },
-        { config: { timeout: number } },
-        { settings: { theme: string } },
-      ];
-      type Result = Prettify<Input>;
+  it("should handle intersected interfaces", () => {
+    interface A {
+      id: string;
+    }
+    interface B {
+      value: number;
+    }
+    type Result = Prettify<A & B>;
 
-      expectTypeOf<Result>().toEqualTypeOf<{
-        config: { api: string } & { timeout: number };
-        settings: { theme: string };
-      }>();
-    });
-
-    it("should handle optional properties", () => {
-      type Input = [{ a?: string }, { b: number }];
-      type Result = Prettify<Input>;
-
-      expectTypeOf<Result>().toEqualTypeOf<{
-        a?: string;
-        b: number;
-      }>();
-    });
-
-    it("should intersect optional and required properties", () => {
-      type Input = [{ a?: string }, { a: string }];
-      type Result = Prettify<Input>;
-
-      expectTypeOf<Result>().toEqualTypeOf<{ a: string }>();
-    });
-
-    it("should handle function properties", () => {
-      type Input = [
-        { getName: () => string },
-        { setName: (name: string) => void },
-        { age: number },
-      ];
-      type Result = Prettify<Input>;
-
-      expectTypeOf<Result>().toEqualTypeOf<{
-        age: number;
-        getName: () => string;
-        setName: (name: string) => void;
-      }>();
-    });
+    expectTypeOf<Result>().toEqualTypeOf<{ id: string; value: number }>();
   });
 
-  describe("Edge cases", () => {
-    it("should handle single empty object", () => {
-      type Input = [{}];
-      type Result = Prettify<Input>;
+  it("should handle nested interfaces", () => {
+    interface A {
+      user: B;
+    }
+    interface B {
+      name: string;
+    }
+    interface C {
+      user: { age: number };
+    }
+    type Result = Prettify<A & C>;
 
-      expectTypeOf<Result>().toEqualTypeOf<{}>();
-    });
-
-    it("should handle multiple empty objects", () => {
-      type Input = [{}, {}, {}];
-      type Result = Prettify<Input>;
-
-      expectTypeOf<Result>().toEqualTypeOf<{}>();
-    });
-
-    it("should handle mix of empty and non-empty objects", () => {
-      type Input = [{}, { a: string }, {}, { b: number }, {}];
-      type Result = Prettify<Input>;
-
-      expectTypeOf<Result>().toEqualTypeOf<{
-        a: string;
-        b: number;
-      }>();
-    });
+    expectTypeOf<Result>().toEqualTypeOf<{
+      user: { age: number; name: string };
+    }>();
   });
 
-  describe("Real-world usage examples", () => {
-    it("should merge compatible configuration objects", () => {
-      type BaseConfig = {
-        apiUrl: string;
-        timeout: number;
-      };
+  it("should handle nested objects", () => {
+    type Input = { user: { age: number } } & { user: { name: string } };
+    type Result = Prettify<Input>;
 
-      type UserConfig = {
-        debug?: boolean;
-        timeout: 5000;
-      };
-
-      type RuntimeConfig = {
-        timestamp: Date;
-      };
-
-      type Input = [BaseConfig, UserConfig, RuntimeConfig];
-      type Result = Prettify<Input>;
-
-      expectTypeOf<Result>().toEqualTypeOf<{
-        apiUrl: string;
-        debug?: boolean;
-        timeout: 5000;
-        timestamp: Date;
-      }>();
-    });
-
-    it("should merge store state slices", () => {
-      type AuthState = {
-        isAuthenticated: boolean;
-        user: { id: string };
-      };
-
-      type UserDetailsState = {
-        user: { name: string };
-      };
-
-      type UIState = {
-        error: null | string;
-        loading: boolean;
-      };
-
-      type Input = [AuthState, UserDetailsState, UIState];
-      type Result = Prettify<Input>;
-
-      expectTypeOf<Result>().toEqualTypeOf<{
-        error: null | string;
-        isAuthenticated: boolean;
-        loading: boolean;
-        user: { id: string } & { name: string };
-      }>();
-    });
-
-    it("should handle union type intersections", () => {
-      type Input = [
-        { value: number | string },
-        { value: boolean | number },
-        { extra: string },
-      ];
-      type Result = Prettify<Input>;
-
-      expectTypeOf<Result>().toEqualTypeOf<{
-        extra: string;
-        value: number;
-      }>();
-    });
+    expectTypeOf<Result>().toEqualTypeOf<{
+      user: { age: number; name: string };
+    }>();
   });
 
-  describe("Type distribution behavior", () => {
-    it("should maintain readonly modifiers", () => {
-      type Input = [{ readonly a: string }, { b: number }];
-      type Result = Prettify<Input>;
+  it("should handle empty object", () => {
+    type Result = Prettify<{}>;
 
-      expectTypeOf<Result>().toEqualTypeOf<{
-        readonly a: string;
-        b: number;
-      }>();
-    });
-
-    it("should handle index signatures", () => {
-      type Input = [{ [key: string]: unknown }, { specificProp: string }];
-      type Result = Prettify<Input>;
-
-      expectTypeOf<Result>().toEqualTypeOf<{
-        [key: string]: unknown;
-        specificProp: string;
-      }>();
-    });
+    expectTypeOf<Result>().toEqualTypeOf<{}>();
   });
 
-  describe("Extends relationships", () => {
-    it("should test extends relationships with empty array", () => {
-      type EmptyResult = Prettify<[]>;
+  it("should preserve optional properties", () => {
+    type Input = { optional?: number } & { required: string };
+    type Result = Prettify<Input>;
 
-      expectTypeOf<EmptyResult>().toExtend<{}>();
-      expectTypeOf<{}>().toExtend<EmptyResult>();
-    });
+    expectTypeOf<Result>().toEqualTypeOf<{
+      optional?: number;
+      required: string;
+    }>();
+  });
 
-    it("should test extends relationships with single object", () => {
-      type SingleObject = Prettify<[{ a: number }]>;
+  it("should preserve readonly properties", () => {
+    type Input = { name: string } & { readonly id: string };
+    type Result = Prettify<Input>;
 
-      expectTypeOf<SingleObject>().toExtend<{ a: number }>();
-      expectTypeOf<{ a: number }>().toExtend<SingleObject>();
+    expectTypeOf<Result>().toEqualTypeOf<{
+      readonly id: string;
+      name: string;
+    }>();
+  });
 
-      expectTypeOf<SingleObject>().toExtend<{}>();
-    });
+  it("should preserve arrays", () => {
+    type Input = { items: string[] } & { numbers: number[] };
+    type Result = Prettify<Input>;
 
-    it("should test extends relationships with merged objects", () => {
-      type MergedObjects = Prettify<[{ a: number }, { b: string }]>;
+    expectTypeOf<Result>().toEqualTypeOf<{
+      items: string[];
+      numbers: number[];
+    }>();
+  });
 
-      expectTypeOf<MergedObjects>().toExtend<{ a: number }>();
-      expectTypeOf<MergedObjects>().toExtend<{ b: string }>();
-      expectTypeOf<MergedObjects>().toExtend<{}>();
+  it("should preserve readonly arrays", () => {
+    type Input = { data: number[] } & { readonly items: readonly string[] };
+    type Result = Prettify<Input>;
 
-      expectTypeOf<{ a: number; b: string }>().toExtend<MergedObjects>();
-    });
+    expectTypeOf<Result>().toEqualTypeOf<{
+      data: number[];
+      readonly items: readonly string[];
+    }>();
+  });
 
-    it("should test extends with property conflicts", () => {
-      type ConflictingProps = Prettify<[{ a: string }, { a: number }]>;
+  it("should preserve Sets", () => {
+    type Input = { ids: Set<number> } & { users: Set<string> };
+    type Result = Prettify<Input>;
 
-      expectTypeOf<ConflictingProps>().toExtend<{}>();
-    });
+    expectTypeOf<Result>().toEqualTypeOf<{
+      ids: Set<number>;
+      users: Set<string>;
+    }>();
+  });
 
-    it("should test extends with compatible intersections", () => {
-      type CompatibleIntersection = Prettify<
-        [{ a: number | string }, { a: string }]
-      >;
+  it("should preserve Maps", () => {
+    type Input = { cache: Map<string, number> } & {
+      lookup: Map<number, string>;
+    };
+    type Result = Prettify<Input>;
 
-      expectTypeOf<CompatibleIntersection>().toExtend<{ a: string }>();
-      expectTypeOf<{ a: string }>().toExtend<CompatibleIntersection>();
+    expectTypeOf<Result>().toEqualTypeOf<{
+      cache: Map<string, number>;
+      lookup: Map<number, string>;
+    }>();
+  });
 
-      expectTypeOf<CompatibleIntersection>().toExtend<{}>();
-    });
+  it("should preserve WeakSets and WeakMaps", () => {
+    type Input = { weakMap: WeakMap<object, string> } & {
+      weakSet: WeakSet<object>;
+    };
+    type Result = Prettify<Input>;
 
-    it("should test extends with nested objects", () => {
-      type NestedMerge = Prettify<
-        [{ user: { id: number } }, { user: { name: string } }]
-      >;
+    expectTypeOf<Result>().toEqualTypeOf<{
+      weakMap: WeakMap<object, string>;
+      weakSet: WeakSet<object>;
+    }>();
+  });
 
-      expectTypeOf<NestedMerge>().toExtend<{}>();
+  it("should preserve Date objects", () => {
+    type Input = { created: Date } & { updated: Date };
+    type Result = Prettify<Input>;
 
-      expectTypeOf<NestedMerge>().toExtend<{
-        user: { id: number; name: string };
-      }>();
-    });
+    expectTypeOf<Result>().toEqualTypeOf<{
+      created: Date;
+      updated: Date;
+    }>();
+  });
 
-    it("should test extends with optional properties", () => {
-      type OptionalMerge = Prettify<[{ a?: string }, { a: string; b: number }]>;
+  it("should preserve RegExp objects", () => {
+    type Input = { pattern: RegExp } & { validator: RegExp };
+    type Result = Prettify<Input>;
 
-      expectTypeOf<OptionalMerge>().toExtend<{ a: string }>();
-      expectTypeOf<OptionalMerge>().toExtend<{ b: number }>();
-      expectTypeOf<OptionalMerge>().toExtend<{}>();
-    });
+    expectTypeOf<Result>().toEqualTypeOf<{
+      pattern: RegExp;
+      validator: RegExp;
+    }>();
+  });
 
-    it("should test extends with function properties", () => {
-      type FunctionMerge = Prettify<
-        [{ getValue: () => number }, { setValue: (x: number) => void }]
-      >;
+  it("should preserve Promise objects", () => {
+    type Input = { loadData: Promise<string> } & { saveData: Promise<void> };
+    type Result = Prettify<Input>;
 
-      expectTypeOf<FunctionMerge>().toExtend<{ getValue: () => number }>();
-      expectTypeOf<FunctionMerge>().toExtend<{
-        setValue: (x: number) => void;
-      }>();
+    expectTypeOf<Result>().toEqualTypeOf<{
+      loadData: Promise<string>;
+      saveData: Promise<void>;
+    }>();
+  });
 
-      expectTypeOf<{
-        getValue: () => number;
-        setValue: (x: number) => void;
-      }>().toExtend<FunctionMerge>();
-    });
+  it("should preserve Error objects", () => {
+    type Input = { lastError: Error } & { validationError: TypeError };
+    type Result = Prettify<Input>;
 
-    it("should test extends with complex inheritance chains", () => {
-      interface Base {
-        id: number;
-      }
+    expectTypeOf<Result>().toEqualTypeOf<{
+      lastError: Error;
+      validationError: TypeError;
+    }>();
+  });
 
-      interface Extended extends Base {
-        name: string;
-      }
+  it("should preserve functions", () => {
+    type Input = { onChange: (value: string) => void } & {
+      onClick: () => void;
+    };
+    type Result = Prettify<Input>;
 
-      type PrettifiedExtended = Prettify<[Base, { name: string }]>;
+    expectTypeOf<Result>().toEqualTypeOf<{
+      onChange: (value: string) => void;
+      onClick: () => void;
+    }>();
+  });
 
-      expectTypeOf<PrettifiedExtended>().toExtend<Base>();
-      expectTypeOf<Extended>().toExtend<PrettifiedExtended>();
-      expectTypeOf<PrettifiedExtended>().toExtend<Extended>();
-    });
+  it("should handle mixed collections and objects", () => {
+    type Input = {
+      cache: Map<string, number>;
+      config: { api: string };
+      items: string[];
+    } & {
+      config: { timeout: number };
+      metadata: { version: string };
+      users: Set<string>;
+    };
+    type Result = Prettify<Input>;
 
-    it("should test extends with array and tuple properties", () => {
-      type ArrayMerge = Prettify<
-        [{ items: string[] }, { count: number; items: readonly string[] }]
-      >;
-
-      expectTypeOf<ArrayMerge>().toExtend<{ count: number }>();
-      expectTypeOf<ArrayMerge>().toExtend<{}>();
-    });
-
-    it("should test extends with discriminated unions", () => {
-      type UnionMerge = Prettify<
-        [{ id: number; type: "user" }, { permissions: string[]; type: "admin" }]
-      >;
-
-      expectTypeOf<UnionMerge>().toBeNever();
-    });
+    expectTypeOf<Result>().toEqualTypeOf<{
+      cache: Map<string, number>;
+      config: { api: string; timeout: number };
+      items: string[];
+      metadata: { version: string };
+      users: Set<string>;
+    }>();
   });
 });

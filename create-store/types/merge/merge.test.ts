@@ -35,7 +35,7 @@ describe("Merge type", () => {
 
     expectTypeOf<Result>().toMatchObjectType<{
       a: string;
-      b: never;
+      b: number;
       c: boolean;
     }>();
   });
