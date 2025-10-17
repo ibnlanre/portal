@@ -22,6 +22,7 @@ Whether you're building a small React component or a large-scale application, `@
 - [Get started](#get-started)
   - [Prerequisites](#prerequisites)
   - [Install the library](#install-the-library)
+  - [Quick start](#quick-start)
 - [Understand core concepts](#understand-core-concepts)
   - [What is a store?](#what-is-a-store)
   - [Store types: Primitive and Composite](#store-types-primitive-and-composite)
@@ -49,6 +50,7 @@ Whether you're building a small React component or a large-scale application, `@
   - [Handle arrays in stores](#handle-arrays-in-stores)
   - [Provide fallback values: `fallback()`](#provide-fallback-values-fallback)
   - [Infer state types: `InferType`](#infer-state-types-infertype)
+- [TypeScript Tips](#typescript-tips)
 - [Persist state](#persist-state)
   - [Web Storage adapters](#web-storage-adapters)
   - [Cookie Storage adapter](#cookie-storage-adapter)
@@ -173,6 +175,77 @@ For projects that don't use a package manager (e.g., simple HTML pages or online
 <!-- The library will be available globally, e.g., window.Portal.createStore -->
 ```
 
+## Quick start
+
+Get up and running with `@ibnlanre/portal` in 5 minutes.
+
+### Your first store
+
+```ts
+import { createStore } from "@ibnlanre/portal";
+
+// Create a simple store
+const countStore = createStore(0);
+
+// Get the current value
+console.log(countStore.$get()); // 0
+
+// Update the value
+countStore.$set(5);
+countStore.$set((prev) => prev + 1); // 6
+
+// Subscribe to changes
+countStore.$act((newValue) => {
+  console.log("Count updated to:", newValue);
+});
+```
+
+### Stores with nested state
+
+```ts
+import { createStore } from "@ibnlanre/portal";
+
+const userStore = createStore({
+  name: "Alex",
+  email: "alex@example.com",
+  preferences: {
+    theme: "dark",
+    notifications: true,
+  },
+});
+
+// Access nested values
+console.log(userStore.preferences.theme.$get()); // "dark"
+
+// Update nested properties (partial updates)
+userStore.preferences.$set({ theme: "light" }); // notifications remains true
+```
+
+### Using stores in React
+
+```tsx
+import { createStore } from "@ibnlanre/portal";
+import { useState } from "react";
+
+const counterStore = createStore({ count: 0 });
+
+function Counter() {
+  // Use the $use hook like useState
+  const [state, setState] = counterStore.$use();
+
+  return (
+    <div>
+      <p>Count: {state.count}</p>
+      <button onClick={() => setState({ count: state.count + 1 })}>
+        Increment
+      </button>
+    </div>
+  );
+}
+```
+
+For more comprehensive guides, continue to the **Understand core concepts** section below.
+
 ## Understand core concepts
 
 Understanding these core concepts will help you use `@ibnlanre/portal` effectively.
@@ -213,6 +286,9 @@ Both store types share a consistent API for getting, setting, and subscribing to
 By default, when you update objects in `@ibnlanre/portal`, the library performs **partial updates** (merging). This means only the properties you specify are changed, while other properties remain unchanged. However, sometimes you want to treat an object as a **single value** that should be completely replaced when updated.
 
 The `atom()` function allows you to mark objects as **atomic**, which changes their update behavior from merging to complete replacement.
+
+<details>
+<summary><strong>Click to expand: Understanding atomic objects in detail</strong></summary>
 
 #### Understanding the difference
 
@@ -602,6 +678,8 @@ const directConfig = store.config.$get();
 
 Understanding atomic objects helps you control exactly how your data updates, leading to more predictable state management and fewer bugs related to unexpected partial updates.
 
+</details>
+
 ## Configure your stores
 
 `@ibnlanre/portal` is designed to work with minimal configuration. The primary configuration points are:
@@ -887,6 +965,16 @@ function App() {
 ### Use store instance methods
 
 All store instances, whether primitive or composite, provide a core set of methods for interacting with the state.
+
+**Quick Reference Table:**
+
+| Method   | Use Case                                                          | Returns                   |
+| -------- | ----------------------------------------------------------------- | ------------------------- |
+| `$get()` | Retrieve current state or compute a derived value                 | `S` or derived value `R`  |
+| `$set()` | Update state with a new value or updater function                 | `void`                    |
+| `$act()` | Subscribe to state changes and react to updates                   | `unsubscribe` function    |
+| `$use()` | Connect store to React component (hook)                           | `[state, setState]` tuple |
+| `$key()` | Access deeply nested stores using dot-separated paths (Composite) | Nested `Store` instance   |
 
 #### `$get()`
 
@@ -2435,6 +2523,143 @@ InferType<Store, Path?>;
    ```
 
 The `InferType` utility ensures type safety when working with store data outside of the reactive context, making it easier to integrate Portal stores with other parts of your TypeScript application.
+
+## TypeScript Tips
+
+`@ibnlanre/portal` is designed with TypeScript-first development in mind. Here are some best practices to get the most out of the type system:
+
+### Type Inference
+
+Store types are automatically inferred from the initial state, so you often don't need explicit type annotations:
+
+```ts
+// Type is inferred as: PrimitiveStore<number>
+const countStore = createStore(0);
+
+// Type is inferred as: CompositeStore<{ name: string; age: number }>
+const userStore = createStore({ name: "Alex", age: 30 });
+```
+
+### Explicit Type Parameters
+
+For complex scenarios or when initializing asynchronously with placeholder values, use explicit type parameters:
+
+```ts
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+// Initialize with null but specify the full type
+const userStore = createStore<User | null>(null);
+
+// Now TypeScript knows userStore will eventually hold a User
+const [user] = userStore.$use((value) => {
+  if (value) return value.name;
+  return "Guest";
+});
+```
+
+### Deep Partial Updates
+
+Take advantage of deep partial updates when working with nested objects. TypeScript will verify that your update shape is compatible:
+
+```ts
+const appStore = createStore({
+  user: { name: "Alice", age: 30, role: "admin" },
+  config: { theme: "light", language: "en" },
+});
+
+// ✅ Valid: partial update of nested property
+appStore.user.$set({ name: "Bob" });
+
+// ✅ Valid: partial update at any depth
+appStore.$set({
+  user: { role: "moderator" },
+  config: { theme: "dark" },
+});
+```
+
+### Type-Safe Selectors
+
+Use selectors in `$use` and `$get` to derive typed values:
+
+```ts
+const userStore = createStore({ name: "Alex", email: "alex@example.com" });
+
+// Selector return type is inferred as string
+const [displayName] = userStore.$use(
+  (user) => `User: ${user.name} (${user.email})`
+);
+
+// No need to manually type the selector result
+const [stats] = userStore.$use((user) => ({
+  letterCount: user.name.length,
+}));
+```
+
+### Atomic Objects and Type Safety
+
+When using atomic objects, remember that they can be partially cleared. Use `InferType` to understand the actual type after operations:
+
+```ts
+import { createStore, atom, InferType } from "@ibnlanre/portal";
+
+const configStore = createStore({
+  api: atom({ baseUrl: "https://api.com", timeout: 5000 }),
+});
+
+// Type is: { baseUrl: string | undefined; timeout: number | undefined }
+type ApiConfig = InferType<typeof configStore.api>;
+
+// Always use fallback for complete types when needed
+const defaults = { baseUrl: "https://api.com", timeout: 5000 };
+const safeConfig = configStore.api.$get(fallback(defaults)); // ✅ Complete type
+```
+
+### Type-Safe Actions
+
+Actions in stores inherit the type context and can provide full autocomplete:
+
+```ts
+const counterStore = createStore({
+  value: 0,
+  increment(amount: number = 1) {
+    // TypeScript knows counterStore and all its properties
+    counterStore.value.$set((prev) => prev + amount);
+  },
+  multiply(factor: number) {
+    counterStore.value.$set((prev) => prev * factor);
+  },
+});
+
+// ✅ Full autocomplete for actions
+counterStore.increment(5);
+counterStore.multiply(2);
+```
+
+### Combining Multiple Stores
+
+When combining stores, ensure compatibility with the `combine` utility:
+
+```ts
+import { combine, createStore } from "@ibnlanre/portal";
+
+const state = { count: 0, message: "Hello" };
+const actions = {
+  increment() {
+    store.count.$set((v) => v + 1);
+  },
+};
+
+// combine ensures proper type merging
+const store = createStore(combine(state, actions));
+
+// ✅ Access both state and actions with full type safety
+store.count.$get(); // ✅ number
+store.increment(); // ✅ function
+```
 
 ## Persist state
 

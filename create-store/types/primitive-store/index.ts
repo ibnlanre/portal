@@ -13,14 +13,20 @@ export type PrimitiveStore<State> = {
     subscriber: Subscriber<State>,
     immediate?: boolean
   ) => () => void;
-  readonly $get: <Value = State>(selector?: Selector<State, Value>) => Value;
+  readonly $get: {
+    (): State;
+    <Value>(selector: Selector<State, Value>): Value;
+  };
   readonly $set: PartialStateSetter<State>;
   readonly $sub: (
     subscriber: Subscriber<State>,
     immediate?: boolean
   ) => () => void;
-  readonly $use: <Value = State>(
-    selector?: Selector<State, Value>,
-    dependencies?: DependencyList
-  ) => PartialStateManager<State, Value>;
+  readonly $use: {
+    (): PartialStateManager<State>;
+    <Value>(
+      selector: Selector<State, Value>,
+      dependencies?: DependencyList
+    ): PartialStateManager<State, Value>;
+  };
 };
