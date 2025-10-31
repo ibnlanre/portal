@@ -24,7 +24,6 @@ export function createPrimitiveStore<State>(initialState: State) {
   function setState(value: State) {
     state = value;
     notifySubscribers(value);
-    return true;
   }
 
   function notifySubscribers(value: State) {
@@ -48,6 +47,7 @@ export function createPrimitiveStore<State>(initialState: State) {
       dependencies?: DependencyList
     ): PartialStateManager<State, Value> {
       const value = useSyncExternalStore($sub, $get, $get);
+
       const resolvedValue = useSync(() => {
         return resolveSelectorValue(value, selector);
       }, [value, dependencies]);

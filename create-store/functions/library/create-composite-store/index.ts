@@ -1,10 +1,11 @@
-import type { DependencyList, Dispatch } from "react";
+import type { DependencyList } from "react";
 
 import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { GenericObject } from "@/create-store/types/generic-object";
 import type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
 import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 import type { PartialStatePath } from "@/create-store/types/partial-state-path";
+import type { PartialStateSetter } from "@/create-store/types/partial-state-setter";
 import type { Paths } from "@/create-store/types/paths";
 import type { Property } from "@/create-store/types/property";
 import type { ResolvePath } from "@/create-store/types/resolve-path";
@@ -125,30 +126,24 @@ export function createCompositeStore<State extends GenericObject>(
   function set<
     Path extends Paths<State>,
     Value extends ResolvePath<State, Path>,
-  >(path: Path): Dispatch<PartialSetStateAction<Value>>;
+  >(path: Path): PartialStateSetter<Value>;
 
   function set<Path extends Paths<State> = never>(
     path?: Path
-  ): Dispatch<PartialSetStateAction<State>>;
+  ): PartialStateSetter<State>;
 
   function set<Path extends Paths<State>>(path?: Path) {
-    if (!path) {
-      return (action: PartialSetStateAction<State>) => {
-        const next = isSetStateActionFunction(action)
-          ? action(clone(state))
-          : action;
-        setState(replace(state, next));
-      };
-    }
-
     return <Value extends ResolvePath<State, Path>>(
       action: PartialSetStateAction<Value>
     ) => {
       const current = resolvePath(state, path);
+
       const next = isSetStateActionFunction(action)
         ? action(clone(current))
         : action;
-      setProperty(replace(current, next), path);
+
+      if (path) setProperty(replace(current, next), path);
+      else setState(replace(state, next));
     };
   }
 
