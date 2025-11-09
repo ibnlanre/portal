@@ -3,23 +3,37 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 import { defineConfig, defaultExclude } from "vitest/config";
 
+const ignoreFiles = ["**/*.{test,json}.*", "**/types/**", "**/*.d.ts"];
+
 export default defineConfig({
   plugins: [tsconfigPaths(), react()],
   test: {
-    coverage: {
-      clean: true,
-      exclude: defaultExclude.concat([
-        "**/*.{test,json}.*",
-        "**/types/**",
-        "**/*.d.ts",
-      ]),
-      include: ["**/*.ts"],
-    },
-    environment: "happy-dom",
     globals: true,
     logHeapUsage: false,
-    setupFiles: "vitest.setup.ts",
     reporters: ["default"],
-    exclude: defaultExclude.concat(["**/*.ssr.test.ts"]),
+    coverage: {
+      clean: true,
+      exclude: defaultExclude.concat(ignoreFiles),
+      include: ["**/*.ts"],
+    },
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "browser",
+          environment: "happy-dom",
+          setupFiles: "vitest.setup.ts",
+          exclude: defaultExclude.concat(["**/*.ssr.test.ts"]),
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "ssr",
+          environment: "node",
+          include: ["**/*.ssr.test.ts"],
+        },
+      },
+    ],
   },
 });

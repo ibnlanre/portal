@@ -1261,8 +1261,8 @@ describe("createCompositeStore", () => {
             theme: "dark",
           }),
           settings: {
-            volume: 50,
             brightness: 80,
+            volume: 50,
           },
         });
 
@@ -1331,23 +1331,23 @@ describe("createCompositeStore", () => {
         userSubscriber.mockClear();
         preferencesSubscriber.mockClear();
 
-        store.user.preferences.$set({ theme: "light", language: "fr" });
+        store.user.preferences.$set({ language: "fr", theme: "light" });
 
         expect(rootSubscriber).toHaveBeenCalledWith(
           expect.objectContaining({
             user: expect.objectContaining({
-              preferences: { theme: "light", language: "fr" },
+              preferences: { language: "fr", theme: "light" },
             }),
           })
         );
         expect(userSubscriber).toHaveBeenCalledWith(
           expect.objectContaining({
-            preferences: { theme: "light", language: "fr" },
+            preferences: { language: "fr", theme: "light" },
           })
         );
         expect(preferencesSubscriber).toHaveBeenCalledWith({
-          theme: "light",
           language: "fr",
+          theme: "light",
         });
       });
 

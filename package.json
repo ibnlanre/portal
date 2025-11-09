@@ -84,9 +84,9 @@
     "url": "git+https://github.com/ibnlanre/portal.git"
   },
   "scripts": {
-    "bundle": "tsup --config tsup.config.ts",
-    "watch": "tsup --config tsup.config.ts --watch",
+       "bundle": "tsup --config tsup.config.ts",
     "check-exports": "attw --pack .",
+    "check-workspace": "git diff-index --quiet HEAD --",
     "commit": "git add .",
     "coverage": "vitest run --coverage --typecheck",
     "dry-run": "npm publish --dry-run --no-git-checks",
@@ -97,8 +97,7 @@
     "package": "npm publish --access public",
     "patch": "npm version patch",
     "postbundle": "npm run check-exports",
-    "postpack": "git push",
-    "postpublish": "git push --tags",
+    "postpublish": "git push --follow-tags",
     "posttest": "npm run lint",
     "postversion": "npm run package",
     "pre-major": "npm version premajor",
@@ -107,13 +106,12 @@
     "precommit": "standard-changelog --releaseCount 0",
     "prepublishOnly": "npm run bundle",
     "pretest": "npm run typecheck",
-    "preversion": "npm run test",
-    "test": "npm run test:browser && npm run test:ssr",
+    "preversion": "npm run check-workspace && npm run test",
+    "test": "vitest run",
     "test:ci": "vitest run --coverage --typecheck",
-    "test:browser": "vitest run --config vitest.config.mts",
-    "test:ssr": "vitest run --config vitest.ssr.config.mts",
     "typecheck": "tsc --pretty --noEmit",
-    "version": "npm run commit"
+    "version": "npm run commit",
+    "watch": "tsup --config tsup.config.ts --watch"
   },
   "version": "5.2.4"
 }

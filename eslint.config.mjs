@@ -74,7 +74,7 @@ const vitestConfig = tseslint.config({
   plugins: { vitest: vitestPlugin },
   rules: {
     ...vitestPlugin.configs.recommended.rules,
-    "vitest/expect-expect": false,
+    "vitest/expect-expect": "off",
   },
 });
 

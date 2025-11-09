@@ -1,5 +1,3 @@
-/* eslint-disable vitest/expect-expect */
-
 import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
 

@@ -462,18 +462,18 @@ describe("createPrimitiveStore", () => {
     it("should handle partial updates on atomic objects", () => {
       const store = createPrimitiveStore(
         createAtom<{
+          fontSize: number;
           notifications: boolean;
           theme: string;
-          fontSize: number;
         }>({
           notifications: true,
           theme: "dark",
         })
       );
 
-      store.$set({ theme: "light", fontSize: 14 });
+      store.$set({ fontSize: 14, theme: "light" });
 
-      expect(store.$get()).toEqual({ theme: "light", fontSize: 14 });
+      expect(store.$get()).toEqual({ fontSize: 14, theme: "light" });
       expect(store.$get().notifications).toBeUndefined();
     });
 
@@ -515,9 +515,9 @@ describe("createPrimitiveStore", () => {
 
     it("should work with React hooks for atomic objects", () => {
       interface Store {
+        fontSize: number;
         language: string;
         theme: string;
-        fontSize: number;
       }
 
       const store = createPrimitiveStore(
@@ -533,29 +533,29 @@ describe("createPrimitiveStore", () => {
       expect(state).toEqual({ language: "en", theme: "dark" });
 
       act(() => {
-        setState({ theme: "light", fontSize: 16 });
+        setState({ fontSize: 16, theme: "light" });
       });
 
-      expect(result.current[0]).toEqual({ theme: "light", fontSize: 16 });
-      expect(store.$get()).toEqual({ theme: "light", fontSize: 16 });
+      expect(result.current[0]).toEqual({ fontSize: 16, theme: "light" });
+      expect(store.$get()).toEqual({ fontSize: 16, theme: "light" });
     });
 
     it("should handle atomic objects with selectors", () => {
       interface Store {
-        user: { name: string; age: number };
-        settings: { theme: string; notifications: boolean };
-        profile: { id: number; email: string };
+        profile: { email: string; id: number };
+        settings: { notifications: boolean; theme: string };
+        user: { age: number; name: string };
       }
 
       const store = createPrimitiveStore(
         createAtom<Store>({
-          user: {
-            name: "John",
-            age: 30,
-          },
           settings: {
-            theme: "dark",
             notifications: true,
+            theme: "dark",
+          },
+          user: {
+            age: 30,
+            name: "John",
           },
         })
       );
@@ -565,8 +565,8 @@ describe("createPrimitiveStore", () => {
 
       store.$set({
         profile: {
-          id: 123,
           email: "john@example.com",
+          id: 123,
         },
       });
 
@@ -590,29 +590,29 @@ describe("createPrimitiveStore", () => {
     it("should handle complex nested atomic objects", () => {
       interface Store {
         config: {
-          api: { timeout: number; retries: number };
-          ui: { theme: string; sidebar: string };
+          api: { retries: number; timeout: number };
+          ui: { sidebar: string; theme: string };
         };
-        metadata: { version: string; features: string[] };
-        settings: { theme: string };
         info: { build: string };
+        metadata: { features: string[]; version: string };
+        settings: { theme: string };
       }
 
       const store = createPrimitiveStore(
         createAtom<Store>({
           config: {
             api: {
-              timeout: 5000,
               retries: 3,
+              timeout: 5000,
             },
             ui: {
-              theme: "dark",
               sidebar: "collapsed",
+              theme: "dark",
             },
           },
           metadata: {
-            version: "1.0",
             features: ["feature1", "feature2"],
+            version: "1.0",
           },
         })
       );
@@ -621,17 +621,17 @@ describe("createPrimitiveStore", () => {
       expect(store.$get().metadata?.features).toEqual(["feature1", "feature2"]);
 
       store.$set({
-        settings: {
-          theme: "light",
-        },
         info: {
           build: "123",
+        },
+        settings: {
+          theme: "light",
         },
       });
 
       expect(store.$get()).toEqual({
-        settings: { theme: "light" },
         info: { build: "123" },
+        settings: { theme: "light" },
       });
       expect(store.$get().config).toBeUndefined();
       expect(store.$get().metadata).toBeUndefined();
@@ -639,10 +639,10 @@ describe("createPrimitiveStore", () => {
 
     it("should maintain atom behavior across multiple updates", () => {
       interface Store {
-        step: number;
-        value: number;
         extra: string;
         final: number;
+        step: number;
+        value: number;
       }
 
       const store = createPrimitiveStore(
@@ -655,8 +655,8 @@ describe("createPrimitiveStore", () => {
       store.$set({ value: 10 });
       expect(store.$get()).toEqual({ value: 10 });
 
-      store.$set({ step: 5, value: 20, extra: "data" });
-      expect(store.$get()).toEqual({ step: 5, value: 20, extra: "data" });
+      store.$set({ extra: "data", step: 5, value: 20 });
+      expect(store.$get()).toEqual({ extra: "data", step: 5, value: 20 });
 
       store.$set((current) => ({
         final: (current.value ?? 0) + (current.step ?? 0),
@@ -668,8 +668,8 @@ describe("createPrimitiveStore", () => {
       const store = createPrimitiveStore(
         createAtom<{
           count: number;
-          name: string;
           extra: boolean;
+          name: string;
         }>({
           count: 0,
           name: "test",
@@ -682,29 +682,29 @@ describe("createPrimitiveStore", () => {
 
       store.$set({ count: 1 });
       store.$set({ name: "updated" });
-      store.$set({ count: 5, name: "final", extra: true });
+      store.$set({ count: 5, extra: true, name: "final" });
 
       expect(subscriber).toHaveBeenCalledTimes(3);
       expect(subscriber).toHaveBeenNthCalledWith(1, { count: 1 });
       expect(subscriber).toHaveBeenNthCalledWith(2, { name: "updated" });
       expect(subscriber).toHaveBeenNthCalledWith(3, {
         count: 5,
-        name: "final",
         extra: true,
+        name: "final",
       });
     });
 
     it("should support creating atoms with partial objects", () => {
       interface Store {
-        optional?: number;
-        required: string;
         nested: {
-          prop1: string;
-          prop2: number;
           deep: {
             value: boolean;
           };
+          prop1: string;
+          prop2: number;
         };
+        optional?: number;
+        required: string;
       }
 
       const store1 = createPrimitiveStore(
@@ -717,38 +717,38 @@ describe("createPrimitiveStore", () => {
 
       const store2 = createPrimitiveStore(
         createAtom<Store>({
-          required: "test",
           nested: {
             prop1: "partial",
           },
+          required: "test",
         })
       );
 
       expect(store2.$get()).toEqual({
-        required: "test",
         nested: { prop1: "partial" },
+        required: "test",
       });
 
       store2.$set({
-        optional: 42,
         nested: {
-          prop2: 10,
           deep: { value: true },
+          prop2: 10,
         },
+        optional: 42,
       });
 
       expect(store2.$get()).toEqual({
-        optional: 42,
         nested: {
-          prop2: 10,
           deep: { value: true },
+          prop2: 10,
         },
+        optional: 42,
       });
       expect(store2.$get().required).toBeUndefined();
     });
 
     it("should handle createAtom idempotency", () => {
-      const initialObject = { theme: "dark", language: "en" };
+      const initialObject = { language: "en", theme: "dark" };
 
       const atom1 = createAtom(initialObject);
       const atom2 = createAtom(atom1);
@@ -756,7 +756,7 @@ describe("createPrimitiveStore", () => {
       expect(atom1).toBe(atom2);
 
       const store = createPrimitiveStore(atom1);
-      expect(store.$get()).toEqual({ theme: "dark", language: "en" });
+      expect(store.$get()).toEqual({ language: "en", theme: "dark" });
 
       store.$set({ theme: "light" });
       expect(store.$get()).toEqual({ theme: "light" });
@@ -764,43 +764,43 @@ describe("createPrimitiveStore", () => {
 
     it("should handle atomic objects with different property types", () => {
       interface Store {
-        booleanProp: boolean;
-        numberProp: number;
-        stringProp: string;
         arrayProp: number[];
-        objectProp: { nested: string };
-        nullProp: null;
-        undefinedProp: undefined;
-        newString: string;
-        newNumber: number;
+        booleanProp: boolean;
         newArray: string[];
+        newNumber: number;
         newObject: { different: string };
+        newString: string;
+        nullProp: null;
+        numberProp: number;
+        objectProp: { nested: string };
+        stringProp: string;
+        undefinedProp: undefined;
       }
 
       const store = createPrimitiveStore(
         createAtom<Store>({
-          booleanProp: true,
-          numberProp: 42,
-          stringProp: "hello",
           arrayProp: [1, 2, 3],
-          objectProp: { nested: "value" },
+          booleanProp: true,
           nullProp: null,
+          numberProp: 42,
+          objectProp: { nested: "value" },
+          stringProp: "hello",
           undefinedProp: undefined,
         })
       );
 
       store.$set({
-        newString: "world",
-        newNumber: 100,
         newArray: ["a", "b"],
+        newNumber: 100,
         newObject: { different: "structure" },
+        newString: "world",
       });
 
       expect(store.$get()).toEqual({
-        newString: "world",
-        newNumber: 100,
         newArray: ["a", "b"],
+        newNumber: 100,
         newObject: { different: "structure" },
+        newString: "world",
       });
 
       expect(store.$get().booleanProp).toBeUndefined();

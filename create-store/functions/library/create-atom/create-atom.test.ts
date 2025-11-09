@@ -7,7 +7,7 @@ import { createAtom } from "./index";
 describe("createAtom", () => {
   describe("Basic Functionality", () => {
     it("should mark an object as atomic", () => {
-      const obj = { theme: "dark", language: "en" };
+      const obj = { language: "en", theme: "dark" };
       const atom = createAtom(obj);
 
       expect(atomic in atom).toBe(true);
@@ -15,7 +15,7 @@ describe("createAtom", () => {
     });
 
     it("should return the same reference if already atomic", () => {
-      const obj = { theme: "dark", language: "en" };
+      const obj = { language: "en", theme: "dark" };
       const atom1 = createAtom(obj);
       const atom2 = createAtom(atom1);
 
@@ -25,7 +25,7 @@ describe("createAtom", () => {
     });
 
     it("should preserve object properties", () => {
-      const obj = { theme: "dark", language: "en", count: 42 };
+      const obj = { count: 42, language: "en", theme: "dark" };
       const atom = createAtom(obj);
 
       expect(atom.theme).toBe("dark");
@@ -34,7 +34,7 @@ describe("createAtom", () => {
     });
 
     it("should make atomic symbol non-enumerable", () => {
-      const obj = { theme: "dark", language: "en" };
+      const obj = { language: "en", theme: "dark" };
       const atom = createAtom(obj);
 
       const keys = Object.keys(atom);
@@ -63,16 +63,16 @@ describe("createAtom", () => {
 
   describe("DeepPartial Support", () => {
     interface FullInterface {
-      required: string;
-      optional: number;
       nested: {
+        deep: {
+          optional?: string;
+          value: boolean;
+        };
         prop1: string;
         prop2: number;
-        deep: {
-          value: boolean;
-          optional?: string;
-        };
       };
+      optional: number;
+      required: string;
     }
 
     it("should accept partial objects", () => {
@@ -87,10 +87,10 @@ describe("createAtom", () => {
 
     it("should accept partially nested objects", () => {
       const atom = createAtom<FullInterface>({
-        required: "test",
         nested: {
           prop1: "partial",
         },
+        required: "test",
       });
 
       expect(atom.required).toBe("test");
@@ -173,10 +173,10 @@ describe("createAtom", () => {
   describe("Type Safety", () => {
     it("should maintain type information", () => {
       interface TestInterface {
-        name: string;
         age: number;
+        name: string;
         settings?: {
-          theme: "light" | "dark";
+          theme: "dark" | "light";
         };
       }
 
