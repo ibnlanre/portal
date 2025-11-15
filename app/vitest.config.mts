@@ -6,15 +6,17 @@ import { defineConfig, defaultExclude } from "vitest/config";
 const ignoreFiles = ["**/*.{test,json}.*", "**/types/**", "**/*.d.ts"];
 
 export default defineConfig({
-  plugins: [tsconfigPaths(), react()],
+  plugins: [react(), tsconfigPaths()],
   test: {
     globals: true,
     logHeapUsage: false,
     reporters: ["default"],
+    setupFiles: ["./vitest.setup.ts"],
     coverage: {
       clean: true,
       exclude: defaultExclude.concat(ignoreFiles),
       include: ["**/*.ts"],
+      reportsDirectory: "./coverage",
     },
     projects: [
       {
@@ -22,7 +24,6 @@ export default defineConfig({
         test: {
           name: "browser",
           environment: "happy-dom",
-          setupFiles: "vitest.setup.ts",
           exclude: defaultExclude.concat(["**/*.ssr.test.ts"]),
         },
       },

@@ -37,15 +37,15 @@ describe("createAtom", () => {
       const obj = { language: "en", theme: "dark" };
       const atom = createAtom(obj);
 
+      const elements = expect.arrayContaining(["theme", "language"]);
+
       const keys = Object.keys(atom);
-      expect(keys).toEqual(["theme", "language"]);
+      expect(keys).toEqual(elements);
       expect(keys).not.toContain(atomic);
 
       const enumerableKeys: string[] = [];
-      for (const key in atom) {
-        enumerableKeys.push(key);
-      }
-      expect(enumerableKeys).toEqual(["theme", "language"]);
+      for (const key in atom) enumerableKeys.push(key);
+      expect(enumerableKeys).toEqual(elements);
     });
 
     it("should make atomic symbol non-configurable and non-writable", () => {

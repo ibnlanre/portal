@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist",
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "rootDir": "./"
+  },
+  "exclude": ["dist", "node_modules"],
+  "extends": "../tsconfig.json",
+  "include": ["**/*.ts", "**/*.tsx", "tsup.config.ts"]
+}

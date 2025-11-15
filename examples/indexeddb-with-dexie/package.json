@@ -10,6 +10,9 @@
     "dexie": "^4.0.11",
     "react-router-dom": "^7.6.2"
   },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.17"
+  },
   "description": "Example of using createStore with IndexedDB via Dexie",
   "name": "indexeddb-with-dexie-example",
   "scripts": {
