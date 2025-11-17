@@ -287,9 +287,6 @@ By default, when you update objects in `@ibnlanre/portal`, the library performs 
 
 The `atom()` function allows you to mark objects as **atomic**, which changes their update behavior from merging to complete replacement.
 
-<details>
-<summary><strong>Click to expand: Understanding atomic objects in detail</strong></summary>
-
 #### Understanding the difference
 
 **Regular objects (default behavior - merging):**
@@ -677,8 +674,6 @@ const directConfig = store.config.$get();
 ```
 
 Understanding atomic objects helps you control exactly how your data updates, leading to more predictable state management and fewer bugs related to unexpected partial updates.
-
-</details>
 
 ## Configure your stores
 
