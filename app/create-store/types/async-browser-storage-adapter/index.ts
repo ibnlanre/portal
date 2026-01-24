@@ -4,10 +4,13 @@
 export interface AsyncBrowserStorageAdapterOptions<State, StoredState = State>
   extends AsyncBrowserStorageTransforms<State, StoredState> {
   /**
-   * Returns the current value associated with the given key, or null if the given key does not exist.
+   * Returns the current value associated with the given key.
+   *
+   * For synchronous storage (e.g., localStorage), returns the value or `null` if not found.
+   * For asynchronous storage (e.g., IndexedDB), returns a Promise resolving to the value or `undefined` if not found.
    *
    * @param key The key to retrieve the value for.
-   * @returns The value associated with the key, or null if the key does not exist.
+   * @returns The value associated with the key, or a sentinel value (`null`/`undefined`) if the key does not exist.
    */
   getItem(key: string): null | Promise<StoredState | undefined> | StoredState;
 
