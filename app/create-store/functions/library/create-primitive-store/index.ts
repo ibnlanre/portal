@@ -65,7 +65,6 @@ export function createPrimitiveStore<State>(initialState: State) {
     }
 
     return {
-      $act: $sub,
       $get,
       $set,
       $sub,

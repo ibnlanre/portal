@@ -211,9 +211,6 @@ export function createCompositeStore<State extends GenericObject>(
 
   function buildStore<Path extends Paths<State>>(chain?: Path) {
     return {
-      $act(subscriber: Subscriber<State>, immediate = true) {
-        return sub(subscriber, chain, immediate);
-      },
       $get(selector?: Selector<StatePath<State, Path>>) {
         return get(chain, selector);
       },

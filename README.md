@@ -38,7 +38,7 @@ Whether you're building a small React component or a large-scale application, `@
   - [Use store instance methods](#use-store-instance-methods)
     - [`$get()`](#get)
     - [`$set()`](#set)
-    - [`$act()`](#act)
+    - [`$sub()`](#sub)
     - [`$key()`](#key)
     - [`$use()` (React Hook)](#use-react-hook)
   - [Define actions: Functions in stores](#define-actions-functions-in-stores)
@@ -86,7 +86,7 @@ Whether you're building a small React component or a large-scale application, `@
 
 - **🔄 Intuitive State Management**
 
-  - Simple, consistent API with `$get`, `$set`, and `$act`
+  - Simple, consistent API with `$get`, `$set`, and `$sub`
   - Deep partial updates for nested structures
   - Safe handling of circular references
 
@@ -195,7 +195,7 @@ countStore.$set(5);
 countStore.$set((prev) => prev + 1); // 6
 
 // Subscribe to changes
-countStore.$act((newValue) => {
+countStore.$sub((newValue) => {
   console.log("Count updated to:", newValue);
 });
 ```
@@ -636,11 +636,11 @@ const store = createStore({
   atomicData: atom({ x: 10, y: 20 }),
 });
 
-store.regularData.$act((data) => {
+store.regularData.$sub((data) => {
   console.log("Regular data changed:", data);
 });
 
-store.atomicData.$act((data) => {
+store.atomicData.$sub((data) => {
   console.log("Atomic data changed:", data);
 });
 
@@ -972,7 +972,7 @@ All store instances, whether primitive or composite, provide a core set of metho
 | -------- | ----------------------------------------------------------------- | ------------------------- |
 | `$get()` | Retrieve current state or compute a derived value                 | `S` or derived value `R`  |
 | `$set()` | Update state with a new value or updater function                 | `void`                    |
-| `$act()` | Subscribe to state changes and react to updates                   | `unsubscribe` function    |
+| `$sub()` | Subscribe to state changes and react to updates                   | `unsubscribe` function    |
 | `$use()` | Connect store to React component (hook)                           | `[state, setState]` tuple |
 | `$key()` | Access deeply nested stores using dot-separated paths (Composite) | Nested `Store` instance   |
 
@@ -1103,7 +1103,7 @@ listStore.items.$set((prevItems) => [...prevItems, 7]);
 // listStore.items.$get() is now [4, 5, 6, 7]
 ```
 
-#### `$act()`
+#### `$sub()`
 
 Subscribes a callback function to state changes. The callback receives the new state (and optionally the old state) whenever it changes. This method returns an `unsubscribe` function to stop listening for updates.
 
@@ -1112,7 +1112,7 @@ By default, the callback is invoked immediately with the current state upon subs
 **Syntax:**
 
 ```ts
-$act(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () => void
+$sub(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () => void
 ```
 
 - **`subscriber`**: A function that is called when the state changes. It receives `newState` and optionally `oldState`.
@@ -1126,7 +1126,7 @@ $act(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () =
     ```ts
     const nameStore = createStore("Alex");
 
-    const unsubscribe = nameStore.$act((newName, oldName) => {
+    const unsubscribe = nameStore.$sub((newName, oldName) => {
       console.log(`Name changed from "${oldName}" to "${newName}"`);
     });
     // Immediately logs: Name changed from "undefined" to "Alex"
@@ -1143,7 +1143,7 @@ $act(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () =
     ```ts
     const statusStore = createStore("idle");
 
-    const unsubscribeNonImmediate = statusStore.$act((newStatus) => {
+    const unsubscribeNonImmediate = statusStore.$sub((newStatus) => {
       console.log(`Status updated to: ${newStatus}`);
     }, false); // `false` prevents immediate call
 
@@ -1159,7 +1159,7 @@ $act(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () =
     const settingsStore = createStore({ theme: "light", volume: 70 });
 
     // Setting up subscription to changes in settings
-    const unsubscribeSettings = settingsStore.$act((newSettings) => {
+    const unsubscribeSettings = settingsStore.$sub((newSettings) => {
       console.log("Settings updated:", newSettings);
     });
 
@@ -1172,7 +1172,7 @@ $act(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () =
 
 #### `$key()`
 
-(CompositeStore only) Provides convenient access to deeply nested stores using a dot-separated string path. This method returns the nested store instance, allowing you to use its methods (`$get`, `$set`, `$act`, `$use`, `$key`) directly.
+(CompositeStore only) Provides convenient access to deeply nested stores using a dot-separated string path. This method returns the nested store instance, allowing you to use its methods (`$get`, `$set`, `$sub`, `$use`, `$key`) directly.
 
 **Syntax:**
 
@@ -1224,7 +1224,7 @@ const languageStore = preferencesStore.$key("language");
 console.log(languageStore.$get()); // "en"
 
 // Using methods on the store returned by $key
-const unsubscribe = appStore.$key("user.preferences.theme").$act((newTheme) => {
+const unsubscribe = appStore.$key("user.preferences.theme").$sub((newTheme) => {
   console.log("Theme via $key:", newTheme);
 });
 
@@ -1698,7 +1698,7 @@ const settingsStore = createStore({
 
 The `useVersion` hook is particularly useful when you want deep dependency tracking for custom hooks, or when native React hooks (`useMemo`, `useEffect`, `useCallback`) need to respond to changes in complex objects or arrays.
 
-> **Tip:** Rather than using `useEffect` to sync the store state to an external service, consider using `$act` for more efficient updates. This allows you to subscribe to changes in the store and react accordingly, while also providing a way to unsubscribe when no longer needed.
+> **Tip:** Rather than using `useEffect` to sync the store state to an external service, consider using `$sub` for more efficient updates. This allows you to subscribe to changes in the store and react accordingly, while also providing a way to unsubscribe when no longer needed.
 
 ### Context-based stores: `createContextStore`
 
@@ -1935,7 +1935,7 @@ You can initialize a store with state fetched asynchronously by passing an `asyn
 
 **Important Considerations:**
 
-- The store's methods (`$get`, `$set`, `$act`, `$use`) will operate on the unresolved Promise or an initial empty state until resolution.
+- The store's methods (`$get`, `$set`, `$sub`, `$use`) will operate on the unresolved Promise or an initial empty state until resolution.
 - If the Promise resolves to an object, this object is treated as a single (primitive-like) value within the store. To achieve a nested structure from async data, initialize the store with a placeholder structure (or `null`) and then update it using `$set` once the data is fetched.
 
 **Example:**
@@ -2102,7 +2102,7 @@ console.log(nodeB.name); // "Node Beta"
 
 When your store's state includes arrays, `@ibnlanre/portal` treats them in a specific way:
 
-- **Arrays as store properties**: If an array is a direct property of your initial state object (e.g., `items: [1, 2, 3]` in `createStore({ items: [...] })`), then `store.items` becomes a store instance that manages this array. You can use `$get()`, `$set()`, and `$act()` on `store.items` to interact with the entire array.
+- **Arrays as store properties**: If an array is a direct property of your initial state object (e.g., `items: [1, 2, 3]` in `createStore({ items: [...] })`), then `store.items` becomes a store instance that manages this array. You can use `$get()`, `$set()`, and `$sub()` on `store.items` to interact with the entire array.
 
   ```ts
   const store = createStore({ tags: ["typescript", "state-management"] });
@@ -2711,7 +2711,7 @@ const initialCounterState = getStoredCounter(0); // Default to 0 if null
 const persistentCounterStore = createStore(initialCounterState);
 
 // Subscribe to store changes to save them to Local Storage
-persistentCounterStore.$act((newState) => {
+persistentCounterStore.$sub((newState) => {
   setStoredCounter(newState);
 }, false); // `false` prevents saving immediately on setup, only on actual changes
 
@@ -2741,7 +2741,7 @@ const initialSessionData = getStoredSessionData({
 });
 const sessionDataStore = createStore(initialSessionData);
 
-sessionDataStore.$act(setStoredSessionData, false);
+sessionDataStore.$sub(setStoredSessionData, false);
 
 // Example:
 sessionDataStore.$set({ guestId: "guest-123", lastPage: "/products" });
@@ -2804,7 +2804,7 @@ const initialPrefs = getCookiePreferences({
 });
 const prefsStore = createStore(initialPrefs);
 
-prefsStore.$act((newPrefs) => {
+prefsStore.$sub((newPrefs) => {
   setCookiePrefs(newPrefs);
 
   // Example: Update maxAge on a specific change
@@ -2878,7 +2878,7 @@ const [getCustomState, setCustomState] = createBrowserStorageAdapter<{
 const initialCustomData = getCustomState({ lastSync: null });
 const customDataStore = createStore(initialCustomData);
 
-customDataStore.$act(setCustomState, false);
+customDataStore.$sub(setCustomState, false);
 customDataStore.$set({ lastSync: new Date().toISOString() });
 ```
 
@@ -2954,7 +2954,7 @@ const result = await getEncryptedState({ sensitive: "data" });
 const store = createStore(result);
 
 // When you set the state, it will be encrypted before being stored.
-store.$act(setEncryptedState, false);
+store.$sub(setEncryptedState, false);
 ```
 
 ## Cookie Storage

@@ -25,4 +25,4 @@ export const counterStore = createStore({
 });
 
 // Subscribe to store changes and auto-persist
-counterStore.value.$act(setStoredCount, false);
+counterStore.value.$sub(setStoredCount, false);

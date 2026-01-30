@@ -6,13 +6,6 @@ import type { Selector } from "@/create-store/types/selector";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
 export type PrimitiveStore<State> = {
-  /**
-   * @deprecated Use `$sub` instead.
-   */
-  readonly $act: (
-    subscriber: Subscriber<State>,
-    immediate?: boolean
-  ) => () => void;
   readonly $get: {
     (): State;
     <Value>(selector: Selector<State, Value>): Value;

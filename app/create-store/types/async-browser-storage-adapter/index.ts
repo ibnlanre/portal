@@ -1,8 +1,10 @@
 /**
  * An interface for a storage object.
  */
-export interface AsyncBrowserStorageAdapterOptions<State, StoredState = State>
-  extends AsyncBrowserStorageTransforms<State, StoredState> {
+export interface AsyncBrowserStorageAdapterOptions<
+  State,
+  StoredState = State,
+> extends AsyncBrowserStorageTransforms<State, StoredState> {
   /**
    * Returns the current value associated with the given key.
    *

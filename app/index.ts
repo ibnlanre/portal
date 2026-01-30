@@ -33,7 +33,6 @@ export type {
   GetLocalStorage,
   SetLocalStorage,
 } from "@/create-store/types/local-storage";
-export type { Normalize } from "@/create-store/types/normalize";
 export type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
 export type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 export type { PartialStateSetter } from "@/create-store/types/partial-state-setter";
@@ -46,8 +45,6 @@ export type {
   GetSessionStorage,
   SetSessionStorage,
 } from "@/create-store/types/session-storage";
-export type { SetPartial } from "@/create-store/types/set-partial";
-export type { SetPartialStateAction } from "@/create-store/types/set-partial-state-action";
 export type { StatePath } from "@/create-store/types/state-path";
 export type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 export type { StoreValueResolver } from "@/create-store/types/store-value-resolver";
@@ -69,4 +66,3 @@ export { createCompositeStore } from "@/create-store/functions/library/create-co
 export { createContextStore } from "@/create-store/functions/library/create-context-store";
 export { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
 export { fallback } from "@/create-store/functions/library/fallback";
-export { normalizeObject } from "@/create-store/functions/library/normalize-object";

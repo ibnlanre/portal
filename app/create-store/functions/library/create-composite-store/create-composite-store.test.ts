@@ -1685,7 +1685,7 @@ describe("createCompositeStore", () => {
         expect(() => store.data.ref?.$get()).not.toThrow();
         expect(store.data.ref?.$get()).toEqual(circularObj);
         expect(store.data.ref).toEqual(store.data);
-        expect(store.other.ref?.ref).toEqual(store.other);
+        expect(store.other.ref?.$get()?.ref).toEqual(circularObj);
       });
 
       it("should handle deeply nested circular references", () => {

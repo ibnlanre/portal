@@ -33,8 +33,7 @@ export type SetCookieStorage<State> = (
 ) => void;
 
 interface CookieDataOptions<State>
-  extends CookieOptions,
-    StorageAdapterOptions<State> {}
+  extends CookieOptions, StorageAdapterOptions<State> {}
 
 type CookieSignature =
   | {

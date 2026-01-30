@@ -89,7 +89,7 @@ class Hmac {
     const msg = new Uint8Array(this.data.reduce((sum, a) => sum + a.length, 0));
     let offset = 0;
     for (const chunk of this.data)
-      msg.set(chunk, offset), (offset += chunk.length);
+      (msg.set(chunk, offset), (offset += chunk.length));
 
     const oKeyPad = new Uint8Array(BLOCK_SIZE);
     const iKeyPad = new Uint8Array(BLOCK_SIZE);

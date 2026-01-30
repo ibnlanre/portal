@@ -1,5 +1,4 @@
 import type { CompositeStore } from "./index";
-import type { Normalize } from "@/create-store/types/normalize";
 import type { Paths } from "@/create-store/types/paths";
 
 import { describe, it } from "vitest";

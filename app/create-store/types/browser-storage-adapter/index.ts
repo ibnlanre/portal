@@ -1,8 +1,7 @@
 import type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 
 export interface BrowserStorageAdapterOptions<State>
-  extends StorageAdapterOptions<State>,
-    StorageInterface {}
+  extends StorageAdapterOptions<State>, StorageInterface {}
 
 export interface GetBrowserStorage<State> {
   /**

@@ -32,7 +32,6 @@ import { resolveValue } from "@/create-store/functions/utilities/resolve-value";
 export function createStore<State extends Dictionary>(
   state: Factory<State>
 ): CompositeStore<State>;
-
 /**
  * @example
  *
@@ -49,7 +48,6 @@ export function createStore<State extends Dictionary>(
 export function createStore<State>(
   state: Initializer<Promise<State>>
 ): Promise<PrimitiveStore<State>>;
-
 /**
  * @example
  *
@@ -63,7 +61,6 @@ export function createStore<State>(
 export function createStore<State extends Reference>(
   state: Factory<State>
 ): PrimitiveStore<State>;
-
 /**
  * @example
  *
@@ -82,7 +79,6 @@ export function createStore<State extends Reference>(
 export function createStore<State extends GenericObject>(
   state: Factory<State>
 ): CompositeStore<State>;
-
 /**
  * @example
  *
@@ -97,7 +93,6 @@ export function createStore<State extends GenericObject>(
 export function createStore<State = undefined>(
   state?: Factory<State>
 ): PrimitiveStore<State>;
-
 export function createStore<State>(initialState?: State) {
   const state = resolveValue(initialState);
 

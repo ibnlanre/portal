@@ -55,9 +55,9 @@ const userStore = createStore({
   // userStore state is now { id: "123", preferences: { theme: "light" } }
   ```
 
-- **`$act()`**: Subscribes to state changes. Returns an `unsubscribe` function.
+- **`$sub()`**: Subscribes to state changes. Returns an `unsubscribe` function.
   ```typescript
-  const unsubscribe = simpleStore.$act((newState, oldState) => {
+  const unsubscribe = simpleStore.$sub((newState, oldState) => {
     console.log(`State changed from "${oldState}" to "${newState}"`);
   });
 
@@ -93,7 +93,7 @@ const storageKey = "myApp.userPreferences";
 const [getStoredState, setStoredState] = createLocalStorageAdapter(storageKey);
 
 const persistentUserStore = createStore(getStoredState() || { theme: "default" });
-persistentUserStore.$act(setStoredState);
+persistentUserStore.$sub(setStoredState);
 
 // Example usage:
 persistentUserStore.theme.$set("dark"); // State is saved to Local Storage
@@ -111,7 +111,7 @@ const storageKey = "myApp.sessionData";
 const [getStoredState, setStoredState] = createSessionStorageAdapter(storageKey);
 
 const sessionStore = createStore(getStoredState() || { isActive: false });
-sessionStore.$act(setStoredState);
+sessionStore.$sub(setStoredState);
 
 sessionStore.isActive.$set(true); // State is saved to Session Storage
 ```
@@ -134,7 +134,7 @@ const [getStoredState, setStoredState] = createCookieStorageAdapter(
 );
 
 const cookieBackedStore = createStore(getStoredState() || { userId: null });
-cookieBackedStore.$act(setStoredState);
+cookieBackedStore.$sub(setStoredState);
 
 cookieBackedStore.userId.$set("user-abc-123"); // State is saved as a cookie
 ```
@@ -215,7 +215,7 @@ async function fetchInitialData() {
 // The store will be initialized once the promise resolves.
 const asyncStore = createStore(fetchInitialData());
 
-asyncStore.$act((state) => {
+asyncStore.$sub((state) => {
   if (state) { // Check if state is resolved
     console.log("Async data loaded:", state.username.$get());
   }

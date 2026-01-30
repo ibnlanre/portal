@@ -42,4 +42,4 @@ export const preferencesStore = createStore(initialValue);
 getStoredValue(initialValue).then(preferencesStore.$set);
 
 // Subscribe to store changes and auto-persist
-preferencesStore.$act(setStoredValue);
+preferencesStore.$sub(setStoredValue);

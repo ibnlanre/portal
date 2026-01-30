@@ -23,7 +23,6 @@ export function combine<
   sources: Sources,
   cache?: WeakMap<object, object>
 ): Combine<Target, Sources>;
-
 /**
  * A simple and straightforward deep merge function that recursively merges objects.
  * Handles cyclic references to prevent infinite recursion.
@@ -41,7 +40,6 @@ export function combine<
   source?: Source,
   cache?: WeakMap<object, object>
 ): Source extends GenericObject ? Replace<Target, Source> : Target;
-
 export function combine<
   Target extends GenericObject,
   Source extends GenericObject | GenericObject[],

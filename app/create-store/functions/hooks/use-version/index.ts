@@ -12,13 +12,13 @@ import { compare } from "@/create-store/functions/helpers/compare";
  * @returns An array containing the current version number.
  */
 export function useVersion(input?: unknown): number {
-  const ref = useRef<unknown>();
-  const version = useRef(0);
+  const ref = useRef<unknown>(undefined);
+  const versionRef = useRef(0);
 
   if (!compare(ref.current, input)) {
     ref.current = input;
-    version.current += 1;
+    versionRef.current += 1;
   }
 
-  return version.current;
+  return versionRef.current;
 }
