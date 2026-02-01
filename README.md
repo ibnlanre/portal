@@ -279,7 +279,7 @@ Both store types share a consistent API for getting, setting, and subscribing to
 
 By default, when you update objects in `@ibnlanre/portal`, the library performs **partial updates** (merging). This means only the properties you specify are changed, while other properties remain unchanged. However, sometimes you want to treat an object as a **single value** that should be completely replaced when updated.
 
-The `atom()` function allows you to mark objects as **atomic**, which changes their update behavior from merging to complete replacement.
+The `createAtom()` function allows you to mark objects as **atomic**, which changes their update behavior from merging to complete replacement.
 
 <details>
 <summary><strong>Click to expand: Understanding atomic objects in detail</strong></summary>
@@ -307,10 +307,10 @@ console.log(settingsStore.$get());
 **Atomic objects (complete replacement):**
 
 ```ts
-import { createStore, atom } from "@ibnlanre/portal";
+import { createStore, createAtom } from "@ibnlanre/portal";
 
 const preferencesStore = createStore({
-  userSettings: atom({
+  userSettings: createAtom({
     theme: "dark",
     fontSize: 16,
     notifications: true,
@@ -335,23 +335,23 @@ Atomic objects are particularly useful for:
 4. **Immutable data structures** where partial updates don't make conceptual sense
 5. **Performance optimization** when you know you always want to replace the entire object
 
-#### Using `atom()`
+#### Using `createAtom()`
 
 **Syntax:**
 
 ```ts
-atom<State extends object>(value: DeepPartial<State>): Atomic<State>
+createAtom<State extends object>(value: DeepPartial<State>): Atomic<State>
 ```
 
 - **`value`**: The partial object to mark as atomic (can be incomplete)
 - **Returns**: The same object, but marked as atomic for complete replacement behavior
 
-> **Note:** Since atomic objects support complete replacement, they can be cleared of their values, which is why `atom()` accepts `DeepPartial<State>`. When accessing atomic objects via `$get()`, the result might have missing properties. Use the `fallback()` function to provide default values and restore complete types.
+> **Note:** Since atomic objects support complete replacement, they can be cleared of their values, which is why `createAtom()` accepts `DeepPartial<State>`. When accessing atomic objects via `$get()`, the result might have missing properties. Use the `fallback()` function to provide default values and restore complete types.
 
 **Basic Example:**
 
 ```ts
-import { createStore, atom } from "@ibnlanre/portal";
+import { createStore, createAtom } from "@ibnlanre/portal";
 
 const appStore = createStore({
   // Regular object - supports partial updates
@@ -362,7 +362,7 @@ const appStore = createStore({
   },
 
   // Atomic object - complete replacement only
-  apiConfig: atom({
+  apiConfig: createAtom({
     baseUrl: "https://api.example.com",
     timeout: 5000,
     retries: 3,
@@ -391,10 +391,10 @@ console.log(appStore.apiConfig.$get());
 Since atomic objects can be cleared of their values, accessing them might return incomplete data. The `fallback()` function helps provide default values and restore complete types:
 
 ```ts
-import { createStore, atom, fallback } from "@ibnlanre/portal";
+import { createStore, createAtom, fallback } from "@ibnlanre/portal";
 
 const configStore = createStore({
-  settings: atom({
+  settings: createAtom({
     theme: "light" as "light" | "dark",
     fontSize: 16,
     notifications: true,
@@ -426,7 +426,7 @@ console.log(incompleteSettings);
 **Advanced fallback usage:**
 
 ````ts
-import { createStore, atom, fallback } from "@ibnlanre/portal";
+import { createStore, createAtom, fallback } from "@ibnlanre/portal";
 
 interface UserPreferences {
   theme: "light" | "dark";
@@ -442,7 +442,7 @@ interface UserPreferences {
 }
 
 const userStore = createStore({
-  preferences: atom<UserPreferences>({}), // Start with empty atomic object
+  preferences: createAtom<UserPreferences>({}), // Start with empty atomic object
 });
 
 // Define comprehensive defaults
@@ -474,7 +474,7 @@ preferences.notifications.email; // ✅ TypeScript knows this exists
 **1. Mixed regular and atomic objects:**
 
 ```ts
-import { createStore, atom } from "@ibnlanre/portal";
+import { createStore, createAtom } from "@ibnlanre/portal";
 
 const gameStore = createStore({
   player: {
@@ -487,7 +487,7 @@ const gameStore = createStore({
   },
 
   // Game settings are treated as a complete unit
-  gameSettings: atom({
+  gameSettings: createAtom({
     difficulty: "medium",
     soundEnabled: true,
     graphicsQuality: "high",
@@ -506,10 +506,10 @@ gameStore.gameSettings.$set({ difficulty: "hard" });
 **2. Atomic objects with functional updates:**
 
 ```ts
-import { createStore, atom } from "@ibnlanre/portal";
+import { createStore, createAtom } from "@ibnlanre/portal";
 
 const themeStore = createStore({
-  currentTheme: atom({
+  currentTheme: createAtom({
     primary: "#007bff",
     secondary: "#6c757d",
     background: "#ffffff",
@@ -539,14 +539,14 @@ themeStore.currentTheme.$set((currentTheme) => {
 **3. Nested atomic objects:**
 
 ```ts
-import { createStore, atom } from "@ibnlanre/portal";
+import { createStore, createAtom } from "@ibnlanre/portal";
 
 const userStore = createStore({
   profile: {
     name: "John Doe",
 
     // Preferences are atomic - complete replacement
-    preferences: atom({
+    preferences: createAtom({
       language: "en",
       timezone: "UTC",
       notifications: true,
@@ -571,14 +571,14 @@ userStore.profile.preferences.$set({ language: "fr", timezone: "CET" });
 
 #### Important characteristics
 
-**1. `atom()` is idempotent:**
+**1. `createAtom()` is idempotent:**
 
 ```ts
-import { atom } from "@ibnlanre/portal";
+import { createAtom } from "@ibnlanre/portal";
 
 const config = { api: "https://api.com", version: "v1" };
-const atomic1 = atom(config);
-const atomic2 = atom(atomic1); // Safe to call multiple times
+const atomic1 = createAtom(config);
+const atomic2 = createAtom(atomic1); // Safe to call multiple times
 
 console.log(atomic1 === atomic2); // true
 ```
@@ -586,9 +586,9 @@ console.log(atomic1 === atomic2); // true
 **2. Atomic objects preserve normal JavaScript behavior:**
 
 ```ts
-import { atom } from "@ibnlanre/portal";
+import { createAtom } from "@ibnlanre/portal";
 
-const settings = atom({
+const settings = createAtom({
   theme: "dark",
   lang: "en",
 });
@@ -599,16 +599,16 @@ console.log(settings.theme); // "dark"
 console.log(JSON.stringify(settings)); // '{"theme":"dark","lang":"en"}'
 ```
 
-**3. `atom()` accepts partial objects by design:**
+**3. `createAtom()` accepts partial objects by design:**
 
-The `atom()` function intentionally accepts `DeepPartial<State>`, allowing you to create atomic objects with incomplete data. This design enables flexible initialization and clearing patterns:
+The `createAtom()` function intentionally accepts `DeepPartial<State>`, allowing you to create atomic objects with incomplete data. This design enables flexible initialization and clearing patterns:
 
 ```ts
-import { createStore, atom } from "@ibnlanre/portal";
+import { createStore, createAtom } from "@ibnlanre/portal";
 
 // Start with partial data
 const configStore = createStore({
-  settings: atom({ theme: "dark" }), // Only theme is provided
+  settings: createAtom({ theme: "dark" }), // Only theme is provided
 });
 
 // Can be completely cleared
@@ -623,11 +623,11 @@ configStore.settings.$set({ theme: "light", fontSize: 14 }); // Replace with new
 When you update an atomic object, the entire object is replaced, not merged:
 
 ```ts
-import { createStore, atom } from "@ibnlanre/portal";
+import { createStore, createAtom } from "@ibnlanre/portal";
 
 const store = createStore({
   regularData: { a: 1, b: 2 },
-  atomicData: atom({ x: 10, y: 20 }),
+  atomicData: createAtom({ x: 10, y: 20 }),
 });
 
 store.regularData.$subscribe((data) => {
@@ -652,10 +652,10 @@ store.atomicData.$set({ x: 50 });
 Since atomic objects can contain partial data, always use `fallback()` when you need guaranteed complete objects:
 
 ```ts
-import { createStore, atom, fallback } from "@ibnlanre/portal";
+import { createStore, createAtom, fallback } from "@ibnlanre/portal";
 
 const store = createStore({
-  config: atom({ theme: "dark" }), // Partial atomic object
+  config: createAtom({ theme: "dark" }), // Partial atomic object
 });
 
 // Define complete defaults
@@ -904,14 +904,14 @@ const [CounterProvider, useCounterStore] = createContextStore(
       const initialState = { count: context.initialCount };
 
       const actions = {
-        increment(this: any) {
-          this.count.$set((prev: number) => prev + 1);
+        increment() {
+          counterStore.count.$set((prev: number) => prev + 1);
         },
-        decrement(this: any) {
-          this.count.$set((prev: number) => prev - 1);
+        decrement() {
+          counterStore.count.$set((prev: number) => prev - 1);
         },
-        reset(this: any) {
-          this.count.$set(context.initialCount);
+        reset() {
+          counterStore.count.$set(context.initialCount);
         },
       };
 
@@ -1733,16 +1733,16 @@ const [AppProvider, useAppStore] = createContextStore((context: AppContext) => {
   };
 
   const actions = {
-    toggleTheme(this: any) {
-      this.user.preferences.theme.$set((previousTheme: "light" | "dark") => {
+    toggleTheme() {
+      store.user.preferences.theme.$set((previousTheme: "light" | "dark") => {
         return previousTheme === "light" ? "dark" : "light";
       });
     },
-    updateTheme(this: any, newTheme: "light" | "dark") {
-      this.user.preferences.theme.$set(newTheme);
+    updateTheme(newTheme: "light" | "dark") {
+      store.user.preferences.theme.$set(newTheme);
     },
-    updateLocale(this: any, newLocale: string) {
-      this.user.preferences.locale.$set(newLocale);
+    updateLocale(newLocale: string) {
+      store.user.preferences.locale.$set(newLocale);
     },
   };
 
@@ -1833,20 +1833,20 @@ const initialState = {
 
 // Define actions separately
 const actions = {
-  login(this: any, email: string) {
-    this.$set({
+  login(email: string) {
+    userStore.$set({
       profile: { email },
       isLoggedIn: true,
     });
   },
-  logout(this: any) {
-    this.$set({
+  logout() {
+    userStore.$set({
       isLoggedIn: false,
       profile: { email: "", name: "" },
     });
   },
-  updateName(this: any, newName: string) {
-    this.profile.name.$set(newName);
+  updateName(newName: string) {
+    userStore.profile.name.$set(newName);
   },
 };
 
@@ -2209,10 +2209,10 @@ fallback<State extends object>(outerState: State): (innerState: object) => State
 **Basic Example:**
 
 ```ts
-import { createStore, atom, fallback } from "@ibnlanre/portal";
+import { createStore, createAtom, fallback } from "@ibnlanre/portal";
 
 const userStore = createStore({
-  profile: atom({
+  profile: createAtom({
     name: "John",
     theme: "light" as "light" | "dark",
     notifications: true,
@@ -2248,7 +2248,7 @@ console.log(updated);
 **Advanced Fallback Patterns:**
 
 ```ts
-import { createStore, atom, fallback } from "@ibnlanre/portal";
+import { createStore, createAtom, fallback } from "@ibnlanre/portal";
 
 interface AppConfig {
   api: {
@@ -2267,7 +2267,7 @@ interface AppConfig {
 }
 
 const configStore = createStore({
-  settings: atom<AppConfig>({}), // Start empty
+  settings: createAtom<AppConfig>({}), // Start empty
 });
 
 // Comprehensive default configuration
@@ -2306,10 +2306,10 @@ console.log(config.ui.features.analytics); // true (from fallback)
 **Using with React Components:**
 
 ```tsx
-import { createStore, atom, fallback } from "@ibnlanre/portal";
+import { createStore, createAtom, fallback } from "@ibnlanre/portal";
 
 const themeStore = createStore({
-  preferences: atom({
+  preferences: createAtom({
     primaryColor: "#007bff",
     fontSize: 16,
     darkMode: false,
@@ -2343,10 +2343,10 @@ function ThemedComponent() {
 **Fallback with Dynamic Defaults:**
 
 ```ts
-import { createStore, atom, fallback } from "@ibnlanre/portal";
+import { createStore, createAtom, fallback } from "@ibnlanre/portal";
 
 const gameStore = createStore({
-  playerSettings: atom({
+  playerSettings: createAtom({
     difficulty: "medium" as "easy" | "medium" | "hard",
     volume: 0.8,
   }),
@@ -2607,10 +2607,10 @@ const [stats] = userStore.$use((user) => ({
 When using atomic objects, remember that they can be partially cleared. Use `InferType` to understand the actual type after operations:
 
 ```ts
-import { createStore, atom, InferType } from "@ibnlanre/portal";
+import { createStore, createAtom, InferType } from "@ibnlanre/portal";
 
 const configStore = createStore({
-  api: atom({ baseUrl: "https://api.com", timeout: 5000 }),
+  api: createAtom({ baseUrl: "https://api.com", timeout: 5000 }),
 });
 
 // Type is: { baseUrl: string | undefined; timeout: number | undefined }
@@ -2652,7 +2652,7 @@ import { combine, createStore } from "@ibnlanre/portal";
 const state = { count: 0, message: "Hello" };
 const actions = {
   increment() {
-    this.count.$set((v: number) => v + 1);
+    store.count.$set((v: number) => v + 1);
   },
 };
 
@@ -2864,13 +2864,13 @@ import { createStore, createBrowserStorageAdapter } from "@ibnlanre/portal";
 const customStorage = {
   data: {} as Record<string, string>,
   getItem(key: string) {
-    return this.data[key];
+    return customDataStore.data[key];
   },
   removeItem(key: string) {
-    delete this.data[key];
+    delete customDataStore.data[key];
   },
   setItem(key: string, value: string) {
-    this.data[key] = value;
+    customDataStore.data[key] = value;
   },
 };
 

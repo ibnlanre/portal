@@ -4,60 +4,141 @@ description: Deep merge multiple objects (variadic).
 icon: Merge
 ---
 
-`combine()` deeply merges any number of objects from left to right. Later objects take precedence.
+The `combine()` utility performs a deep merge of multiple objects using a simple spread syntax. It's useful for unifying your initial state and actions into one cohesive structure before passing it into `createStore`.
+
+Unlike shallow merging (such as `Object.assign` or object spread), `combine()`:
+
+- Recursively merges nested objects
+- Preserves store instances within deeply nested structures
+- Handles circular references safely
+- Supports any number of arguments with later objects taking precedence
+- Full type safety with proper TypeScript inference
 
 ## Syntax
 
 ```ts
-combine<Objects extends object[]>(...objects: Objects): Combine<Objects>
+combine<Objects extends GenericObject[]>(...objects: Objects): Combine<Objects>
 ```
 
-## Common usage: initial state + actions
+- `...objects`: Any number of objects to merge, from left to right
+- Returns: A new, deeply merged object with all properties combined
 
-Actions can reference the store after it's created.
+## Basic example
 
 ```ts
-import { combine, createStore } from "@ibnlanre/portal";
+import { createStore, combine } from "@ibnlanre/portal";
 
+// Define the initial state
 const initialState = {
-  count: 0,
+  isLoggedIn: false,
+  profile: {
+    email: "alex@example.com",
+    name: "Alex",
+  },
 };
 
-export const counter = createStore(
-  combine(initialState, {
-    increment() {
-      counter.count.$set((prev) => prev + 1);
-    },
-    reset() {
-      counter.count.$set(0);
-    },
-  })
-);
+// Define actions separately
+const actions = {
+  login(email: string) {
+    userStore.$set({
+      profile: { email },
+      isLoggedIn: true,
+    });
+  },
+  logout() {
+    userStore.$set({
+      isLoggedIn: false,
+      profile: { email: "", name: "" },
+    });
+  },
+  updateName(newName: string) {
+    userStore.profile.name.$set(newName);
+  },
+};
 
-counter.increment();
+// Combine initial state and actions into a single object
+export const userStore = createStore(combine(initialState, actions));
+```
+
+## Multiple objects example
+
+```ts
+import { createStore, combine } from "@ibnlanre/portal";
+
+// Base configuration
+const baseConfig = {
+  api: {
+    baseUrl: "https://api.example.com",
+    timeout: 5000,
+  },
+  ui: {
+    theme: "light",
+    language: "en",
+  },
+};
+
+// Environment-specific overrides
+const developmentConfig = {
+  api: {
+    baseUrl: "https://dev-api.example.com",
+    debug: true,
+  },
+  ui: {
+    showDebugInfo: true,
+  },
+};
+
+// User preferences
+const userPreferences = {
+  ui: {
+    theme: "dark",
+    fontSize: 16,
+  },
+  notifications: {
+    email: true,
+    push: false,
+  },
+};
+
+// Combine all sources - later objects override earlier ones
+const appConfig = combine(baseConfig, developmentConfig, userPreferences);
+
+// Result will be:
+// {
+//   api: {
+//     baseUrl: "https://dev-api.example.com", // from developmentConfig
+//     timeout: 5000,                          // from baseConfig
+//     debug: true                             // from developmentConfig
+//   },
+//   ui: {
+//     theme: "dark",                          // from userPreferences
+//     language: "en",                         // from baseConfig
+//     showDebugInfo: true,                    // from developmentConfig
+//     fontSize: 16                            // from userPreferences
+//   },
+//   notifications: {                          // from userPreferences
+//     email: true,
+//     push: false
+//   }
+// }
+
+const configStore = createStore(appConfig);
 ```
 
 ## Edge cases
 
 ```ts
-const empty = combine();
+// Empty call returns empty object
+const empty = combine(); // {}
 
-const base = { a: { b: 1 } };
-const single = combine(base); // returns base as-is
+// Single object returns as-is (no cloning)
+const single = combine(baseConfig); // baseConfig
 
-const merged = combine(base, { a: { c: 2 } });
+// Nested objects are deep merged
+const merged = combine({ a: { b: 1 } }, { a: { c: 2 } });
 // { a: { b: 1, c: 2 } }
-```
 
-## Spread arrays
-
-Type inference is best with tuples. If you spread a plain array, TypeScript may infer a union of element types.
-
-```ts
-const configs = [
-  { api: { baseUrl: "https://api.example.com" } },
-  { api: { timeout: 5000 } },
-] as const;
-
-const config = combine(...configs);
+// Works with spread arrays (types inferred as union of array elements)
+const configs = [config1, config2, config3];
+const mergedFromArray = combine(...configs);
 ```
