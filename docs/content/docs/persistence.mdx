@@ -1,238 +1,105 @@
 ---
 title: Persistence
-description: Persist store state with storage adapters.
+description: Keep your state alive across reloads and sessions.
 icon: Database
 ---
 
-`@ibnlanre/portal` allows you to persist store state across sessions using storage adapters. These adapters provide `getState` and `setState` functions that you integrate with your store.
+Want your data to stick around after the user hits refresh? Portal makes it easy to sync your store with LocalStorage, SessionStorage, or any custom backend.
 
-## Web Storage adapters
+The pattern is always the same:
 
-Use `createLocalStorageAdapter` or `createSessionStorageAdapter` to persist in the browser's Local Storage or Session Storage.
+1. **Get** the saved state (or a default).
+2. **Create** the store.
+3. **Subscribe** to updates to save changes.
 
-```ts
-createLocalStorageAdapter<State>(key: string, options?: StorageAdapterOptions<State>)
-createSessionStorageAdapter<State>(key: string, options?: StorageAdapterOptions<State>)
-```
+## Local Storage
 
-**Parameters:**
-
-- `key: string`: A unique string identifying this store's data in web storage
-- `options?: StorageAdapterOptions<State>`: Optional configuration with:
-  - `stringify?: (state: State) => string`: Serialize before saving (defaults to `JSON.stringify`)
-  - `parse?: (storedString: string) => State`: Deserialize after loading (defaults to `JSON.parse`)
-
-**Returns:** `[getStateFunction, setStateFunction]`
-
-### createLocalStorageAdapter
-
-Persists state in `localStorage`. Data remains until explicitly cleared.
+Use `createLocalStorageAdapter` to persist data in the browser permanently (until cleared).
 
 ```ts
 import { createStore, createLocalStorageAdapter } from "@ibnlanre/portal";
 
-const [getStoredCounter, setStoredCounter] =
-  createLocalStorageAdapter<number>("app-counter");
+// 1. Create the adapter
+const [get, set] = createLocalStorageAdapter<number>("my-counter-key");
 
-// Load persisted state or use a default if nothing is stored
-const initialCounterState = getStoredCounter(0); // Default to 0 if null
-const persistentCounterStore = createStore(initialCounterState);
+// 2. Initialize store with saved data (or 0 if empty)
+const counterStore = createStore(get(0));
 
-// Subscribe to store changes to save them to Local Storage
-persistentCounterStore.$subscribe((newState) => {
-  setStoredCounter(newState);
-}, false); // `false` prevents saving immediately on setup
-
-// Example usage:
-persistentCounterStore.$set(10); // State is now 10 and saved to Local Storage
-persistentCounterStore.$set((prev) => prev + 5); // State is 15 and saved
+// 3. Save changes automatically
+counterStore.$subscribe(set, false); // 'false' skips initial save
 ```
 
-### createSessionStorageAdapter
+That's it! Your counter now survives reloads.
 
-Persists state in `sessionStorage`. Data remains for the duration of the page session.
+## Session Storage
+
+If you only want data to persist while the tab is open, use `createSessionStorageAdapter`.
 
 ```ts
 import { createStore, createSessionStorageAdapter } from "@ibnlanre/portal";
 
-const [getStoredSessionData, setStoredSessionData] =
-  createSessionStorageAdapter<{
-    guestId: string | null;
-    lastPage: string;
-  }>("userSessionData");
+const [get, set] = createSessionStorageAdapter("session-data");
 
-const initialSessionData = getStoredSessionData({
-  guestId: null,
-  lastPage: "/",
-});
-const sessionDataStore = createStore(initialSessionData);
+const store = createStore(get({ step: 1 }));
 
-sessionDataStore.$subscribe(setStoredSessionData, false);
-
-// Example:
-sessionDataStore.$set({ guestId: "guest-123", lastPage: "/products" });
-// This data will be cleared when the tab is closed.
+store.$subscribe(set, false);
 ```
 
-## Cookie Storage adapter
+## Cookie Storage
 
-Use `createCookieStorageAdapter` for persisting state in browser cookies.
+Need your state accessible by the server? Or specifically need cookies? We've got you covered.
 
-```ts
-createCookieStorageAdapter<State>(key: string, options?: CookieStorageAdapterOptions<State>)
-```
-
-**Parameters:**
-
-- `key: string`: The name of the cookie
-- `options?: CookieStorageAdapterOptions<State>`:
-  - `secret?: string`: Secret for signing and verifying cookies (tamper-proofing)
-  - `stringify?: (state: State) => string`: Serialize before saving
-  - `parse?: (storedString: string) => State`: Deserialize after loading
-  - Cookie attributes: `path`, `domain`, `secure`, `sameSite`, `maxAge`, `expires`
-
-**Example:**
+**Note:** You can optional sign your cookies with a secret to prevent tampering!
 
 ```ts
 import { createStore, createCookieStorageAdapter } from "@ibnlanre/portal";
 
-const [getCookiePreferences, setCookiePreferences] =
-  createCookieStorageAdapter<{
-    theme: "light" | "dark";
-    notifications: boolean;
-  }>("app-preferences", {
-    secret: "your-very-strong-secret-key-for-signing",
-    path: "/",
-    secure: true,
-    sameSite: "lax",
-    maxAge: 3600 * 24 * 30, // 30 days
-  });
-
-const initialPrefs = getCookiePreferences({
-  theme: "light",
-  notifications: true,
+const [get, set] = createCookieStorageAdapter("user-prefs", {
+  path: "/",
+  secure: true,
+  maxAge: 3600 * 24 * 365, // 1 year
+  secret: "my-secret-key", // Enables signing!
 });
-const prefsStore = createStore(initialPrefs);
 
-prefsStore.$subscribe((newPrefs) => {
-  setCookiePreferences(newPrefs);
-}, false);
+const prefsStore = createStore(get({ theme: "dark" }));
 
-prefsStore.$set({ theme: "dark" }); // State saved to a signed cookie
+prefsStore.$subscribe(set, false);
 ```
 
-If you provide a `secret`, cookies are automatically signed before being set and verified when retrieved.
+## Custom Storage
 
-## Browser Storage adapter
+Have a weird use case? Storing data in `AsyncStorage`, `IndexedDB`, or a remote API?
 
-For custom storage mechanisms (e.g., IndexedDB, a remote API, `chrome.storage`), use `createBrowserStorageAdapter`.
-
-```ts
-createBrowserStorageAdapter<State, StoredState>(
-  key: string,
-  options: BrowserStorageAdapterOptions<State, StoredState>
-)
-```
-
-**Parameters:**
-
-- `key: string`: A key for your custom storage
-- `options`:
-  - `getItem: (key: string) => string | null`: Retrieve an item
-  - `setItem: (key: string, value: string) => void`: Save an item
-  - `removeItem: (key: string) => void`: Remove an item
-  - `stringify?` / `parse?`: Custom serialization
-
-**Example with in-memory storage:**
-
-```ts
-import { createStore, createBrowserStorageAdapter } from "@ibnlanre/portal";
-
-const customStorage = {
-  data: {} as Record<string, string>,
-  getItem(key: string) {
-    return this.data[key];
-  },
-  removeItem(key: string) {
-    delete this.data[key];
-  },
-  setItem(key: string, value: string) {
-    this.data[key] = value;
-  },
-};
-
-const [getCustomState, setCustomState] = createBrowserStorageAdapter<{
-  lastSync: null | string;
-}>("custom-key", customStorage);
-
-const initialCustomData = getCustomState({ lastSync: null });
-const customDataStore = createStore(initialCustomData);
-
-customDataStore.$subscribe(setCustomState, false);
-customDataStore.$set({ lastSync: new Date().toISOString() });
-```
-
-## Async Browser Storage adapter
-
-For asynchronous storage (e.g., IndexedDB with encryption/compression), use `createAsyncBrowserStorageAdapter`.
-
-```ts
-createAsyncBrowserStorageAdapter<State, StoredState = State>(
-  key: string,
-  options: AsyncBrowserStorageAdapterOptions<State, StoredState>
-)
-```
-
-**Parameters:**
-
-- `key: string`: A key for your storage
-- `options`:
-  - `getItem: (key: string) => Promise<string | null> | string | null`
-  - `setItem: (key: string, value: string) => Promise<void> | void`
-  - `removeItem: (key: string) => Promise<void> | void`
-  - `beforeUsage?`: Transform data from storage before use
-  - `beforeStorage?`: Transform data before storing
-
-**Example with encryption:**
+`createBrowserStorageAdapter` (sync) and `createAsyncBrowserStorageAdapter` (async) let you plug in any storage engine.
 
 ```ts
 import {
-  createAsyncBrowserStorageAdapter,
   createStore,
+  createAsyncBrowserStorageAdapter,
 } from "@ibnlanre/portal";
 
-const [getEncryptedState, setEncryptedState] = createAsyncBrowserStorageAdapter<
-  { sensitive: string },
-  string
->("encrypted", {
-  getItem(key) {
-    return localStorage.getItem(key);
+const [get, set] = createAsyncBrowserStorageAdapter("secure-data", {
+  async getItem(key) {
+    // Your custom logic (e.g., IndexedDB)
+    return await myDB.get(key);
   },
-  removeItem(key) {
-    return localStorage.removeItem(key);
+  async setItem(key, value) {
+    await myDB.put(key, value);
   },
-  setItem(key, value) {
-    return localStorage.setItem(key, value);
-  },
+
+  // Optional: Encrypt before storing!
   beforeStorage(data) {
-    return btoa(JSON.stringify(data)); // Encrypt before storing
+    return encrypt(data);
   },
+  // Decrypt before using
   beforeUsage(data) {
-    return JSON.parse(atob(data)); // Decrypt when retrieving
+    return decrypt(data);
   },
 });
 
-// Initialize store with async data
-const result = await getEncryptedState({ sensitive: "data" });
-const store = createStore(result);
+// Use 'await' to get the initial state
+const initialState = await get({ sensitive: "default" });
+const store = createStore(initialState);
 
-// Subscribe to persist changes
-store.$subscribe(setEncryptedState, false);
+store.$subscribe(set, false);
 ```
-
-## Best practices
-
-- **Hydrate first**: Load persisted state before creating the store
-- **Subscribe with `immediate = false`**: Prevents overwriting hydrated state on initial subscription
-- **Handle serialization**: Dates, functions, and class instances need custom `stringify`/`parse`
-- **Clear persisted state**: Call `setState(undefined)` to remove from storage

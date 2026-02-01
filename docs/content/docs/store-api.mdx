@@ -1,0 +1,153 @@
+---
+title: Store API
+description: The methods you'll use to interact with your data.
+icon: Braces
+---
+
+Every store in Portal shares the same predictable API. Once you know how to use one store, you know how to use them all—whether it's a simple number or a deeply nested object tree.
+
+## Cheat Sheet
+
+| I want to...            | Method            | Return Value           |
+| :---------------------- | :---------------- | :--------------------- |
+| **Read** the value once | `$get()`          | The current value `S`  |
+| **Update** the value    | `$set(value)`     | `void`                 |
+| **Watch** for changes   | `$subscribe(fn)`  | `unsubscribe` function |
+| **Use** in React        | `$use(selector?)` | `[value, setValue]`    |
+| **Access** a deep path  | `$at(path)`       | `Store` instance       |
+
+---
+
+## Reading Data: `$get()`
+
+Use `$get()` when you need to read the state imperatively—like inside an event handler, a utility function, or an action.
+
+```ts
+const countStore = createStore(10);
+const currentCount = countStore.$get(); // 10
+```
+
+### Derived values
+
+You can pass a "selector" function to `$get()` to transform the data before returning it.
+
+```ts
+const userStore = createStore({ firstName: "Alex", lastName: "Johnson" });
+
+// Compute full name on the fly
+const fullName = userStore.$get((u) => `${u.firstName} ${u.lastName}`);
+// "Alex Johnson"
+```
+
+---
+
+## Writing Data: `$set()`
+
+Use `$set()` to update your state. You can pass a new value directly, or a function that receives the previous state.
+
+```ts
+const countStore = createStore(0);
+
+// Set directly
+countStore.$set(5);
+
+// Update based on previous value
+countStore.$set((prev) => prev + 1);
+```
+
+### Partial updates
+
+If your store holds an object, `$set()` automatically merges your changes. You don't need to spread the old state manually.
+
+```ts
+const settingsStore = createStore({
+  theme: "light",
+  fontSize: 12,
+  sidebar: { collapsed: false },
+});
+
+// Updates theme, keeps fontSize and sidebar intact
+settingsStore.$set({ theme: "dark" });
+```
+
+### Updating nested values
+
+Because Portal stores are recursive, you can update nested properties directly.
+
+```ts
+// Update deeply nested property
+settingsStore.sidebar.collapsed.$set(true);
+
+// Or update the parent object
+settingsStore.sidebar.$set({ collapsed: true });
+```
+
+---
+
+## Listening: `$subscribe()`
+
+Use `$subscribe()` to run a side effect whenever the state changes. This is great for logging, syncing to local storage, or triggering analytics.
+
+```ts
+const unsubscribe = settingsStore.$subscribe((newValue, oldValue) => {
+  console.log("Settings changed:", newValue);
+});
+
+// Later... stop listening
+unsubscribe();
+```
+
+> **Note:** By default, `$subscribe` runs immediately when you call it. Pass `false` as the second argument if you only want to react to _future_ changes.
+
+```ts
+// Only run on changes, not on initial subscribtion
+settingsStore.$subscribe(handler, false);
+```
+
+---
+
+## React Integration: `$use()`
+
+If you're using React, `$use()` is your best friend. It subscribes to the store and re-renders your component whenever the value changes.
+
+```tsx
+function ThemeToggler() {
+  const [theme, setTheme] = settingsStore.theme.$use();
+
+  return (
+    <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+      Current: {theme}
+    </button>
+  );
+}
+```
+
+### Selecting data
+
+Just like `$get()`, you can pass a selector to `$use()` to subscribe only to a derived value. Your component will **only re-render if the derived value changes**.
+
+```tsx
+function SidebarStatus() {
+  // Only re-renders if 'collapsed' changes
+  const [isCollapsed] = settingsStore.sidebar.$use((s) => s.collapsed);
+
+  return <div>{isCollapsed ? "Closed" : "Open"}</div>;
+}
+```
+
+---
+
+## Dynamic Access: `$at()`
+
+Sometimes you don't know the property name ahead of time. `$at()` lets you access nested stores using a string path.
+
+```ts
+const userStore = createStore({
+  preferences: { theme: "dark" },
+});
+
+const path = "preferences.theme";
+const themeStore = userStore.$at(path);
+
+console.log(themeStore.$get()); // "dark"
+```

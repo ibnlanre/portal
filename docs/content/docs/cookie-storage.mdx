@@ -1,237 +1,94 @@
 ---
-title: Cookie Storage
-description: Utility functions for direct cookie manipulation.
+title: Cookie Utilities
+description: Low-level tools for managing cookies directly.
 icon: Cookie
 ---
 
-Beyond the `createCookieStorageAdapter`, `@ibnlanre/portal` also exposes a `cookieStorage` module. This module provides a collection of utility functions for direct, granular manipulation of browser cookies. You might use these functions if you need to interact with cookies outside the context of a store or require more fine-grained control than the adapter offers.
+Sometimes you don't need a full Store adapter—you just want to read or write a cookie.
 
-These utilities are particularly helpful for tasks like signing/unsigning cookie values for security, directly reading or writing specific cookies, or managing cookie properties with precision.
-
-## Access the module
-
-To use these utilities, import `cookieStorage`:
+Portal exposes its internal cookie engine via `cookieStorage`. It handles the messy parts of `document.cookie` for you.
 
 ```ts
 import { cookieStorage } from "@ibnlanre/portal";
 ```
 
-## sign()
+## Basic Operations
 
-Signs a string value using a secret key. This is useful for creating tamper-proof cookie values.
-
-### Parameters
-
-- `value: string`: The string to sign.
-- `secret: string`: The secret key for signing.
-
-### Returns
-
-`string` - The signed string.
-
-### Example
+### Reading Cookies
 
 ```ts
-const originalValue = "user-session-data";
-const secretKey = "your-super-secret-key";
-
-const signedValue = cookieStorage.sign(originalValue, secretKey);
-// signedValue might look like "user-session-data.asdfjklsemf..."
+const token = cookieStorage.getItem("auth_token");
+// returns "xyz..." or null
 ```
 
-## unsign()
-
-Verifies and unsigns a previously signed string using the corresponding secret key.
-
-### Parameters
-
-- `signedValue: string`: The signed string to unsign.
-- `secret: string`: The secret key used for signing.
-
-### Returns
-
-`string | false` - The original string if the signature is valid, or `false` if tampering is detected or the secret is incorrect.
-
-### Example
+### Writing Cookies
 
 ```ts
-const potentiallyTamperedValue = "user-session-data.asdfjklsemf...";
-const secretKey = "your-super-secret-key";
-
-const originalValue = cookieStorage.unsign(potentiallyTamperedValue, secretKey);
-
-if (originalValue === false) {
-  console.error("Cookie signature is invalid!");
-} else {
-  console.log("Original value:", originalValue);
-}
-```
-
-## getItem()
-
-Retrieves the value of a cookie by its name (key).
-
-### Parameters
-
-- `key: string`: The name of the cookie.
-
-### Returns
-
-`string | null` - The cookie's value, or `null` if the cookie is not found.
-
-### Example
-
-```ts
-const themePreference = cookieStorage.getItem("userTheme");
-
-if (themePreference) {
-  console.log("User theme:", themePreference);
-}
-```
-
-## setItem()
-
-Sets or updates a cookie's value. You can also provide cookie options.
-
-### Parameters
-
-- `key: string`: The name of the cookie.
-- `value: string`: The value to store in the cookie.
-- `options?: CookieOptions`: Optional. An object specifying cookie attributes (e.g., `path`, `expires`, `secure`). Refer to the `CookieOptions` type definition for details.
-
-### Returns
-
-`void`
-
-### Example
-
-```ts
-cookieStorage.setItem("userToken", "abc123xyz789", {
-  secure: true,
+cookieStorage.setItem("theme", "dark", {
   path: "/",
-  maxAge: 3600 * 24, // 1 day in seconds
+  maxAge: 3600 * 24 * 7, // 7 days
+  secure: true,
+  sameSite: "strict",
 });
 ```
 
-## removeItem()
-
-Removes a cookie by its name.
-
-### Parameters
-
-- `key: string`: The name of the cookie to remove.
-- `options?: CookieOptions`: Optional. Cookie options (like `path` and `domain`) that must match the options used when the cookie was set for successful removal.
-
-### Returns
-
-`void`
-
-### Example
+### Deleting Cookies
 
 ```ts
-cookieStorage.removeItem("userToken", { path: "/" });
+// Note: You must match the path/domain used when creating the cookie!
+cookieStorage.removeItem("theme", { path: "/" });
 ```
 
-## clear()
+### Clearing All Cookies
 
-Attempts to clear all cookies accessible to the current document's path and domain by setting their expiration date to the past. Note that this might not remove cookies set with specific `path` or `domain` attributes unless those are also iterated and cleared individually.
-
-### Returns
-
-`void`
-
-### Example
+Wipes every cookie accessible to the current page.
 
 ```ts
-cookieStorage.clear(); // Clears cookies for the current path/domain
+cookieStorage.clear();
 ```
 
-## createKey()
+---
 
-Constructs a standardized cookie name string based on a set of provided options. This helps maintain consistent naming conventions for cookies across your application.
+## Security (Signing)
 
-### Parameters
+If you're storing sensitive data (like user roles or IDs) in a cookie, you don't want users tampering with it in the dev tools.
 
-An object with the following optional properties:
+Portal provides cryptographic signing to prevent this.
 
-| Property                       | Type                                                                                        | Default   | Description                                                            |
-| ------------------------------ | ------------------------------------------------------------------------------------------- | --------- | ---------------------------------------------------------------------- |
-| `cookieFragmentDescription`    | `string`                                                                                    | -         | A description for the cookie's purpose (e.g., "Authentication Token"). |
-| `cookiePrefix`                 | `string`                                                                                    | `""`      | A prefix for the cookie name (e.g., `"__Host-"`).                      |
-| `cookieFragmentSizes`          | `number[]`                                                                                  | `[]`      | Array defining sizes for fragments if the description is segmented.    |
-| `cookieScope`                  | `string`                                                                                    | `""`      | The scope of the cookie (e.g., "session", "user").                     |
-| `cookieScopeCase`              | `"title" \| "upper" \| "lower" \| "camel" \| "snake" \| "pascal" \| "header" \| "constant"` | `"title"` | The case formatting for the scope part.                                |
-| `cookieService`                | `string`                                                                                    | `""`      | The service associated with the cookie.                                |
-| `cookieScopeServiceConnector`  | `string`                                                                                    | `"-"`     | Connector between scope and service.                                   |
-| `cookieScopeFragmentConnector` | `string`                                                                                    | `"_"`     | Connector between scope and fragment description.                      |
-| `cookieFragmentsConnector`     | `string`                                                                                    | `""`      | Connector between multiple fragments of the description.               |
-| `cookieSuffix`                 | `string`                                                                                    | `""`      | A suffix for the cookie name.                                          |
+### `sign(value, secret)`
 
-### Returns
-
-`string` - The generated cookie name.
-
-### Example
+Creates a signed string that includes a hash of the value.
 
 ```ts
-const authTokenKey = cookieStorage.createKey({
-  cookieFragmentDescription: "Authentication Token",
-  cookiePrefix: "__Secure-",
-  cookieScope: "userSession",
-  cookieScopeCase: "camel",
-});
-
-// authTokenKey might be "__Secure-userSession_AuthenticationToken"
-console.log(authTokenKey);
+const safeValue = cookieStorage.sign("admin", "my-super-secret-key");
+// Returns something like "admin.8a7b3c..."
 ```
 
-## key()
+### `unsign(value, secret)`
 
-Retrieves the name (key) of a cookie at a specific index in the document's cookie string. The order of cookies can be browser-dependent.
-
-### Parameters
-
-- `index: number`: The zero-based index of the cookie.
-
-### Returns
-
-`string | null` - The cookie name at the specified index, or `null` if the index is out of bounds.
-
-### Example
+Verifies the signature. If the user tampered with the value (or the signature doesn't match), it returns `false`.
 
 ```ts
-const firstCookieName = cookieStorage.key(0);
+const value = cookieStorage.unsign(cookieValue, "my-super-secret-key");
 
-if (firstCookieName) {
-  console.log("Name of the first cookie:", firstCookieName);
+if (value === false) {
+  throw new Error("Tampered cookie detected!");
 }
+
+console.log("Verified value:", value); // "admin"
 ```
 
-## length
+---
 
-A property that retrieves the total number of cookies accessible to the current document.
+## Cookie Options
 
-### Type
+When setting cookies, you can use these options:
 
-`number`
-
-### Example
-
-```ts
-const numberOfCookies = cookieStorage.length;
-console.log(`There are ${numberOfCookies} cookies.`);
-```
-
-## Cookie options reference
-
-The `CookieOptions` type is used by `setItem()`, `removeItem()`, and `createCookieStorageAdapter()`:
-
-| Option     | Type                          | Description                                            |
-| ---------- | ----------------------------- | ------------------------------------------------------ |
-| `path`     | `string`                      | Cookie path (e.g., `/`).                               |
-| `domain`   | `string`                      | Cookie domain.                                         |
-| `maxAge`   | `number`                      | Max age in seconds (e.g., `3600 * 24 * 7` for 7 days). |
-| `expires`  | `Date`                        | Expiration date.                                       |
-| `secure`   | `boolean`                     | If `true`, cookie is only sent over HTTPS.             |
-| `sameSite` | `'strict' \| 'lax' \| 'none'` | SameSite attribute.                                    |
-| `httpOnly` | `boolean`                     | If `true`, cookie is not accessible via JavaScript.    |
+| Option     | Type                          | Description                    |
+| :--------- | :---------------------------- | :----------------------------- |
+| `path`     | `string`                      | URL path prefix (default: `/`) |
+| `maxAge`   | `number`                      | Lifetime in seconds            |
+| `expires`  | `Date`                        | Absolute expiration date       |
+| `secure`   | `boolean`                     | Only send over HTTPS           |
+| `sameSite` | `'lax' \| 'strict' \| 'none'` | CORS policy                    |
+| `domain`   | `string`                      | Domain scope                   |

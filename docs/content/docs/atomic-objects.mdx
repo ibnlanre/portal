@@ -1,216 +1,79 @@
 ---
-title: Atomic objects + fallback()
-description: Replace objects instead of merging, and restore full types.
+title: Atomic Objects
+description: How to replace objects completely instead of merging them.
 icon: Shield
 ---
 
-By default, when you update objects in `@ibnlanre/portal`, the library performs **partial updates** (merging). However, sometimes you want to treat an object as a **single value** that should be completely replaced when updated.
+By default, Portal tries to be helpful by **merging** objects when you update them. This is usually what you want for state management.
 
-The `createAtom()` function allows you to mark objects as **atomic**, which changes their update behavior from merging to complete replacement.
+But sometimes, you want an object to behave like a primitive value—when you set it, you want to **replace** it entirely.
 
-## When to use
+This is where `createAtom()` comes in.
 
-- **Configuration objects** that should be treated as complete units
-- **API response data** that represents a complete entity
-- **Form state** where you want to reset to a specific configuration
-- **Immutable data structures** where partial updates don't make conceptual sense
-- **Performance optimization** when you know you always want to replace the entire object
+## Merging vs Replacing
 
-## Understanding the difference
-
-**Regular objects (default behavior - merging):**
+Here's the default behavior (merging):
 
 ```ts
-import { createStore } from "@ibnlanre/portal";
-
-const settingsStore = createStore({
-  theme: "dark",
-  fontSize: 16,
-  notifications: true,
+const store = createStore({
+  settings: { theme: "dark", fontSize: 14 },
 });
 
-// Partial update - only changes the theme, keeps other properties
-settingsStore.$set({ theme: "light" });
-
-console.log(settingsStore.$get());
-// { theme: "light", fontSize: 16, notifications: true }
+// Merges: theme is updated, fontSize is kept
+store.settings.$set({ theme: "light" });
+// Result: { theme: "light", fontSize: 14 }
 ```
 
-**Atomic objects (complete replacement):**
+Sometimes you want the opposite. You want to wipe the slate clean.
 
 ```ts
 import { createStore, createAtom } from "@ibnlanre/portal";
 
-const preferencesStore = createStore({
-  userSettings: createAtom({
-    theme: "dark",
-    fontSize: 16,
-    notifications: true,
-  }),
+const store = createStore({
+  // Mark this object as "atomic"
+  settings: createAtom({ theme: "dark", fontSize: 14 }),
 });
 
-// Complete replacement - replaces the entire object
-preferencesStore.userSettings.$set({ theme: "light" });
-
-console.log(preferencesStore.userSettings.$get());
-// { theme: "light" }
-// Note: fontSize and notifications are gone
+// Replaces completely! fontSize is gone.
+store.settings.$set({ theme: "light" });
+// Result: { theme: "light" }
 ```
 
-## createAtom()
+## When to use this
 
-```ts
-createAtom<State extends object>(value: DeepPartial<State>): Atomic<State>
-```
+Atomic objects are perfect for:
 
-- `value`: The partial object to mark as atomic (can be incomplete)
-- Returns: The same object, but marked as atomic for complete replacement behavior
+- **API Responses**: When fetching new data, you usually want to replace the old data entirely, not merge it.
+- **Strict Types**: When an object must exactly match a shape and shouldn't inherit usually undefined properties from previous states.
+- **Resetting State**: When you want to clear specific sections of your store easily.
 
-**Basic example:**
+## Handling missing data with `fallback()`
 
-```ts
-import { createStore, createAtom } from "@ibnlanre/portal";
+If you're replacing objects, you might accidentally remove properties that your UI expects.
 
-const appStore = createStore({
-  // Regular object - supports partial updates
-  user: {
-    name: "Alice",
-    email: "alice@example.com",
-    age: 30,
-  },
-
-  // Atomic object - complete replacement only
-  apiConfig: createAtom({
-    baseUrl: "https://api.example.com",
-    timeout: 5000,
-    retries: 3,
-  }),
-});
-
-// Partial update on regular object
-appStore.user.$set({ name: "Bob" });
-console.log(appStore.user.$get());
-// { name: "Bob", email: "alice@example.com", age: 30 }
-
-// Complete replacement on atomic object
-appStore.apiConfig.$set({ baseUrl: "https://api.dev.com" });
-console.log(appStore.apiConfig.$get());
-// { baseUrl: "https://api.dev.com" }
-// Note: timeout and retries are removed
-
-// Atomic objects can be completely cleared
-appStore.apiConfig.$set({});
-console.log(appStore.apiConfig.$get());
-// {} - all properties are gone
-```
-
-## fallback()
-
-Since atomic objects can be cleared of their values, accessing them might return incomplete data. The `fallback()` function helps provide default values and restore complete types.
-
-```ts
-fallback<State extends object>(outerState: State): (innerState: object) => State
-```
-
-**Example:**
+`fallback()` lets you provide default values when reading an atomic object, so you always get a complete shape back.
 
 ```ts
 import { createStore, createAtom, fallback } from "@ibnlanre/portal";
 
-const configStore = createStore({
-  settings: createAtom({
-    theme: "light" as "light" | "dark",
-    fontSize: 16,
-    notifications: true,
-  }),
-});
-
-// Define default settings
-const defaultSettings = {
-  theme: "light" as "light" | "dark",
-  fontSize: 16,
-  notifications: true,
+// Define defaults once
+const defaults = {
+  theme: "light",
+  fontSize: 14,
 };
 
-// Settings might be partially cleared
-configStore.settings.$set({ theme: "dark" }); // Only theme is set
-
-// Use fallback to ensure we have complete settings
-const completeSettings = configStore.settings.$get(fallback(defaultSettings));
-console.log(completeSettings);
-// { theme: "dark", fontSize: 16, notifications: true }
-
-// Without fallback, we'd get incomplete data
-const incompleteSettings = configStore.settings.$get();
-console.log(incompleteSettings);
-// { theme: "dark" } - missing fontSize and notifications
-```
-
-## Advanced patterns
-
-**Mixed regular and atomic objects:**
-
-```ts
-import { createStore, createAtom } from "@ibnlanre/portal";
-
-const gameStore = createStore({
-  player: {
-    name: "Player1",
-    score: 100,
-    inventory: {
-      gold: 50,
-      items: ["sword", "potion"],
-    },
-  },
-  gameSettings: createAtom({
-    difficulty: "medium",
-    soundEnabled: true,
-    graphicsQuality: "high",
-  }),
+const store = createStore({
+  // Initialize with defaults (or empty object)
+  config: createAtom(defaults),
 });
 
-// Partial update on player (merges with existing data)
-gameStore.player.$set({ score: 150 });
-// player.name and player.inventory remain unchanged
+// Later, we accidentally set an incomplete config
+store.config.$set({ theme: "dark" });
+// store.config is now just { theme: "dark" }
 
-// Complete replacement of game settings
-gameStore.gameSettings.$set({ difficulty: "hard" });
-// soundEnabled and graphicsQuality are removed
+// BUT, when we read it with fallback...
+const safeConfig = store.config.$get(fallback(defaults));
+// Result: { theme: "dark", fontSize: 14 }
 ```
 
-**Atomic objects with functional updates:**
-
-```ts
-import { createStore, createAtom } from "@ibnlanre/portal";
-
-const themeStore = createStore({
-  currentTheme: createAtom({
-    primary: "#007bff",
-    secondary: "#6c757d",
-    background: "#ffffff",
-  }),
-});
-
-themeStore.currentTheme.$set((currentTheme) => {
-  if (currentTheme.background === "#ffffff") {
-    return {
-      primary: "#0d6efd",
-      secondary: "#495057",
-      background: "#212529",
-    };
-  } else {
-    return {
-      primary: "#007bff",
-      secondary: "#6c757d",
-      background: "#ffffff",
-    };
-  }
-});
-```
-
-## Important characteristics
-
-- `createAtom()` is idempotent (calling twice returns the same reference)
-- Works with partial objects (`createAtom({ theme: "dark" })` is allowed)
-- Replacements do not merge; nested values are dropped unless provided
-- Atomic objects preserve normal JavaScript behavior (`Object.keys`, `JSON.stringify`, etc.)
+The `fallback()` utility merges the current (potentially incomplete) state with your defaults, ensuring your selectors and components never crash due to missing keys.

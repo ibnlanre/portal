@@ -1,231 +1,98 @@
 ---
-title: Context stores
-description: Create React Context-based stores with dynamic initialization.
+title: Scoped Stores (Context)
+description: Create stores that live within the React component tree.
 icon: Layers
 ---
 
-The `createContextStore()` function creates React Context-based stores that solve a common problem: initializing stores with dynamic values that come from props or external sources.
+Global stores are great, but sometimes you need a store that:
 
-## The problem it solves
+1. Is initialized with data from `props`.
+2. Exists only for a specific part of your app (like a single tab in a dashboard).
+3. Has multiple instances active at once.
 
-Global stores are typically created outside of the React component lifecycle, so they can't be initialized with values from props or context. With a global store, you'd need to:
+`createContextStore()` gives you the best of both worlds: the power of Portal's API with the scoping of React Context.
 
-1. Create the store with a known default state
-2. Sync props to the store using `useEffect` in every component that needs it
+## The Problem
 
-`createContextStore` eliminates this boilerplate by allowing you to pass a function that receives the context data needed before the store is initialized.
+If you use a global `createStore()`, you can't easily initialize it with data from your component's props, because the store is created _before_ the component mounts.
 
-## Key benefits
-
-- **Dynamic Store Creation**: Initialize stores with runtime values from context, props, or API responses
-- **Type-Safe Integration**: Full TypeScript support with proper type inference
-- **Maximum Flexibility**: Full control over store initialization and memoization strategies
-- **Flexible Architecture**: Support for nested providers and multi-tenant applications
-- **Developer Experience**: Clear error messages and seamless React integration
-
-## Syntax
-
-```ts
-createContextStore<Context, ContextStore>(
-  initializer: (context: Context) => ContextStore
-): [StoreProvider, useStore]
+```tsx
+// ❌ Hard to pass 'initialCount' dynamically
+const globalStore = createStore(0);
 ```
 
-- `initializer`: A function that receives the context value and returns a store instance
-- Returns: An array containing `[StoreProvider, useStore]`
+## The Solution
 
-## Basic example
+`createContextStore` lets you define a "store creator" function. This function runs inside a Provider component, meaning it has access to props and hooks.
 
 ```tsx
 import { createContextStore, createStore } from "@ibnlanre/portal";
 
-interface UserProps {
-  userId: string;
-  theme: "light" | "dark";
-}
-
-// Create a context store for user settings
-const [UserProvider, useUserStore] = createContextStore(
-  (context: UserProps) => {
-    return createStore(context);
-  }
-);
-
-function UserProfile() {
-  const store = useUserStore();
-  const { userId, theme } = store.$get();
-
-  return (
-    <div style={{ background: theme === "dark" ? "#333" : "#fff" }}>
-      <p>User ID: {userId}</p>
-      <p>Theme: {theme}</p>
-    </div>
-  );
-}
-
-function App(props: UserProps) {
-  return (
-    <UserProvider value={props}>
-      <UserProfile />
-    </UserProvider>
-  );
-}
-
-<App userId="123" theme="dark" />;
-```
-
-## Advanced example with actions
-
-```tsx
-import {
-  createContextStore,
-  createStore,
-  combine,
-  useSync,
-} from "@ibnlanre/portal";
-
-type CounterContext = { initialCount: number };
-
+// 1. Create the Context Store factory
 const [CounterProvider, useCounterStore] = createContextStore(
-  (context: CounterContext) => {
-    const store = useSync(() => {
-      const initialState = { count: context.initialCount };
-
-      const actions = {
-        increment() {
-          counterStore.count.$set((prev: number) => prev + 1);
-        },
-        decrement() {
-          counterStore.count.$set((prev: number) => prev - 1);
-        },
-        reset() {
-          counterStore.count.$set(context.initialCount);
-        },
-      };
-
-      const counterStore = createStore(combine(initialState, actions));
-      return counterStore;
-    }, [context.initialCount]);
-
-    return store;
+  // This factory function receives the props passed to the Provider
+  (props: { start: number }) => {
+    return createStore(props.start);
   }
 );
-
-function Counter() {
-  const store = useCounterStore();
-  const [count] = store.count.$use();
-
-  return (
-    <div>
-      <span>Count: {count}</span>
-      <button onClick={store.increment}>+</button>
-      <button onClick={store.decrement}>-</button>
-      <button onClick={store.reset}>Reset</button>
-    </div>
-  );
-}
-
-function App() {
-  return (
-    <CounterProvider value={{ initialCount: 10 }}>
-      <Counter />
-    </CounterProvider>
-  );
-}
 ```
 
-## Full application example
+Now you can use it in your app:
 
 ```tsx
-import { combine, createStore, createContextStore } from "@ibnlanre/portal";
-
-// Define the context type
-type AppContext = {
-  userId: string;
-  theme: "light" | "dark";
-  locale: string;
-};
-
-// Create the context scope
-const [AppProvider, useAppStore] = createContextStore((context: AppContext) => {
-  const initialState = {
-    user: {
-      id: context.userId,
-      preferences: {
-        theme: context.theme,
-        locale: context.locale,
-      },
-    },
-  };
-
-  const actions = {
-    toggleTheme() {
-      store.user.preferences.theme.$set((previousTheme: "light" | "dark") => {
-        return previousTheme === "light" ? "dark" : "light";
-      });
-    },
-    updateTheme(newTheme: "light" | "dark") {
-      store.user.preferences.theme.$set(newTheme);
-    },
-    updateLocale(newLocale: string) {
-      store.user.preferences.locale.$set(newLocale);
-    },
-  };
-
-  const store = createStore(combine(initialState, actions));
-  return store;
-});
-
 function App() {
-  const appContext: AppContext = {
-    userId: "user-123",
-    theme: "light",
-    locale: "en",
-  };
-
   return (
-    <AppProvider value={appContext}>
-      <UserProfile />
-      <Settings />
-    </AppProvider>
-  );
-}
+    <>
+      {/* Two independent stores! */}
+      <CounterProvider value={{ start: 10 }}>
+        <CounterDisplay id="A" />
+      </CounterProvider>
 
-function UserProfile() {
-  const store = useAppStore();
-
-  const [userId] = store.user.id.$use();
-  const [theme] = store.user.preferences.theme.$use();
-
-  return (
-    <div className={`profile theme-${theme}`}>
-      <h1>User ID: {userId}</h1>
-    </div>
-  );
-}
-
-function Settings() {
-  const store = useAppStore();
-  const [theme] = store.user.preferences.theme.$use();
-
-  return (
-    <div>
-      <button onClick={store.toggleTheme}>
-        Toggle Theme (Current: {theme})
-      </button>
-    </div>
+      <CounterProvider value={{ start: 100 }}>
+        <CounterDisplay id="B" />
+      </CounterProvider>
+    </>
   );
 }
 ```
 
-## Use cases
+## Consuming the Store
 
-- **User-specific stores**: Initialize stores with user data from authentication context
-- **Feature flags**: Create stores based on feature flag configuration
-- **Multi-tenant applications**: Initialize stores with tenant-specific configuration
-- **Server-side rendering**: Initialize stores with server-rendered data
-- **Theme providers**: Create theme-aware stores with runtime theme configuration
+Inside your components, `useCounterStore()` returns the specific store instance for that tree. You can then use the standard `$use()`, `$get()`, and `$set()` methods.
 
-## Important notes
+```tsx
+function CounterDisplay({ id }: { id: string }) {
+  // Get the store instance for this context
+  const store = useCounterStore();
 
-The factory function passed to `createContextStore` runs on every render. You're responsible for memoizing values if needed. This design gives you complete freedom to use any hooks or memoization strategy within the factory function.
+  // Use it just like a global store
+  const [count, setCount] = store.$use();
+
+  return (
+    <button onClick={() => setCount(count + 1)}>
+      Counter {id}: {count}
+    </button>
+  );
+}
+```
+
+## Advanced: Memoization
+
+The factory function runs inside a React component, so you can use hooks like `useMemo` (or Portal's `useSync`) to prevent recreating the store on every render.
+
+```tsx
+import { createContextStore, createStore, useSync } from "@ibnlanre/portal";
+
+const [UserProvider, useUserStore] = createContextStore(
+  (props: { id: string; name: string }) => {
+    // Only recreate the store if props.id changes
+    return useSync(() => {
+      return createStore({
+        id: props.id,
+        name: props.name,
+        // ... complex logic
+      });
+    }, [props.id]);
+  }
+);
+```

@@ -1,148 +1,114 @@
 ---
-title: Actions
-description: Define functions in stores to co-locate state logic.
+title: Actions & Logic
+description: Encapsulate your business logic right where your data lives.
 icon: Zap
 ---
 
-You can include functions within the initial state object of a composite store. These functions become methods on the store, allowing you to co-locate state logic (actions) with the state itself.
+Data structure and business logic belong together. With Portal, you don't need separate "action files" or complex dispatchers. You just write functions.
 
-When defining actions, to update state, you must use the variable that holds the store instance. For example, if your store is `const store = createStore(...)`, you would use `store.property.$set(...)` inside an action.
+## Defining Actions
 
-## Counter with actions
+Any function you add to your store automatically becomes an action. To update the state, simply reference the store variable directly.
 
 ```ts
 import { createStore } from "@ibnlanre/portal";
 
 const counterStore = createStore({
-  value: 0,
-  increment(amount: number = 1) {
-    counterStore.value.$set((prev) => prev + amount);
+  count: 0,
+
+  // Simple action
+  increment() {
+    counterStore.count.$set((prev) => prev + 1);
   },
-  decrement(amount: number = 1) {
-    counterStore.value.$set((prev) => prev - amount);
+
+  // Action with arguments
+  add(amount: number) {
+    counterStore.count.$set((prev) => prev + amount);
   },
-  reset() {
-    counterStore.value.$set(0);
+
+  // Async action
+  async fetchCount() {
+    const response = await fetch("/api/count");
+    const data = await response.json();
+    counterStore.count.$set(data.value);
   },
 });
 
-counterStore.increment(5);
-console.log(counterStore.value.$get()); // 5
-
-counterStore.decrement();
-console.log(counterStore.value.$get()); // 4
-
-counterStore.reset();
-console.log(counterStore.value.$get()); // 0
+// Usage
+counterStore.increment();
+counterStore.add(5);
 ```
 
-## Reducer pattern
+## Why reference the variable?
 
-You can structure actions to follow a reducer pattern if that fits your application's architecture.
+You might wonder why we use `counterStore.count.$set` instead of `this.count.$set`.
+
+By referencing the variable explicitly, arrow functions work perfectly, you never have to worry about `this` contexts getting lost, and destructuring actions becomes safe and easy.
 
 ```ts
-import { createStore } from "@ibnlanre/portal";
+const { increment } = counterStore;
+increment(); // Works perfectly!
+```
 
-type CounterAction =
-  | { type: "INCREMENT"; payload: number }
-  | { type: "DECREMENT"; payload: number }
-  | { type: "RESET" };
+## The Reducer Pattern
 
-const counterStore = createStore({
+Do you prefer the predictability of reducers? Currently using Redux? You can easily implement a dispatch pattern if you like.
+
+```ts
+type Action = { type: "INC" } | { type: "DEC" };
+
+const store = createStore({
   value: 0,
-  dispatch(action: CounterAction) {
+
+  dispatch(action: Action) {
     switch (action.type) {
-      case "INCREMENT":
-        counterStore.value.$set((prev) => prev + action.payload);
-        break;
-      case "DECREMENT":
-        counterStore.value.$set((prev) => prev - action.payload);
-        break;
-      case "RESET":
-        counterStore.value.$set(0);
-        break;
+      case "INC":
+        return store.value.$set((prev) => prev + 1);
+      case "DEC":
+        return store.value.$set((prev) => prev - 1);
     }
   },
 });
 
-counterStore.dispatch({ type: "INCREMENT", payload: 5 });
-console.log(counterStore.value.$get()); // 5
-
-counterStore.dispatch({ type: "RESET" });
-console.log(counterStore.value.$get()); // 0
+store.dispatch({ type: "INC" });
 ```
 
-## Actions as hooks
+## Actions as Hooks
 
-`@ibnlanre/portal` allows you to define functions within your store that can be used as React custom hooks. This enables you to co-locate complex, stateful logic—including side effects managed by `useEffect` or component-level state from `useState`—directly with the store it relates to.
+Here's where things get powerful. If you prefix an action with `use`, Portal treats it as a **custom hook**.
 
-To create an action that functions as a hook:
-
-- Prefix the function name with `use`
-- Place it directly within the object you pass to `createStore`
-- Use it like any regular custom hook in your React components
-
-```ts
-import { createStore } from "@ibnlanre/portal";
-import { useState, useEffect } from "react";
-
-export const notificationStore = createStore({
-  message: "",
-  setMessage(newMessage: string) {
-    notificationStore.message.$set(newMessage);
-  },
-  useAutoResetMessage(initialMessage: string, delay: number) {
-    const [internalMessage, setInternalMessage] = useState(initialMessage);
-
-    useEffect(() => {
-      if (internalMessage) {
-        const timer = setTimeout(() => {
-          setInternalMessage("");
-        }, delay);
-        return () => clearTimeout(timer);
-      }
-    }, [internalMessage, delay]);
-
-    useEffect(() => {
-      notificationStore.message.$set(internalMessage);
-    }, [internalMessage]);
-
-    return [internalMessage, setInternalMessage] as const;
-  },
-});
-```
-
-**Using the hook action in a component:**
+This allows you to bundle React logic (like `useEffect`, `useState`, or other hooks) directly with the store that controls it.
 
 ```tsx
-import { notificationStore } from "../stores/notification-store";
+import { createStore } from "@ibnlanre/portal";
+import { useEffect } from "react";
 
-export function NotificationManager() {
-  const [message, setMessage] = notificationStore.useAutoResetMessage(
-    "Welcome!",
-    3000
-  );
+const notificationStore = createStore({
+  message: null as string | null,
 
-  const [globalMessage] = notificationStore.message.$use();
+  // This is a custom hook living inside your store!
+  useAutoClear(timeout = 3000) {
+    // It can subscribe to the store itself
+    const [msg] = notificationStore.message.$use();
 
-  return (
-    <div>
-      <p>Current message (from hook state): {message}</p>
-      <p>Global message (from store): {globalMessage}</p>
-      <button onClick={() => setMessage("Resetting in 3 seconds")}>
-        Set Temporary Message
-      </button>
-    </div>
-  );
+    useEffect(() => {
+      if (msg) {
+        const timer = setTimeout(() => {
+          notificationStore.message.$set(null);
+        }, timeout);
+        return () => clearTimeout(timer);
+      }
+    }, [msg, timeout]);
+  },
+});
+
+// Use it in your component
+function NotificationBanner() {
+  notificationStore.useAutoClear();
+
+  const [msg] = notificationStore.message.$use();
+  if (!msg) return null;
+
+  return <div className="alert">{msg}</div>;
 }
 ```
-
-This pattern allows you to:
-
-- Reuse complex hook logic across components
-- Co-locate logic with the state it touches
-- Maintain a clean separation of concern between logic and UI
-
-## Important notes
-
-These functions are not automatically memoized. To prevent recreating hook logic on every render, define your store at the module level whenever possible. If you need to create a store inside a React component, use the `useMemo` hook to ensure the store is created based on stable dependencies.

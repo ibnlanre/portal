@@ -24,6 +24,7 @@ yarn add @ibnlanre/portal
 Using TypeScript? Good news—we include type definitions automatically, so you don't need to install any extra `@types` packages.
 
 ### Using a CDN
+
 If you're not using a bundler, you can grab Portal directly from a CDN:
 
 ```html
@@ -72,8 +73,8 @@ const userStore = createStore({
     theme: "dark",
     notifications: {
       email: true,
-      push: false
-    }
+      push: false,
+    },
   },
 });
 
@@ -119,11 +120,7 @@ function Counter() {
   // Automatically re-renders when countStore changes
   const [count, setCount] = countStore.$use();
 
-  return (
-    <button onClick={() => setCount(count + 1)}>
-      Count is {count}
-    </button>
-  );
+  return <button onClick={() => setCount(count + 1)}>Count is {count}</button>;
 }
 ```
 
@@ -131,10 +128,10 @@ function Counter() {
 
 Here's a quick map of the concepts you'll use most often:
 
-| Method | Description |
-| :--- | :--- |
-| **`createStore`** | Creates a new observable store from any value. |
-| **`$get`** | reads the current value (without subscribing). |
-| **`$set`** | Updates the value (merges objects, replaces primitives). |
-| **`$use`** | React hook to read values and re-render on changes. |
-| **`$subscribe`** | Native subscription for non-React code (logs, analytics, etc). |
+| Method            | Description                                                    |
+| :---------------- | :------------------------------------------------------------- |
+| **`createStore`** | Creates a new observable store from any value.                 |
+| **`$get`**        | reads the current value (without subscribing).                 |
+| **`$set`**        | Updates the value (merges objects, replaces primitives).       |
+| **`$use`**        | React hook to read values and re-render on changes.            |
+| **`$subscribe`**  | Native subscription for non-React code (logs, analytics, etc). |

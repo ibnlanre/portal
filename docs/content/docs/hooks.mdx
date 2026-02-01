@@ -1,191 +1,96 @@
 ---
-title: Hooks
-description: useAsync, useSync, and useVersion for advanced patterns.
+title: Helpful Hooks
+description: Built-in utilities for async data, memoization, and deep comparisons.
 icon: RefreshCw
 ---
 
-`@ibnlanre/portal` provides specialized hooks for async operations, memoized computations, and deep dependency tracking.
+Portal comes with a few extra hooks to make your life easier when dealing with complex state or side effects.
 
-## useAsync
+## `useAsync`: Data Fetching Made Easy
 
-The `useAsync` hook provides a robust solution for handling asynchronous operations within your store actions. It automatically manages loading states, error handling, and data states.
+Handling loading states and errors for async operations is repetitive. `useAsync` handles it for you.
 
-### Key features
+It's perfect for fetching data inside your store actions.
 
-- **Automatic state management**: Tracks `loading`, `error`, and `data` states
-- **Error handling**: Catches and manages errors automatically
-- **Dependency tracking**: Re-runs when dependencies change
-- **Promise support**: Works with any promise-returning function
-
-### Basic usage
-
-```ts
+```tsx
 import { createStore, useAsync } from "@ibnlanre/portal";
 
-type UserProfile = {
-  id: string;
-  name: string;
-  email: string;
-};
-
 const userStore = createStore({
-  users: [] as UserProfile[],
-  profile: null as UserProfile | null,
-  useUsers: async () => {
+  data: null,
+
+  // A "hook action" that fetches data
+  useFetchUser(id: string) {
     const { data, loading, error } = useAsync(
       async ({ signal }) => {
-        const response = await fetch("/api/users", { signal });
-
-        if (!response.ok) throw new Error("Failed to fetch users");
-        return response.json() as UserProfile[];
-      } // No dependencies, runs once on mount
-    );
-
-    if (data) userStore.users.$set(data);
-    return { userLoading: loading, userError: error };
-  },
-  useProfile: (userId: string) => {
-    const { data, loading, error } = useAsync(
-      async ({ signal }) => {
-        if (!userId) throw new Error("User ID is required");
-
-        const response = await fetch(`/api/users/${userId}`, { signal });
-
-        if (!response.ok) throw new Error("Failed to fetch user");
-        return response.json() as UserProfile;
+        const res = await fetch(`/api/users/${id}`, { signal });
+        return res.json();
       },
-      [userId] // Dependency included in a list
+      [id]
     );
 
-    if (data) userStore.profile.$set(data);
-    return { profileLoading: loading, profileError: error };
+    // Automatically sync successful data to the store
+    if (data) {
+      userStore.data.$set(data);
+    }
+
+    return { loading, error };
   },
 });
 ```
 
-### Usage in React component
+Now your component is clean:
 
 ```tsx
-interface UserProfileComponentProps {
-  userId: string;
-}
+function UserProfile({ id }) {
+  const { loading, error } = userStore.useFetchUser(id);
+  const [user] = userStore.data.$use();
 
-function UserProfileComponent({ userId }: UserProfileComponentProps) {
-  const { profileLoading: loading, profileError: error } =
-    userStore.useProfile(userId);
-  const [profile] = userStore.profile.$use();
+  if (loading) return <Spinner />;
+  if (error) return <Error msg={error.message} />;
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-  if (!profile) return <div>No profile found</div>;
-
-  return (
-    <div>
-      <h1>{profile.name}</h1>
-      <p>{profile.email}</p>
-    </div>
-  );
+  return <div>{user.name}</div>;
 }
 ```
 
-## useSync
+## `useSync`: Deep Memoization
 
-The `useSync` hook provides a `useMemo` implementation with deep dependency verification. It's designed to compute and memoize values based on complex dependencies, with automatic re-computation when any part of the dependency tree changes.
+React's `useMemo` is great, but it relies on referential equality. If you pass a new object `{ x: 1 }` every time, `useMemo` will re-run every time.
 
-### Key features
-
-- **Deep dependency tracking**: Performs deep equality checks on complex objects and arrays
-- **Automatic memoization**: Only re-computes when dependencies actually change
-- **Complex object support**: Handles nested objects, arrays, and circular references
-- **Type safety**: Full TypeScript support with proper type inference
-
-### Basic usage
+`useSync` is like `useMemo`, but it performs a **deep comparison** on dependencies. It only re-runs if the _values_ actually change.
 
 ```tsx
-import { createStore, useSync } from "@ibnlanre/portal";
+import { useSync } from "@ibnlanre/portal";
 
-const settingsStore = createStore({
-  fontSize: 16,
-  theme: "light" as "light" | "dark",
-  language: "en",
-  useDisplaySettings: () => {
-    const [theme] = settingsStore.theme.$use();
-    const [fontSize] = settingsStore.fontSize.$use();
-    const [language] = settingsStore.language.$use();
+function Chart({ config }) {
+  // config is an object like { color: 'red', points: [...] }
+  // Even if the parent passes a new object reference,
+  // useSync won't update unless the content changes.
 
-    // This will only re-compute when theme, fontSize, or language change
-    return useSync(() => {
-      return {
-        cssVariables: {
-          "--theme": theme,
-          "--font-size": `${fontSize}px`,
-          "--language": language,
-        },
-        className: `theme-${theme} lang-${language}`,
-        styleObject: {
-          fontSize: fontSize,
-          colorScheme: theme,
-        },
-      };
-    }, [theme, fontSize, language]);
-  },
-});
+  const processedData = useSync(() => {
+    return expensiveCalculation(config);
+  }, [config]);
 
-function ThemedComponent() {
-  const { className, styleObject, cssVariables } =
-    settingsStore.useDisplaySettings();
-
-  return (
-    <div className={className} style={styleObject}>
-      <p>Theme: {cssVariables["--theme"]}</p>
-    </div>
-  );
+  return <Graph data={processedData} />;
 }
 ```
 
-## useVersion
+## `useVersion`: Deep Dependency Tracking
 
-The `useVersion` hook provides deep dependency comparison through deep equality checking, making it ideal for complex state management scenarios. It's the foundational hook used internally by `useAsync` and `useSync`, but can also be used directly when you want to build custom hooks with deep dependency checking.
+If you're building your own hooks and need to trigger an effect only when an object deeply changes, `useVersion` is your friend.
 
-### Key features
-
-- **Deep equality checking**: Performs deep comparison of complex objects, arrays, and nested structures
-- **Version tracking**: Returns an incrementing version number that changes only when dependencies actually change
-- **Performance optimized**: Avoids unnecessary re-computations by detecting true changes
-- **Circular reference support**: Safely handles objects with circular references
-
-### Basic usage
+It returns a version number that increments only when the provided value changes deeply.
 
 ```tsx
-import { createStore, useVersion } from "@ibnlanre/portal";
+import { useVersion } from "@ibnlanre/portal";
 import { useEffect } from "react";
 
-const settingsStore = createStore({
-  theme: "light",
-  preferences: {
-    language: "en",
-    notifications: { email: true, push: false },
-  },
-  useWatchPreferences() {
-    const preferences = settingsStore.preferences.$get();
-    const version = useVersion(preferences);
+function AutoSave({ formState }) {
+  // 'version' only bumps when formState deeply changes
+  const version = useVersion(formState);
 
-    useEffect(() => {
-      console.log("Preferences changed:", preferences);
-      // Sync preferences to external service
-      syncPreferencesToServer(preferences);
-    }, [version]);
-
-    return preferences;
-  },
-});
+  useEffect(() => {
+    console.log("Form changed! Saving...");
+    saveToApi(formState);
+  }, [version]); // Dependency is a simple number
+}
 ```
-
-The `useVersion` hook is particularly useful when you want deep dependency tracking for custom hooks, or when native React hooks (`useMemo`, `useEffect`, `useCallback`) need to respond to changes in complex objects or arrays.
-
-## Best practices
-
-- Rather than using `useEffect` to sync the store state to an external service, consider using `$subscribe` for more efficient updates
-- Use `useSync` when you need memoized derived values from store state
-- Use `useAsync` for data fetching operations that should manage their own loading/error states
-- Use `useVersion` when building custom hooks that need to detect deep changes in dependencies

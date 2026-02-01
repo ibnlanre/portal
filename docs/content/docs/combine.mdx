@@ -1,144 +1,87 @@
 ---
-title: combine()
-description: Deep merge multiple objects (variadic).
+title: Organizing with combine()
+description: Split your state and logic into manageable pieces.
 icon: Merge
 ---
 
-The `combine()` utility performs a deep merge of multiple objects using a simple spread syntax. It's useful for unifying your initial state and actions into one cohesive structure before passing it into `createStore`.
+As your application grows, defining a massive store object in one file can get messy.
 
-Unlike shallow merging (such as `Object.assign` or object spread), `combine()`:
+`combine()` lets you write your state and actions in separate variables (or even separate files) and merge them together into a single, type-safe store.
 
-- Recursively merges nested objects
-- Preserves store instances within deeply nested structures
-- Handles circular references safely
-- Supports any number of arguments with later objects taking precedence
-- Full type safety with proper TypeScript inference
+## Why use it?
 
-## Syntax
+- **Organization**: Keep your initial state separate from your business logic.
+- **Modularity**: Split a large store into smaller domain-specific chunks.
+- **Deep Merging**: Unlike `...spread`, `combine` merges deeply nested objects intelligently.
 
-```ts
-combine<Objects extends GenericObject[]>(...objects: Objects): Combine<Objects>
-```
+## Splitting State and Actions
 
-- `...objects`: Any number of objects to merge, from left to right
-- Returns: A new, deeply merged object with all properties combined
-
-## Basic example
+A common pattern is to define state and actions separately, then bind them together.
 
 ```ts
 import { createStore, combine } from "@ibnlanre/portal";
 
-// Define the initial state
-const initialState = {
-  isLoggedIn: false,
-  profile: {
-    email: "alex@example.com",
-    name: "Alex",
-  },
+// 1. Define your data
+const state = {
+  count: 0,
+  settings: { theme: "dark" },
 };
 
-// Define actions separately
+// 2. Define your logic
+// Note: We reference 'mainStore' which is defined below.
+// This works perfectly fine at runtime!
 const actions = {
-  login(email: string) {
-    userStore.$set({
-      profile: { email },
-      isLoggedIn: true,
-    });
+  increment() {
+    mainStore.count.$set((prev) => prev + 1);
   },
-  logout() {
-    userStore.$set({
-      isLoggedIn: false,
-      profile: { email: "", name: "" },
-    });
-  },
-  updateName(newName: string) {
-    userStore.profile.name.$set(newName);
+  toggleTheme() {
+    const current = mainStore.settings.theme.$get();
+    mainStore.settings.theme.$set(current === "dark" ? "light" : "dark");
   },
 };
 
-// Combine initial state and actions into a single object
-export const userStore = createStore(combine(initialState, actions));
+// 3. Combine them
+export const mainStore = createStore(combine(state, actions));
 ```
 
-## Multiple objects example
+## Merging Configuration
+
+You can also use `combine()` to layer multiple configuration objects. Later arguments override earlier ones, deeply.
 
 ```ts
-import { createStore, combine } from "@ibnlanre/portal";
-
-// Base configuration
-const baseConfig = {
-  api: {
-    baseUrl: "https://api.example.com",
-    timeout: 5000,
-  },
-  ui: {
-    theme: "light",
-    language: "en",
-  },
+const defaultConfig = {
+  api: { endpoint: "https://api.com", timeout: 3000 },
+  logger: { level: "info" },
 };
 
-// Environment-specific overrides
-const developmentConfig = {
-  api: {
-    baseUrl: "https://dev-api.example.com",
-    debug: true,
-  },
-  ui: {
-    showDebugInfo: true,
-  },
+const devConfig = {
+  api: { endpoint: "localhost:3000" }, // Overrides endpoint, keeps timeout
+  logger: { level: "debug" },
 };
 
-// User preferences
-const userPreferences = {
-  ui: {
-    theme: "dark",
-    fontSize: 16,
-  },
-  notifications: {
-    email: true,
-    push: false,
-  },
-};
-
-// Combine all sources - later objects override earlier ones
-const appConfig = combine(baseConfig, developmentConfig, userPreferences);
-
-// Result will be:
+const finalConfig = combine(defaultConfig, devConfig);
+// Result:
 // {
-//   api: {
-//     baseUrl: "https://dev-api.example.com", // from developmentConfig
-//     timeout: 5000,                          // from baseConfig
-//     debug: true                             // from developmentConfig
-//   },
-//   ui: {
-//     theme: "dark",                          // from userPreferences
-//     language: "en",                         // from baseConfig
-//     showDebugInfo: true,                    // from developmentConfig
-//     fontSize: 16                            // from userPreferences
-//   },
-//   notifications: {                          // from userPreferences
-//     email: true,
-//     push: false
-//   }
+//   api: { endpoint: "localhost:3000", timeout: 3000 },
+//   logger: { level: "debug" }
 // }
-
-const configStore = createStore(appConfig);
 ```
 
-## Edge cases
+## How is this different from `Object.assign` or `{...spread}`?
+
+Standard JavaScript spreading (`{ ...a, ...b }`) is **shallow**. If you spread two objects with nested properties, the second one will completely overwrite the nested object of the first.
+
+`combine()` is **deep**. It recursively merges nested objects, preserving properties that aren't explicitly overridden.
 
 ```ts
-// Empty call returns empty object
-const empty = combine(); // {}
+const a = { user: { name: "Alex" } };
+const b = { user: { age: 30 } };
 
-// Single object returns as-is (no cloning)
-const single = combine(baseConfig); // baseConfig
+// JavaScript Spread (BAD): 'name' is lost!
+const spread = { ...a, ...b };
+// Result: { user: { age: 30 } }
 
-// Nested objects are deep merged
-const merged = combine({ a: { b: 1 } }, { a: { c: 2 } });
-// { a: { b: 1, c: 2 } }
-
-// Works with spread arrays (types inferred as union of array elements)
-const configs = [config1, config2, config3];
-const mergedFromArray = combine(...configs);
+// Portal Combine (GOOD): 'name' is preserved!
+const combined = combine(a, b);
+// Result: { user: { name: "Alex", age: 30 } }
 ```
