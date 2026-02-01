@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { defineConfig } from "vite";
 
@@ -10,9 +12,7 @@ export default defineConfig({
   plugins: [
     mdx(await import("./source.config")),
     tailwindcss(),
-    tsConfigPaths({
-      projects: ["./tsconfig.json"],
-    }),
+    tsConfigPaths(),
     tanstackStart({
       prerender: {
         enabled: true,
@@ -20,7 +20,14 @@ export default defineConfig({
     }),
     react(),
   ],
+  resolve: {
+    conditions: ["node", "default"],
+  },
   server: {
     port: 3000,
+  },
+  ssr: {
+    external: ["react", "react-dom"],
+    noExternal: ["fumadocs-mdx", "fumadocs-core", "fumadocs-ui"],
   },
 });

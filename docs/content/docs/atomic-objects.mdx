@@ -1,0 +1,43 @@
+---
+title: Atomic objects + fallback()
+description: Replace objects instead of merging, and restore full types.
+icon: Shield
+---
+
+By default, object updates are merged. Sometimes you want an object to behave like a single value (replace, not merge).
+
+## atom()
+
+```ts
+import { atom, createStore } from "@ibnlanre/portal";
+
+type Settings = {
+  theme: "light" | "dark";
+  fontSize: number;
+};
+
+const store = createStore({
+  settings: atom<Settings>({}),
+});
+
+// Atomic objects are replaced, not merged
+store.settings.$set({ theme: "dark" });
+store.settings.$get(); // { theme: "dark" }
+```
+
+## fallback()
+
+Since atomic objects can be partial, use `fallback()` when you need complete objects + complete types.
+
+```ts
+import { fallback } from "@ibnlanre/portal";
+
+const defaults: Settings = {
+  theme: "light",
+  fontSize: 16,
+};
+
+const settings = store.settings.$get(fallback(defaults));
+// typed as Settings
+settings.fontSize;
+```

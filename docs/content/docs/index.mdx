@@ -1,34 +1,60 @@
 ---
-title: Hello World
-description: Your favourite docs framework.
-icon: Rocket
+title: Introduction
+description: Type-safe state management for React apps.
+icon: Boxes
 ---
 
-Hey there! Fumadocs is the docs framework that also works on Tanstack Start!
+`@ibnlanre/portal` is a state management library that bridges the gap between simple state hooks and complex state machines.
 
-## Heading
+It gives you:
 
-Hello World!
+- A small, consistent store API (`$get`, `$set`, `$subscribe`, `$use`)
+- Nested state via composite stores
+- Great TypeScript inference
 
-<Cards>
-  <Card
-    title="Learn more about Tanstack Start"
-    href="https://tanstack.com/start"
-  />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.dev" />
-</Cards>
+## Install
 
-### CodeBlock
-
-```ts
-console.log('Hello World');
+```bash
+pnpm add @ibnlanre/portal
 ```
 
-#### Table
+## Quick start
 
-| Head                            | Description                         |
-| ------------------------------- | ----------------------------------- |
-| `hello`                         | Hello World                         |
-| very **important**              | Hey                                 |
-| _Surprisingly_                  | Fumadocs                            |
-| very long text that looks weird | hello world hello world hello world |
+```ts
+import { createStore } from "@ibnlanre/portal";
+
+const count = createStore(0);
+
+count.$subscribe((value) => {
+  console.log("count:", value);
+});
+
+count.$set(1);
+count.$set((prev) => prev + 1);
+
+console.log(count.$get());
+```
+
+## Nested state
+
+```ts
+import { createStore } from "@ibnlanre/portal";
+
+const user = createStore({
+  profile: {
+    name: "Alex",
+    preferences: { theme: "light" as const },
+  },
+});
+
+user.profile.name.$set("Taylor");
+user.$at("profile.preferences.theme").$set("dark");
+```
+
+## Where to next
+
+- [Get started](/docs/get-started)
+- [Store API](/docs/store-api)
+- [combine()](/docs/combine)
+- [Atomic objects + fallback()](/docs/atomic-objects)
+- [Persistence](/docs/persistence)

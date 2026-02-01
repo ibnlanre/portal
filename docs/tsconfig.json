@@ -11,7 +11,8 @@
     "noEmit": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@/.source": ["./.source"]
+      "@/.source": ["./.source"],
+      "@/.source/*": ["./.source/*"]
     },
     "resolveJsonModule": true,
     "skipLibCheck": true,

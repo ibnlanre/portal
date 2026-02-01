@@ -904,14 +904,14 @@ const [CounterProvider, useCounterStore] = createContextStore(
       const initialState = { count: context.initialCount };
 
       const actions = {
-        increment: () => {
-          counterStore.count.$set((prev) => prev + 1);
+        increment(this: any) {
+          this.count.$set((prev: number) => prev + 1);
         },
-        decrement: () => {
-          counterStore.count.$set((prev) => prev - 1);
+        decrement(this: any) {
+          this.count.$set((prev: number) => prev - 1);
         },
-        reset: () => {
-          counterStore.count.$set(context.initialCount);
+        reset(this: any) {
+          this.count.$set(context.initialCount);
         },
       };
 
@@ -1733,16 +1733,16 @@ const [AppProvider, useAppStore] = createContextStore((context: AppContext) => {
   };
 
   const actions = {
-    toggleTheme: () => {
-      store.user.preferences.theme.$set((previousTheme) => {
+    toggleTheme(this: any) {
+      this.user.preferences.theme.$set((previousTheme: "light" | "dark") => {
         return previousTheme === "light" ? "dark" : "light";
       });
     },
-    updateTheme: (newTheme: "light" | "dark") => {
-      store.user.preferences.theme.$set(newTheme);
+    updateTheme(this: any, newTheme: "light" | "dark") {
+      this.user.preferences.theme.$set(newTheme);
     },
-    updateLocale: (newLocale: string) => {
-      store.user.preferences.locale.$set(newLocale);
+    updateLocale(this: any, newLocale: string) {
+      this.user.preferences.locale.$set(newLocale);
     },
   };
 
@@ -1833,20 +1833,20 @@ const initialState = {
 
 // Define actions separately
 const actions = {
-  login(email: string) {
-    userStore.$set({
+  login(this: any, email: string) {
+    this.$set({
       profile: { email },
       isLoggedIn: true,
     });
   },
-  logout() {
-    userStore.$set({
+  logout(this: any) {
+    this.$set({
       isLoggedIn: false,
       profile: { email: "", name: "" },
     });
   },
-  updateName(newName: string) {
-    userStore.profile.name.$set(newName);
+  updateName(this: any, newName: string) {
+    this.profile.name.$set(newName);
   },
 };
 
@@ -2652,7 +2652,7 @@ import { combine, createStore } from "@ibnlanre/portal";
 const state = { count: 0, message: "Hello" };
 const actions = {
   increment() {
-    store.count.$set((v) => v + 1);
+    this.count.$set((v: number) => v + 1);
   },
 };
 

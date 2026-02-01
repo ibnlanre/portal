@@ -1,0 +1,63 @@
+---
+title: combine()
+description: Deep merge multiple objects (variadic).
+icon: Merge
+---
+
+`combine()` deeply merges any number of objects from left to right. Later objects take precedence.
+
+## Syntax
+
+```ts
+combine<Objects extends object[]>(...objects: Objects): Combine<Objects>
+```
+
+## Common usage: initial state + actions
+
+Actions can reference the store after it's created.
+
+```ts
+import { combine, createStore } from "@ibnlanre/portal";
+
+const initialState = {
+  count: 0,
+};
+
+export const counter = createStore(
+  combine(initialState, {
+    increment() {
+      counter.count.$set((prev) => prev + 1);
+    },
+    reset() {
+      counter.count.$set(0);
+    },
+  })
+);
+
+counter.increment();
+```
+
+## Edge cases
+
+```ts
+const empty = combine();
+
+const base = { a: { b: 1 } };
+const single = combine(base); // returns base as-is
+
+const merged = combine(base, { a: { c: 2 } });
+// { a: { b: 1, c: 2 } }
+```
+
+## Spread arrays
+
+Type inference is best with tuples. If you spread a plain array, TypeScript may infer a union of element types.
+
+```ts
+const configs = [
+  { api: { baseUrl: "https://api.example.com" } },
+  { api: { timeout: 5000 } },
+] as const;
+
+const config = combine(...configs);
+```

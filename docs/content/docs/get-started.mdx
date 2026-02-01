@@ -1,0 +1,59 @@
+---
+title: Get started
+description: Install Portal and create your first store.
+icon: Play
+---
+
+## Install
+
+```bash
+pnpm add @ibnlanre/portal
+```
+
+## Create your first store
+
+```ts
+import { createStore } from "@ibnlanre/portal";
+
+const store = createStore(0);
+
+console.log(store.$get()); // 0
+
+store.$set(5);
+store.$set((prev) => prev + 1);
+```
+
+## Subscribe to updates
+
+`$subscribe` calls your subscriber immediately by default.
+
+```ts
+const unsubscribe = store.$subscribe((value) => {
+  console.log("value:", value);
+});
+
+store.$set(10);
+unsubscribe();
+```
+
+To subscribe without an immediate call:
+
+```ts
+store.$subscribe((value) => {
+  console.log("value:", value);
+}, false);
+```
+
+## Use in React
+
+```tsx
+import { createStore } from "@ibnlanre/portal";
+
+const counter = createStore({ count: 0 });
+
+export function Counter() {
+  const [count, setCount] = counter.count.$use();
+
+  return <button onClick={() => setCount((c) => c + 1)}>Count: {count}</button>;
+}
+```

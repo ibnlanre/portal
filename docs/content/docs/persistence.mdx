@@ -1,0 +1,48 @@
+---
+title: Persistence
+description: Persist store state with storage adapters.
+icon: Database
+---
+
+Portal ships small adapters for common persistence targets.
+
+## Web Storage adapters
+
+Use `createLocalStorageAdapter` or `createSessionStorageAdapter`.
+
+```ts
+import {
+  createLocalStorageAdapter,
+  createStore,
+  fallback,
+} from "@ibnlanre/portal";
+
+type State = {
+  count: number;
+};
+
+const key = "counter";
+const defaults: State = { count: 0 };
+
+const [getState, setState] = createLocalStorageAdapter<State>(key);
+
+const initialState = getState(defaults);
+const store = createStore(initialState);
+
+// Persist on changes (skip immediate so hydration doesn't get overwritten)
+store.$subscribe((state) => {
+  setState(state);
+}, false);
+
+// If you want to clear persisted state:
+// setState(undefined)
+```
+
+## Async storage
+
+If your storage is async (e.g. IndexedDB), use the async adapter helpers and subscribe the same way.
+
+If you’re wiring persistence manually, the key trick is usually:
+
+- hydrate first
+- subscribe with `immediate = false`

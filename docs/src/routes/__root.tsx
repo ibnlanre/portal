@@ -23,7 +23,7 @@ export const Route = createRootRoute({
         name: "viewport",
       },
       {
-        title: "Fumadocs on TanStack Start",
+        title: "Portal Docs",
       },
     ],
   }),
@@ -39,7 +39,7 @@ function RootComponent() {
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
