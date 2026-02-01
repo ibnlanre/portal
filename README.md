@@ -38,8 +38,8 @@ Whether you're building a small React component or a large-scale application, `@
   - [Use store instance methods](#use-store-instance-methods)
     - [`$get()`](#get)
     - [`$set()`](#set)
-    - [`$sub()`](#sub)
-    - [`$key()`](#key)
+    - [`$subscribe()`](#subscribe)
+    - [`$at()`](#at)
     - [`$use()` (React Hook)](#use-react-hook)
   - [Define actions: Functions in stores](#define-actions-functions-in-stores)
   - [Actions as hooks](#actions-as-hooks)
@@ -79,25 +79,21 @@ Whether you're building a small React component or a large-scale application, `@
 `@ibnlanre/portal` offers powerful features for efficient state management:
 
 - **📦 Flexible Store Types**
-
   - Manage both primitive values and complex nested objects
   - Automatic type inference based on initial state
   - Full TypeScript support with robust type checking
 
 - **🔄 Intuitive State Management**
-
-  - Simple, consistent API with `$get`, `$set`, and `$sub`
+  - Simple, consistent API with `$get`, `$set`, and `$subscribe`
   - Deep partial updates for nested structures
   - Safe handling of circular references
 
 - **⚛️ Seamless React Integration**
-
   - Connect to components with the `$use` hook
   - Context-based stores via `createContextStore`
   - Co-locate state logic using actions-as-hooks
 
 - **🔌 Built-in State Persistence**
-
   - Local Storage and Session Storage adapters
   - Cookie Storage with signing support
   - Customizable async storage adapters
@@ -195,7 +191,7 @@ countStore.$set(5);
 countStore.$set((prev) => prev + 1); // 6
 
 // Subscribe to changes
-countStore.$sub((newValue) => {
+countStore.$subscribe((newValue) => {
   console.log("Count updated to:", newValue);
 });
 ```
@@ -264,12 +260,10 @@ A store is an object that holds your application's state. It allows you to read 
 `@ibnlanre/portal` distinguishes between two main types of stores, created automatically based on the initial state you provide:
 
 1.  **Primitive Store**: Manages a single, primitive value (e.g., a string, number, boolean, null, or undefined). At times, it can also manage a single object as a primitive-like store, where the entire object is treated as a single value.
-
     - **Example**: A store holding a user's name as a string or a count as a number.
     - Primitive stores provide methods to get the current value, set a new value, and subscribe to changes.
 
 2.  **Composite Store**: Manages an object, enabling nested state structures. Each property in a composite store's initial object can itself become a store instance (either primitive or composite), allowing for granular state management and access.
-
     - **Example**: A store holding user details, where each property (like `name`, `email`, `address`) can be accessed and updated independently.
     - Composite stores provide methods to get the current state, set new values for specific properties, and subscribe to changes at any level of the nested structure.
 
@@ -636,11 +630,11 @@ const store = createStore({
   atomicData: atom({ x: 10, y: 20 }),
 });
 
-store.regularData.$sub((data) => {
+store.regularData.$subscribe((data) => {
   console.log("Regular data changed:", data);
 });
 
-store.atomicData.$sub((data) => {
+store.atomicData.$subscribe((data) => {
   console.log("Atomic data changed:", data);
 });
 
@@ -968,13 +962,13 @@ All store instances, whether primitive or composite, provide a core set of metho
 
 **Quick Reference Table:**
 
-| Method   | Use Case                                                          | Returns                   |
-| -------- | ----------------------------------------------------------------- | ------------------------- |
-| `$get()` | Retrieve current state or compute a derived value                 | `S` or derived value `R`  |
-| `$set()` | Update state with a new value or updater function                 | `void`                    |
-| `$sub()` | Subscribe to state changes and react to updates                   | `unsubscribe` function    |
-| `$use()` | Connect store to React component (hook)                           | `[state, setState]` tuple |
-| `$key()` | Access deeply nested stores using dot-separated paths (Composite) | Nested `Store` instance   |
+| Method         | Use Case                                                          | Returns                   |
+| -------------- | ----------------------------------------------------------------- | ------------------------- |
+| `$get()`       | Retrieve current state or compute a derived value                 | `S` or derived value `R`  |
+| `$set()`       | Update state with a new value or updater function                 | `void`                    |
+| `$subscribe()` | Subscribe to state changes and react to updates                   | `unsubscribe` function    |
+| `$use()`       | Connect store to React component (hook)                           | `[state, setState]` tuple |
+| `$at()`        | Access deeply nested stores using dot-separated paths (Composite) | Nested `Store` instance   |
 
 #### `$get()`
 
@@ -1103,7 +1097,7 @@ listStore.items.$set((prevItems) => [...prevItems, 7]);
 // listStore.items.$get() is now [4, 5, 6, 7]
 ```
 
-#### `$sub()`
+#### `$subscribe()`
 
 Subscribes a callback function to state changes. The callback receives the new state (and optionally the old state) whenever it changes. This method returns an `unsubscribe` function to stop listening for updates.
 
@@ -1112,7 +1106,7 @@ By default, the callback is invoked immediately with the current state upon subs
 **Syntax:**
 
 ```ts
-$sub(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () => void
+$subscribe(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () => void
 ```
 
 - **`subscriber`**: A function that is called when the state changes. It receives `newState` and optionally `oldState`.
@@ -1126,7 +1120,7 @@ $sub(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () =
     ```ts
     const nameStore = createStore("Alex");
 
-    const unsubscribe = nameStore.$sub((newName, oldName) => {
+    const unsubscribe = nameStore.$subscribe((newName, oldName) => {
       console.log(`Name changed from "${oldName}" to "${newName}"`);
     });
     // Immediately logs: Name changed from "undefined" to "Alex"
@@ -1143,7 +1137,7 @@ $sub(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () =
     ```ts
     const statusStore = createStore("idle");
 
-    const unsubscribeNonImmediate = statusStore.$sub((newStatus) => {
+    const unsubscribeNonImmediate = statusStore.$subscribe((newStatus) => {
       console.log(`Status updated to: ${newStatus}`);
     }, false); // `false` prevents immediate call
 
@@ -1159,7 +1153,7 @@ $sub(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () =
     const settingsStore = createStore({ theme: "light", volume: 70 });
 
     // Setting up subscription to changes in settings
-    const unsubscribeSettings = settingsStore.$sub((newSettings) => {
+    const unsubscribeSettings = settingsStore.$subscribe((newSettings) => {
       console.log("Settings updated:", newSettings);
     });
 
@@ -1170,14 +1164,14 @@ $sub(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () =
     unsubscribeSettings(); // Stop listening to changes
     ```
 
-#### `$key()`
+#### `$at()`
 
-(CompositeStore only) Provides convenient access to deeply nested stores using a dot-separated string path. This method returns the nested store instance, allowing you to use its methods (`$get`, `$set`, `$sub`, `$use`, `$key`) directly.
+(CompositeStore only) Provides convenient access to deeply nested stores using a dot-separated string path. This method returns the nested store instance, allowing you to use its methods (`$get`, `$set`, `$subscribe`, `$use`, `$at`) directly.
 
 **Syntax:**
 
 ```ts
-$key<N extends Store<any>>(path: string): N
+$at<N extends Store<any>>(path: string): N
 ```
 
 - **`path`**: A dot-separated string representing the path to the nested store (e.g., `"user.preferences.theme"`). TypeScript provides autocompletion for valid paths.
@@ -1200,8 +1194,8 @@ const appStore = createStore({
   status: "active",
 });
 
-// Access nested stores using $key
-const themeStore = appStore.$key("user.preferences.theme");
+// Access nested stores using $at
+const themeStore = appStore.$at("user.preferences.theme");
 
 // Immediately get the current theme
 console.log(themeStore.$get()); // "dark"
@@ -1213,20 +1207,22 @@ themeStore.$set("light");
 console.log(appStore.user.preferences.theme.$get()); // "light"
 ```
 
-`$key` can be used on intermediate stores as well. For example, if you want to access a nested property like `user.preferences.language`, you can do so directly:
+`$at` can be used on intermediate stores as well. For example, if you want to access a nested property like `user.preferences.language`, you can do so directly:
 
 ```ts
-// Accessing a nested store using $key
-const preferencesStore = appStore.user.$key("preferences");
+// Accessing a nested store using $at
+const preferencesStore = appStore.user.$at("preferences");
 
-// Equivalent to appStore.$key("user.preferences.language")
-const languageStore = preferencesStore.$key("language");
+// Equivalent to appStore.$at("user.preferences.language")
+const languageStore = preferencesStore.$at("language");
 console.log(languageStore.$get()); // "en"
 
-// Using methods on the store returned by $key
-const unsubscribe = appStore.$key("user.preferences.theme").$sub((newTheme) => {
-  console.log("Theme via $key:", newTheme);
-});
+// Using methods on the store returned by $at
+const unsubscribe = appStore
+  .$at("user.preferences.theme")
+  .$subscribe((newTheme) => {
+    console.log("Theme via $at:", newTheme);
+  });
 
 // Triggers the subscription
 appStore.user.preferences.theme.$set("blue");
@@ -1698,7 +1694,7 @@ const settingsStore = createStore({
 
 The `useVersion` hook is particularly useful when you want deep dependency tracking for custom hooks, or when native React hooks (`useMemo`, `useEffect`, `useCallback`) need to respond to changes in complex objects or arrays.
 
-> **Tip:** Rather than using `useEffect` to sync the store state to an external service, consider using `$sub` for more efficient updates. This allows you to subscribe to changes in the store and react accordingly, while also providing a way to unsubscribe when no longer needed.
+> **Tip:** Rather than using `useEffect` to sync the store state to an external service, consider using `$subscribe` for more efficient updates. This allows you to subscribe to changes in the store and react accordingly, while also providing a way to unsubscribe when no longer needed.
 
 ### Context-based stores: `createContextStore`
 
@@ -1802,32 +1798,26 @@ function Settings() {
 
 ### Combine stores and actions: `combine()`
 
-The `combine()` utility performs a deep merge between objects and now supports multiple sources for complex merging scenarios. It's useful for unifying your initial state and actions into one cohesive structure before passing it into createStore.
+The `combine()` utility performs a deep merge of multiple objects using a simple spread syntax. It's useful for unifying your initial state and actions into one cohesive structure before passing it into createStore.
 
 Unlike shallow merging (such as Object.assign or object spread), `combine()`:
 
 - Recursively merges nested objects
 - Preserves store instances within deeply nested structures
 - Handles circular references safely
-- **Supports multiple sources** with later sources taking precedence
-- **Enhanced type definitions** for better TypeScript experience
+- **Supports any number of arguments** with later objects taking precedence
+- **Full type safety** with proper TypeScript inference
 
 **Syntax:**
 
 ```ts
-// Single source merge
-combine<Target extends Dictionary, Source>(target: Target, source: Source): Merge<Target, Source>
-
-// Multiple sources merge
-combine<Target extends Dictionary, Sources extends Dictionary[]>(target: Target, sources: Sources): Combine<Target, Sources>
+combine<Objects extends GenericObject[]>(...objects: Objects): Combine<Objects>
 ```
 
-- **`target`**: Base state or object.
-- **`source`**: Object containing actions or additional properties to merge.
-- **`sources`**: Array of objects to merge in sequence, with later sources taking precedence.
-- **Returns**: A new, deeply merged object with references preserved.
+- **`...objects`**: Any number of objects to merge, from left to right
+- **Returns**: A new, deeply merged object with all properties combined
 
-**Single Source Example:**
+**Basic Example:**
 
 ```ts
 import { createStore, combine } from "@ibnlanre/portal";
@@ -1864,7 +1854,7 @@ const actions = {
 export const userStore = createStore(combine(initialState, actions));
 ```
 
-**Multiple Sources Example:**
+**Multiple Objects Example:**
 
 ```ts
 import { createStore, combine } from "@ibnlanre/portal";
@@ -1904,8 +1894,8 @@ const userPreferences = {
   },
 };
 
-// Combine all sources - later sources override earlier ones
-const appConfig = combine(baseConfig, [developmentConfig, userPreferences]);
+// Combine all sources - later objects override earlier ones
+const appConfig = combine(baseConfig, developmentConfig, userPreferences);
 
 // Result will be:
 // {
@@ -1929,13 +1919,27 @@ const appConfig = combine(baseConfig, [developmentConfig, userPreferences]);
 const configStore = createStore(appConfig);
 ```
 
+**Edge Cases:**
+
+```ts
+// Empty call returns empty object
+const empty = combine(); // {}
+
+// Single object returns as-is (no cloning)
+const single = combine(baseConfig); // baseConfig
+
+// Works with spread arrays (types inferred as union of array elements)
+const configs = [config1, config2, config3];
+const merged = combine(...configs);
+```
+
 ### Initialize state asynchronously
 
 You can initialize a store with state fetched asynchronously by passing an `async` function (that returns a `Promise`) to `createStore`. The store will initially be empty (or hold the unresolved Promise object itself, depending on internal handling) until the Promise resolves.
 
 **Important Considerations:**
 
-- The store's methods (`$get`, `$set`, `$sub`, `$use`) will operate on the unresolved Promise or an initial empty state until resolution.
+- The store's methods (`$get`, `$set`, `$subscribe`, `$use`) will operate on the unresolved Promise or an initial empty state until resolution.
 - If the Promise resolves to an object, this object is treated as a single (primitive-like) value within the store. To achieve a nested structure from async data, initialize the store with a placeholder structure (or `null`) and then update it using `$set` once the data is fetched.
 
 **Example:**
@@ -2102,7 +2106,7 @@ console.log(nodeB.name); // "Node Beta"
 
 When your store's state includes arrays, `@ibnlanre/portal` treats them in a specific way:
 
-- **Arrays as store properties**: If an array is a direct property of your initial state object (e.g., `items: [1, 2, 3]` in `createStore({ items: [...] })`), then `store.items` becomes a store instance that manages this array. You can use `$get()`, `$set()`, and `$sub()` on `store.items` to interact with the entire array.
+- **Arrays as store properties**: If an array is a direct property of your initial state object (e.g., `items: [1, 2, 3]` in `createStore({ items: [...] })`), then `store.items` becomes a store instance that manages this array. You can use `$get()`, `$set()`, and `$subscribe()` on `store.items` to interact with the entire array.
 
   ```ts
   const store = createStore({ tags: ["typescript", "state-management"] });
@@ -2130,7 +2134,6 @@ When your store's state includes arrays, `@ibnlanre/portal` treats them in a spe
   ```
 
 - **Updating arrays**:
-
   - To replace the entire array, use `$set()` on the array's store property:
     ```ts
     const listStore = createStore({ items: [1, 2, 3] });
@@ -2711,7 +2714,7 @@ const initialCounterState = getStoredCounter(0); // Default to 0 if null
 const persistentCounterStore = createStore(initialCounterState);
 
 // Subscribe to store changes to save them to Local Storage
-persistentCounterStore.$sub((newState) => {
+persistentCounterStore.$subscribe((newState) => {
   setStoredCounter(newState);
 }, false); // `false` prevents saving immediately on setup, only on actual changes
 
@@ -2741,7 +2744,7 @@ const initialSessionData = getStoredSessionData({
 });
 const sessionDataStore = createStore(initialSessionData);
 
-sessionDataStore.$sub(setStoredSessionData, false);
+sessionDataStore.$subscribe(setStoredSessionData, false);
 
 // Example:
 sessionDataStore.$set({ guestId: "guest-123", lastPage: "/products" });
@@ -2804,7 +2807,7 @@ const initialPrefs = getCookiePreferences({
 });
 const prefsStore = createStore(initialPrefs);
 
-prefsStore.$sub((newPrefs) => {
+prefsStore.$subscribe((newPrefs) => {
   setCookiePrefs(newPrefs);
 
   // Example: Update maxAge on a specific change
@@ -2878,7 +2881,7 @@ const [getCustomState, setCustomState] = createBrowserStorageAdapter<{
 const initialCustomData = getCustomState({ lastSync: null });
 const customDataStore = createStore(initialCustomData);
 
-customDataStore.$sub(setCustomState, false);
+customDataStore.$subscribe(setCustomState, false);
 customDataStore.$set({ lastSync: new Date().toISOString() });
 ```
 
@@ -2954,7 +2957,7 @@ const result = await getEncryptedState({ sensitive: "data" });
 const store = createStore(result);
 
 // When you set the state, it will be encrypted before being stored.
-store.$sub(setEncryptedState, false);
+store.$subscribe(setEncryptedState, false);
 ```
 
 ## Cookie Storage
@@ -3183,7 +3186,6 @@ Retrieves the total number of cookies accessible to the current document.
   ```
 
 - **Avoid common reactivity pitfalls**:
-
   - **Don't use `useMemo` with incomplete dependencies**: If you use React's `useMemo` for derived state, ensure all store data is included in the dependency array.
   - **Don't capture external variables in selectors**: Selectors should depend only on the store state they receive as their parameter.
   - **Use store-level selectors for cross-store dependencies**: When deriving data from multiple stores, use a parent store that contains all the data.
@@ -3333,12 +3335,10 @@ Please read our [CONTRIBUTING.md](CONTRIBUTING.md) file for detailed guidelines 
 If you need help using `@ibnlanre/portal`, here are the resources available to you:
 
 1. **Documentation**:
-
    - Start with this README and the [API Reference](https://ibnlanre.github.io/portal/).
    - Check our [Troubleshooting Guide](TROUBLESHOOTING.md) for solutions to common issues.
 
 2. **Community Support**:
-
    - Browse existing [GitHub Issues](https://github.com/ibnlanre/portal/issues) for similar problems and solutions.
    - Join discussions in the [GitHub Discussions tab](https://github.com/ibnlanre/portal/discussions) for community help and ideas.
 

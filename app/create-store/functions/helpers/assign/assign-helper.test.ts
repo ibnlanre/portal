@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { combineHelper } from "./index";
+import { assignHelper } from "./index";
 
-describe("combineHelper", () => {
+describe("assignHelper", () => {
   describe("Basic Property Copying", () => {
     it("copies string properties from source to result", () => {
       const result = { existing: "value" };
       const source = { another: 42, newProp: "new" };
       const keys = ["newProp", "another"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result).toEqual({
         another: 42,
@@ -23,7 +23,7 @@ describe("combineHelper", () => {
       const source = { prop: "new" };
       const keys = ["prop"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result).toEqual({
         keep: "unchanged",
@@ -36,7 +36,7 @@ describe("combineHelper", () => {
       const source = { a: undefined, b: null, c: "value" };
       const keys = ["a", "b", "c"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result).toEqual({
         a: undefined,
@@ -50,7 +50,7 @@ describe("combineHelper", () => {
       const source = { a: 1 };
       const keys = ["a", "nonExistent"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result).toEqual({
         a: 1,
@@ -68,7 +68,7 @@ describe("combineHelper", () => {
       const source = { [sym1]: "symbol1", [sym2]: 42 };
       const keys = [sym1, sym2];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result).toEqual({
         normalProp: "value",
@@ -83,7 +83,7 @@ describe("combineHelper", () => {
       const source = { num: 123, str: "updated", [sym]: "symbolValue" };
       const keys = ["str", sym, "num"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result).toEqual({
         num: 123,
@@ -99,7 +99,7 @@ describe("combineHelper", () => {
       const source = { prop: 42 };
       const keys = ["prop"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result.prop).toBe(42);
     });
@@ -109,7 +109,7 @@ describe("combineHelper", () => {
       const source = { arr: [3, 4, 5] };
       const keys = ["arr"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result.arr).toEqual([3, 4, 5]);
       expect(result.arr).toBe(source.arr);
@@ -130,7 +130,7 @@ describe("combineHelper", () => {
       };
       const keys = ["nested"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result.nested).toEqual({
         a: 1,
@@ -153,7 +153,7 @@ describe("combineHelper", () => {
       };
       const keys = ["obj", "str", "num"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result).toEqual({
         num: 2,
@@ -169,7 +169,7 @@ describe("combineHelper", () => {
       const source = { ignored: "this" };
       const keys: string[] = [];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result).toEqual({ existing: "value" });
     });
@@ -182,7 +182,7 @@ describe("combineHelper", () => {
       };
       const keys = ["nullProp", "undefinedProp"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result.nullProp).toBe(source.nullProp);
       expect(result.undefinedProp).toBe(source.undefinedProp);
@@ -195,7 +195,7 @@ describe("combineHelper", () => {
       const source = { func: fn2 };
       const keys = ["func"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result.func).toBe(fn2);
     });
@@ -207,7 +207,7 @@ describe("combineHelper", () => {
       const source = { date: date2 };
       const keys = ["date"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result.date).toBe(date2);
     });
@@ -219,7 +219,7 @@ describe("combineHelper", () => {
       const source = { pattern: regex2 };
       const keys = ["pattern"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result.pattern).toBe(regex2);
     });
@@ -253,10 +253,10 @@ describe("combineHelper", () => {
 
       const keys = ["nested"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result.nested.value).toBe("updated");
-      // combineHelper calls combine internally, which preserves circular structure
+      // assignHelper calls combine internally, which preserves circular structure
       expect(result.nested.circular).toStrictEqual(
         expect.objectContaining({
           value: "updated",
@@ -276,7 +276,7 @@ describe("combineHelper", () => {
       };
       const keys = ["prop1", "prop2"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       // When both target and source are dictionaries, they get merged
       expect(result.prop1).toEqual({ old: "data", shared: "value" });
@@ -331,7 +331,7 @@ describe("combineHelper", () => {
       };
       const keys = ["level1"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result.level1.level2.level3).toEqual({
         add: "new",
@@ -383,7 +383,7 @@ describe("combineHelper", () => {
 
       const keys = ["config"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result.config.settings).toEqual({
         features: ["old"],
@@ -415,7 +415,7 @@ describe("combineHelper", () => {
 
       const keys = ["special"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result.special).toBe("special value");
     });
@@ -437,7 +437,7 @@ describe("combineHelper", () => {
 
       const keys = ["hidden"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result.hidden).toBe("hidden value");
     });
@@ -455,7 +455,7 @@ describe("combineHelper", () => {
       };
       const keys = ["willBeReplaced"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result.willBeReplaced).toBe("now a string");
     });
@@ -465,7 +465,7 @@ describe("combineHelper", () => {
       const source = { 0: "zero", 1: "one" };
       const keys = ["0", "1"];
 
-      combineHelper(result, keys, source);
+      assignHelper(result, keys, source);
 
       expect(result).toEqual({
         "0": "zero",

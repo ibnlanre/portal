@@ -17,7 +17,7 @@ describe("createPrimitiveStore", () => {
       expect(store.$get).toBeTypeOf("function");
       expect(store.$set).toBeTypeOf("function");
       expect(store.$use).toBeTypeOf("function");
-      expect(store.$sub).toBeTypeOf("function");
+      expect(store.$subscribe).toBeTypeOf("function");
 
       expect(store.$get()).toBe("initial value");
       expect(() => store.$set("new value")).not.toThrow();
@@ -47,7 +47,7 @@ describe("createPrimitiveStore", () => {
       expect("$get" in store).toBe(true);
       expect("$set" in store).toBe(true);
       expect("$use" in store).toBe(true);
-      expect("$sub" in store).toBe(true);
+      expect("$subscribe" in store).toBe(true);
 
       expect("value" in store).toBe(false);
 
@@ -165,7 +165,7 @@ describe("createPrimitiveStore", () => {
       const store = createPrimitiveStore(initialState);
 
       const subscriber = vi.fn();
-      store.$sub(subscriber);
+      store.$subscribe(subscriber);
       expect(subscriber).toHaveBeenCalledWith(initialState);
 
       store.$set("new value");
@@ -177,7 +177,7 @@ describe("createPrimitiveStore", () => {
       const store = createPrimitiveStore(initialState);
 
       const subscriber = vi.fn();
-      const unsubscribe = store.$sub(subscriber);
+      const unsubscribe = store.$subscribe(subscriber);
 
       unsubscribe();
       store.$set("new value");
@@ -230,7 +230,7 @@ describe("createPrimitiveStore", () => {
       expect(keys).not.toContain("$get");
       expect(keys).not.toContain("$set");
       expect(keys).not.toContain("$use");
-      expect(keys).not.toContain("$sub");
+      expect(keys).not.toContain("$subscribe");
     });
 
     it("should return empty array for ownKeys when state is not a dictionary", () => {
@@ -355,9 +355,9 @@ describe("createPrimitiveStore", () => {
       const subscriber2 = vi.fn();
       const subscriber3 = vi.fn();
 
-      store.$sub(subscriber1);
-      store.$sub(subscriber2);
-      store.$sub(subscriber3);
+      store.$subscribe(subscriber1);
+      store.$subscribe(subscriber2);
+      store.$subscribe(subscriber3);
 
       expect(subscriber1).toHaveBeenCalledWith("initial");
       expect(subscriber2).toHaveBeenCalledWith("initial");
@@ -374,7 +374,7 @@ describe("createPrimitiveStore", () => {
       const store = createPrimitiveStore("initial");
       const subscriber = vi.fn();
 
-      store.$sub(subscriber, false);
+      store.$subscribe(subscriber, false);
       expect(subscriber).not.toHaveBeenCalled();
 
       store.$set("updated");
@@ -388,8 +388,8 @@ describe("createPrimitiveStore", () => {
       const subscriber1 = vi.fn();
       const subscriber2 = vi.fn();
 
-      const unsubscribe1 = store.$sub(subscriber1);
-      store.$sub(subscriber2);
+      const unsubscribe1 = store.$subscribe(subscriber1);
+      store.$subscribe(subscriber2);
 
       unsubscribe1();
       store.$set("updated");
@@ -503,7 +503,7 @@ describe("createPrimitiveStore", () => {
       );
 
       const subscriber = vi.fn();
-      store.$sub(subscriber);
+      store.$subscribe(subscriber);
 
       subscriber.mockClear();
 
@@ -677,7 +677,7 @@ describe("createPrimitiveStore", () => {
       );
 
       const subscriber = vi.fn();
-      store.$sub(subscriber);
+      store.$subscribe(subscriber);
       subscriber.mockClear();
 
       store.$set({ count: 1 });
@@ -840,7 +840,7 @@ describe("createPrimitiveStore", () => {
       expect("$get" in store).toBe(true);
       expect("$set" in store).toBe(true);
       expect("$use" in store).toBe(true);
-      expect("$sub" in store).toBe(true);
+      expect("$subscribe" in store).toBe(true);
 
       expect("prop1" in store).toBe(false);
       expect("prop2" in store).toBe(false);

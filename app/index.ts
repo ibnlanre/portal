@@ -2,6 +2,7 @@ export type { CookieOptions } from "@/cookie-storage/types/cookie-options";
 export type { CookieStorage } from "@/cookie-storage/types/cookie-storage";
 export type { CreateCookieKeyOptions } from "@/cookie-storage/types/create-cookie-key-options";
 export type { WordMappingSegments } from "@/cookie-storage/types/word-mapping-segments";
+export type { Assign } from "@/create-store/types/assign";
 export type {
   AsyncBrowserStorageAdapterOptions,
   AsyncBrowserStorageTransforms,

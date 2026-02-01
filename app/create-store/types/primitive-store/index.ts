@@ -11,7 +11,7 @@ export type PrimitiveStore<State> = {
     <Value>(selector: Selector<State, Value>): Value;
   };
   readonly $set: PartialStateSetter<State>;
-  readonly $sub: (
+  readonly $subscribe: (
     subscriber: Subscriber<State>,
     immediate?: boolean
   ) => () => void;

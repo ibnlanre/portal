@@ -59,7 +59,7 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
     const store = createCompositeStore({ value: "initial" });
     const updates: Array<{ value: string }> = [];
 
-    const unsubscribe = store.$sub((state) => {
+    const unsubscribe = store.$subscribe((state) => {
       updates.push(state);
     });
 
@@ -78,7 +78,7 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
 
     expect(typeof store.$get).toBe("function");
     expect(typeof store.$set).toBe("function");
-    expect(typeof store.$sub).toBe("function");
+    expect(typeof store.$subscribe).toBe("function");
 
     expect((store as any).value).toBeUndefined();
     expect(Object.keys(store).sort()).toEqual(["test"]);
@@ -107,8 +107,8 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
     const updates1: Array<{ counter: number }> = [];
     const updates2: Array<{ counter: number }> = [];
 
-    const unsubscribe1 = store.$sub((state) => updates1.push(state));
-    const unsubscribe2 = store.$sub((state) => updates2.push(state));
+    const unsubscribe1 = store.$subscribe((state) => updates1.push(state));
+    const unsubscribe2 = store.$subscribe((state) => updates2.push(state));
 
     expect(updates1).toEqual([{ counter: 0 }]);
     expect(updates2).toEqual([{ counter: 0 }]);
@@ -197,7 +197,7 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
     const store = createCompositeStore({ counter: 0 });
     const updates: Array<{ counter: number }> = [];
 
-    store.$sub((state) => updates.push(state));
+    store.$subscribe((state) => updates.push(state));
 
     for (let i = 1; i <= 5; i++) {
       store.$set({ counter: i });

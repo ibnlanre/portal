@@ -12,7 +12,7 @@ export interface AtomicStore<State> {
     selector?: PartialSelector<State, Value>
   ) => Value;
   readonly $set: AtomicStateSetter<State>;
-  readonly $sub: (
+  readonly $subscribe: (
     subscriber: Subscriber<State>,
     immediate?: boolean
   ) => () => void;

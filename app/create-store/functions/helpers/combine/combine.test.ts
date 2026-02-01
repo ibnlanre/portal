@@ -1,535 +1,129 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { combine } from "./index";
 
 describe("combine", () => {
-  describe("Basic Merging", () => {
-    it("should merge simple objects", () => {
-      const target = { a: 1, b: 2 };
-      const source = { b: 3, c: 4 };
+  describe("Basic Merging with Spread", () => {
+    it("should merge multiple objects using spread syntax", () => {
+      const obj1 = { a: 1, b: 2 };
+      const obj2 = { b: 3, c: 4 };
+      const obj3 = { c: 5, d: 6 };
 
-      const result = combine(target, source);
+      const result = combine(obj1, obj2, obj3);
 
-      expect(result).toEqual({ a: 1, b: 3, c: 4 });
-      expect(result).not.toBe(target);
-      expect(result).not.toBe(source);
+      expect(result).toEqual({ a: 1, b: 3, c: 5, d: 6 });
+      expect(result).not.toBe(obj1);
+      expect(result).not.toBe(obj2);
+      expect(result).not.toBe(obj3);
     });
 
-    it("should handle empty objects", () => {
-      expect(combine({}, {})).toEqual({});
-      expect(combine({ a: 1 }, {})).toEqual({ a: 1 });
-      expect(combine({}, { b: 2 })).toEqual({ b: 2 });
+    it("should handle single object", () => {
+      const obj = { a: 1, b: 2 };
+      const result = combine(obj);
+
+      expect(result).toEqual({ a: 1, b: 2 });
+      expect(result).toBe(obj);
+    });
+
+    it("should handle empty arguments", () => {
+      const result = combine();
+
+      expect(result).toEqual({});
+    });
+
+    it("should handle two objects", () => {
+      const obj1 = { a: 1 };
+      const obj2 = { b: 2 };
+
+      const result = combine(obj1, obj2);
+
+      expect(result).toEqual({ a: 1, b: 2 });
     });
   });
 
-  describe("Deep Merging", () => {
-    it("should recursively merge nested objects", () => {
-      const target = {
-        a: 1,
-        nested: {
-          deep: {
-            value: "original",
-          },
-          x: 10,
-          y: 20,
-        },
-      };
+  describe("Basic Property Copying", () => {
+    it("copies string properties from source to result", () => {
+      const result = { existing: "value" };
+      const source = { another: 42, newProp: "new" };
 
-      const source = {
-        b: 2,
-        nested: {
-          deep: {
-            newProp: "added",
-            value: "updated",
-          },
-          y: 99,
-          z: 30,
-        },
-      };
-
-      const result = combine(target, source);
+      combine(result, source);
 
       expect(result).toEqual({
-        a: 1,
-        b: 2,
-        nested: {
-          deep: {
-            newProp: "added",
-            value: "updated",
-          },
-          x: 10,
-          y: 99,
-          z: 30,
-        },
-      });
-
-      expect(result.nested).not.toBe(target.nested);
-      expect(result.nested.deep).not.toBe(target.nested.deep);
-    });
-
-    it("should handle mixed data types in nested structures", () => {
-      const target = {
-        config: {
-          enabled: true,
-          settings: {
-            timeout: 1000,
-          },
-        },
-        data: [1, 2, 3],
-      };
-
-      const source = {
-        config: {
-          enabled: false,
-          newOption: "added",
-          settings: {
-            retries: 3,
-          },
-        },
-        metadata: {
-          version: "1.0.0",
-        },
-      };
-
-      const result = combine(target, source);
-
-      expect(result).toEqual({
-        config: {
-          enabled: false,
-          newOption: "added",
-          settings: {
-            retries: 3,
-            timeout: 1000,
-          },
-        },
-        data: [1, 2, 3],
-        metadata: {
-          version: "1.0.0",
-        },
+        another: 42,
+        existing: "value",
+        newProp: "new",
       });
     });
 
-    it("should overwrite non-dictionary values with dictionary sources", () => {
-      const target = {
-        prop: "string value",
-      };
+    it("replaces existing properties", () => {
+      const result = { keep: "unchanged", prop: "old" };
+      const source = { prop: "new" };
 
-      const source = {
-        prop: {
-          nested: "object",
-        },
-      };
-
-      const result = combine(target, source);
+      combine(result, source);
 
       expect(result).toEqual({
-        prop: {
-          nested: "object",
-        },
+        keep: "unchanged",
+        prop: "new",
       });
     });
-  });
 
-  describe("Circular References", () => {
-    it("should handle circular references in target", () => {
-      const target: {
-        a: number;
-        self?: any;
-      } = { a: 1 };
-      target.self = target;
+    it("handles undefined and null values", () => {
+      const result = { a: 1, b: 2 };
+      const source = { a: undefined, b: null, c: "value" };
 
-      const source = { b: 2 };
+      combine(result, source);
 
-      const result = combine(target, source);
-
-      expect(result.a).toBe(1);
-      expect(result.b).toBe(2);
-      expect(result.self).toBe(result);
-      expect(result.self?.a).toBe(1);
-      expect(result.self?.b).toBe(2);
-    });
-
-    it("should handle circular references in source", () => {
-      const target: any = { a: 1 };
-
-      const source: any = { b: 2 };
-      source.self = source;
-
-      const result = combine(target, source);
-
-      expect(result.a).toBe(1);
-      expect(result.b).toBe(2);
-      expect(result.self).toBe(result.self);
-      expect(result.self.b).toBe(2);
-    });
-
-    it("should handle mutual circular references", () => {
-      const objA: { name: string; ref?: typeof objB } = { name: "A" };
-      const objB = { name: "B", ref: objA };
-      objA.ref = objB;
-
-      const target = { first: objA };
-      const source = { second: objB };
-
-      const result = combine(target, source);
-
-      expect(result.first.name).toBe("A");
-      expect(result.second.name).toBe("B");
-      expect(result.first.ref).toStrictEqual(result.second);
-      expect(result.second.ref).toStrictEqual(result.first);
-    });
-
-    it("should handle deeply nested circular references", () => {
-      const target: {
-        level1: {
-          level2: {
-            backToRoot?: typeof target;
-            value: string;
-          };
-        };
-      } = {
-        level1: {
-          level2: {
-            value: "deep",
-          },
-        },
-      };
-      target.level1.level2.backToRoot = target;
-
-      const source = {
-        level1: {
-          level2: {
-            newValue: "added",
-          },
-        },
-      };
-
-      const result = combine(target, source);
-
-      expect(result.level1.level2.value).toBe("deep");
-      expect(result.level1.level2.newValue).toBe("added");
-      expect(result.level1.level2.backToRoot).toEqual(result);
-      expect(result).not.toBe(target);
-    });
-  });
-
-  describe("Array Handling", () => {
-    it("should handle arrays in target and source", () => {
-      const target = {
-        list: [1, 2, 3],
-      };
-
-      const source = {
-        list: [4, 5],
-      };
-
-      const result = combine(target, source);
-
-      expect(result.list.length).toBe(2);
-      expect(result.list[0]).toBe(4);
-      expect(result.list[1]).toBe(5);
-      expect(result.list).not.toBe(target.list);
-      expect(result.list).toBe(source.list);
-    });
-
-    it("should handle array circular references", () => {
-      const arr: any[] = [1, 2];
-      arr.push(arr);
-
-      const target = { data: arr };
-      const source = { metadata: "info" };
-
-      const result = combine(target, source);
-
-      expect(result.data[0]).toBe(1);
-      expect(result.data[1]).toBe(2);
-      expect(result.data[2]).toBe(result.data);
-      expect(result.metadata).toBe("info");
-    });
-  });
-
-  describe("Special Values", () => {
-    it("should handle Date objects", () => {
-      const date = new Date("2023-01-01");
-      const target = { created: date };
-      const source = { updated: new Date("2023-01-02") };
-
-      const result = combine(target, source);
-
-      expect(result.created).toBe(date);
-      expect(result.updated).toEqual(new Date("2023-01-02"));
-    });
-
-    it("should handle RegExp objects", () => {
-      const regex = /test/gi;
-      const target = { pattern: regex };
-      const source = { flags: "added" };
-
-      const result = combine(target, source);
-
-      expect(result.pattern).toBe(regex);
-      expect(result.flags).toBe("added");
-    });
-
-    it("should handle null and undefined values", () => {
-      const target = {
-        a: null as null | string,
-        b: undefined as string | undefined,
+      expect(result).toEqual({
+        a: undefined,
+        b: null,
         c: "value",
-      };
+      });
+    });
 
-      const source = {
-        a: "not null",
-        b: "not undefined",
-        d: null,
-      };
+    it("handles missing keys gracefully", () => {
+      const result = { existing: "value" };
+      const source = { a: 1 };
 
-      const result = combine(target, source);
+      combine(result, source);
 
       expect(result).toEqual({
-        a: "not null",
-        b: "not undefined",
-        c: "value",
-        d: null,
-      });
-    });
-
-    it("should handle functions", () => {
-      const fn1 = () => "target";
-      const fn2 = () => "source";
-
-      const target = { func: fn1 };
-      const source = { func: fn2, newFunc: fn1 };
-
-      const result = combine(target, source);
-
-      expect(result.func).toBe(fn2);
-      expect(result.newFunc).toBe(fn1);
-      expect(result.func()).toBe("source");
-      expect(result.newFunc()).toBe("target");
-    });
-  });
-
-  describe("Symbol and Non-enumerable Properties", () => {
-    it("should handle symbol keys", () => {
-      const sym1 = Symbol("test1");
-      const sym2 = Symbol("test2");
-
-      const target = { regular: "prop", [sym1]: "target value" };
-      const source = { regular: "updated", [sym2]: "source value" };
-
-      const result = combine(target, source);
-
-      expect(result[sym1]).toBe("target value");
-      expect(result[sym2]).toBe("source value");
-      expect(result.regular).toBe("updated");
-    });
-
-    it("should preserve non-enumerable properties", () => {
-      const target = { regular: "prop" };
-      Object.defineProperty(target, "hidden", {
-        enumerable: false,
-        value: "hidden value",
-      });
-
-      const source = { new: "prop", regular: "updated" };
-
-      const result = combine(target, source) as {
-        hidden: string;
-        new: string;
-        regular: string;
-      };
-
-      expect(result.regular).toBe("updated");
-      expect(result.new).toBe("prop");
-      expect(Object.getOwnPropertyDescriptor(result, "hidden")).toBeDefined();
-      expect(result.hidden).toBe("hidden value");
-    });
-  });
-
-  describe("Immutability", () => {
-    it("should not modify the original target object", () => {
-      const target = {
         a: 1,
-        nested: {
-          x: 10,
-        },
-      };
-
-      const targetCopy = JSON.parse(JSON.stringify(target));
-      const source = {
-        a: 99,
-        nested: {
-          y: 20,
-        },
-      };
-
-      combine(target, source);
-      expect(target).toEqual(targetCopy);
-    });
-
-    it("should not modify the original source object", () => {
-      const target = { a: 1 };
-      const source = {
-        b: 2,
-        nested: {
-          x: 10,
-        },
-      };
-
-      const sourceCopy = JSON.parse(JSON.stringify(source));
-
-      combine(target, source);
-      expect(source).toEqual(sourceCopy);
-    });
-
-    it("should create completely independent objects", () => {
-      const target = {
-        config: {
-          settings: {
-            timeout: 1000,
-          },
-        },
-      };
-
-      const source = {
-        config: {
-          settings: {
-            retries: 3,
-          },
-        },
-      };
-
-      const result = combine(target, source);
-
-      result.config.settings.timeout = 9999;
-      result.config.settings.retries = 9999;
-
-      expect(target.config.settings.timeout).toBe(1000);
-      expect(source.config.settings.retries).toBe(3);
+        existing: "value",
+        nonExistent: undefined,
+      });
     });
   });
 
-  describe("Edge Cases", () => {
-    it("should handle objects with prototype chain", () => {
-      class Parent {
-        parentProp = "parent";
-      }
-
-      class Child extends Parent {
-        childProp = "child";
-      }
-
-      const target = new Child() as any;
-      const source = { childProp: "updated", newProp: "added" };
-
-      const result = combine(target, source);
-
-      expect(result.childProp).toBe("updated");
-      expect(result.newProp).toBe("added");
-      expect(result.parentProp).toBe("parent");
-    });
-
-    it("should handle very deeply nested objects", () => {
-      const createDeepObject = (depth: number): any => {
-        if (depth === 0) return { value: "deep" };
-        return { nested: createDeepObject(depth - 1) };
-      };
-
-      const target = createDeepObject(10);
-      const source = createDeepObject(10);
-      source.nested.nested.nested.nested.nested.nested.nested.nested.nested.value =
-        "updated";
-
-      const result = combine(target, source);
-
-      expect(
-        result.nested.nested.nested.nested.nested.nested.nested.nested.nested
-          .value
-      ).toBe("updated");
-    });
-
-    it("should handle objects with many properties", () => {
-      const target: Record<string, number> = {};
-      const source: Record<string, number> = {};
-
-      for (let i = 0; i < 1000; i++) {
-        target[`prop${i}`] = i;
-        source[`prop${i + 500}`] = i + 500;
-      }
-
-      const result = combine(target, source);
-
-      expect(Object.keys(result)).toHaveLength(1500);
-      expect(result.prop0).toBe(0);
-      expect(result.prop999).toBe(999);
-      expect(result.prop500).toBe(500);
-      expect(result.prop1499).toBe(1499);
-    });
-  });
-
-  describe("Multiple Sources", () => {
-    it("should merge multiple sources into target", () => {
-      const target = { a: 1 };
-      const source1 = { b: 2 };
-      const source2 = { c: 3 };
-      const source3 = { d: 4 };
-
-      const result = combine(target, [source1, source2, source3]);
-
-      expect(result).toEqual({ a: 1, b: 2, c: 3, d: 4 });
-      expect(result).not.toBe(target);
-      expect(result).not.toBe(source1);
-      expect(result).not.toBe(source2);
-      expect(result).not.toBe(source3);
-    });
-
-    it("should handle overlapping properties with later sources taking precedence", () => {
-      const target = { a: 1, b: 2 };
-      const source1 = { b: 10, c: 3 };
-      const source2 = { c: 20, d: 4 };
-      const source3 = { a: 100, d: 40 };
-
-      const result = combine(target, [source1, source2, source3]);
-      expect(result).toEqual({ a: 100, b: 10, c: 20, d: 40 });
-    });
-
-    it("should handle deep merging with multiple sources", () => {
-      const target = {
+  describe("Deep Merging with Spread", () => {
+    it("should deeply merge nested objects", () => {
+      const obj1 = {
         config: {
-          features: {
-            auth: true,
-          },
+          features: { auth: true },
           theme: "light",
         },
       };
 
-      const source1 = {
+      const obj2 = {
         config: {
-          features: {
-            notifications: false,
-          },
+          features: { notifications: false },
           timeout: 5000,
         },
       };
 
-      const source2 = {
+      const obj3 = {
         config: {
-          features: {
-            analytics: true,
-            auth: false,
-          },
+          features: { analytics: true },
           theme: "dark",
         },
       };
 
-      const result = combine(target, [source1, source2]);
+      const result = combine(obj1, obj2, obj3);
 
       expect(result).toEqual({
         config: {
           features: {
             analytics: true,
-            auth: false,
+            auth: true,
             notifications: false,
           },
           theme: "dark",
@@ -538,141 +132,530 @@ describe("combine", () => {
       });
     });
 
-    it("should handle empty sources array", () => {
-      const target = { a: 1, b: 2 };
-      const result = combine(target, []);
+    it("should handle many objects", () => {
+      const objects = Array.from({ length: 10 }, (_, i) => ({
+        [`prop${i}`]: i,
+        shared: i,
+      }));
 
-      expect(result).toEqual({ a: 1, b: 2 });
-      expect(result).toBe(target);
+      const result = combine(...objects);
+
+      expect(result.prop0).toBe(0);
+      expect(result.prop9).toBe(9);
+      expect(result.shared).toBe(9); // Last value wins
+      expect(Object.keys(result)).toHaveLength(11); // prop0-prop9 + shared
+
+      expectTypeOf(result.shared).toEqualTypeOf<number>();
+      expectTypeOf(result).toEqualTypeOf<{
+        [k: string]: number;
+        shared: number;
+      }>();
+    });
+  });
+
+  describe("Immutability with Spread", () => {
+    it("should not modify original objects", () => {
+      const obj1 = { a: 1, nested: { x: 10 } };
+      const obj2 = { b: 2, nested: { y: 20 } };
+      const obj3 = { c: 3 };
+
+      const obj1Copy = JSON.parse(JSON.stringify(obj1));
+      const obj2Copy = JSON.parse(JSON.stringify(obj2));
+      const obj3Copy = JSON.parse(JSON.stringify(obj3));
+
+      combine(obj1, obj2, obj3);
+
+      expect(obj1).toEqual(obj1Copy);
+      expect(obj2).toEqual(obj2Copy);
+      expect(obj3).toEqual(obj3Copy);
     });
 
-    it("should handle array with single source", () => {
-      const target = { a: 1 };
-      const source = { b: 2 };
+    it("should create independent result object", () => {
+      const obj1 = { config: { timeout: 1000 } };
+      const obj2 = { config: { retries: 3 } };
 
-      const result = combine(target, [source]);
+      const result = combine(obj1, obj2);
 
-      expect(result).toEqual({ a: 1, b: 2 });
+      result.config.timeout = 9999;
+      result.config.retries = 9999;
+
+      expect(obj1.config.timeout).toBe(1000);
+      expect(obj2.config.retries).toBe(3);
     });
+  });
 
-    it("should handle circular references in multiple sources", () => {
-      const target = { a: 1 };
+  describe("Circular References with Spread", () => {
+    it("should handle circular references in spread objects", () => {
+      const obj1: any = { a: 1 };
+      obj1.self = obj1;
 
-      const source1: any = { b: 2 };
-      source1.self = source1;
+      const obj2 = { b: 2 };
 
-      const source2: any = { c: 3 };
-      source2.ref = source1;
-
-      const result = combine(target, [source1, source2]);
+      const result = combine(obj1, obj2);
 
       expect(result.a).toBe(1);
       expect(result.b).toBe(2);
-      expect(result.c).toBe(3);
+      expect(result.self.a).toBe(1);
       expect(result.self.b).toBe(2);
-      expect(result.ref.b).toBe(2);
-      expect(result.self).toBe(result.self);
     });
+  });
 
-    it("should handle functions in multiple sources", () => {
-      const fn1 = () => "function1";
-      const fn2 = () => "function2";
-      const fn3 = () => "function3";
+  describe("Special Values with Spread", () => {
+    it("should handle mixed data types", () => {
+      const obj1 = { date: new Date("2023-01-01"), str: "hello" };
+      const obj2 = { bool: true, num: 42 };
+      const obj3 = { arr: [1, 2, 3], regex: /test/i };
 
-      const target = { func: fn1 };
-      const source1 = { func: fn2, helper: fn1 };
-      const source2 = { func: fn3, utility: fn2 };
-
-      const result = combine(target, [source1, source2]);
-
-      expect(result.func).toBe(fn3);
-      expect(result.helper).toBe(fn1);
-      expect(result.utility).toBe(fn2);
-      expect(result.func()).toBe("function3");
-      expect(result.helper()).toBe("function1");
-      expect(result.utility()).toBe("function2");
-    });
-
-    it("should preserve function references in multiple sources", () => {
-      const sharedFunction = () => "shared";
-
-      const target = { action1: sharedFunction };
-      const source1 = { action2: sharedFunction };
-      const source2 = { action3: sharedFunction };
-
-      const result = combine(target, [source1, source2]);
-
-      expect(result.action1).toBe(sharedFunction);
-      expect(result.action2).toBe(sharedFunction);
-      expect(result.action3).toBe(sharedFunction);
-      expect(result.action1).toBe(result.action2);
-      expect(result.action2).toBe(result.action3);
-    });
-
-    it("should handle mixed data types across multiple sources", () => {
-      const date = new Date("2023-01-01");
-      const regex = /test/i;
-      const fn = () => "test";
-
-      const target = { str: "hello" };
-      const source1 = { date, num: 42 };
-      const source2 = { bool: true, regex };
-      const source3 = { arr: [1, 2, 3], func: fn };
-
-      const result = combine(target, [source1, source2, source3]);
+      const result = combine(obj1, obj2, obj3);
 
       expect(result.str).toBe("hello");
       expect(result.num).toBe(42);
-      expect(result.date).toEqual(date);
       expect(result.bool).toBe(true);
-      expect(result.regex).toEqual(regex);
-      expect(result.func).toBe(fn);
+      expect(result.date).toEqual(new Date("2023-01-01"));
+      expect(result.regex).toEqual(/test/i);
       expect(result.arr).toEqual([1, 2, 3]);
     });
 
-    it("should handle very large number of sources", () => {
-      const target = { base: 0 };
-      const sources = Array.from({ length: 100 }, (_, i) => ({
-        [`prop${i}`]: i,
-      }));
+    it("should handle functions across multiple objects", () => {
+      const fn1 = () => "first";
+      const fn2 = () => "second";
+      const fn3 = () => "third";
 
-      const result = combine(target, sources);
+      const obj1 = { action: fn1, helper: fn1 };
+      const obj2 = { action: fn2, utility: fn2 };
+      const obj3 = { action: fn3 };
 
-      expect(result.base).toBe(0);
-      expect(Object.keys(result)).toHaveLength(101);
-      expect(result.prop0).toBe(0);
-      expect(result.prop99).toBe(99);
+      const result = combine(obj1, obj2, obj3);
+
+      expect(result.action).toBe(fn3);
+      expect(result.helper).toBe(fn1);
+      expect(result.utility).toBe(fn2);
+      expect(result.action()).toBe("third");
     });
+  });
 
-    it("should not modify original sources when using multiple sources", () => {
-      const target = { a: 1 };
-      const source1 = { b: 2, nested: { x: 10 } };
-      const source2 = { c: 3, nested: { y: 20 } };
-
-      const source1Copy = JSON.parse(JSON.stringify(source1));
-      const source2Copy = JSON.parse(JSON.stringify(source2));
-
-      combine(target, [source1, source2]);
-
-      expect(source1).toEqual(source1Copy);
-      expect(source2).toEqual(source2Copy);
-    });
-
-    it("should handle symbol properties across multiple sources", () => {
+  describe("Edge Cases with Spread", () => {
+    it("should handle objects with symbol properties", () => {
       const sym1 = Symbol("sym1");
       const sym2 = Symbol("sym2");
       const sym3 = Symbol("sym3");
 
-      const target = { regular: "prop", [sym1]: "target" };
-      const source1 = { [sym2]: "source1" };
-      const source2 = { [sym1]: "overridden", [sym3]: "source2" };
+      const obj1 = { regular: "prop", [sym1]: "first" };
+      const obj2 = { [sym2]: "second" };
+      const obj3 = { [sym1]: "overridden", [sym3]: "third" };
 
-      const result = combine(target, [source1, source2]);
+      const result = combine(obj1, obj2, obj3);
 
       expect(result.regular).toBe("prop");
       expect(result[sym1]).toBe("overridden");
-      expect(result[sym2]).toBe("source1");
-      expect(result[sym3]).toBe("source2");
+      expect(result[sym2]).toBe("second");
+      expect(result[sym3]).toBe("third");
+    });
+
+    it("should handle precedence - later objects override earlier ones", () => {
+      const obj1 = { name: "first", value: 1 };
+      const obj2 = { type: "second", value: 2 };
+      const obj3 = { status: "third", value: 3 };
+
+      const result = combine(obj1, obj2, obj3);
+
+      expect(result.value).toBe(3);
+      expect(result.name).toBe("first");
+      expect(result.type).toBe("second");
+      expect(result.status).toBe("third");
+    });
+  });
+
+  describe("Symbol Property Handling", () => {
+    it("copies symbol properties", () => {
+      const sym1 = Symbol("test1");
+      const sym2 = Symbol("test2");
+      const result = { normalProp: "value" };
+      const source = { [sym1]: "symbol1", [sym2]: 42 };
+
+      combine(result, source);
+
+      expect(result).toEqual({
+        normalProp: "value",
+        [sym1]: "symbol1",
+        [sym2]: 42,
+      });
+    });
+
+    it("handles mixed string and symbol keys", () => {
+      const sym = Symbol("mixed");
+      const result = { str: "original" };
+      const source = { num: 123, str: "updated", [sym]: "symbolValue" };
+
+      combine(result, source);
+
+      expect(result).toEqual({
+        num: 123,
+        str: "updated",
+        [sym]: "symbolValue",
+      });
+    });
+  });
+
+  describe("Dictionary vs Non-Dictionary Handling", () => {
+    it("replaces non-dictionary values with source values", () => {
+      const result = { prop: "string" };
+      const source = { prop: 42 };
+
+      combine(result, source);
+
+      expect(result.prop).toBe(42);
+    });
+
+    it("replaces arrays with source arrays", () => {
+      const result = { arr: [1, 2] };
+      const source = { arr: [3, 4, 5] };
+
+      combine(result, source);
+
+      expect(result.arr).toEqual([3, 4, 5]);
+      expect(result.arr).toBe(source.arr);
+    });
+
+    it("recursively combines dictionary objects", () => {
+      const result = {
+        nested: {
+          a: 1,
+          b: 2,
+        },
+      };
+      const source = {
+        nested: {
+          b: 3,
+          c: 4,
+        },
+      };
+
+      combine(result, source);
+
+      expect(result.nested).toEqual({
+        a: 1,
+        b: 3,
+        c: 4,
+      });
+      expect(result.nested).not.toBe(source.nested);
+    });
+
+    it("handles mixed dictionary and non-dictionary properties", () => {
+      const result = {
+        num: 1,
+        obj: { keep: "this" },
+        str: "original",
+      };
+      const source = {
+        num: 2,
+        obj: { add: "new", keep: "updated" },
+        str: "replaced",
+      };
+
+      combine(result, source);
+
+      expect(result).toEqual({
+        num: 2,
+        obj: { add: "new", keep: "updated" },
+        str: "replaced",
+      });
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("handles empty keys array", () => {
+      const result = { existing: "value" };
+      const source = { ignored: "this" };
+      const keys: string[] = [];
+
+      combine(result, source);
+
+      expect(result).toEqual({ existing: "value" });
+    });
+
+    it("handles null and undefined target values", () => {
+      const result = { nullProp: null, undefinedProp: undefined };
+      const source = {
+        nullProp: { newObj: "value" },
+        undefinedProp: { anotherObj: "value" },
+      };
+
+      combine(result, source);
+
+      expect(result.nullProp).toBe(source.nullProp);
+      expect(result.undefinedProp).toBe(source.undefinedProp);
+    });
+
+    it("handles function properties", () => {
+      const fn1 = () => "original";
+      const fn2 = () => "replacement";
+      const result = { func: fn1 };
+      const source = { func: fn2 };
+
+      combine(result, source);
+
+      expect(result.func).toBe(fn2);
+    });
+
+    it("handles Date objects", () => {
+      const date1 = new Date("2023-01-01");
+      const date2 = new Date("2023-12-31");
+      const result = { date: date1 };
+      const source = { date: date2 };
+
+      combine(result, source);
+
+      expect(result.date).toBe(date2);
+    });
+
+    it("handles RegExp objects", () => {
+      const regex1 = /old/g;
+      const regex2 = /new/i;
+      const result = { pattern: regex1 };
+      const source = { pattern: regex2 };
+
+      combine(result, source);
+
+      expect(result.pattern).toBe(regex2);
+    });
+  });
+
+  describe("Cyclic Reference Handling", () => {
+    it("handles circular references by delegating to combine", () => {
+      type Nested = {
+        circular?: Nested | null;
+        value: string;
+      };
+      type ResultType = {
+        nested: Nested;
+      };
+
+      const result: ResultType = {
+        nested: {
+          circular: null,
+          value: "original",
+        },
+      };
+
+      // Create source with cyclic reference
+      const source: ResultType = {
+        nested: {
+          circular: null,
+          value: "updated",
+        },
+      };
+      source.nested.circular = source.nested;
+
+      combine(result, source);
+
+      expect(result.nested.value).toBe("updated");
+      // combine calls combine internally, which preserves circular structure
+      expect(result.nested.circular).toStrictEqual(
+        expect.objectContaining({
+          value: "updated",
+        })
+      );
+    });
+
+    it("merges dictionaries and assigns primitives directly", () => {
+      const sharedObj = { shared: "value" };
+      const result = {
+        prop1: { old: "data" },
+        prop2: { other: "data" },
+      };
+      const source = {
+        prop1: sharedObj,
+        prop2: sharedObj,
+      };
+
+      combine(result, source);
+
+      // When both target and source are dictionaries, they get merged
+      expect(result.prop1).toEqual({ old: "data", shared: "value" });
+      expect(result.prop2).toEqual({ other: "data", shared: "value" });
+
+      // They are no longer the same reference as sharedObj due to merging
+      expect(result.prop1).not.toBe(sharedObj);
+      expect(result.prop2).not.toBe(sharedObj);
+    });
+  });
+
+  describe("Deep Nested Combining", () => {
+    it("handles deeply nested object structures", () => {
+      type ResultType = {
+        level1: {
+          level2: {
+            level3: {
+              add?: string;
+              keep?: string;
+              value: string;
+            };
+            newLevel3?: {
+              fresh: string;
+            };
+          };
+        };
+      };
+
+      const result: ResultType = {
+        level1: {
+          level2: {
+            level3: {
+              keep: "this",
+              value: "original",
+            },
+          },
+        },
+      };
+
+      const source: ResultType = {
+        level1: {
+          level2: {
+            level3: {
+              add: "new",
+              value: "updated",
+            },
+            newLevel3: {
+              fresh: "data",
+            },
+          },
+        },
+      };
+
+      combine(result, source);
+
+      expect(result.level1.level2.level3).toEqual({
+        add: "new",
+        keep: "this",
+        value: "updated",
+      });
+      expect(result.level1.level2.newLevel3).toEqual({
+        fresh: "data",
+      });
+    });
+
+    it("handles complex mixed structures", () => {
+      type ResultType = {
+        config: {
+          metadata: string;
+          newSection?: {
+            data: string;
+          };
+          settings: {
+            features?: string[];
+            locale?: string;
+            theme: string;
+          };
+        };
+      };
+
+      const result: ResultType = {
+        config: {
+          metadata: "original",
+          settings: {
+            features: ["old"],
+            theme: "dark",
+          },
+        },
+      };
+
+      const source: ResultType = {
+        config: {
+          metadata: "updated",
+          newSection: {
+            data: "fresh",
+          },
+          settings: {
+            locale: "en",
+            theme: "light",
+          },
+        },
+      };
+
+      combine(result, source);
+
+      expect(result.config.settings).toEqual({
+        features: ["old"],
+        locale: "en",
+        theme: "light",
+      });
+      expect(result.config.metadata).toBe("updated");
+      expect(result.config.newSection).toEqual({ data: "fresh" });
+    });
+  });
+
+  describe("Property Descriptor Preservation", () => {
+    it("copies properties regardless of descriptor configuration", () => {
+      type ResultType = {
+        normal?: string;
+        special?: string;
+      };
+
+      const result: ResultType = { normal: "value" };
+      const source: ResultType = {};
+
+      // Define property with custom descriptor
+      Object.defineProperty(source, "special", {
+        configurable: true,
+        enumerable: true,
+        value: "special value",
+        writable: false,
+      });
+
+      combine(result, source);
+
+      expect(result.special).toBe("special value");
+    });
+
+    it("handles non-enumerable properties when explicitly listed", () => {
+      type ResultType = {
+        existing?: string;
+        hidden?: string;
+      };
+
+      const result: ResultType = { existing: "value" };
+      const source: ResultType = {};
+
+      Object.defineProperty(source, "hidden", {
+        configurable: true,
+        enumerable: false,
+        value: "hidden value",
+      });
+
+      combine(result, source);
+
+      expect(result.hidden).toBe("hidden value");
+    });
+  });
+
+  describe("Type Safety Edge Cases", () => {
+    it("handles source properties that are not objects correctly", () => {
+      const result = {
+        willBeReplaced: {
+          nested: "object",
+        },
+      };
+      const source = {
+        willBeReplaced: "now a string",
+      };
+
+      combine(result, source);
+
+      expect(result.willBeReplaced).toBe("now a string");
+    });
+
+    it("handles numeric keys as strings", () => {
+      const result = { existing: "value" };
+      const source = { 0: "zero", 1: "one" };
+
+      combine(result, source);
+
+      expect(result).toEqual({
+        "0": "zero",
+        "1": "one",
+        existing: "value",
+      });
     });
   });
 });

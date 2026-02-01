@@ -211,17 +211,17 @@ export function createCompositeStore<State extends GenericObject>(
 
   function buildStore<Path extends Paths<State>>(chain?: Path) {
     return {
-      $get(selector?: Selector<StatePath<State, Path>>) {
-        return get(chain, selector);
-      },
-      $key(path: Path) {
+      $at(path: Path) {
         const fullPath = joinPaths(chain, path);
         return resolveProperty(fullPath) as Property<State, Path>;
+      },
+      $get(selector?: Selector<StatePath<State, Path>>) {
+        return get(chain, selector);
       },
       $set(value: PartialStatePath<State, Path>) {
         return set(chain)(value);
       },
-      $sub(subscriber: Subscriber<State>, immediate = true) {
+      $subscribe(subscriber: Subscriber<State>, immediate = true) {
         return sub(subscriber, chain, immediate);
       },
       $use(

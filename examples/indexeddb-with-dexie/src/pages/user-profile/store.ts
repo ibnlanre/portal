@@ -72,4 +72,4 @@ export const profileStore = createStore({
 });
 
 // Subscribe to store changes and auto-persist
-profileStore.profile.$sub(setStoredProfile);
+profileStore.profile.$subscribe(setStoredProfile);

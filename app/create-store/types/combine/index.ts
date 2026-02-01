@@ -1,21 +1,19 @@
 import type { GenericObject } from "@/create-store/types/generic-object";
 import type { Replace } from "@/create-store/types/replace";
-import type { UnionToTuple } from "@/create-store/types/union-to-tuple";
 
-export type Combine<
-  Target extends GenericObject,
-  Sources extends GenericObject[],
-> =
-  UnionToTuple<Sources[number]> extends infer SourceTuple
-    ? SourceTuple extends readonly GenericObject[]
-      ? CombineHelper<Target, SourceTuple>
-      : never
-    : never;
+export type Combine<Objects extends GenericObject[]> = Objects extends [
+  infer First extends GenericObject,
+  ...infer Rest extends GenericObject[],
+]
+  ? CombineHelper<First, Rest>
+  : number extends Objects["length"]
+    ? Objects[number]
+    : {};
 
 export type CombineHelper<
   Target extends GenericObject,
-  Sources extends readonly GenericObject[],
-> = Sources extends [infer Head, ...infer Rest]
+  Objects extends readonly GenericObject[],
+> = Objects extends [infer Head, ...infer Rest]
   ? Head extends GenericObject
     ? Rest extends readonly GenericObject[]
       ? CombineHelper<Replace<Target, Head>, Rest>

@@ -34,7 +34,7 @@ describe("CompositeStore type inference", () => {
   it("should verify CompositeStore structure", () => {
     type CompositeStoreOfStore = CompositeStore<Store>;
 
-    expectTypeOf<CompositeStoreOfStore>().toHaveProperty("$key");
+    expectTypeOf<CompositeStoreOfStore>().toHaveProperty("$at");
 
     expectTypeOf<CompositeStoreOfStore>().toHaveProperty("count");
     expectTypeOf<CompositeStoreOfStore>().toHaveProperty("name");

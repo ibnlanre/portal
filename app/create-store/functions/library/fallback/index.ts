@@ -1,6 +1,7 @@
 import type { GenericObject } from "@/create-store/types/generic-object";
+import type { Replace } from "@/create-store/types/replace";
 
-import { combine } from "@/create-store/functions/helpers/combine";
+import { assign } from "@/create-store/functions/helpers/assign";
 
 /**
  * Acts as a selector fallback mechanism.
@@ -13,7 +14,9 @@ import { combine } from "@/create-store/functions/helpers/combine";
  * @returns A function that takes an inner state object and combines it with the outer state.
  */
 export function fallback<State extends GenericObject>(outerState: State) {
-  return <InnerState extends GenericObject>(innerState: InnerState) => {
-    return combine(outerState, innerState);
+  return <InnerState extends GenericObject>(
+    innerState: InnerState
+  ): Replace<State, InnerState> => {
+    return assign(outerState, innerState);
   };
 }

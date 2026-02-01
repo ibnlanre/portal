@@ -1,1 +1,1 @@
-export type Accessor = "$get" | "$set" | "$sub" | "$use";
+export type Accessor = "$get" | "$set" | "$subscribe" | "$use";

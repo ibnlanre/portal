@@ -17,7 +17,7 @@ export function Preferences() {
     path: Paths<AppPreferences>,
     value: ResolvePath<AppPreferences, typeof path>
   ) {
-    preferencesStore.$key(path).$set(value);
+    preferencesStore.$at(path).$set(value);
   }
 
   return (

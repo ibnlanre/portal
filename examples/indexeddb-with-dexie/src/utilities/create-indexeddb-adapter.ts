@@ -5,8 +5,10 @@ import {
 
 import { StoreDatabase } from "./store-database";
 
-export interface IndexedDBAdapterOptions<State, StoredState = State>
-  extends AsyncBrowserStorageTransforms<State, StoredState> {
+export interface IndexedDBAdapterOptions<
+  State,
+  StoredState = State,
+> extends AsyncBrowserStorageTransforms<State, StoredState> {
   databaseName?: string;
   version?: number;
 }

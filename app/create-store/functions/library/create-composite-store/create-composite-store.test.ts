@@ -37,8 +37,8 @@ describe("createCompositeStore", () => {
       expect(store.$get).toBeTypeOf("function");
       expect(store.$set).toBeTypeOf("function");
       expect(store.$use).toBeTypeOf("function");
-      expect(store.$sub).toBeTypeOf("function");
-      expect(store.$key).toBeTypeOf("function");
+      expect(store.$subscribe).toBeTypeOf("function");
+      expect(store.$at).toBeTypeOf("function");
 
       expect(store.user.$get).toBeTypeOf("function");
       expect(store.user.$set).toBeTypeOf("function");
@@ -93,8 +93,8 @@ describe("createCompositeStore", () => {
       expect(keys).not.toContain("$get");
       expect(keys).not.toContain("$set");
       expect(keys).not.toContain("$use");
-      expect(keys).not.toContain("$sub");
-      expect(keys).not.toContain("$key");
+      expect(keys).not.toContain("$subscribe");
+      expect(keys).not.toContain("$at");
     });
 
     it("should handle 'in' operator correctly", () => {
@@ -109,8 +109,8 @@ describe("createCompositeStore", () => {
       expect("$get" in store).toBe(true);
       expect("$set" in store).toBe(true);
       expect("$use" in store).toBe(true);
-      expect("$sub" in store).toBe(true);
-      expect("$key" in store).toBe(true);
+      expect("$subscribe" in store).toBe(true);
+      expect("$at" in store).toBe(true);
 
       expect("nonExistent" in store).toBe(false);
 
@@ -341,9 +341,9 @@ describe("createCompositeStore", () => {
         expect(store.user.name.$get((name) => name.toUpperCase())).toBe("JOHN");
       });
 
-      it("gets state via $key path notation", () => {
-        expect(store.$key("user.preferences.theme").$get()).toBe("light");
-        expect(store.$key("user.preferences").$get()).toEqual({
+      it("gets state via $at path notation", () => {
+        expect(store.$at("user.preferences.theme").$get()).toBe("light");
+        expect(store.$at("user.preferences").$get()).toEqual({
           notifications: true,
           theme: "light",
         });
@@ -440,9 +440,9 @@ describe("createCompositeStore", () => {
         });
       });
 
-      it("sets nested values via $key path notation", () => {
+      it("sets nested values via $at path notation", () => {
         store
-          .$key("user.preferences")
+          .$at("user.preferences")
           .$set({ notifications: false, theme: "dark" });
 
         expect(state).toEqual({
@@ -458,7 +458,7 @@ describe("createCompositeStore", () => {
           theme: "dark",
         });
 
-        store.$key("user.name").$set("Alice");
+        store.$at("user.name").$set("Alice");
 
         expect(state).toEqual({
           count: 0,
@@ -494,7 +494,7 @@ describe("createCompositeStore", () => {
         expect(store.user.name.$get()).toBe("JOHN");
 
         store
-          .$key("user.preferences.theme")
+          .$at("user.preferences.theme")
           .$set((theme) => (theme === "light" ? "dark" : "light"));
 
         expect(state).toEqual({
@@ -504,7 +504,7 @@ describe("createCompositeStore", () => {
             preferences: { notifications: true, theme: "light" },
           },
         });
-        expect(store.user.preferences.$key("theme").$get()).toBe("dark");
+        expect(store.user.preferences.$at("theme").$get()).toBe("dark");
         expect(store.user.preferences.theme.$get()).toBe("dark");
       });
 
@@ -583,19 +583,19 @@ describe("createCompositeStore", () => {
       });
     });
 
-    describe("$key() method", () => {
+    describe("$at() method", () => {
       beforeEach(() => {
         store.$set(state);
       });
 
       it("is defined", () => {
-        expect(store.$key("user.preferences.notifications")).toBeDefined();
-        expect(store.user.$key("preferences.notifications")).toBeDefined();
-        expect(store.user.preferences.$key("notifications")).toBeDefined();
+        expect(store.$at("user.preferences.notifications")).toBeDefined();
+        expect(store.user.$at("preferences.notifications")).toBeDefined();
+        expect(store.user.preferences.$at("notifications")).toBeDefined();
       });
 
-      it("allows chaining $key calls", () => {
-        const theme = store.$key("user").$key("preferences").$key("theme");
+      it("allows chaining $at calls", () => {
+        const theme = store.$at("user").$at("preferences").$at("theme");
         expect(theme.$get()).toBe("light");
 
         theme.$set("dark");
@@ -604,20 +604,20 @@ describe("createCompositeStore", () => {
 
       it("handles non-existent paths gracefully", () => {
         const nonExistentKey: any = "user.nonExistent.property";
-        const nonExistent = () => store.$key(nonExistentKey);
+        const nonExistent = () => store.$at(nonExistentKey);
         expect(nonExistent).not.toThrow();
         expect(nonExistent().$get()).toBeUndefined();
       });
     });
 
-    describe("$sub() method", () => {
+    describe("$subscribe() method", () => {
       beforeEach(() => {
         store.$set(state);
       });
 
       it("calls subscribers with initial state", () => {
         const subscriber = vi.fn();
-        store.$sub(subscriber);
+        store.$subscribe(subscriber);
         expect(subscriber).toHaveBeenCalledWith(store.$get());
       });
 
@@ -626,9 +626,9 @@ describe("createCompositeStore", () => {
         const countSubscriber = vi.fn();
         const userSubscriber = vi.fn();
 
-        store.$sub(rootSubscriber);
-        store.count.$sub(countSubscriber);
-        store.user.$sub(userSubscriber);
+        store.$subscribe(rootSubscriber);
+        store.count.$subscribe(countSubscriber);
+        store.user.$subscribe(userSubscriber);
 
         rootSubscriber.mockClear();
         countSubscriber.mockClear();
@@ -660,7 +660,7 @@ describe("createCompositeStore", () => {
 
       it("allows unsubscribing from state changes", () => {
         const subscriber = vi.fn();
-        const unsubscribe = store.$sub(subscriber, false);
+        const unsubscribe = store.$subscribe(subscriber, false);
 
         subscriber.mockClear();
 
@@ -1270,9 +1270,9 @@ describe("createCompositeStore", () => {
         const preferencesSubscriber = vi.fn();
         const settingsSubscriber = vi.fn();
 
-        store.$sub(rootSubscriber);
-        store.preferences.$sub(preferencesSubscriber);
-        store.settings.$sub(settingsSubscriber);
+        store.$subscribe(rootSubscriber);
+        store.preferences.$subscribe(preferencesSubscriber);
+        store.settings.$subscribe(settingsSubscriber);
 
         rootSubscriber.mockClear();
         preferencesSubscriber.mockClear();
@@ -1323,9 +1323,9 @@ describe("createCompositeStore", () => {
         const userSubscriber = vi.fn();
         const preferencesSubscriber = vi.fn();
 
-        store.$sub(rootSubscriber);
-        store.user.$sub(userSubscriber);
-        store.user.preferences.$sub(preferencesSubscriber);
+        store.$subscribe(rootSubscriber);
+        store.user.$subscribe(userSubscriber);
+        store.user.preferences.$subscribe(preferencesSubscriber);
 
         rootSubscriber.mockClear();
         userSubscriber.mockClear();
@@ -1366,8 +1366,8 @@ describe("createCompositeStore", () => {
         const atomicSubscriber = vi.fn();
         const regularSubscriber = vi.fn();
 
-        store.atomicData.$sub(atomicSubscriber);
-        store.regularData.$sub(regularSubscriber);
+        store.atomicData.$subscribe(atomicSubscriber);
+        store.regularData.$subscribe(regularSubscriber);
 
         atomicSubscriber.mockClear();
         regularSubscriber.mockClear();
@@ -1498,17 +1498,17 @@ describe("createCompositeStore", () => {
           expect(count.value.$get()).toBe(0);
         });
 
-        it("should access methods via $key", () => {
-          count.$key("increase")(3);
+        it("should access methods via $at", () => {
+          count.$at("increase")(3);
           expect(count.value.$get()).toBe(3);
 
-          count.$key("decrease")(1);
+          count.$at("decrease")(1);
           expect(count.value.$get()).toBe(2);
 
-          count.$key("set")(5);
+          count.$at("set")(5);
           expect(count.value.$get()).toBe(5);
 
-          count.$key("reset")();
+          count.$at("reset")();
           expect(count.value.$get()).toBe(0);
         });
 
@@ -1780,7 +1780,7 @@ describe("createCompositeStore", () => {
         const subscribers = [];
 
         for (let i = 0; i < 10; i++) {
-          const unsubscribe = store.count.$sub(() => {});
+          const unsubscribe = store.count.$subscribe(() => {});
           subscribers.push(unsubscribe);
         }
 
@@ -2036,7 +2036,7 @@ describe("createCompositeStore", () => {
     });
 
     describe("Deep path setter protection", () => {
-      it("should prevent mutations when using $key path notation", () => {
+      it("should prevent mutations when using $at path notation", () => {
         const store = createCompositeStore({
           app: {
             user: {
@@ -2046,9 +2046,9 @@ describe("createCompositeStore", () => {
           },
         });
 
-        const profileBefore = store.$key("app.user.profile").$get();
+        const profileBefore = store.$at("app.user.profile").$get();
 
-        store.$key("app.user.profile").$set((profile) => {
+        store.$at("app.user.profile").$set((profile) => {
           profile.name = "Mutated";
           profile.settings.theme = "dark";
 
@@ -2058,8 +2058,8 @@ describe("createCompositeStore", () => {
         expect(profileBefore.name).toBe("John");
         expect(profileBefore.settings.theme).toBe("light");
 
-        expect(store.$key("app.user.profile").$get().name).toBe("Jane");
-        expect(store.$key("app.user.profile").$get().settings.theme).toBe(
+        expect(store.$at("app.user.profile").$get().name).toBe("Jane");
+        expect(store.$at("app.user.profile").$get().settings.theme).toBe(
           "light"
         );
       });
@@ -2167,7 +2167,7 @@ describe("createCompositeStore", () => {
         nested: { deep: { value: "test" } },
       });
 
-      const deepPath = store.$key("nested.deep.value");
+      const deepPath = store.$at("nested.deep.value");
       expect(deepPath.$get()).toBe("test");
 
       deepPath.$set("updated");

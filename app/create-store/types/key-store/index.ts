@@ -7,7 +7,7 @@ import type { StoreValueResolver } from "@/create-store/types/store-value-resolv
 export interface KeyStore<
   State extends GenericObject,
 > extends PrimitiveStore<State> {
-  readonly $key: <Path extends Paths<State>>(
+  readonly $at: <Path extends Paths<State>>(
     path: Path
   ) => StoreValueResolver<ResolvePath<State, Path>>;
 }

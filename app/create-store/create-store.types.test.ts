@@ -288,7 +288,7 @@ describe("createStore - Type Tests", () => {
         (value: ((prev: number) => number) | number) => void
       >();
 
-      expectTypeOf(primitiveStore.$sub).toExtend<
+      expectTypeOf(primitiveStore.$subscribe).toExtend<
         (subscriber: (value: number) => void, immediate?: boolean) => () => void
       >();
     });
