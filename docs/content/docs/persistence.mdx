@@ -17,13 +17,14 @@ The pattern is always the same:
 Use `createLocalStorageAdapter` to persist data in the browser permanently (until cleared).
 
 ```ts
+import { z } from "zod";
 import { createStore, createLocalStorageAdapter } from "@ibnlanre/portal";
 
 // 1. Create the adapter
 const [get, set] = createLocalStorageAdapter<number>("my-counter-key");
 
 // 2. Initialize store with saved data (or 0 if empty)
-const counterStore = createStore(get(0));
+const counterStore = createStore(z.number(), get(0));
 
 // 3. Save changes automatically
 counterStore.$subscribe(set, false); // 'false' skips initial save
@@ -36,11 +37,12 @@ That's it! Your counter now survives reloads.
 If you only want data to persist while the tab is open, use `createSessionStorageAdapter`.
 
 ```ts
+import { z } from "zod";
 import { createStore, createSessionStorageAdapter } from "@ibnlanre/portal";
 
 const [get, set] = createSessionStorageAdapter("session-data");
 
-const store = createStore(get({ step: 1 }));
+const store = createStore(z.object({ step: z.number() }), get({ step: 1 }));
 
 store.$subscribe(set, false);
 ```
@@ -52,6 +54,7 @@ Need your state accessible by the server? Or specifically need cookies? We've go
 **Note:** You can optional sign your cookies with a secret to prevent tampering!
 
 ```ts
+import { z } from "zod";
 import { createStore, createCookieStorageAdapter } from "@ibnlanre/portal";
 
 const [get, set] = createCookieStorageAdapter("user-prefs", {
@@ -61,7 +64,10 @@ const [get, set] = createCookieStorageAdapter("user-prefs", {
   secret: "my-secret-key", // Enables signing!
 });
 
-const prefsStore = createStore(get({ theme: "dark" }));
+const prefsStore = createStore(
+  z.object({ theme: z.string() }),
+  get({ theme: "dark" })
+);
 
 prefsStore.$subscribe(set, false);
 ```
@@ -99,7 +105,7 @@ const [get, set] = createAsyncBrowserStorageAdapter("secure-data", {
 
 // Use 'await' to get the initial state
 const initialState = await get({ sensitive: "default" });
-const store = createStore(initialState);
+const store = createStore(z.object({ sensitive: z.string() }), initialState);
 
 store.$subscribe(set, false);
 ```

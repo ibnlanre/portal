@@ -178,10 +178,11 @@ Get up and running with `@ibnlanre/portal` in 5 minutes.
 ### Your first store
 
 ```ts
+import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 
 // Create a simple store
-const countStore = createStore(0);
+const countStore = createStore(z.number(), 0);
 
 // Get the current value
 console.log(countStore.$get()); // 0
@@ -199,16 +200,24 @@ countStore.$subscribe((newValue) => {
 ### Stores with nested state
 
 ```ts
+import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 
-const userStore = createStore({
-  name: "Alex",
-  email: "alex@example.com",
-  preferences: {
-    theme: "dark",
-    notifications: true,
-  },
-});
+const userStore = createStore(
+  z.object({
+    name: z.string(),
+    email: z.string(),
+    preferences: z.object({
+      theme: z.string(),
+      notifications: z.boolean(),
+    }),
+  }),
+  {
+    name: "Alex",
+    email: "alex@example.com",
+    preferences: { theme: "dark", notifications: true },
+  }
+);
 
 // Access nested values
 console.log(userStore.preferences.theme.$get()); // "dark"
@@ -220,10 +229,11 @@ userStore.preferences.$set({ theme: "light" }); // notifications remains true
 ### Using stores in React
 
 ```tsx
+import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 import { useState } from "react";
 
-const counterStore = createStore({ count: 0 });
+const counterStore = createStore(z.object({ count: z.number() }), { count: 0 });
 
 function Counter() {
   // Use the $use hook like useState
@@ -279,55 +289,86 @@ Both store types share a consistent API for getting, setting, and subscribing to
 
 By default, when you update objects in `@ibnlanre/portal`, the library performs **partial updates** (merging). This means only the properties you specify are changed, while other properties remain unchanged. However, sometimes you want to treat an object as a **single value** that should be completely replaced when updated.
 
-The `createAtom()` function allows you to mark objects as **atomic**, which changes their update behavior from merging to complete replacement.
+Use `z.custom<T>()` in your schema for fields where you want **complete replacement** instead of partial merging. This tells the store to treat that field as an opaque primitive value.
 
 <details>
 <summary><strong>Click to expand: Understanding atomic objects in detail</strong></summary>
 
 #### Understanding the difference
 
-**Regular objects (default behavior - merging):**
+**Regular object fields (default behavior — merging):**
 
 ```ts
+import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 
-const settingsStore = createStore({
-  theme: "dark",
-  fontSize: 16,
-  notifications: true,
-});
+const settingsStore = createStore(
+  z.object({
+    theme: z.string(),
+    fontSize: z.number(),
+    notifications: z.boolean(),
+  }),
+  { theme: "dark", fontSize: 16, notifications: true }
+);
 
-// Partial update - only changes the theme, keeps other properties
+// Partial update — only changes the theme, keeps other properties
 settingsStore.$set({ theme: "light" });
 
 console.log(settingsStore.$get());
 // Output: { theme: "light", fontSize: 16, notifications: true }
 ```
 
-**Atomic objects (complete replacement):**
+**Atomic fields using `z.custom<T>()` (complete replacement):**
 
 ```ts
-import { createStore, createAtom } from "@ibnlanre/portal";
+import { z } from "zod";
+import { createStore } from "@ibnlanre/portal";
 
-const preferencesStore = createStore({
-  userSettings: createAtom({
-    theme: "dark",
-    fontSize: 16,
-    notifications: true,
+interface ApiConfig {
+  baseUrl: string;
+  timeout: number;
+  retries: number;
+}
+
+const appStore = createStore(
+  z.object({
+    // Regular object — supports partial updates
+    user: z.object({
+      name: z.string(),
+      email: z.string(),
+      age: z.number(),
+    }),
+    // Atomic field — complete replacement only
+    apiConfig: z.custom<ApiConfig>(),
   }),
+  {
+    user: { name: "Alice", email: "alice@example.com", age: 30 },
+    apiConfig: {
+      baseUrl: "https://api.example.com",
+      timeout: 5000,
+      retries: 3,
+    },
+  }
+);
+
+// Partial update on regular object
+appStore.user.$set({ name: "Bob" });
+console.log(appStore.user.$get());
+// Output: { name: "Bob", email: "alice@example.com", age: 30 }
+
+// Complete replacement on atomic field
+appStore.apiConfig.$set({
+  baseUrl: "https://api.dev.com",
+  timeout: 3000,
+  retries: 1,
 });
-
-// Complete replacement - replaces the entire object
-preferencesStore.userSettings.$set({ theme: "light" });
-
-console.log(preferencesStore.userSettings.$get());
-// Output: { theme: "light" }
-// Note: fontSize and notifications are gone
+console.log(appStore.apiConfig.$get());
+// Output: { baseUrl: "https://api.dev.com", timeout: 3000, retries: 1 }
 ```
 
-#### When to use atomic objects
+#### When to use `z.custom<T>()`
 
-Atomic objects are particularly useful for:
+Atomic fields are particularly useful for:
 
 1. **Configuration objects** that should be treated as complete units
 2. **API response data** that represents a complete entity
@@ -335,128 +376,31 @@ Atomic objects are particularly useful for:
 4. **Immutable data structures** where partial updates don't make conceptual sense
 5. **Performance optimization** when you know you always want to replace the entire object
 
-#### Using `createAtom()`
+#### Handling atomic fields with `fallback()`
 
-**Syntax:**
-
-```ts
-createAtom<State extends object>(value: DeepPartial<State>): Atomic<State>
-```
-
-- **`value`**: The partial object to mark as atomic (can be incomplete)
-- **Returns**: The same object, but marked as atomic for complete replacement behavior
-
-> **Note:** Since atomic objects support complete replacement, they can be cleared of their values, which is why `createAtom()` accepts `DeepPartial<State>`. When accessing atomic objects via `$get()`, the result might have missing properties. Use the `fallback()` function to provide default values and restore complete types.
-
-**Basic Example:**
+When an atomic field may be partially filled or reset, the `fallback()` function provides default values and restores complete types:
 
 ```ts
-import { createStore, createAtom } from "@ibnlanre/portal";
-
-const appStore = createStore({
-  // Regular object - supports partial updates
-  user: {
-    name: "Alice",
-    email: "alice@example.com",
-    age: 30,
-  },
-
-  // Atomic object - complete replacement only
-  apiConfig: createAtom({
-    baseUrl: "https://api.example.com",
-    timeout: 5000,
-    retries: 3,
-  }),
-});
-
-// Partial update on regular object
-appStore.user.$set({ name: "Bob" });
-console.log(appStore.user.$get());
-// Output: { name: "Bob", email: "alice@example.com", age: 30 }
-
-// Complete replacement on atomic object
-appStore.apiConfig.$set({ baseUrl: "https://api.dev.com" });
-console.log(appStore.apiConfig.$get());
-// Output: { baseUrl: "https://api.dev.com" }
-// Note: timeout and retries are removed
-
-// Atomic objects can be completely cleared
-appStore.apiConfig.$set({});
-console.log(appStore.apiConfig.$get());
-// Output: {} - all properties are gone
-```
-
-#### Handling cleared atomic objects with `fallback()`
-
-Since atomic objects can be cleared of their values, accessing them might return incomplete data. The `fallback()` function helps provide default values and restore complete types:
-
-```ts
-import { createStore, createAtom, fallback } from "@ibnlanre/portal";
-
-const configStore = createStore({
-  settings: createAtom({
-    theme: "light" as "light" | "dark",
-    fontSize: 16,
-    notifications: true,
-  }),
-});
-
-// Define default settings
-const defaultSettings = {
-  theme: "light" as "light" | "dark",
-  fontSize: 16,
-  notifications: true,
-};
-
-// Settings might be partially cleared
-configStore.settings.$set({ theme: "dark" }); // Only theme is set
-
-// Use fallback to ensure we have complete settings
-const completeSettings = configStore.settings.$get(fallback(defaultSettings));
-console.log(completeSettings);
-// Output: { theme: "dark", fontSize: 16, notifications: true }
-// fallback provides missing fontSize and notifications
-
-// Without fallback, we'd get incomplete data
-const incompleteSettings = configStore.settings.$get();
-console.log(incompleteSettings);
-// Output: { theme: "dark" } - missing fontSize and notifications
-```
-
-**Advanced fallback usage:**
-
-````ts
-import { createStore, createAtom, fallback } from "@ibnlanre/portal";
+import { z } from "zod";
+import { createStore, fallback } from "@ibnlanre/portal";
 
 interface UserPreferences {
   theme: "light" | "dark";
   language: string;
-  notifications: {
-    email: boolean;
-    push: boolean;
-  };
-  layout: {
-    sidebar: "collapsed" | "expanded";
-    density: "compact" | "comfortable";
-  };
+  notifications: { email: boolean; push: boolean };
 }
 
-const userStore = createStore({
-  preferences: createAtom<UserPreferences>({}), // Start with empty atomic object
-});
+const userStore = createStore(
+  z.object({
+    preferences: z.custom<Partial<UserPreferences>>(),
+  }),
+  { preferences: {} }
+);
 
-// Define comprehensive defaults
 const defaultPreferences: UserPreferences = {
   theme: "light",
   language: "en",
-  notifications: {
-    email: true,
-    push: false,
-  },
-  layout: {
-    sidebar: "expanded",
-    density: "comfortable",
-  },
+  notifications: { email: true, push: false },
 };
 
 // User updates only theme
@@ -465,212 +409,13 @@ userStore.preferences.$set({ theme: "dark" });
 // Get preferences with fallback for missing values
 const preferences = userStore.preferences.$get(fallback(defaultPreferences));
 console.log(preferences);
-// Output: Complete UserPreferences object with theme: "dark" and all defaults
+// Output: { theme: "dark", language: "en", notifications: { email: true, push: false } }
 
 // Type safety: preferences is typed as UserPreferences (not partial)
 preferences.notifications.email; // ✅ TypeScript knows this exists
-```#### Advanced atomic object patterns
-
-**1. Mixed regular and atomic objects:**
-
-```ts
-import { createStore, createAtom } from "@ibnlanre/portal";
-
-const gameStore = createStore({
-  player: {
-    name: "Player1",
-    score: 100,
-    inventory: {
-      gold: 50,
-      items: ["sword", "potion"],
-    },
-  },
-
-  // Game settings are treated as a complete unit
-  gameSettings: createAtom({
-    difficulty: "medium",
-    soundEnabled: true,
-    graphicsQuality: "high",
-  }),
-});
-
-// Partial update on player (merges with existing data)
-gameStore.player.$set({ score: 150 });
-// player.name and player.inventory remain unchanged
-
-// Complete replacement of game settings
-gameStore.gameSettings.$set({ difficulty: "hard" });
-// soundEnabled and graphicsQuality are removed
-````
-
-**2. Atomic objects with functional updates:**
-
-```ts
-import { createStore, createAtom } from "@ibnlanre/portal";
-
-const themeStore = createStore({
-  currentTheme: createAtom({
-    primary: "#007bff",
-    secondary: "#6c757d",
-    background: "#ffffff",
-  }),
-});
-
-// Use functional updates for conditional logic
-themeStore.currentTheme.$set((currentTheme) => {
-  if (currentTheme.background === "#ffffff") {
-    // Switch to dark theme (complete replacement)
-    return {
-      primary: "#0d6efd",
-      secondary: "#495057",
-      background: "#212529",
-    };
-  } else {
-    // Switch to light theme (complete replacement)
-    return {
-      primary: "#007bff",
-      secondary: "#6c757d",
-      background: "#ffffff",
-    };
-  }
-});
 ```
 
-**3. Nested atomic objects:**
-
-```ts
-import { createStore, createAtom } from "@ibnlanre/portal";
-
-const userStore = createStore({
-  profile: {
-    name: "John Doe",
-
-    // Preferences are atomic - complete replacement
-    preferences: createAtom({
-      language: "en",
-      timezone: "UTC",
-      notifications: true,
-    }),
-
-    // Regular object - partial updates
-    contact: {
-      email: "john@example.com",
-      phone: "+1234567890",
-    },
-  },
-});
-
-// Partial update on contact
-userStore.profile.contact.$set({ email: "newemail@example.com" });
-// phone number remains unchanged
-
-// Complete replacement of preferences
-userStore.profile.preferences.$set({ language: "fr", timezone: "CET" });
-// notifications setting is removed
-```
-
-#### Important characteristics
-
-**1. `createAtom()` is idempotent:**
-
-```ts
-import { createAtom } from "@ibnlanre/portal";
-
-const config = { api: "https://api.com", version: "v1" };
-const atomic1 = createAtom(config);
-const atomic2 = createAtom(atomic1); // Safe to call multiple times
-
-console.log(atomic1 === atomic2); // true
-```
-
-**2. Atomic objects preserve normal JavaScript behavior:**
-
-```ts
-import { createAtom } from "@ibnlanre/portal";
-
-const settings = createAtom({
-  theme: "dark",
-  lang: "en",
-});
-
-// Normal object operations work as expected
-console.log(Object.keys(settings)); // ["theme", "lang"]
-console.log(settings.theme); // "dark"
-console.log(JSON.stringify(settings)); // '{"theme":"dark","lang":"en"}'
-```
-
-**3. `createAtom()` accepts partial objects by design:**
-
-The `createAtom()` function intentionally accepts `DeepPartial<State>`, allowing you to create atomic objects with incomplete data. This design enables flexible initialization and clearing patterns:
-
-```ts
-import { createStore, createAtom } from "@ibnlanre/portal";
-
-// Start with partial data
-const configStore = createStore({
-  settings: createAtom({ theme: "dark" }), // Only theme is provided
-});
-
-// Can be completely cleared
-configStore.settings.$set({}); // All properties removed
-
-// Can be selectively updated
-configStore.settings.$set({ theme: "light", fontSize: 14 }); // Replace with new data
-```
-
-**4. Atomic behavior enforces complete replacement:**
-
-When you update an atomic object, the entire object is replaced, not merged:
-
-```ts
-import { createStore, createAtom } from "@ibnlanre/portal";
-
-const store = createStore({
-  regularData: { a: 1, b: 2 },
-  atomicData: createAtom({ x: 10, y: 20 }),
-});
-
-store.regularData.$subscribe((data) => {
-  console.log("Regular data changed:", data);
-});
-
-store.atomicData.$subscribe((data) => {
-  console.log("Atomic data changed:", data);
-});
-
-store.regularData.$set({ a: 5 });
-// Logs: "Regular data changed: { a: 5, b: 2 }"
-// Note: Property 'b' is preserved through merging
-
-store.atomicData.$set({ x: 50 });
-// Logs: "Atomic data changed: { x: 50 }"
-// Note: Property 'y' is gone due to complete replacement
-```
-
-**5. Use `fallback()` for safe access to atomic objects:**
-
-Since atomic objects can contain partial data, always use `fallback()` when you need guaranteed complete objects:
-
-```ts
-import { createStore, createAtom, fallback } from "@ibnlanre/portal";
-
-const store = createStore({
-  config: createAtom({ theme: "dark" }), // Partial atomic object
-});
-
-// Define complete defaults
-const defaults = { theme: "light", fontSize: 16, animations: true };
-
-// Safe access with fallback
-const config = store.config.$get(fallback(defaults));
-// Result: { theme: "dark", fontSize: 16, animations: true }
-
-// Direct access might be incomplete
-const directConfig = store.config.$get();
-// Result: { theme: "dark" } - missing fontSize and animations
-```
-
-Understanding atomic objects helps you control exactly how your data updates, leading to more predictable state management and fewer bugs related to unexpected partial updates.
+Understanding atomic fields helps you control exactly how your data updates, leading to more predictable state management and fewer bugs related to unexpected partial updates.
 
 </details>
 
@@ -678,8 +423,9 @@ Understanding atomic objects helps you control exactly how your data updates, le
 
 `@ibnlanre/portal` is designed to work with minimal configuration. The primary configuration points are:
 
-1.  **Store Initialization**: When you call `createStore()`, you provide the initial state. This is the main configuration for a store's structure and default values.
-2.  **Persistence Adapters**: If you use state persistence, you configure adapters with options like storage keys and serialization functions.
+1.  **Schema**: When you call `createStore()`, you provide a schema as the first argument. The schema defines the type and structure of your state. Use any [Standard Schema](https://standardschema.dev/) compatible library (Zod, Valibot, ArkType, etc.).
+2.  **Initial State**: The second argument provides the starting value. If the schema supplies defaults (e.g., `z.number().default(0)`), this argument is optional.
+3.  **Persistence Adapters**: If you use state persistence, you configure adapters with options like storage keys and serialization functions.
 
 Refer to the [Persist state](#persist-state) section for detailed configuration of each adapter.
 
@@ -696,43 +442,58 @@ The `createStore()` function is the primary way to initialize a new store. For s
 **Syntax:**
 
 ```ts
-createStore<S>(initialState: S | Promise<S>): Store<S>
+// Schema with explicit initial state
+createStore<Schema, State>(schema: Schema, initialState: State): Store<State>
+
+// Schema with built-in defaults (no initialState needed)
+createStore<Schema>(schema: Schema): Store<InferSchema<Schema>>
 ```
 
-- **`initialState`**: The initial value for the store.
-  - If a primitive value (string, number, boolean, etc.) is provided, or an object that may be undefined or null, a `PrimitiveStore<S>` is created.
-  - If an object is provided, a `CompositeStore<S>` is created, allowing for nested properties to be accessed as individual stores.
-  - If a `Promise` is provided, the store will be initialized with the resolved value of the promise. The store will be empty until the promise resolves. The resolved value is treated as a single entity; if it's an object, it becomes the state of a primitive-like store, not a composite store with nested properties.
-- **Returns**: A `Store` instance, which can be a `PrimitiveStore<S>` or `CompositeStore<S>` depending on `initialState`.
+- **`schema`**: A [Standard Schema](https://standardschema.dev/) instance (e.g., a Zod schema). Defines the shape and type of the state.
+- **`initialState`** (optional): The starting value for the store. Required when the schema has no defaults.
+  - If the resolved state is a plain object, a `CompositeStore` is created with nested property stores.
+  - If the resolved state is a primitive or a schema wraps an opaque type, a `PrimitiveStore` is created.
+- **Returns**: A `Store` instance (`PrimitiveStore<S>` or `CompositeStore<S>`).
 
 **Examples:**
 
 1.  **Creating a primitive store:**
 
     ```ts
+    import { z } from "zod";
     import { createStore } from "@ibnlanre/portal";
 
-    const countStore = createStore(0);
+    const countStore = createStore(z.number(), 0);
     console.log(countStore.$get()); // Output: 0
 
-    const messageStore = createStore("Hello, world!");
+    // Schema defaults — no initialState needed
+    const messageStore = createStore(z.string().default("Hello, world!"));
     console.log(messageStore.$get()); // Output: "Hello, world!"
     ```
 
 2.  **Creating a composite store:**
 
     ```ts
+    import { z } from "zod";
     import { createStore } from "@ibnlanre/portal";
 
-    const userStore = createStore({
-      id: 1,
-      name: "Alex Johnson",
-      email: "alex@example.com",
-      address: {
-        street: "123 Main St",
-        city: "Anytown",
-      },
-    });
+    const userStore = createStore(
+      z.object({
+        id: z.number(),
+        name: z.string(),
+        email: z.string(),
+        address: z.object({
+          street: z.string(),
+          city: z.string(),
+        }),
+      }),
+      {
+        id: 1,
+        name: "Alex Johnson",
+        email: "alex@example.com",
+        address: { street: "123 Main St", city: "Anytown" },
+      }
+    );
 
     console.log(userStore.name.$get()); // Output: "Alex Johnson"
     console.log(userStore.address.city.$get()); // Output: "Anytown"
@@ -741,6 +502,7 @@ createStore<S>(initialState: S | Promise<S>): Store<S>
 3.  **Creating a store with asynchronous initialization:**
 
     ```ts
+    import { z } from "zod";
     import { createStore } from "@ibnlanre/portal";
 
     async function fetchUserData(): Promise<{ id: number; name: string }> {
@@ -749,38 +511,41 @@ createStore<S>(initialState: S | Promise<S>): Store<S>
       });
     }
 
-    const userProfileStore = await createStore(fetchUserData());
-    // The store is now initialized as a primitive store with the fetched data.
-    // Note: userProfileStore holds { id: 1, name: "Fetched User" } as a single value.
-    // It's not created as a composite store despite being an object.
+    // Pass an async schema default to createStore
+    const userProfileStore = await createStore(
+      z.custom<{ id: number; name: string }>(),
+      fetchUserData()
+    );
 
     console.log(userProfileStore.$get()); // Output: { id: 1, name: "Fetched User" }
     ```
 
 #### Using `createPrimitiveStore()`
 
-Creates a store specifically for a single, primitive value (string, number, boolean, null, undefined, symbol, bigint).
+Creates a store specifically for a single, primitive value.
 
 **Syntax:**
 
 ```ts
-createPrimitiveStore<S extends Primitives>(initialState: S): PrimitiveStore<S>
+createPrimitiveStore<Schema, State>(schema: Schema, initialState: State): PrimitiveStore<State>
 ```
 
-- **`initialState`**: The initial primitive value.
-- **Returns**: A `PrimitiveStore<S>` instance.
+- **`schema`**: A Standard Schema instance describing the type.
+- **`initialState`**: The initial value.
+- **Returns**: A `PrimitiveStore<State>` instance.
 
 **When to use:**
 
 - When you are certain the state will always be a primitive value and want to be explicit.
-- In rare cases where `createStore()` type inference for primitives might need disambiguation (though generally robust).
+- When you need a store for a value that should be completely replaced (not merged) on every `$set`.
 
 **Example:**
 
 ```ts
+import { z } from "zod";
 import { createPrimitiveStore } from "@ibnlanre/portal";
 
-const isActiveStore = createPrimitiveStore(false);
+const isActiveStore = createPrimitiveStore(z.boolean(), false);
 console.log(isActiveStore.$get()); // false
 ```
 
@@ -791,11 +556,12 @@ Creates a store specifically for an object, enabling nested state structures.
 **Syntax:**
 
 ```ts
-createCompositeStore<S extends GenericObject>(initialState: S): CompositeStore<S>
+createCompositeStore<Schema, State>(schema: Schema, initialState: State): CompositeStore<State>
 ```
 
-- **`initialState`**: The initial object. Each property can become a nested store.
-- **Returns**: A `CompositeStore<S>` instance.
+- **`schema`**: A Standard Schema instance describing the object shape.
+- **`initialState`**: The initial object. Each property becomes a nested store.
+- **Returns**: A `CompositeStore<State>` instance.
 
 **When to use:**
 
@@ -805,16 +571,32 @@ createCompositeStore<S extends GenericObject>(initialState: S): CompositeStore<S
 **Example:**
 
 ```ts
+import { z } from "zod";
 import { createCompositeStore } from "@ibnlanre/portal";
 
-const userDetailsStore = createCompositeStore({
-  username: "guest",
-  permissions: { read: true, write: false },
-});
+const userDetailsStore = createCompositeStore(
+  z.object({
+    username: z.string(),
+    permissions: z.object({ read: z.boolean(), write: z.boolean() }),
+  }),
+  { username: "guest", permissions: { read: true, write: false } }
+);
 
 console.log(userDetailsStore.username.$get()); // "guest"
 userDetailsStore.permissions.write.$set(true);
 ```
+
+import { createCompositeStore } from "@ibnlanre/portal";
+
+const userDetailsStore = createCompositeStore({
+username: "guest",
+permissions: { read: true, write: false },
+});
+
+console.log(userDetailsStore.username.$get()); // "guest"
+userDetailsStore.permissions.write.$set(true);
+
+````
 
 > **Note:** Using `createStore()` is generally preferred as it automatically determines whether to create a primitive or composite store based on the initial state.
 
@@ -845,7 +627,7 @@ Global stores are typically created outside of the React component lifecycle, so
 createContextStore<Context, ContextStore>(
   initializer: (context: Context) => ContextStore
 ): [StoreProvider, useStore]
-```
+````
 
 - **`initializer`**: A function that receives the context value and returns a store instance
 - **Returns**: An array containing `[StoreProvider, useStore]`
@@ -853,6 +635,7 @@ createContextStore<Context, ContextStore>(
 **Basic Example:**
 
 ```tsx
+import { z } from "zod";
 import { createContextStore, createStore } from "@ibnlanre/portal";
 
 interface UserProps {
@@ -863,7 +646,13 @@ interface UserProps {
 // Create a context store for user settings
 const [UserProvider, useUserStore] = createContextStore(
   (context: UserProps) => {
-    return createStore(context);
+    return createStore(
+      z.object({
+        userId: z.string(),
+        theme: z.enum(["light", "dark"]),
+      }),
+      context
+    );
   }
 );
 
@@ -915,7 +704,10 @@ const [CounterProvider, useCounterStore] = createContextStore(
         },
       };
 
-      const counterStore = createStore(combine(initialState, actions));
+      const counterStore = createStore(
+        z.object({ count: z.number() }),
+        combine(initialState, actions)
+      );
       return counterStore;
     }, [context.initialCount]);
 
@@ -989,10 +781,13 @@ $get<R>(selector: (currentState: S) => R): R
 1.  **Getting the current state:**
 
     ```ts
-    const countStore = createStore(10);
+    const countStore = createStore(z.number(), 10);
     const currentCount = countStore.$get(); // 10
 
-    const userStore = createStore({ name: "Alex", role: "admin" });
+    const userStore = createStore(
+      z.object({ name: z.string(), role: z.string() }),
+      { name: "Alex", role: "admin" }
+    );
     const currentUser = userStore.$get(); // { name: "Alex", role: "admin" }
     const userName = userStore.name.$get(); // "Alex"
     ```
@@ -1000,11 +795,14 @@ $get<R>(selector: (currentState: S) => R): R
 2.  **Getting a derived value using a selector:**
 
     ```ts
-    const countStore = createStore(10);
+    const countStore = createStore(z.number(), 10);
     const doubledCount = countStore.$get((count) => count * 2); // 20
     console.log(countStore.$get()); // 10 (original state is unchanged)
 
-    const userStore = createStore({ firstName: "Alex", lastName: "Johnson" });
+    const userStore = createStore(
+      z.object({ firstName: z.string(), lastName: z.string() }),
+      { firstName: "Alex", lastName: "Johnson" }
+    );
     const fullName = userStore.$get(
       (user) => `${user.firstName} ${user.lastName}`
     ); // "Alex Johnson"
@@ -1032,7 +830,7 @@ $set(updater: (prevState: S) => S): void
 1.  **Setting a new value directly (Primitive Store):**
 
     ```ts
-    const countStore = createStore(0);
+    const countStore = createStore(z.number(), 0);
     countStore.$set(5);
     console.log(countStore.$get()); // 5
     ```
@@ -1040,7 +838,7 @@ $set(updater: (prevState: S) => S): void
 2.  **Updating using a function (Primitive Store):**
 
     ```ts
-    const countStore = createStore(5);
+    const countStore = createStore(z.number(), 5);
     countStore.$set((prevCount) => prevCount + 1);
     console.log(countStore.$get()); // 6
     ```
@@ -1048,11 +846,14 @@ $set(updater: (prevState: S) => S): void
 3.  **Partial update on a Composite Store:**
 
     ```ts
-    const settingsStore = createStore({
-      theme: "light",
-      fontSize: 12,
-      notifications: true,
-    });
+    const settingsStore = createStore(
+      z.object({
+        theme: z.string(),
+        fontSize: z.number(),
+        notifications: z.boolean(),
+      }),
+      { theme: "light", fontSize: 12, notifications: true }
+    );
 
     // Update only theme and fontSize; notifications is preserved.
     settingsStore.$set({ theme: "dark", fontSize: 14 });
@@ -1069,10 +870,13 @@ $set(updater: (prevState: S) => S): void
 4.  **Updating nested properties in a Composite Store:**
 
     ```ts
-    const userStore = createStore({
-      profile: { name: "Alex", age: 30 },
-      role: "user",
-    });
+    const userStore = createStore(
+      z.object({
+        profile: z.object({ name: z.string(), age: z.number() }),
+        role: z.string(),
+      }),
+      { profile: { name: "Alex", age: 30 }, role: "user" }
+    );
 
     // Update nested property directly
     userStore.profile.name.$set("Alexandra");
@@ -1086,7 +890,10 @@ $set(updater: (prevState: S) => S): void
 **Note on arrays:** When a part of your state is an array, and you use `$set` on the parent object containing that array, the entire array will be replaced if it's part of the update object. To modify array elements (e.g., add or remove items), access the array store directly or use functional updates on that specific array store.
 
 ```ts
-const listStore = createStore({ items: [1, 2, 3], name: "My List" });
+const listStore = createStore(
+  z.object({ items: z.array(z.number()), name: z.string() }),
+  { items: [1, 2, 3], name: "My List" }
+);
 
 // This replaces the entire 'items' array but preserves 'name'.
 listStore.$set({ items: [4, 5, 6] });
@@ -1118,7 +925,7 @@ $subscribe(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean)
 1.  **Basic subscription:**
 
     ```ts
-    const nameStore = createStore("Alex");
+    const nameStore = createStore(z.string(), "Alex");
 
     const unsubscribe = nameStore.$subscribe((newName, oldName) => {
       console.log(`Name changed from "${oldName}" to "${newName}"`);
@@ -1135,7 +942,7 @@ $subscribe(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean)
 2.  **Subscription without immediate callback execution:**
 
     ```ts
-    const statusStore = createStore("idle");
+    const statusStore = createStore(z.string(), "idle");
 
     const unsubscribeNonImmediate = statusStore.$subscribe((newStatus) => {
       console.log(`Status updated to: ${newStatus}`);
@@ -1150,7 +957,10 @@ $subscribe(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean)
 3.  **Subscribing to a composite store:**
 
     ```ts
-    const settingsStore = createStore({ theme: "light", volume: 70 });
+    const settingsStore = createStore(
+      z.object({ theme: z.string(), volume: z.number() }),
+      { theme: "light", volume: 70 }
+    );
 
     // Setting up subscription to changes in settings
     const unsubscribeSettings = settingsStore.$subscribe((newSettings) => {
@@ -1180,19 +990,22 @@ $at<N extends Store<any>>(path: string): N
 **Examples:**
 
 ```ts
-const appStore = createStore({
-  user: {
-    profile: {
-      name: "Alex",
-      email: "alex@example.com",
+const appStore = createStore(
+  z.object({
+    user: z.object({
+      profile: z.object({ name: z.string(), email: z.string() }),
+      preferences: z.object({ theme: z.string(), language: z.string() }),
+    }),
+    status: z.string(),
+  }),
+  {
+    user: {
+      profile: { name: "Alex", email: "alex@example.com" },
+      preferences: { theme: "dark", language: "en" },
     },
-    preferences: {
-      theme: "dark",
-      language: "en",
-    },
-  },
-  status: "active",
-});
+    status: "active",
+  }
+);
 
 // Access nested stores using $at
 const themeStore = appStore.$at("user.preferences.theme");
@@ -1257,8 +1070,9 @@ $use<R>(
 
     ```tsx
     // src/stores/counter-store.ts
+    import { z } from "zod";
     import { createStore } from "@ibnlanre/portal";
-    export const countStore = createStore(0);
+    export const countStore = createStore(z.number(), 0);
 
     // src/components/counter.tsx
     import { countStore } from "../stores/counterStore";
@@ -1330,13 +1144,13 @@ $use<R>(
 
     ```tsx
     // store.ts
+    import { z } from "zod";
     import { createStore } from "@ibnlanre/portal";
 
-    export const userStore = createStore({
-      name: "Alex",
-      age: 30,
-      city: "Anytown",
-    });
+    export const userStore = createStore(
+      z.object({ name: z.string(), age: z.number(), city: z.string() }),
+      { name: "Alex", age: 30, city: "Anytown" }
+    );
 
     // user-profile.tsx
     import { userStore } from "./store";
@@ -1365,21 +1179,21 @@ $use<R>(
 
 ### Define actions: Functions in stores
 
-You can include functions within the initial state object of a composite store. These functions become methods on the store, allowing you to co-locate state logic (actions) with the state itself. This is useful for encapsulating complex state transitions.
+Use `combine()` to merge your state and actions into a single object before passing it to `createStore`. Actions reference the store variable directly—this works because function bodies evaluate lazily, after the variable is assigned.
 
-When defining actions, to update state, you must use the variable that holds the store instance. For example, if your store is `const store = createStore(...)`, you would use `store.property.$set(...)` inside an action, not `this.property.$set(...)`.
+When defining actions, to update state, use the variable that holds the store instance. For example, `store.property.$set(...)` inside an action, not `this.property.$set(...)`.
 
 **Examples:**
 
 1.  **Counter with actions:**
 
     ```ts
-    import { createStore } from "@ibnlanre/portal";
+    import { z } from "zod";
+    import { createStore, combine } from "@ibnlanre/portal";
 
-    const counterStore = createStore({
-      value: 0,
+    const state = { value: 0 };
+    const actions = {
       increment(amount: number = 1) {
-        // To update 'value', use 'counterStore.value'
         counterStore.value.$set((prev) => prev + amount);
       },
       decrement(amount: number = 1) {
@@ -1388,7 +1202,12 @@ When defining actions, to update state, you must use the variable that holds the
       reset() {
         counterStore.value.$set(0);
       },
-    });
+    };
+
+    const counterStore = createStore(
+      z.object({ value: z.number() }),
+      combine(state, actions)
+    );
 
     counterStore.increment(5);
     console.log(counterStore.value.$get()); // 5
@@ -1404,19 +1223,19 @@ When defining actions, to update state, you must use the variable that holds the
     You can structure actions to follow a reducer pattern if that fits your application's architecture.
 
     ```ts
-    import { createStore } from "@ibnlanre/portal";
+    import { z } from "zod";
+    import { createStore, combine } from "@ibnlanre/portal";
 
     type CounterAction =
       | { type: "INCREMENT"; payload: number }
       | { type: "DECREMENT"; payload: number }
       | { type: "RESET" };
 
-    const counterStore = createStore({
-      value: 0,
+    const state = { value: 0 };
+    const actions = {
       dispatch(action: CounterAction) {
         switch (action.type) {
           case "INCREMENT":
-            // Use 'counterStore.value' to access $set
             counterStore.value.$set((prev) => prev + action.payload);
             break;
           case "DECREMENT":
@@ -1427,7 +1246,12 @@ When defining actions, to update state, you must use the variable that holds the
             break;
         }
       },
-    });
+    };
+
+    const counterStore = createStore(
+      z.object({ value: z.number() }),
+      combine(state, actions)
+    );
 
     counterStore.dispatch({ type: "INCREMENT", payload: 5 });
     console.log(counterStore.value.$get()); // 5
@@ -1438,12 +1262,12 @@ When defining actions, to update state, you must use the variable that holds the
 
 ### Actions as hooks
 
-`@ibnlanre/portal` allows you to define functions within your store that can be used as React custom hooks. This powerful feature enables you to co-locate complex, stateful logic—including side effects managed by `useEffect` or component-level state from `useState` directly with the store it relates to.
+`@ibnlanre/portal` allows you to define functions within your store that can be used as React custom hooks. Use `combine()` to add hook functions alongside your state and pass the result to `createStore`.
 
 To create an action that functions as a hook, simply follow React's convention:
 
 - prefix the function name with `use`
-- place it directly within the object you pass to `createStore`
+- include it in the actions object passed to `combine()`
 - then use it like any regular custom hook in your React components.
 
 This pattern leverages React's own rules for hooks. It doesn't prevent the function from being recreated on re-renders (which is normal React behavior), but it provides an excellent way to organize and attach reusable hook logic to your store instance.
@@ -1455,11 +1279,12 @@ This pattern leverages React's own rules for hooks. It doesn't prevent the funct
 Let's create a store with an action that uses `useState` and `useEffect` to automatically reset a message after a delay.
 
 ```ts
-import { createStore } from "@ibnlanre/portal";
+import { z } from "zod";
+import { createStore, combine } from "@ibnlanre/portal";
 import { useState, useEffect } from "react";
 
-export const notificationStore = createStore({
-  message: "",
+const state = { message: "" };
+const actions = {
   setMessage(newMessage: string) {
     notificationStore.message.$set(newMessage);
   },
@@ -1481,7 +1306,12 @@ export const notificationStore = createStore({
 
     return [internalMessage, setInternalMessage] as const;
   },
-});
+};
+
+export const notificationStore = createStore(
+  z.object({ message: z.string() }),
+  combine(state, actions)
+);
 ```
 
 **Using the hook action in a component:**
@@ -1529,7 +1359,8 @@ The `useAsync` hook provides a robust solution for handling asynchronous operati
 **Basic Usage:**
 
 ```ts
-import { createStore, useAsync } from "@ibnlanre/portal";
+import { z } from "zod";
+import { createStore, combine, useAsync } from "@ibnlanre/portal";
 
 type UserProfile = {
   id: string;
@@ -1537,9 +1368,12 @@ type UserProfile = {
   email: string;
 };
 
-const userStore = createStore({
-  users: [] as UserProfile[],
-  profile: null as UserProfile | null,
+const state = {
+  users: [],
+  profile: null,
+};
+
+const actions = {
   useUsers: async () => {
     const { data, loading, error } = useAsync(
       async ({ signal }) => {
@@ -1569,7 +1403,15 @@ const userStore = createStore({
     if (data) userStore.profile.$set(data);
     return { profileLoading: loading, profileError: error };
   },
-});
+};
+
+const userStore = createStore(
+  z.object({
+    users: z.custom<UserProfile[]>(),
+    profile: z.custom<UserProfile | null>(),
+  }),
+  combine(state, actions)
+);
 ```
 
 **Usage in React component:**
@@ -1612,12 +1454,16 @@ The `useSync` hook provides a `useMemo` implementation with deep dependency veri
 **Basic Usage:**
 
 ```tsx
-import { createStore, useSync } from "@ibnlanre/portal";
+import { z } from "zod";
+import { createStore, combine, useSync } from "@ibnlanre/portal";
 
-const settingsStore = createStore({
+const state = {
   fontSize: 16,
-  theme: "light" as "light" | "dark",
+  theme: "light",
   language: "en",
+};
+
+const actions = {
   useDisplaySettings: () => {
     const [theme] = settingsStore.theme.$use();
     const [fontSize] = settingsStore.fontSize.$use();
@@ -1632,14 +1478,20 @@ const settingsStore = createStore({
           "--language": language,
         },
         className: `theme-${theme} lang-${language}`,
-        styleObject: {
-          fontSize: fontSize,
-          colorScheme: theme,
-        },
+        styleObject: { fontSize: fontSize, colorScheme: theme },
       };
     }, [theme, fontSize, language]);
   },
-});
+};
+
+const settingsStore = createStore(
+  z.object({
+    fontSize: z.number(),
+    theme: z.enum(["light", "dark"]),
+    language: z.string(),
+  }),
+  combine(state, actions)
+);
 
 function ThemedComponent() {
   const { className, styledObject, cssVariables } =
@@ -1668,15 +1520,19 @@ The `useVersion` hook provides deep dependency comparison through deep equality 
 **Basic Usage:**
 
 ```tsx
-import { createStore, useVersion } from "@ibnlanre/portal";
+import { z } from "zod";
+import { createStore, combine, useVersion } from "@ibnlanre/portal";
 import { useEffect } from "react";
 
-const settingsStore = createStore({
+const state = {
   theme: "light",
   preferences: {
     language: "en",
     notifications: { email: true, push: false },
   },
+};
+
+const actions = {
   useWatchPreferences() {
     const preferences = settingsStore.preferences.$get();
     const version = useVersion(preferences);
@@ -1689,7 +1545,18 @@ const settingsStore = createStore({
 
     return preferences;
   },
-});
+};
+
+const settingsStore = createStore(
+  z.object({
+    theme: z.string(),
+    preferences: z.object({
+      language: z.string(),
+      notifications: z.object({ email: z.boolean(), push: z.boolean() }),
+    }),
+  }),
+  combine(state, actions)
+);
 ```
 
 The `useVersion` hook is particularly useful when you want deep dependency tracking for custom hooks, or when native React hooks (`useMemo`, `useEffect`, `useCallback`) need to respond to changes in complex objects or arrays.
@@ -1711,6 +1578,7 @@ The `createContextStore` function enables efficient global store management thro
 **Basic Usage:**
 
 ```tsx
+import { z } from "zod";
 import { combine, createStore, createContextStore } from "@ibnlanre/portal";
 
 // Define the context type
@@ -1746,7 +1614,18 @@ const [AppProvider, useAppStore] = createContextStore((context: AppContext) => {
     },
   };
 
-  const store = createStore(combine(initialState, actions));
+  const store = createStore(
+    z.object({
+      user: z.object({
+        id: z.string(),
+        preferences: z.object({
+          theme: z.enum(["light", "dark"]),
+          locale: z.string(),
+        }),
+      }),
+    }),
+    combine(initialState, actions)
+  );
   return store;
 });
 ```
@@ -1820,6 +1699,7 @@ combine<Objects extends GenericObject[]>(...objects: Objects): Combine<Objects>
 **Basic Example:**
 
 ```ts
+import { z } from "zod";
 import { createStore, combine } from "@ibnlanre/portal";
 
 // Define the initial state
@@ -1850,8 +1730,14 @@ const actions = {
   },
 };
 
-// Combine initial state and actions into a single object
-export const userStore = createStore(combine(initialState, actions));
+// Combine initial state and actions, pass schema + combined object to createStore
+export const userStore = createStore(
+  z.object({
+    isLoggedIn: z.boolean(),
+    profile: z.object({ email: z.string(), name: z.string() }),
+  }),
+  combine(initialState, actions)
+);
 ```
 
 **Multiple Objects Example:**
@@ -1916,7 +1802,7 @@ const appConfig = combine(baseConfig, developmentConfig, userPreferences);
 //   }
 // }
 
-const configStore = createStore(appConfig);
+const configStore = createStore(z.custom<typeof appConfig>(), appConfig);
 ```
 
 **Edge Cases:**
@@ -1945,6 +1831,7 @@ You can initialize a store with state fetched asynchronously by passing an `asyn
 **Example:**
 
 ```ts
+import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 
 interface UserData {
@@ -1963,7 +1850,7 @@ async function fetchInitialData(): Promise<UserData> {
   );
 }
 
-const userStore = await createStore(fetchInitialData());
+const userStore = await createStore(z.custom<UserData>(), fetchInitialData());
 // At this point, the promise has resolved, and the store is initialized.
 const userData = userStore.$get();
 console.log(userData); // { id: 1, name: "Lyn", email: "lyn@example.com" }
@@ -1976,6 +1863,7 @@ userStore.$set({ id: 2, name: "Alex", email: "alex@example.com" });
 If you need a nested store structure from asynchronously loaded data, initialize the store with a placeholder structure (or `null`) and then update it using `$set` once the data is fetched. This allows the composite store structure to be established correctly.
 
 ```ts
+import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 
 interface AppData {
@@ -1984,11 +1872,14 @@ interface AppData {
   loading: boolean;
 }
 
-const appDataStore = createStore<AppData>({
-  user: null,
-  settings: null,
-  loading: true,
-});
+const appDataStore = createStore(
+  z.object({
+    user: z.custom<{ name: string; role: string } | null>(),
+    settings: z.custom<{ theme: string } | null>(),
+    loading: z.boolean(),
+  }),
+  { user: null, settings: null, loading: true }
+);
 
 async function loadAppData() {
   try {
@@ -2018,6 +1909,7 @@ loadAppData();
 **Example:**
 
 ```ts
+import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 
 // Define a type for clarity
@@ -2041,10 +1933,20 @@ const nodeB: Node = {
 nodeA.connections.push(nodeB); // nodeA points to nodeB
 nodeB.connections.push(nodeA); // nodeB points back to nodeA (circular reference)
 
-const graphStore = createStore({
-  nodes: [nodeA, nodeB], // 'nodes' is an array of Node objects
-  selectedNode: nodeA, // 'selectedNode' is a Node object
-});
+const graphStore = createStore(
+  z.object({
+    nodes: z.custom<Node[]>(),
+    selectedNode: z.object({
+      name: z.string(),
+      connections: z.custom<Node[]>(),
+      metadata: z.object({ type: z.string() }).optional(),
+    }),
+  }),
+  {
+    nodes: [nodeA, nodeB],
+    selectedNode: nodeA,
+  }
+);
 
 // Accessing data:
 // 1. For 'selectedNode' (a direct object property, so it and its properties are stores)
@@ -2106,10 +2008,12 @@ console.log(nodeB.name); // "Node Beta"
 
 When your store's state includes arrays, `@ibnlanre/portal` treats them in a specific way:
 
-- **Arrays as store properties**: If an array is a direct property of your initial state object (e.g., `items: [1, 2, 3]` in `createStore({ items: [...] })`), then `store.items` becomes a store instance that manages this array. You can use `$get()`, `$set()`, and `$subscribe()` on `store.items` to interact with the entire array.
+- **Arrays as store properties**: If an array is a direct property of your initial state object (e.g., `items: [1, 2, 3]` in `createStore(z.object({ items: z.array(...) }), { items: [...] })`), then `store.items` becomes a store instance that manages this array. You can use `$get()`, `$set()`, and `$subscribe()` on `store.items` to interact with the entire array.
 
   ```ts
-  const store = createStore({ tags: ["typescript", "state-management"] });
+  const store = createStore(z.object({ tags: z.array(z.string()) }), {
+    tags: ["typescript", "state-management"],
+  });
   const currentTags = store.tags.$get(); // ['typescript', 'state-management']
   store.tags.$set(["javascript", "react"]); // Replaces the array
   ```
@@ -2117,12 +2021,17 @@ When your store's state includes arrays, `@ibnlanre/portal` treats them in a spe
 - **Elements within arrays are not individual stores**: Objects or other values _inside_ an array are treated as plain data. They are not automatically wrapped as individual store instances. This means you cannot call store methods like `$get()` or `$set()` directly on an array element, even if that element is an object.
 
   ```ts
-  const store = createStore({
-    users: [
-      { id: 1, name: "Alice" },
-      { id: 2, name: "Bob" },
-    ],
-  });
+  const store = createStore(
+    z.object({
+      users: z.array(z.object({ id: z.number(), name: z.string() })),
+    }),
+    {
+      users: [
+        { id: 1, name: "Alice" },
+        { id: 2, name: "Bob" },
+      ],
+    }
+  );
 
   // Correct: Get the array, then access elements
   const usersArray = store.users.$get();
@@ -2136,16 +2045,27 @@ When your store's state includes arrays, `@ibnlanre/portal` treats them in a spe
 - **Updating arrays**:
   - To replace the entire array, use `$set()` on the array's store property:
     ```ts
-    const listStore = createStore({ items: [1, 2, 3] });
+    const listStore = createStore(z.object({ items: z.array(z.number()) }), {
+      items: [1, 2, 3],
+    });
     listStore.items.$set([4, 5, 6]);
     console.log(listStore.items.$get()); // Output: [4, 5, 6]
     ```
   - To modify the array (e.g., add, remove, or update elements), use a functional update with `$set()` on the array's store property. This ensures immutability by creating a new array.
 
     ```ts
-    const userListStore = createStore({
-      users: [{ id: 1, name: "Alex", details: { age: 30 } }],
-    });
+    const userListStore = createStore(
+      z.object({
+        users: z.array(
+          z.object({
+            id: z.number(),
+            name: z.string(),
+            details: z.object({ age: z.number() }),
+          })
+        ),
+      }),
+      { users: [{ id: 1, name: "Alex", details: { age: 30 } }] }
+    );
 
     // Add a new user
     userListStore.users.$set((currentUsers) => [
@@ -2172,17 +2092,25 @@ When your store's state includes arrays, `@ibnlanre/portal` treats them in a spe
 - **Arrays of primitive values**: These are handled straightforwardly. The array itself is the store property.
 
   ```ts
-  const numberListStore = createStore({ ids: [101, 102, 103] });
+  const numberListStore = createStore(z.object({ ids: z.array(z.number()) }), {
+    ids: [101, 102, 103],
+  });
   numberListStore.ids.$set((prevIds) => [...prevIds, 104]);
   ```
 
 This behavior ensures that arrays are managed predictably as collections, while direct object properties of a store are augmented for more granular control. If you require each item in a collection to have full store capabilities, consider structuring your state as an object mapping IDs to individual stores, rather than an array of items. For example:
 
 ```ts
-const itemStores = createStore({
-  item_1: { name: "Item A", stock: 10 },
-  item_2: { name: "Item B", stock: 5 },
-});
+const itemStores = createStore(
+  z.object({
+    item_1: z.object({ name: z.string(), stock: z.number() }),
+    item_2: z.object({ name: z.string(), stock: z.number() }),
+  }),
+  {
+    item_1: { name: "Item A", stock: 10 },
+    item_2: { name: "Item B", stock: 5 },
+  }
+);
 // Now itemStores.item_1 is a store, itemStores.item_1.name is a store, etc.
 ```
 
@@ -2209,24 +2137,28 @@ fallback<State extends object>(outerState: State): (innerState: object) => State
 **Basic Example:**
 
 ```ts
-import { createStore, createAtom, fallback } from "@ibnlanre/portal";
+import { z } from "zod";
+import { createStore, fallback } from "@ibnlanre/portal";
 
-const userStore = createStore({
-  profile: createAtom({
-    name: "John",
-    theme: "light" as "light" | "dark",
-    notifications: true,
-  }),
-});
+interface Profile {
+  name: string;
+  theme: "light" | "dark";
+  notifications: boolean;
+}
+
+const userStore = createStore(
+  z.object({ profile: z.custom<Partial<Profile>>() }),
+  { profile: { name: "John", theme: "light", notifications: true } }
+);
 
 // Define defaults for when profile is cleared
-const defaultProfile = {
+const defaultProfile: Profile = {
   name: "Guest",
-  theme: "light" as "light" | "dark",
+  theme: "light",
   notifications: false,
 };
 
-// Clear the atomic profile (simulating data loss)
+// Clear the profile (simulating data loss)
 userStore.profile.$set({});
 
 // Without fallback - incomplete data
@@ -2248,51 +2180,37 @@ console.log(updated);
 **Advanced Fallback Patterns:**
 
 ```ts
-import { createStore, createAtom, fallback } from "@ibnlanre/portal";
+import { z } from "zod";
+import { createStore, fallback } from "@ibnlanre/portal";
 
 interface AppConfig {
-  api: {
-    baseUrl: string;
-    timeout: number;
-    retries: number;
-  };
+  api: { baseUrl: string; timeout: number; retries: number };
   ui: {
     theme: "light" | "dark";
     language: string;
-    features: {
-      beta: boolean;
-      analytics: boolean;
-    };
+    features: { beta: boolean; analytics: boolean };
   };
 }
 
-const configStore = createStore({
-  settings: createAtom<AppConfig>({}), // Start empty
-});
+const configStore = createStore(
+  z.object({ settings: z.custom<Partial<AppConfig>>() }),
+  { settings: {} }
+);
 
 // Comprehensive default configuration
 const defaultConfig: AppConfig = {
-  api: {
-    baseUrl: "https://api.example.com",
-    timeout: 5000,
-    retries: 3,
-  },
+  api: { baseUrl: "https://api.example.com", timeout: 5000, retries: 3 },
   ui: {
     theme: "light",
     language: "en",
-    features: {
-      beta: false,
-      analytics: true,
-    },
+    features: { beta: false, analytics: true },
   },
 };
 
 // User sets only partial config
 configStore.settings.$set({
-  ui: {
-    theme: "dark",
-  },
-});
+  ui: { theme: "dark" },
+} as Partial<AppConfig>);
 
 // Get complete config with fallback
 const config = configStore.settings.$get(fallback(defaultConfig));
@@ -2306,17 +2224,21 @@ console.log(config.ui.features.analytics); // true (from fallback)
 **Using with React Components:**
 
 ```tsx
-import { createStore, createAtom, fallback } from "@ibnlanre/portal";
+import { z } from "zod";
+import { createStore, fallback } from "@ibnlanre/portal";
 
-const themeStore = createStore({
-  preferences: createAtom({
-    primaryColor: "#007bff",
-    fontSize: 16,
-    darkMode: false,
-  }),
-});
+interface ThemePreferences {
+  primaryColor: string;
+  fontSize: number;
+  darkMode: boolean;
+}
 
-const defaultTheme = {
+const themeStore = createStore(
+  z.object({ preferences: z.custom<Partial<ThemePreferences>>() }),
+  { preferences: { primaryColor: "#007bff", fontSize: 16, darkMode: false } }
+);
+
+const defaultTheme: ThemePreferences = {
   primaryColor: "#007bff",
   fontSize: 16,
   darkMode: false,
@@ -2343,24 +2265,35 @@ function ThemedComponent() {
 **Fallback with Dynamic Defaults:**
 
 ```ts
-import { createStore, createAtom, fallback } from "@ibnlanre/portal";
+import { z } from "zod";
+import { createStore, fallback } from "@ibnlanre/portal";
 
-const gameStore = createStore({
-  playerSettings: createAtom({
-    difficulty: "medium" as "easy" | "medium" | "hard",
-    volume: 0.8,
+type Difficulty = "easy" | "medium" | "hard";
+interface PlayerSettings {
+  difficulty: Difficulty;
+  volume: number;
+  controls?: string;
+}
+
+const gameStore = createStore(
+  z.object({
+    playerSettings: z.custom<Partial<PlayerSettings>>(),
+    currentLevel: z.number(),
   }),
-  currentLevel: 1,
-});
+  {
+    playerSettings: { difficulty: "medium", volume: 0.8 },
+    currentLevel: 1,
+  }
+);
 
 // Dynamic defaults based on other store state
-function getPlayerDefaults() {
+function getPlayerDefaults(): PlayerSettings {
   const level = gameStore.currentLevel.$get();
 
   return {
-    difficulty: level > 10 ? ("hard" as const) : ("medium" as const),
+    difficulty: level > 10 ? "hard" : "medium",
     volume: 0.5,
-    controls: "standard" as const,
+    controls: "standard",
   };
 }
 
@@ -2395,14 +2328,18 @@ InferType<Store, Path?>;
    ```ts
    import { createStore, InferType } from "@ibnlanre/portal";
 
-   const userStore = createStore({
-     age: 30,
-     name: "Alice",
-     preferences: {
-       notifications: true,
-       theme: "dark",
-     },
-   });
+   const userStore = createStore(
+     z.object({
+       age: z.number(),
+       name: z.string(),
+       preferences: z.object({ notifications: z.boolean(), theme: z.string() }),
+     }),
+     {
+       age: 30,
+       name: "Alice",
+       preferences: { notifications: true, theme: "dark" },
+     }
+   );
 
    // Infer the complete state type
    type UserState = InferType<typeof userStore>;
@@ -2424,22 +2361,22 @@ InferType<Store, Path?>;
    ```ts
    import { createStore, InferType } from "@ibnlanre/portal";
 
-   const appStore = createStore({
-     data: {
-       comments: [],
-       posts: [],
-     },
-     user: {
-       profile: {
-         email: "bob@example.com",
-         name: "Bob",
+   const appStore = createStore(
+     z.object({
+       data: z.object({ comments: z.array(z.any()), posts: z.array(z.any()) }),
+       user: z.object({
+         profile: z.object({ email: z.string(), name: z.string() }),
+         settings: z.object({ language: z.string(), theme: z.string() }),
+       }),
+     }),
+     {
+       data: { comments: [], posts: [] },
+       user: {
+         profile: { email: "bob@example.com", name: "Bob" },
+         settings: { language: "en", theme: "light" },
        },
-       settings: {
-         language: "en",
-         theme: "light",
-       },
-     },
-   });
+     }
+   );
 
    type AppData = InferType<typeof appStore, "data">;
    // UserProfile is: { name: string; email: string; }
@@ -2466,9 +2403,9 @@ InferType<Store, Path?>;
    ```ts
    import { createStore, InferType } from "@ibnlanre/portal";
 
-   const countStore = createStore(0);
-   const nameStore = createStore("Hello");
-   const itemsStore = createStore<string[]>([]);
+   const countStore = createStore(z.number(), 0);
+   const nameStore = createStore(z.string(), "Hello");
+   const itemsStore = createStore(z.array(z.string()), []);
 
    type CountType = InferType<typeof countStore>; // number
    type ItemsType = InferType<typeof itemsStore>; // string[]
@@ -2489,15 +2426,22 @@ InferType<Store, Path?>;
    ```ts
    import { createStore, InferType } from "@ibnlanre/portal";
 
-   const formStore = createStore({
-     email: "",
-     profile: {
-       bio: "",
-       firstName: "",
-       lastName: "",
-     },
-     username: "",
-   });
+   const formStore = createStore(
+     z.object({
+       email: z.string(),
+       profile: z.object({
+         bio: z.string(),
+         firstName: z.string(),
+         lastName: z.string(),
+       }),
+       username: z.string(),
+     }),
+     {
+       email: "",
+       profile: { bio: "", firstName: "", lastName: "" },
+       username: "",
+     }
+   );
 
    type FormData = InferType<typeof formStore>;
    type ProfileData = InferType<typeof formStore, "profile">;
@@ -2537,10 +2481,13 @@ Store types are automatically inferred from the initial state, so you often don'
 
 ```ts
 // Type is inferred as: PrimitiveStore<number>
-const countStore = createStore(0);
+const countStore = createStore(z.number(), 0);
 
 // Type is inferred as: CompositeStore<{ name: string; age: number }>
-const userStore = createStore({ name: "Alex", age: 30 });
+const userStore = createStore(z.object({ name: z.string(), age: z.number() }), {
+  name: "Alex",
+  age: 30,
+});
 ```
 
 ### Explicit Type Parameters
@@ -2555,7 +2502,7 @@ interface User {
 }
 
 // Initialize with null but specify the full type
-const userStore = createStore<User | null>(null);
+const userStore = createStore(z.custom<User | null>(), null);
 
 // Now TypeScript knows userStore will eventually hold a User
 const [user] = userStore.$use((value) => {
@@ -2569,10 +2516,16 @@ const [user] = userStore.$use((value) => {
 Take advantage of deep partial updates when working with nested objects. TypeScript will verify that your update shape is compatible:
 
 ```ts
-const appStore = createStore({
-  user: { name: "Alice", age: 30, role: "admin" },
-  config: { theme: "light", language: "en" },
-});
+const appStore = createStore(
+  z.object({
+    user: z.object({ name: z.string(), age: z.number(), role: z.string() }),
+    config: z.object({ theme: z.string(), language: z.string() }),
+  }),
+  {
+    user: { name: "Alice", age: 30, role: "admin" },
+    config: { theme: "light", language: "en" },
+  }
+);
 
 // ✅ Valid: partial update of nested property
 appStore.user.$set({ name: "Bob" });
@@ -2589,7 +2542,10 @@ appStore.$set({
 Use selectors in `$use` and `$get` to derive typed values:
 
 ```ts
-const userStore = createStore({ name: "Alex", email: "alex@example.com" });
+const userStore = createStore(
+  z.object({ name: z.string(), email: z.string() }),
+  { name: "Alex", email: "alex@example.com" }
+);
 
 // Selector return type is inferred as string
 const [displayName] = userStore.$use(
@@ -2604,16 +2560,17 @@ const [stats] = userStore.$use((user) => ({
 
 ### Atomic Objects and Type Safety
 
-When using atomic objects, remember that they can be partially cleared. Use `InferType` to understand the actual type after operations:
+When using `z.custom<T>()` for atomic fields, use `InferType` to understand the actual type:
 
 ```ts
-import { createStore, createAtom, InferType } from "@ibnlanre/portal";
+import { z } from "zod";
+import { createStore, InferType, fallback } from "@ibnlanre/portal";
 
-const configStore = createStore({
-  api: createAtom({ baseUrl: "https://api.com", timeout: 5000 }),
-});
+const configStore = createStore(
+  z.object({ api: z.custom<{ baseUrl: string; timeout: number }>() }),
+  { api: { baseUrl: "https://api.com", timeout: 5000 } }
+);
 
-// Type is: { baseUrl: string | undefined; timeout: number | undefined }
 type ApiConfig = InferType<typeof configStore.api>;
 
 // Always use fallback for complete types when needed
@@ -2626,16 +2583,23 @@ const safeConfig = configStore.api.$get(fallback(defaults)); // ✅ Complete typ
 Actions in stores inherit the type context and can provide full autocomplete:
 
 ```ts
-const counterStore = createStore({
-  value: 0,
+import { z } from "zod";
+import { createStore, combine } from "@ibnlanre/portal";
+
+const state = { value: 0 };
+const actions = {
   increment(amount: number = 1) {
-    // TypeScript knows counterStore and all its properties
     counterStore.value.$set((prev) => prev + amount);
   },
   multiply(factor: number) {
     counterStore.value.$set((prev) => prev * factor);
   },
-});
+};
+
+const counterStore = createStore(
+  z.object({ value: z.number() }),
+  combine(state, actions)
+);
 
 // ✅ Full autocomplete for actions
 counterStore.increment(5);
@@ -2657,7 +2621,10 @@ const actions = {
 };
 
 // combine ensures proper type merging
-const store = createStore(combine(state, actions));
+const store = createStore(
+  z.object({ count: z.number(), message: z.string() }),
+  combine(state, actions)
+);
 
 // ✅ Access both state and actions with full type safety
 store.count.$get(); // ✅ number
@@ -2711,7 +2678,7 @@ const [getStoredCounter, setStoredCounter] = localStorageAdapter;
 
 // Load persisted state or use a default if nothing is stored
 const initialCounterState = getStoredCounter(0); // Default to 0 if null
-const persistentCounterStore = createStore(initialCounterState);
+const persistentCounterStore = createStore(z.number(), initialCounterState);
 
 // Subscribe to store changes to save them to Local Storage
 persistentCounterStore.$subscribe((newState) => {
@@ -2742,7 +2709,13 @@ const initialSessionData = getStoredSessionData({
   guestId: null,
   lastPage: "/",
 });
-const sessionDataStore = createStore(initialSessionData);
+const sessionDataStore = createStore(
+  z.object({
+    guestId: z.string().nullable(),
+    lastPage: z.string(),
+  }),
+  initialSessionData
+);
 
 sessionDataStore.$subscribe(setStoredSessionData, false);
 
@@ -2805,7 +2778,10 @@ const initialPrefs = getCookiePreferences({
   theme: "light",
   notifications: true,
 });
-const prefsStore = createStore(initialPrefs);
+const prefsStore = createStore(
+  z.object({ theme: z.string(), notifications: z.boolean() }),
+  initialPrefs
+);
 
 prefsStore.$subscribe((newPrefs) => {
   setCookiePrefs(newPrefs);
@@ -2879,7 +2855,10 @@ const [getCustomState, setCustomState] = createBrowserStorageAdapter<{
 }>("custom-key", customStorage);
 
 const initialCustomData = getCustomState({ lastSync: null });
-const customDataStore = createStore(initialCustomData);
+const customDataStore = createStore(
+  z.object({ lastSync: z.string().nullable() }),
+  initialCustomData
+);
 
 customDataStore.$subscribe(setCustomState, false);
 customDataStore.$set({ lastSync: new Date().toISOString() });
@@ -3194,16 +3173,26 @@ Retrieves the total number of cookies accessible to the current document.
 
   ```ts
   // ✅ Good: Related data grouped together
-  const uiStore = createStore({
-    modals: { loginVisible: false, cartVisible: false },
-    notifications: { count: 0, items: [] },
-    theme: "dark",
-  });
+  const uiStore = createStore(
+    z.object({
+      modals: z.object({ loginVisible: z.boolean(), cartVisible: z.boolean() }),
+      notifications: z.object({ count: z.number(), items: z.array(z.any()) }),
+      theme: z.string(),
+    }),
+    {
+      modals: { loginVisible: false, cartVisible: false },
+      notifications: { count: 0, items: [] },
+      theme: "dark",
+    }
+  );
 
   // ❌ Less optimal: Separate stores for closely related UI state
-  const loginModalStore = createStore(false);
-  const cartModalStore = createStore(false);
-  const notificationStore = createStore({ count: 0, items: [] });
+  const loginModalStore = createStore(z.boolean(), false);
+  const cartModalStore = createStore(z.boolean(), false);
+  const notificationStore = createStore(
+    z.object({ count: z.number(), items: z.array(z.any()) }),
+    { count: 0, items: [] }
+  );
   ```
 
 - **Keep components simple**: Components should focus on rendering UI and handling user interactions. Move complex logic or data fetching to actions or hooks.
@@ -3245,14 +3234,18 @@ While `@ibnlanre/portal` is versatile, it's important to be aware of its limitat
 - **Serialization for persistence**: When using persistence adapters (localStorage, sessionStorage, cookies), the state must be serializable. Functions, Symbols, `undefined` (in some parts of objects when using `JSON.stringify`), or complex class instances might not serialize/deserialize correctly by default. Customize `stringify` and `parse` options in adapters for complex scenarios. Functions within stores (actions) are not persisted.
 
 ```ts
-const store = createStore({
-  name: "Alice",
-  lastLogin: new Date(), // Date objects need custom serialization
-  preferences: {
-    theme: "dark",
-    notifications: true,
-  },
-});
+const store = createStore(
+  z.object({
+    name: z.string(),
+    lastLogin: z.custom<Date>(),
+    preferences: z.object({ theme: z.string(), notifications: z.boolean() }),
+  }),
+  {
+    name: "Alice",
+    lastLogin: new Date(), // Date objects need custom serialization
+    preferences: { theme: "dark", notifications: true },
+  }
+);
 
 const [getState, setState] = createLocalStorageAdapter("user-store", {
   stringify: (state) =>
@@ -3285,10 +3278,13 @@ userStore.$set((prev) => ({ ...prev, name: "New Name" }));
 
   ```ts
   // ❌ This creates a primitive-like store with the resolved object as its value
-  const userStore = createStore(fetchUserData()); // fetchUserData returns Promise<{ name: string; age: number; }>
+  const userStore = createStore(z.custom<UserData>(), fetchUserData()); // fetchUserData returns Promise<UserData>
 
   // ✅ This creates a composite store with nested properties
-  const userStore = createStore({ name: "", age: 0 });
+  const userStore = createStore(
+    z.object({ name: z.string(), age: z.number() }),
+    { name: "", age: 0 }
+  );
   fetchUserData().then((data) => userStore.$set(data));
   ```
 
@@ -3304,7 +3300,12 @@ To make the most of `@ibnlanre/portal`, consider these best practices:
 - **Co-locate actions**: Define actions (functions) within your composite stores to keep state logic close to the state it manages. This improves encapsulation and maintainability.
 - **Use selectors for derived data**: Prevent redundant state and keep your stores lean by computing derived values on the fly.
   ```ts
-  const cartStore = createStore({ items: [{ price: 10, quantity: 2 }] });
+  const cartStore = createStore(
+    z.object({
+      items: z.array(z.object({ price: z.number(), quantity: z.number() })),
+    }),
+    { items: [{ price: 10, quantity: 2 }] }
+  );
   const totalCost = cartStore.$get((state) =>
     state.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
   );

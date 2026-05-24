@@ -13,11 +13,11 @@ Handling loading states and errors for async operations is repetitive. `useAsync
 It's perfect for fetching data inside your store actions.
 
 ```tsx
-import { createStore, useAsync } from "@ibnlanre/portal";
+import { z } from "zod";
+import { createStore, combine, useAsync } from "@ibnlanre/portal";
 
-const userStore = createStore({
-  data: null,
-
+const state = { data: null };
+const actions = {
   // A "hook action" that fetches data
   useFetchUser(id: string) {
     const { data, loading, error } = useAsync(
@@ -35,7 +35,12 @@ const userStore = createStore({
 
     return { loading, error };
   },
-});
+};
+
+const userStore = createStore(
+  z.object({ data: z.unknown().nullable() }),
+  combine(state, actions)
+);
 ```
 
 Now your component is clean:

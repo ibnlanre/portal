@@ -4,20 +4,29 @@ description: How to replace objects completely instead of merging them.
 icon: Shield
 ---
 
-By default, Portal tries to be helpful by **merging** objects when you update them. This is usually what you want for state management.
+By default, Portal **merges** objects when you update them. This is usually what you want for state management.
 
-But sometimes, you want an object to behave like a primitive value—when you set it, you want to **replace** it entirely.
+But sometimes, you want a nested object to behave like a primitive value—when you set it, you want to **replace** it entirely.
 
-This is where `createAtom()` comes in.
+This is where `z.custom<T>()` comes in.
 
 ## Merging vs Replacing
 
 Here's the default behavior (merging):
 
 ```ts
-const store = createStore({
-  settings: { theme: "dark", fontSize: 14 },
-});
+import { z } from "zod";
+import { createStore } from "@ibnlanre/portal";
+
+const store = createStore(
+  z.object({
+    settings: z.object({
+      theme: z.string(),
+      fontSize: z.number(),
+    }),
+  }),
+  { settings: { theme: "dark", fontSize: 14 } }
+);
 
 // Merges: theme is updated, fontSize is kept
 store.settings.$set({ theme: "light" });
@@ -26,16 +35,24 @@ store.settings.$set({ theme: "light" });
 
 Sometimes you want the opposite. You want to wipe the slate clean.
 
-```ts
-import { createStore, createAtom } from "@ibnlanre/portal";
+Mark the property as a custom primitive type using `z.custom<T>()`—Portal then treats it as a leaf value that is always fully replaced:
 
-const store = createStore({
-  // Mark this object as "atomic"
-  settings: createAtom({ theme: "dark", fontSize: 14 }),
-});
+```ts
+import { z } from "zod";
+import { createStore } from "@ibnlanre/portal";
+
+type Settings = { theme: string; fontSize: number };
+
+const store = createStore(
+  z.object({
+    // Mark this object as a custom type — it will be replaced, not merged
+    settings: z.custom<Settings>(),
+  }),
+  { settings: { theme: "dark", fontSize: 14 } }
+);
 
 // Replaces completely! fontSize is gone.
-store.settings.$set({ theme: "light" });
+store.settings.$set({ theme: "light" } as Settings);
 // Result: { theme: "light" }
 ```
 
@@ -44,31 +61,30 @@ store.settings.$set({ theme: "light" });
 Atomic objects are perfect for:
 
 - **API Responses**: When fetching new data, you usually want to replace the old data entirely, not merge it.
-- **Strict Types**: When an object must exactly match a shape and shouldn't inherit usually undefined properties from previous states.
+- **Strict Types**: When an object must exactly match a shape and shouldn’t inherit properties from previous states.
 - **Resetting State**: When you want to clear specific sections of your store easily.
 
 ## Handling missing data with `fallback()`
 
-If you're replacing objects, you might accidentally remove properties that your UI expects.
+If you’re replacing objects, you might accidentally remove properties that your UI expects.
 
 `fallback()` lets you provide default values when reading an atomic object, so you always get a complete shape back.
 
 ```ts
-import { createStore, createAtom, fallback } from "@ibnlanre/portal";
+import { z } from "zod";
+import { createStore, fallback } from "@ibnlanre/portal";
+
+type Config = { theme: string; fontSize: number };
 
 // Define defaults once
-const defaults = {
-  theme: "light",
-  fontSize: 14,
-};
+const defaults: Config = { theme: "light", fontSize: 14 };
 
-const store = createStore({
-  // Initialize with defaults (or empty object)
-  config: createAtom(defaults),
+const store = createStore(z.object({ config: z.custom<Config>() }), {
+  config: defaults,
 });
 
-// Later, we accidentally set an incomplete config
-store.config.$set({ theme: "dark" });
+// Later, we set an incomplete config
+store.config.$set({ theme: "dark" } as Config);
 // store.config is now just { theme: "dark" }
 
 // BUT, when we read it with fallback...

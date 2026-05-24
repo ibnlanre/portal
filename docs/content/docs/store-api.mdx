@@ -23,7 +23,10 @@ Every store in Portal shares the same predictable API. Once you know how to use 
 Use `$get()` when you need to read the state imperatively—like inside an event handler, a utility function, or an action.
 
 ```ts
-const countStore = createStore(10);
+import { z } from "zod";
+import { createStore } from "@ibnlanre/portal";
+
+const countStore = createStore(z.number(), 10);
 const currentCount = countStore.$get(); // 10
 ```
 
@@ -32,7 +35,10 @@ const currentCount = countStore.$get(); // 10
 You can pass a "selector" function to `$get()` to transform the data before returning it.
 
 ```ts
-const userStore = createStore({ firstName: "Alex", lastName: "Johnson" });
+const userStore = createStore(
+  z.object({ firstName: z.string(), lastName: z.string() }),
+  { firstName: "Alex", lastName: "Johnson" }
+);
 
 // Compute full name on the fly
 const fullName = userStore.$get((u) => `${u.firstName} ${u.lastName}`);
@@ -46,7 +52,7 @@ const fullName = userStore.$get((u) => `${u.firstName} ${u.lastName}`);
 Use `$set()` to update your state. You can pass a new value directly, or a function that receives the previous state.
 
 ```ts
-const countStore = createStore(0);
+const countStore = createStore(z.number(), 0);
 
 // Set directly
 countStore.$set(5);
@@ -60,11 +66,18 @@ countStore.$set((prev) => prev + 1);
 If your store holds an object, `$set()` automatically merges your changes. You don't need to spread the old state manually.
 
 ```ts
-const settingsStore = createStore({
-  theme: "light",
-  fontSize: 12,
-  sidebar: { collapsed: false },
-});
+const settingsStore = createStore(
+  z.object({
+    theme: z.string(),
+    fontSize: z.number(),
+    sidebar: z.object({ collapsed: z.boolean() }),
+  }),
+  {
+    theme: "light",
+    fontSize: 12,
+    sidebar: { collapsed: false },
+  }
+);
 
 // Updates theme, keeps fontSize and sidebar intact
 settingsStore.$set({ theme: "dark" });
@@ -142,9 +155,12 @@ function SidebarStatus() {
 Sometimes you don't know the property name ahead of time. `$at()` lets you access nested stores using a string path.
 
 ```ts
-const userStore = createStore({
-  preferences: { theme: "dark" },
-});
+const userStore = createStore(
+  z.object({
+    preferences: z.object({ theme: z.string() }),
+  }),
+  { preferences: { theme: "dark" } }
+);
 
 const path = "preferences.theme";
 const themeStore = userStore.$at(path);

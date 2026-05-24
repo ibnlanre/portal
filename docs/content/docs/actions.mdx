@@ -4,18 +4,18 @@ description: Encapsulate your business logic right where your data lives.
 icon: Zap
 ---
 
-Data structure and business logic belong together. With Portal, you don't need separate "action files" or complex dispatchers. You just write functions.
+Data structure and business logic belong together. With Portal, you don't need separate "action files" or complex dispatchers. You just write functions and combine them with your state.
 
 ## Defining Actions
 
-Any function you add to your store automatically becomes an action. To update the state, simply reference the store variable directly.
+Define your state and actions separately, then merge them with `combine()`. Actions reference the store variable directly—this works because function bodies are evaluated lazily, after the store is assigned.
 
 ```ts
-import { createStore } from "@ibnlanre/portal";
+import { z } from "zod";
+import { createStore, combine } from "@ibnlanre/portal";
 
-const counterStore = createStore({
-  count: 0,
-
+const state = { count: 0 };
+const actions = {
   // Simple action
   increment() {
     counterStore.count.$set((prev) => prev + 1);
@@ -32,7 +32,12 @@ const counterStore = createStore({
     const data = await response.json();
     counterStore.count.$set(data.value);
   },
-});
+};
+
+const counterStore = createStore(
+  z.object({ count: z.number() }),
+  combine(state, actions)
+);
 
 // Usage
 counterStore.increment();
@@ -55,11 +60,13 @@ increment(); // Works perfectly!
 Do you prefer the predictability of reducers? Currently using Redux? You can easily implement a dispatch pattern if you like.
 
 ```ts
+import { z } from "zod";
+import { createStore, combine } from "@ibnlanre/portal";
+
 type Action = { type: "INC" } | { type: "DEC" };
 
-const store = createStore({
-  value: 0,
-
+const state = { value: 0 };
+const actions = {
   dispatch(action: Action) {
     switch (action.type) {
       case "INC":
@@ -68,7 +75,12 @@ const store = createStore({
         return store.value.$set((prev) => prev - 1);
     }
   },
-});
+};
+
+const store = createStore(
+  z.object({ value: z.number() }),
+  combine(state, actions)
+);
 
 store.dispatch({ type: "INC" });
 ```
@@ -80,12 +92,12 @@ Here's where things get powerful. If you prefix an action with `use`, Portal tre
 This allows you to bundle React logic (like `useEffect`, `useState`, or other hooks) directly with the store that controls it.
 
 ```tsx
-import { createStore } from "@ibnlanre/portal";
+import { z } from "zod";
+import { createStore, combine } from "@ibnlanre/portal";
 import { useEffect } from "react";
 
-const notificationStore = createStore({
-  message: null as string | null,
-
+const state = { message: null };
+const actions = {
   // This is a custom hook living inside your store!
   useAutoClear(timeout = 3000) {
     // It can subscribe to the store itself
@@ -100,7 +112,12 @@ const notificationStore = createStore({
       }
     }, [msg, timeout]);
   },
-});
+};
+
+const notificationStore = createStore(
+  z.object({ message: z.string().nullable() }),
+  combine(state, actions)
+);
 
 // Use it in your component
 function NotificationBanner() {
