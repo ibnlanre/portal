@@ -3,6 +3,8 @@ import type { DependencyList } from "react";
 
 import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { GenericObject } from "@/create-store/types/generic-object";
+import type { InferObject } from "@/create-store/types/infer-object";
+import type { InferSchema } from "@/create-store/types/infer-schema";
 import type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
 import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 import type { PartialStatePath } from "@/create-store/types/partial-state-path";
@@ -29,10 +31,15 @@ import { useSync } from "@/create-store/functions/hooks/use-sync";
 import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
-export function createCompositeStore<State extends GenericObject>(
-  initialState: State,
-  schema?: StandardSchemaV1
-): CompositeStore<State> {
+export function createCompositeStore<
+  Schema extends StandardSchemaV1,
+  State extends InferObject<Schema> = InferObject<Schema>,
+>(
+  schema: Schema,
+  initialState: NoInfer<State>
+): CompositeStore<
+  InferSchema<Schema> extends infer Clean extends GenericObject ? Clean : State
+> {
   let state = initialState;
 
   const cache = new WeakMap<any, CompositeStore<State>>();
@@ -96,7 +103,6 @@ export function createCompositeStore<State extends GenericObject>(
   }
 
   function applySchema(value: State): State {
-    if (!schema) return value;
     const validation = schema["~standard"].validate(value);
     if (validation instanceof Promise) return value;
     if (validation.issues) throw new Error(validation.issues[0].message);
@@ -329,5 +335,9 @@ export function createCompositeStore<State extends GenericObject>(
     return proxy;
   }
 
-  return createProxy();
+  return createProxy() as unknown as CompositeStore<
+    InferSchema<Schema> extends infer Clean extends GenericObject
+      ? Clean
+      : State
+  >;
 }

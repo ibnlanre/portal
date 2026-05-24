@@ -128,6 +128,25 @@ describe("resolveSchema", () => {
       expect(result).toBeInstanceOf(Promise);
       await expect(result).resolves.toBeUndefined();
     });
+
+    it("should fall back to the scalar seed when the object seed fails asynchronously", async () => {
+      const schema: StandardSchemaV1<number> = {
+        "~standard": {
+          validate: (value) =>
+            Promise.resolve(
+              value !== undefined && typeof value === "object"
+                ? { issues: [{ message: "not a number" }] }
+                : { value: 42 }
+            ),
+          vendor: "test",
+          version: 1,
+        },
+      };
+
+      const result = resolveSchema(schema);
+      expect(result).toBeInstanceOf(Promise);
+      await expect(result).resolves.toBe(42);
+    });
   });
 
   describe("Custom schemas", () => {

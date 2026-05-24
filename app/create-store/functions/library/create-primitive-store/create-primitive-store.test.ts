@@ -1,13 +1,14 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 
 import { createPrimitiveStore } from "./index";
 
 describe("createPrimitiveStore", () => {
   describe("Proxy Shape", () => {
     it("should expose only store methods", () => {
-      const store = createPrimitiveStore("initial value");
+      const store = createPrimitiveStore(z.string(), "initial value");
       const storeKeys = Object.keys(store).filter((key) => key.startsWith("$"));
 
       expect(storeKeys).toEqual([]);
@@ -25,7 +26,7 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should make store methods non-enumerable", () => {
-      const store = createPrimitiveStore("test");
+      const store = createPrimitiveStore(z.string(), "test");
 
       const keys = Object.keys(store);
       expect(keys).toEqual([]);
@@ -40,7 +41,7 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should handle 'in' operator for primitive store", () => {
-      const store = createPrimitiveStore("test");
+      const store = createPrimitiveStore(z.string(), "test");
 
       expect("$get" in store).toBe(true);
       expect("$set" in store).toBe(true);
@@ -53,7 +54,7 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should handle property descriptors for primitive store", () => {
-      const store = createPrimitiveStore("test value");
+      const store = createPrimitiveStore(z.string(), "test value");
 
       const getDescriptor = Object.getOwnPropertyDescriptor(store, "$get");
       expect(getDescriptor).toBeDefined();
@@ -66,11 +67,11 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should handle different primitive types", () => {
-      const stringStore = createPrimitiveStore("hello");
-      const numberStore = createPrimitiveStore(42);
-      const booleanStore = createPrimitiveStore(true);
-      const nullStore = createPrimitiveStore(null);
-      const undefinedStore = createPrimitiveStore(undefined);
+      const stringStore = createPrimitiveStore(z.string(), "hello");
+      const numberStore = createPrimitiveStore(z.number(), 42);
+      const booleanStore = createPrimitiveStore(z.boolean(), true);
+      const nullStore = createPrimitiveStore(z.null(), null);
+      const undefinedStore = createPrimitiveStore(z.undefined(), undefined);
 
       expect(stringStore.$get).toBeTypeOf("function");
       expect(numberStore.$get).toBeTypeOf("function");
@@ -92,7 +93,7 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should prevent overriding store methods", () => {
-      const store = createPrimitiveStore("test");
+      const store = createPrimitiveStore(z.string(), "test");
       const original$get = store.$get;
       const original$set = store.$set;
 
@@ -110,7 +111,7 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should prevent property definition and deletion", () => {
-      const store = createPrimitiveStore(100);
+      const store = createPrimitiveStore(z.number(), 100);
 
       expect(() => {
         (store as any).newProperty = "value";
@@ -134,7 +135,7 @@ describe("createPrimitiveStore", () => {
 
   describe("Basic Functionality", () => {
     it("should create a store with no initial state", () => {
-      const store = createPrimitiveStore(undefined);
+      const store = createPrimitiveStore(z.undefined(), undefined);
       expect(store).toBeDefined();
       const stateValue = store.$get();
       expect(stateValue).toBeUndefined();
@@ -142,14 +143,14 @@ describe("createPrimitiveStore", () => {
 
     it("should create a store with initial state", () => {
       const initialState = "value";
-      const store = createPrimitiveStore(initialState);
+      const store = createPrimitiveStore(z.string(), initialState);
       const stateValue = store.$get();
       expect(stateValue).toBe(initialState);
     });
 
     it("should set a new state value", () => {
       const initialState = "value";
-      const store = createPrimitiveStore(initialState);
+      const store = createPrimitiveStore(z.string(), initialState);
 
       store.$set("new value");
       expect(store.$get((value) => value.toUpperCase())).toBe("NEW VALUE");
@@ -160,7 +161,7 @@ describe("createPrimitiveStore", () => {
 
     it("should subscribe to state changes", () => {
       const initialState = "value";
-      const store = createPrimitiveStore(initialState);
+      const store = createPrimitiveStore(z.string(), initialState);
 
       const subscriber = vi.fn();
       store.$subscribe(subscriber);
@@ -172,7 +173,7 @@ describe("createPrimitiveStore", () => {
 
     it("should unsubscribe from state changes", () => {
       const initialState = "value";
-      const store = createPrimitiveStore(initialState);
+      const store = createPrimitiveStore(z.string(), initialState);
 
       const subscriber = vi.fn();
       const unsubscribe = store.$subscribe(subscriber);
@@ -184,7 +185,7 @@ describe("createPrimitiveStore", () => {
 
     it("should use the state value in a React component", () => {
       const initialState = "value";
-      const store = createPrimitiveStore(initialState);
+      const store = createPrimitiveStore(z.string(), initialState);
 
       const { result } = renderHook(() => store.$use());
       const [stateValue] = result.current;
@@ -193,7 +194,7 @@ describe("createPrimitiveStore", () => {
 
     it("should update the state value in a React component", () => {
       const initialState = "value";
-      const store = createPrimitiveStore(initialState);
+      const store = createPrimitiveStore(z.string(), initialState);
 
       const { result } = renderHook(() => store.$use());
       const [, setStateValue] = result.current;
@@ -217,7 +218,7 @@ describe("createPrimitiveStore", () => {
         [sym2]: "symbol2",
       };
 
-      const store = createPrimitiveStore(initialState);
+      const store = createPrimitiveStore(z.any(), initialState);
       const keys = Reflect.ownKeys(store);
 
       expect(keys).toContain("stringProp");
@@ -232,15 +233,18 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should return empty array for ownKeys when state is not a dictionary", () => {
-      const primitiveStore = createPrimitiveStore("primitive value");
+      const primitiveStore = createPrimitiveStore(
+        z.string(),
+        "primitive value"
+      );
       const keys = Reflect.ownKeys(primitiveStore);
       expect(keys).toEqual([]);
 
-      const numberStore = createPrimitiveStore(42);
+      const numberStore = createPrimitiveStore(z.number(), 42);
       const numberKeys = Reflect.ownKeys(numberStore);
       expect(numberKeys).toEqual([]);
 
-      const nullStore = createPrimitiveStore(null);
+      const nullStore = createPrimitiveStore(z.null(), null);
       const nullKeys = Reflect.ownKeys(nullStore);
       expect(nullKeys).toEqual([]);
     });
@@ -248,7 +252,10 @@ describe("createPrimitiveStore", () => {
 
   describe("Selector Functions", () => {
     it("should work with selector functions in $get", () => {
-      const store = createPrimitiveStore({ age: 30, name: "John" });
+      const store = createPrimitiveStore(
+        z.object({ age: z.number(), name: z.string() }),
+        { age: 30, name: "John" }
+      );
 
       expect(store.$get((state) => state.name)).toBe("John");
       expect(store.$get((state) => state.age * 2)).toBe(60);
@@ -258,7 +265,10 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should work with selector functions in $use hook", () => {
-      const store = createPrimitiveStore({ count: 5, multiplier: 3 });
+      const store = createPrimitiveStore(
+        z.object({ count: z.number(), multiplier: z.number() }),
+        { count: 5, multiplier: 3 }
+      );
 
       const { result } = renderHook(() =>
         store.$use((state) => state.count * state.multiplier)
@@ -274,13 +284,24 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should handle complex selector transformations", () => {
-      const store = createPrimitiveStore({
-        users: [
-          { active: true, id: 1, name: "Alice" },
-          { active: false, id: 2, name: "Bob" },
-          { active: true, id: 3, name: "Charlie" },
-        ],
-      });
+      const store = createPrimitiveStore(
+        z.object({
+          users: z.array(
+            z.object({
+              active: z.boolean(),
+              id: z.number(),
+              name: z.string(),
+            })
+          ),
+        }),
+        {
+          users: [
+            { active: true, id: 1, name: "Alice" },
+            { active: false, id: 2, name: "Bob" },
+            { active: true, id: 3, name: "Charlie" },
+          ],
+        }
+      );
 
       const activeUsers = store.$get((state) =>
         state.users.filter((user) => user.active).map((user) => user.name)
@@ -292,11 +313,14 @@ describe("createPrimitiveStore", () => {
 
   describe("State Updates", () => {
     it("should handle partial updates for object states", () => {
-      const store = createPrimitiveStore({
-        age: 30,
-        city: "New York",
-        name: "John",
-      });
+      const store = createPrimitiveStore(
+        z.object({ age: z.number(), city: z.string(), name: z.string() }),
+        {
+          age: 30,
+          city: "New York",
+          name: "John",
+        }
+      );
 
       store.$set({ age: 31 });
       expect(store.$get()).toEqual({ age: 31, city: "New York", name: "John" });
@@ -306,7 +330,10 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should handle function-based updates", () => {
-      const store = createPrimitiveStore({ count: 0, step: 1 });
+      const store = createPrimitiveStore(
+        z.object({ count: z.number(), step: z.number() }),
+        { count: 0, step: 1 }
+      );
 
       store.$set((prev) => ({ ...prev, count: prev.count + prev.step }));
       expect(store.$get().count).toBe(1);
@@ -316,10 +343,19 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should handle nested object updates", () => {
-      const store = createPrimitiveStore({
-        settings: { theme: "light" },
-        user: { details: { age: 30, city: "NYC" }, name: "John" },
-      });
+      const store = createPrimitiveStore(
+        z.object({
+          settings: z.object({ theme: z.string() }),
+          user: z.object({
+            details: z.object({ age: z.number(), city: z.string() }),
+            name: z.string(),
+          }),
+        }),
+        {
+          settings: { theme: "light" },
+          user: { details: { age: 30, city: "NYC" }, name: "John" },
+        }
+      );
 
       store.$set((prev) => ({
         ...prev,
@@ -335,7 +371,7 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should handle array updates", () => {
-      const store = createPrimitiveStore([1, 2, 3]);
+      const store = createPrimitiveStore(z.array(z.number()), [1, 2, 3]);
 
       store.$set((prev) => [...prev, 4]);
       expect(store.$get()).toEqual([1, 2, 3, 4]);
@@ -347,7 +383,7 @@ describe("createPrimitiveStore", () => {
 
   describe("Subscription Management", () => {
     it("should handle multiple subscribers", () => {
-      const store = createPrimitiveStore("initial");
+      const store = createPrimitiveStore(z.string(), "initial");
 
       const subscriber1 = vi.fn();
       const subscriber2 = vi.fn();
@@ -369,7 +405,7 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should handle subscription without immediate callback", () => {
-      const store = createPrimitiveStore("initial");
+      const store = createPrimitiveStore(z.string(), "initial");
       const subscriber = vi.fn();
 
       store.$subscribe(subscriber, false);
@@ -381,7 +417,7 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should handle partial unsubscription", () => {
-      const store = createPrimitiveStore("initial");
+      const store = createPrimitiveStore(z.string(), "initial");
 
       const subscriber1 = vi.fn();
       const subscriber2 = vi.fn();
@@ -399,7 +435,9 @@ describe("createPrimitiveStore", () => {
 
   describe("React Hook Integration", () => {
     it("should handle dependencies in $use hook", () => {
-      const store = createPrimitiveStore({ value: 10 });
+      const store = createPrimitiveStore(z.object({ value: z.number() }), {
+        value: 10,
+      });
       let externalDep = "prefix";
 
       const { rerender, result } = renderHook(
@@ -416,7 +454,10 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should handle multiple hooks on same store", () => {
-      const store = createPrimitiveStore({ count: 0, name: "test" });
+      const store = createPrimitiveStore(
+        z.object({ count: z.number(), name: z.string() }),
+        { count: 0, name: "test" }
+      );
 
       const { result: result1 } = renderHook(() => store.$use());
       const { result: result2 } = renderHook(() =>
@@ -442,7 +483,9 @@ describe("createPrimitiveStore", () => {
 
   describe("Proxy Behavior", () => {
     it("should handle proxy defineProperty trap", () => {
-      const store = createPrimitiveStore({ test: "value" });
+      const store = createPrimitiveStore(z.object({ test: z.string() }), {
+        test: "value",
+      });
 
       expect(Object.defineProperty(store, "newProp", { value: "test" })).toBe(
         store
@@ -451,7 +494,9 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should handle proxy deleteProperty trap", () => {
-      const store = createPrimitiveStore({ test: "value" });
+      const store = createPrimitiveStore(z.object({ test: z.string() }), {
+        test: "value",
+      });
 
       expect(delete (store as any).test).toBe(true);
 
@@ -459,14 +504,22 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should handle proxy set trap", () => {
-      const store = createPrimitiveStore({ test: "value" });
+      const store = createPrimitiveStore(z.object({ test: z.string() }), {
+        test: "value",
+      });
 
       (store as any).newProp = "test";
       expect("newProp" in store).toBe(false);
     });
 
     it("should handle proxy has trap correctly", () => {
-      const store = createPrimitiveStore({ prop1: "value1", prop2: "value2" });
+      const store = createPrimitiveStore(
+        z.object({ prop1: z.string(), prop2: z.string() }),
+        {
+          prop1: "value1",
+          prop2: "value2",
+        }
+      );
 
       expect("$get" in store).toBe(true);
       expect("$set" in store).toBe(true);
@@ -482,7 +535,9 @@ describe("createPrimitiveStore", () => {
     });
 
     it("should handle getOwnPropertyDescriptor correctly", () => {
-      const store = createPrimitiveStore({ test: "value" });
+      const store = createPrimitiveStore(z.object({ test: z.string() }), {
+        test: "value",
+      });
 
       const getDescriptor = Object.getOwnPropertyDescriptor(store, "$get");
       expect(getDescriptor).toEqual({
@@ -505,15 +560,19 @@ describe("createPrimitiveStore", () => {
 
   describe("Edge Cases", () => {
     it("should handle null and undefined states", () => {
-      const nullStore = createPrimitiveStore<null | string>(null);
+      const nullStore = createPrimitiveStore(
+        z.union([z.null(), z.string()]),
+        null
+      );
       expect(nullStore.$get()).toBe(null);
 
       nullStore.$set("not null");
       expect(nullStore.$get()).toBe("not null");
 
-      const undefinedStore = createPrimitiveStore<
-        undefined | { defined: boolean }
-      >(undefined);
+      const undefinedStore = createPrimitiveStore(
+        z.union([z.undefined(), z.object({ defined: z.boolean() })]),
+        undefined
+      );
       expect(undefinedStore.$get()).toBeUndefined();
 
       undefinedStore.$set({ defined: true });
@@ -524,14 +583,14 @@ describe("createPrimitiveStore", () => {
       const circularObj: any = { name: "test" };
       circularObj.self = circularObj;
 
-      const store = createPrimitiveStore(circularObj);
+      const store = createPrimitiveStore(z.any(), circularObj);
       expect(store.$get().name).toBe("test");
       expect(store.$get().self).toBe(store.$get());
     });
 
     it("should handle Date objects", () => {
       const date = new Date("2024-01-01");
-      const store = createPrimitiveStore(date);
+      const store = createPrimitiveStore(z.instanceof(Date), date);
 
       expect(store.$get()).toBe(date);
       expect(store.$get().getFullYear()).toBe(2024);
@@ -546,12 +605,12 @@ describe("createPrimitiveStore", () => {
         ["key1", "value1"],
         ["key2", "value2"],
       ]);
-      const mapStore = createPrimitiveStore(map);
+      const mapStore = createPrimitiveStore(z.map(z.string(), z.string()), map);
 
       expect(mapStore.$get().get("key1")).toBe("value1");
 
       const set = new Set([1, 2, 3]);
-      const setStore = createPrimitiveStore(set);
+      const setStore = createPrimitiveStore(z.set(z.number()), set);
 
       expect(setStore.$get().has(2)).toBe(true);
       expect(setStore.$get().size).toBe(3);
@@ -559,7 +618,7 @@ describe("createPrimitiveStore", () => {
 
     it("should handle functions as state", () => {
       const fn = (x: number) => x * 2;
-      const store = createPrimitiveStore(fn);
+      const store = createPrimitiveStore(z.any(), fn);
 
       expect(store.$get()(5)).toBe(10);
 
@@ -596,7 +655,20 @@ describe("createPrimitiveStore", () => {
         },
       };
 
-      const store = createPrimitiveStore(initialState);
+      const store = createPrimitiveStore(
+        z.object({
+          id: z.number(),
+          metadata: z.object({
+            config: z.object({
+              enabled: z.boolean(),
+              options: z.record(z.string(), z.any()),
+            }),
+            created: z.instanceof(Date),
+            tags: z.array(z.string()),
+          }),
+        }),
+        initialState
+      );
 
       expect(store.$get().id).toBe(1);
       expect(store.$get().metadata.tags).toEqual(["tag1", "tag2"]);

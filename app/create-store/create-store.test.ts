@@ -17,7 +17,7 @@ describe("createStore", () => {
   it("should create a primitive store when schema has a primitive default", () => {
     const schema = z.undefined();
     createStore(schema);
-    expect(createPrimitiveStore).toHaveBeenCalledWith(undefined, schema);
+    expect(createPrimitiveStore).toHaveBeenCalledWith(schema, undefined);
     expect(createCompositeStore).not.toHaveBeenCalled();
   });
 
@@ -25,7 +25,7 @@ describe("createStore", () => {
     const initialState = { key: "value" };
     const schema = z.object({ key: z.string().default("value") });
     createStore(schema);
-    expect(createCompositeStore).toHaveBeenCalledWith(initialState, schema);
+    expect(createCompositeStore).toHaveBeenCalledWith(schema, initialState);
     expect(createPrimitiveStore).not.toHaveBeenCalled();
   });
 
@@ -33,8 +33,8 @@ describe("createStore", () => {
     const schema = z.string().default("not a dictionary");
     createStore(schema);
     expect(createPrimitiveStore).toHaveBeenCalledWith(
-      "not a dictionary",
-      schema
+      schema,
+      "not a dictionary"
     );
     expect(createCompositeStore).not.toHaveBeenCalled();
   });
@@ -43,7 +43,7 @@ describe("createStore", () => {
     const initialState = { key: "value" };
     const schema = z.object({ key: z.string().default("value") });
     createStore(schema);
-    expect(createCompositeStore).toHaveBeenCalledWith(initialState, schema);
+    expect(createCompositeStore).toHaveBeenCalledWith(schema, initialState);
     expect(createPrimitiveStore).not.toHaveBeenCalled();
   });
 });

@@ -1,21 +1,22 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
 import { createPrimitiveStore } from "./index";
 
 describe("createPrimitiveStore - Server-Side Rendering (Node Environment)", () => {
   it("should create a store with proper initial state in SSR", () => {
     const initialState = "initial value";
-    const store = createPrimitiveStore(initialState);
+    const store = createPrimitiveStore(z.string(), initialState);
 
     expect(store.$get()).toBe(initialState);
   });
 
   it("should handle different primitive types in SSR", () => {
-    const stringStore = createPrimitiveStore("hello");
-    const numberStore = createPrimitiveStore(42);
-    const booleanStore = createPrimitiveStore(true);
-    const nullStore = createPrimitiveStore(null);
-    const undefinedStore = createPrimitiveStore(undefined);
+    const stringStore = createPrimitiveStore(z.string(), "hello");
+    const numberStore = createPrimitiveStore(z.number(), 42);
+    const booleanStore = createPrimitiveStore(z.boolean(), true);
+    const nullStore = createPrimitiveStore(z.null(), null);
+    const undefinedStore = createPrimitiveStore(z.undefined(), undefined);
 
     expect(stringStore.$get()).toBe("hello");
     expect(numberStore.$get()).toBe(42);
@@ -25,7 +26,7 @@ describe("createPrimitiveStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should allow state updates via $set in SSR", () => {
-    const store = createPrimitiveStore(0);
+    const store = createPrimitiveStore(z.number(), 0);
 
     expect(store.$get()).toBe(0);
 
@@ -37,7 +38,7 @@ describe("createPrimitiveStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should handle subscription in SSR without errors", () => {
-    const store = createPrimitiveStore("initial");
+    const store = createPrimitiveStore(z.string(), "initial");
     const updates: string[] = [];
 
     const unsubscribe = store.$subscribe((value) => {
@@ -55,7 +56,10 @@ describe("createPrimitiveStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should handle complex state updates in SSR", () => {
-    const store = createPrimitiveStore({ count: 0, name: "test" });
+    const store = createPrimitiveStore(
+      z.object({ count: z.number(), name: z.string() }),
+      { count: 0, name: "test" }
+    );
 
     expect(store.$get()).toEqual({ count: 0, name: "test" });
 
@@ -67,7 +71,7 @@ describe("createPrimitiveStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should maintain proper proxy behavior in SSR", () => {
-    const store = createPrimitiveStore("test");
+    const store = createPrimitiveStore(z.string(), "test");
 
     expect(typeof store.$get).toBe("function");
     expect(typeof store.$set).toBe("function");
@@ -78,7 +82,10 @@ describe("createPrimitiveStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should handle selector function in $get during SSR", () => {
-    const store = createPrimitiveStore({ a: 1, b: 2, c: 3 });
+    const store = createPrimitiveStore(
+      z.object({ a: z.number(), b: z.number(), c: z.number() }),
+      { a: 1, b: 2, c: 3 }
+    );
 
     const sum = store.$get((state) => state.a + state.b + state.c);
     expect(sum).toBe(6);
@@ -89,7 +96,7 @@ describe("createPrimitiveStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should handle multiple subscribers in SSR", () => {
-    const store = createPrimitiveStore(0);
+    const store = createPrimitiveStore(z.number(), 0);
     const updates1: number[] = [];
     const updates2: number[] = [];
 
@@ -112,16 +119,16 @@ describe("createPrimitiveStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should handle edge cases in SSR", () => {
-    const emptyStore = createPrimitiveStore("");
+    const emptyStore = createPrimitiveStore(z.string(), "");
     expect(emptyStore.$get()).toBe("");
 
-    const zeroStore = createPrimitiveStore(0);
+    const zeroStore = createPrimitiveStore(z.number(), 0);
     expect(zeroStore.$get()).toBe(0);
 
-    const arrayStore = createPrimitiveStore([]);
+    const arrayStore = createPrimitiveStore(z.array(z.never()), []);
     expect(arrayStore.$get()).toEqual([]);
 
-    const objectStore = createPrimitiveStore({});
+    const objectStore = createPrimitiveStore(z.object({}), {});
     expect(objectStore.$get()).toEqual({});
   });
 

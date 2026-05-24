@@ -1,6 +1,7 @@
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type { DependencyList } from "react";
 
+import type { InferSchema } from "@/create-store/types/infer-schema";
 import type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
 import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
@@ -17,11 +18,11 @@ import { replace } from "@/create-store/functions/helpers/replace";
 import { useSync } from "@/create-store/functions/hooks/use-sync";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
-export function createPrimitiveStore<State>(
-  initialState: State,
-  schema?: StandardSchemaV1
-): PrimitiveStore<State> {
-  let state = initialState;
+export function createPrimitiveStore<
+  Schema extends StandardSchemaV1,
+  State extends InferSchema<Schema> = InferSchema<Schema>,
+>(schema: Schema, initialState: NoInfer<State>): PrimitiveStore<State> {
+  let state = initialState as State;
   const subscribers = new Set<Subscriber<State>>();
   const cache = new WeakMap<object, any>();
 
@@ -44,10 +45,6 @@ export function createPrimitiveStore<State>(
         ? action(clone(state, cache))
         : action;
       const replaced = replace(state, next);
-      if (!schema) {
-        setState(replaced);
-        return;
-      }
       const validation = schema["~standard"].validate(replaced);
       if (validation instanceof Promise) {
         setState(replaced);

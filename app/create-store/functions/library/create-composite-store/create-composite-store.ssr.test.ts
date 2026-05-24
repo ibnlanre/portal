@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
 import { createCompositeStore } from "./index";
 
@@ -11,7 +12,10 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
 
   it("should create a store with proper initial state in SSR", () => {
     const initialState = { counter: 0, name: "test" };
-    const store = createCompositeStore(initialState);
+    const store = createCompositeStore(
+      z.object({ counter: z.number(), name: z.string() }),
+      initialState
+    );
 
     expect(store.$get()).toEqual(initialState);
   });
@@ -22,7 +26,14 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
       settings: { notifications: true },
       user: { id: 1, name: "John" },
     };
-    const store = createCompositeStore(initialState);
+    const store = createCompositeStore(
+      z.object({
+        preferences: z.object({ language: z.string(), theme: z.string() }),
+        settings: z.object({ notifications: z.boolean() }),
+        user: z.object({ id: z.number(), name: z.string() }),
+      }),
+      initialState
+    );
 
     expect(store.$get()).toEqual(initialState);
     expect(store.$get().user.name).toBe("John");
@@ -30,7 +41,10 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should allow state updates via $set in SSR", () => {
-    const store = createCompositeStore({ count: 0, name: "initial" });
+    const store = createCompositeStore(
+      z.object({ count: z.number(), name: z.string() }),
+      { count: 0, name: "initial" }
+    );
 
     expect(store.$get()).toEqual({ count: 0, name: "initial" });
 
@@ -42,10 +56,19 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should handle deep state updates in SSR", () => {
-    const store = createCompositeStore({
-      settings: { theme: "light" },
-      user: { id: 1, profile: { age: 30, name: "John" } },
-    });
+    const store = createCompositeStore(
+      z.object({
+        settings: z.object({ theme: z.string() }),
+        user: z.object({
+          id: z.number(),
+          profile: z.object({ age: z.number(), name: z.string() }),
+        }),
+      }),
+      {
+        settings: { theme: "light" },
+        user: { id: 1, profile: { age: 30, name: "John" } },
+      }
+    );
 
     store.$set({ user: { profile: { age: 31 } } });
 
@@ -56,7 +79,9 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should handle subscription in SSR without errors", () => {
-    const store = createCompositeStore({ value: "initial" });
+    const store = createCompositeStore(z.object({ value: z.string() }), {
+      value: "initial",
+    });
     const updates: Array<{ value: string }> = [];
 
     const unsubscribe = store.$subscribe((state) => {
@@ -74,7 +99,9 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should maintain proper proxy behavior in SSR", () => {
-    const store = createCompositeStore({ test: "value" });
+    const store = createCompositeStore(z.object({ test: z.string() }), {
+      test: "value",
+    });
 
     expect(typeof store.$get).toBe("function");
     expect(typeof store.$set).toBe("function");
@@ -85,10 +112,13 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should handle selector function in $get during SSR", () => {
-    const store = createCompositeStore({
-      items: [1, 2, 3],
-      multiplier: 2,
-    });
+    const store = createCompositeStore(
+      z.object({ items: z.array(z.number()), multiplier: z.number() }),
+      {
+        items: [1, 2, 3],
+        multiplier: 2,
+      }
+    );
 
     const total = store.$get((state) =>
       state.items.reduce((sum, item) => sum + item * state.multiplier, 0)
@@ -103,7 +133,9 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should handle multiple subscribers in SSR", () => {
-    const store = createCompositeStore({ counter: 0 });
+    const store = createCompositeStore(z.object({ counter: z.number() }), {
+      counter: 0,
+    });
     const updates1: Array<{ counter: number }> = [];
     const updates2: Array<{ counter: number }> = [];
 
@@ -126,10 +158,13 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should handle array state updates in SSR", () => {
-    const store = createCompositeStore({
-      count: 2,
-      items: ["a", "b"],
-    });
+    const store = createCompositeStore(
+      z.object({ count: z.number(), items: z.array(z.string()) }),
+      {
+        count: 2,
+        items: ["a", "b"],
+      }
+    );
 
     expect(store.$get()).toEqual({ count: 2, items: ["a", "b"] });
 
@@ -149,13 +184,21 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should handle complex nested state operations in SSR", () => {
-    const store = createCompositeStore({
-      filter: "all",
-      todos: [
-        { completed: false, id: 1, text: "Task 1" },
-        { completed: true, id: 2, text: "Task 2" },
-      ],
-    });
+    const store = createCompositeStore(
+      z.object({
+        filter: z.string(),
+        todos: z.array(
+          z.object({ completed: z.boolean(), id: z.number(), text: z.string() })
+        ),
+      }),
+      {
+        filter: "all",
+        todos: [
+          { completed: false, id: 1, text: "Task 1" },
+          { completed: true, id: 2, text: "Task 2" },
+        ],
+      }
+    );
 
     store.$set((prev) => ({
       todos: prev.todos.map((todo) => {
@@ -175,26 +218,38 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
   });
 
   it("should handle edge cases in SSR", () => {
-    const emptyStore = createCompositeStore({});
+    const emptyStore = createCompositeStore(z.object({}), {});
     expect(emptyStore.$get()).toEqual({});
 
-    const nullableStore = createCompositeStore({
-      empty: "",
-      optional: undefined,
-      value: null,
-    });
+    const nullableStore = createCompositeStore(
+      z.object({
+        empty: z.string(),
+        optional: z.undefined(),
+        value: z.null(),
+      }),
+      {
+        empty: "",
+        optional: undefined,
+        value: null,
+      }
+    );
     expect(nullableStore.$get()).toEqual({
       empty: "",
       optional: undefined,
       value: null,
     });
 
-    const arrayStore = createCompositeStore({ items: [], metadata: {} });
+    const arrayStore = createCompositeStore(
+      z.object({ items: z.array(z.unknown()), metadata: z.object({}) }),
+      { items: [], metadata: {} }
+    );
     expect(arrayStore.$get()).toEqual({ items: [], metadata: {} });
   });
 
   it("should handle rapid state changes in SSR", () => {
-    const store = createCompositeStore({ counter: 0 });
+    const store = createCompositeStore(z.object({ counter: z.number() }), {
+      counter: 0,
+    });
     const updates: Array<{ counter: number }> = [];
 
     store.$subscribe((state) => updates.push(state));
@@ -219,7 +274,13 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
       settings: { theme: "dark" },
       user: { age: 30, name: "John" },
     };
-    const store = createCompositeStore(initialState);
+    const store = createCompositeStore(
+      z.object({
+        settings: z.object({ theme: z.string() }),
+        user: z.object({ age: z.number(), name: z.string() }),
+      }),
+      initialState
+    );
 
     const stateBefore = store.$get();
 

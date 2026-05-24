@@ -245,4 +245,23 @@ describe("createStore - Type Tests", () => {
       expectTypeOf(store).toExtend<CompositeStore<{ value: number }>>();
     });
   });
+
+  describe("Explicit initialState overload", () => {
+    it("object schema with explicit dictionary initialState produces CompositeStore", () => {
+      const store = createStore(z.object({ value: z.number() }), { value: 0 });
+      expectTypeOf(store).toExtend<CompositeStore<{ value: number }>>();
+    });
+
+    it("primitive schema with explicit initialState produces PrimitiveStore", () => {
+      const store = createStore(z.number(), 42);
+      expectTypeOf(store).toExtend<PrimitiveStore<number>>();
+    });
+
+    it("explicit initialState overload is synchronous", () => {
+      // When initialState is provided, schema resolution is bypassed entirely —
+      // the return is always a store, never a Promise.
+      const store = createStore(z.object({ value: z.number() }), { value: 0 });
+      expectTypeOf(store).not.toMatchTypeOf<Promise<unknown>>();
+    });
+  });
 });

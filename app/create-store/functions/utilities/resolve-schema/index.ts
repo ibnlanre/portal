@@ -28,8 +28,15 @@ export function resolveSchema<Schema extends StandardSchemaV1>(
 
     if (result instanceof Promise) {
       return result.then((resolved) => {
-        if ("issues" in resolved) return undefined;
-        return resolved.value;
+        if (!("issues" in resolved)) return resolved.value;
+        if (seed === undefined) return undefined;
+
+        // Object seed failed asynchronously — try the scalar seed as fallback.
+        const fallback = schema["~standard"].validate(undefined);
+        if (fallback instanceof Promise) {
+          return fallback.then((r) => ("issues" in r ? undefined : r.value));
+        }
+        return "issues" in fallback ? undefined : fallback.value;
       });
     }
 
