@@ -690,4 +690,59 @@ describe("createPrimitiveStore", () => {
       expect(store.$get().metadata.config.options.setting3).toBe("new");
     });
   });
+
+  describe("Schema defaults applied at initialization", () => {
+    it("applies schema default when initialState is undefined", () => {
+      const store = createPrimitiveStore(
+        z.number().default(42),
+        undefined as unknown as number
+      );
+      expect(store.$get()).toBe(42);
+    });
+
+    it("applies schema default for strings when initialState is undefined", () => {
+      const store = createPrimitiveStore(
+        z.string().default("hello"),
+        undefined as unknown as string
+      );
+      expect(store.$get()).toBe("hello");
+    });
+
+    it("preserves provided initialState when it satisfies the schema", () => {
+      const store = createPrimitiveStore(z.number().default(42), 7);
+      expect(store.$get()).toBe(7);
+    });
+
+    it("coerces initialState when schema applies coercion", () => {
+      const store = createPrimitiveStore(
+        z.coerce.number(),
+        "123" as unknown as number
+      );
+      expect(store.$get()).toBe(123);
+    });
+
+    it("throws at creation time when initialState is invalid against the schema", () => {
+      expect(() =>
+        createPrimitiveStore(z.number(), "not-a-number" as unknown as number)
+      ).toThrow();
+    });
+
+    it("default propagates correctly through $get after initialization", () => {
+      const store = createPrimitiveStore(
+        z.string().default("initial"),
+        undefined as unknown as string
+      );
+      expect(store.$get()).toBe("initial");
+      store.$set("updated");
+      expect(store.$get()).toBe("updated");
+    });
+
+    it("default applies to boolean schemas", () => {
+      const store = createPrimitiveStore(
+        z.boolean().default(true),
+        undefined as unknown as boolean
+      );
+      expect(store.$get()).toBe(true);
+    });
+  });
 });

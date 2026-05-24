@@ -284,7 +284,7 @@ describe("createCompositeStore", () => {
         }
       );
 
-      expect(store.ref1).toBe(store.ref2);
+      expect(store.ref1.$get()).toEqual(store.ref2.$get());
     });
 
     it("should handle large object structures efficiently", () => {
@@ -1624,20 +1624,20 @@ describe("createCompositeStore", () => {
           largeState
         );
 
-        const results: unknown[] = [];
+        const results: (typeof largeState)[] = [];
         for (let i = 0; i < 10; i++) {
           const state = store.$get();
           results.push(state);
 
-          expect((state as any).settings.language).toBe("en");
-          expect((state as any).users).toHaveLength(50);
-          expect((state as any).users[0].name).toBe("User 0");
+          expect(state.settings.language).toBe("en");
+          expect(state.users).toHaveLength(50);
+          expect(state.users[0].name).toBe("User 0");
         }
 
         expect(results).toHaveLength(10);
 
-        (results[0] as any).settings.language = "fr";
-        expect((results[1] as any).settings.language).toBe("en");
+        results[0].settings.language = "fr";
+        expect(results[1].settings.language).toBe("en");
 
         expect(store.settings.language.$get()).toBe("en");
       });
@@ -2192,6 +2192,89 @@ describe("createCompositeStore", () => {
         deserialized
       );
       expect(newStore.$get()).toEqual(initialState);
+    });
+  });
+
+  describe("Schema defaults applied at initialization", () => {
+    it("fills all missing fields with schema defaults when initialState is empty", () => {
+      const store = createCompositeStore(
+        z.object({
+          count: z.number().default(0),
+          name: z.string().default("world"),
+        }),
+        {} as { count: number; name: string }
+      );
+      expect(store.$get()).toEqual({ count: 0, name: "world" });
+      expect(store.count.$get()).toBe(0);
+      expect(store.name.$get()).toBe("world");
+    });
+
+    it("preserves provided values and only fills missing fields with defaults", () => {
+      const store = createCompositeStore(
+        z.object({
+          count: z.number().default(0),
+          name: z.string().default("world"),
+        }),
+        { count: 5 } as { count: number; name: string }
+      );
+      expect(store.count.$get()).toBe(5);
+      expect(store.name.$get()).toBe("world");
+    });
+
+    it("exposes schema-defaulted fields as accessible store nodes via proxy", () => {
+      const store = createCompositeStore(
+        z.object({ enabled: z.boolean().default(true) }),
+        {} as { enabled: boolean }
+      );
+      expect(store.enabled.$get()).toBe(true);
+      store.enabled.$set(false);
+      expect(store.enabled.$get()).toBe(false);
+    });
+
+    it("applies defaults to nested object fields", () => {
+      const store = createCompositeStore(
+        z.object({
+          settings: z.object({
+            notifications: z.boolean().default(true),
+            theme: z.string().default("light"),
+          }),
+        }),
+        { settings: {} } as {
+          settings: { notifications: boolean; theme: string };
+        }
+      );
+      expect(store.settings.theme.$get()).toBe("light");
+      expect(store.settings.notifications.$get()).toBe(true);
+    });
+
+    it("throws at creation time when initialState is invalid against the schema", () => {
+      expect(() =>
+        createCompositeStore(z.object({ count: z.number() }), {
+          count: "not-a-number",
+        } as any)
+      ).toThrow();
+    });
+
+    it("subsequent $set calls also apply schema defaults for missing fields", () => {
+      const store = createCompositeStore(
+        z.object({
+          label: z.string().default("default"),
+          value: z.number().default(42),
+        }),
+        {} as { label: string; value: number }
+      );
+      expect(store.$get()).toEqual({ label: "default", value: 42 });
+      store.$set({ value: 99 });
+      expect(store.value.$get()).toBe(99);
+      expect(store.label.$get()).toBe("default");
+    });
+
+    it("coerces initialState values when schema uses coercion", () => {
+      const store = createCompositeStore(
+        z.object({ count: z.coerce.number() }),
+        { count: "7" } as unknown as { count: number }
+      );
+      expect(store.count.$get()).toBe(7);
     });
   });
 });

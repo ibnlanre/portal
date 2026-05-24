@@ -1,124 +1,153 @@
-import type { StandardSchemaV1 } from "@standard-schema/spec";
-
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import * as v from "valibot";
-
 import { createStore } from "./index";
+
+import * as v from "valibot";
 
 describe("createStore - Integration tests (real schemas, no mocks)", () => {
   describe("Primitive schemas", () => {
-    it("number schema with default produces working primitive store", () => {
-      const store = createStore(z.number().default(42));
+    it("number schema with explicit initialState produces working primitive store", () => {
+      const store = createStore(z.number(), 42);
       expect(store.$get()).toBe(42);
     });
 
-    it("string schema with default produces working primitive store", () => {
-      const store = createStore(z.string().default("hello"));
+    it("string schema with explicit initialState produces working primitive store", () => {
+      const store = createStore(z.string(), "hello");
       expect(store.$get()).toBe("hello");
     });
 
-    it("number schema without default produces primitive store with undefined state", () => {
-      const store = createStore(z.number());
-      expect(store.$get()).toBeUndefined();
+    it("number schema with zero as initialState produces primitive store", () => {
+      const store = createStore(z.number(), 0);
+      expect(store.$get()).toBe(0);
     });
   });
 
   describe("Object schemas", () => {
-    it("object schema with defaults produces working composite store", () => {
+    it("object schema with explicit initialState produces working composite store", () => {
       const store = createStore(
         z.object({
-          count: z.number().default(0),
-          label: z.string().default("hello"),
-        })
+          count: z.number(),
+          label: z.string(),
+        }),
+        { count: 0, label: "hello" }
       );
       expect(store.count.$get()).toBe(0);
       expect(store.label.$get()).toBe("hello");
       expect(store.$get()).toEqual({ count: 0, label: "hello" });
     });
 
-    it("object schema without defaults produces primitive store with undefined state", () => {
-      const store = createStore(z.object({ value: z.number() }));
-      // Runtime: resolveSchema returns undefined → primitive store
-      expect(store.$get()).toBeUndefined();
-    });
-  });
-
-  describe("Explicit initialState", () => {
-    it("explicit initialState bypasses schema resolution", () => {
-      const store = createStore(z.object({ value: z.number() }), { value: 5 });
-      expect(store.value.$get()).toBe(5);
-    });
-
-    it("explicit primitive initialState produces working primitive store", () => {
-      const store = createStore(z.number(), 99);
-      expect(store.$get()).toBe(99);
+    it("nested object schema with explicit initialState produces working composite store", () => {
+      const store = createStore(
+        z.object({
+          settings: z.object({ notifications: z.boolean(), theme: z.string() }),
+          user: z.object({ age: z.number(), name: z.string() }),
+        }),
+        {
+          settings: { notifications: true, theme: "dark" },
+          user: { age: 30, name: "Alice" },
+        }
+      );
+      expect(store.settings.theme.$get()).toBe("dark");
+      expect(store.user.name.$get()).toBe("Alice");
     });
   });
 
   describe("Valibot schemas", () => {
-    it("valibot object schema with defaults produces working composite store", () => {
+    it("valibot object schema with explicit initialState produces working composite store", () => {
       const store = createStore(
-        v.object({
-          count: v.optional(v.number(), 0),
-          label: v.optional(v.string(), "hi"),
-        })
+        v.object({ count: v.number(), label: v.string() }),
+        { count: 0, label: "hi" }
       );
       expect(store.count.$get()).toBe(0);
       expect(store.label.$get()).toBe("hi");
     });
 
-    it("valibot primitive schema with default produces working primitive store", () => {
-      const store = createStore(v.optional(v.number(), 7));
+    it("valibot primitive schema with explicit initialState produces working primitive store", () => {
+      const store = createStore(v.number(), 7);
       expect(store.$get()).toBe(7);
     });
   });
 
-  describe("Async schemas", () => {
-    it("async schema resolves to a working primitive store", async () => {
-      const schema: StandardSchemaV1<number> = {
-        "~standard": {
-          validate: () => Promise.resolve({ value: 7 }),
-          vendor: "test",
-          version: 1,
-        },
-      };
+  describe("Schema defaults applied at initialization", () => {
+    describe("Zod schemas", () => {
+      it("object schema fills all missing fields with defaults when initialState is empty", () => {
+        const store = createStore(
+          z.object({
+            count: z.number().default(0),
+            label: z.string().default("hello"),
+          }),
+          {} as { count: number; label: string }
+        );
+        expect(store.count.$get()).toBe(0);
+        expect(store.label.$get()).toBe("hello");
+        expect(store.$get()).toEqual({ count: 0, label: "hello" });
+      });
 
-      const store = await createStore(schema);
-      expect(store.$get()).toBe(7);
+      it("object schema preserves provided values and fills only missing defaults", () => {
+        const store = createStore(
+          z.object({
+            count: z.number().default(0),
+            label: z.string().default("hello"),
+          }),
+          { count: 5 } as { count: number; label: string }
+        );
+        expect(store.count.$get()).toBe(5);
+        expect(store.label.$get()).toBe("hello");
+      });
+
+      it("primitive schema applies default when initialState is undefined", () => {
+        const store = createStore(
+          z.number().default(99),
+          undefined as unknown as number
+        );
+        expect(store.$get()).toBe(99);
+      });
+
+      it("schema-defaulted composite fields are accessible as store nodes", () => {
+        const store = createStore(
+          z.object({ enabled: z.boolean().default(true) }),
+          {} as { enabled: boolean }
+        );
+        expect(store.enabled.$get()).toBe(true);
+        store.enabled.$set(false);
+        expect(store.enabled.$get()).toBe(false);
+      });
+
+      it("throws at creation time when initialState is invalid against the schema", () => {
+        expect(() =>
+          createStore(z.object({ count: z.number() }), { count: "bad" } as any)
+        ).toThrow();
+      });
+
+      it("coerces initialState values at creation time when schema uses coercion", () => {
+        const store = createStore(z.object({ count: z.coerce.number() }), {
+          count: "7",
+        } as unknown as { count: number });
+        expect(store.count.$get()).toBe(7);
+      });
     });
 
-    it("async schema resolves to a working composite store", async () => {
-      const schema: StandardSchemaV1<{ count: number }> = {
-        "~standard": {
-          validate: () => Promise.resolve({ value: { count: 3 } }),
-          vendor: "test",
-          version: 1,
-        },
-      };
+    describe("Valibot schemas", () => {
+      it("object schema fills missing fields with optional defaults", () => {
+        const store = createStore(
+          v.object({
+            count: v.optional(v.number(), 0),
+            label: v.optional(v.string(), "hello"),
+          }),
+          {} as { count: number; label: string }
+        );
+        expect(store.count.$get()).toBe(0);
+        expect(store.label.$get()).toBe("hello");
+      });
 
-      const store = await createStore(schema);
-      expect(store.count.$get()).toBe(3);
-    });
-
-    it("async object seed failure falls back to scalar seed", async () => {
-      // Schema whose validate({}) fails but validate(undefined) succeeds.
-      const schema: StandardSchemaV1<number> = {
-        "~standard": {
-          validate: (value) =>
-            Promise.resolve(
-              value !== undefined && typeof value === "object"
-                ? { issues: [{ message: "not a number" }] }
-                : { value: 42 }
-            ),
-          vendor: "test",
-          version: 1,
-        },
-      };
-
-      const store = await createStore(schema);
-      expect(store.$get()).toBe(42);
+      it("primitive schema applies default when initialState is undefined", () => {
+        const store = createStore(
+          v.optional(v.number(), 42),
+          undefined as unknown as number
+        );
+        expect(store.$get()).toBe(42);
+      });
     });
   });
 });

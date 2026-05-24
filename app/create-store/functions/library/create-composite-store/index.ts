@@ -3,7 +3,6 @@ import type { DependencyList } from "react";
 
 import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { GenericObject } from "@/create-store/types/generic-object";
-import type { InferObject } from "@/create-store/types/infer-object";
 import type { InferSchema } from "@/create-store/types/infer-schema";
 import type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
 import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
@@ -32,18 +31,18 @@ import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
 export function createCompositeStore<
-  Schema extends StandardSchemaV1,
-  State extends InferObject<Schema> = InferObject<Schema>,
->(
-  schema: Schema,
-  initialState: NoInfer<State>
-): CompositeStore<
-  InferSchema<Schema> extends infer Clean extends GenericObject ? Clean : State
-> {
-  let state = initialState;
-
+  Schema extends StandardSchemaV1<GenericObject>,
+  State extends InferSchema<Schema>,
+>(schema: Schema, initialState: NoInfer<State>): CompositeStore<State> {
   const cache = new WeakMap<any, CompositeStore<State>>();
   const originalPaths = new Set<string>();
+
+  function applySchema(value: State): State {
+    const validation = schema["~standard"].validate(value);
+    if (validation instanceof Promise) return value;
+    if (validation.issues) throw new Error(validation.issues[0].message);
+    return validation.value;
+  }
 
   function trackOriginalPaths(
     obj: any,
@@ -51,9 +50,7 @@ export function createCompositeStore<
     visited = new WeakSet()
   ): void {
     if (isDictionary(obj)) {
-      if (currentPath) {
-        originalPaths.add(currentPath);
-      }
+      if (currentPath) originalPaths.add(currentPath);
 
       for (const key in obj) {
         const fullPath = currentPath ? `${currentPath}.${key}` : key;
@@ -70,7 +67,8 @@ export function createCompositeStore<
     }
   }
 
-  trackOriginalPaths(initialState);
+  let state = applySchema(initialState);
+  trackOriginalPaths(state);
 
   const subscribers = new Map<
     Paths<State>,
@@ -100,13 +98,6 @@ export function createCompositeStore<
         set.forEach((subscriber) => subscriber(resolvedValue));
       }
     });
-  }
-
-  function applySchema(value: State): State {
-    const validation = schema["~standard"].validate(value);
-    if (validation instanceof Promise) return value;
-    if (validation.issues) throw new Error(validation.issues[0].message);
-    return validation.value as State;
   }
 
   function setState<Path extends Paths<State>>(value: State, path?: Path) {
@@ -335,9 +326,5 @@ export function createCompositeStore<
     return proxy;
   }
 
-  return createProxy() as unknown as CompositeStore<
-    InferSchema<Schema> extends infer Clean extends GenericObject
-      ? Clean
-      : State
-  >;
+  return createProxy() as never;
 }

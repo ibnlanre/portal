@@ -19,10 +19,18 @@ import { useSync } from "@/create-store/functions/hooks/use-sync";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
 export function createPrimitiveStore<
-  Schema extends StandardSchemaV1,
-  State extends InferSchema<Schema> = InferSchema<Schema>,
+  const Schema extends StandardSchemaV1,
+  State extends InferSchema<Schema>,
 >(schema: Schema, initialState: NoInfer<State>): PrimitiveStore<State> {
-  let state = initialState as State;
+  function applySchema(value: State): State {
+    const validation = schema["~standard"].validate(value);
+    if (validation instanceof Promise) return value;
+    if (validation.issues) throw new Error(validation.issues[0].message);
+    return validation.value as State;
+  }
+
+  let state = applySchema(initialState);
+
   const subscribers = new Set<Subscriber<State>>();
   const cache = new WeakMap<object, any>();
 
@@ -44,14 +52,7 @@ export function createPrimitiveStore<
       const next = isSetStateActionFunction(action)
         ? action(clone(state, cache))
         : action;
-      const replaced = replace(state, next);
-      const validation = schema["~standard"].validate(replaced);
-      if (validation instanceof Promise) {
-        setState(replaced);
-        return;
-      }
-      if (validation.issues) throw new Error(validation.issues[0].message);
-      setState(validation.value as State);
+      setState(applySchema(replace(state, next)));
     }
 
     function $use<Value = State>(

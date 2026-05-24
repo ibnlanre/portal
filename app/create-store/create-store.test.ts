@@ -14,24 +14,16 @@ describe("createStore", () => {
     vi.clearAllMocks();
   });
 
-  it("should create a primitive store when schema has a primitive default", () => {
+  it("should create a primitive store for an undefined schema", () => {
     const schema = z.undefined();
-    createStore(schema);
+    createStore(schema, undefined);
     expect(createPrimitiveStore).toHaveBeenCalledWith(schema, undefined);
     expect(createCompositeStore).not.toHaveBeenCalled();
   });
 
-  it("should create a composite store when schema has a dictionary default", () => {
-    const initialState = { key: "value" };
-    const schema = z.object({ key: z.string().default("value") });
-    createStore(schema);
-    expect(createCompositeStore).toHaveBeenCalledWith(schema, initialState);
-    expect(createPrimitiveStore).not.toHaveBeenCalled();
-  });
-
-  it("should create a primitive store when schema has a string default", () => {
-    const schema = z.string().default("not a dictionary");
-    createStore(schema);
+  it("should create a primitive store for a string schema", () => {
+    const schema = z.string();
+    createStore(schema, "not a dictionary");
     expect(createPrimitiveStore).toHaveBeenCalledWith(
       schema,
       "not a dictionary"
@@ -39,11 +31,36 @@ describe("createStore", () => {
     expect(createCompositeStore).not.toHaveBeenCalled();
   });
 
-  it("should create a composite store when schema is detected as an object schema", () => {
+  it("should create a primitive store for a number schema", () => {
+    const schema = z.number();
+    createStore(schema, 0);
+    expect(createPrimitiveStore).toHaveBeenCalledWith(schema, 0);
+    expect(createCompositeStore).not.toHaveBeenCalled();
+  });
+
+  it("should create a composite store for an object schema", () => {
     const initialState = { key: "value" };
-    const schema = z.object({ key: z.string().default("value") });
-    createStore(schema);
+    const schema = z.object({ key: z.string() });
+    createStore(schema, initialState);
     expect(createCompositeStore).toHaveBeenCalledWith(schema, initialState);
     expect(createPrimitiveStore).not.toHaveBeenCalled();
+  });
+
+  it("should create a composite store for a nested object schema", () => {
+    const initialState = { user: { age: 30, name: "Alice" } };
+    const schema = z.object({
+      user: z.object({ age: z.number(), name: z.string() }),
+    });
+    createStore(schema, initialState);
+    expect(createCompositeStore).toHaveBeenCalledWith(schema, initialState);
+    expect(createPrimitiveStore).not.toHaveBeenCalled();
+  });
+
+  it("should pass initialState directly without schema resolution", () => {
+    const initialState = { count: 99 };
+    const schema = z.object({ count: z.number() });
+    createStore(schema, initialState);
+    expect(createCompositeStore).toHaveBeenCalledWith(schema, initialState);
+    expect(createCompositeStore).toHaveBeenCalledTimes(1);
   });
 });
