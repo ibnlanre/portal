@@ -1,4 +1,4 @@
-import type { StandardSchema } from "@/create-store/types/schema";
+import type { StandardSchemaV1 } from "@standard-schema/spec";
 
 /**
  * Checks whether a value implements the Standard Schema V1 protocol.
@@ -6,7 +6,7 @@ import type { StandardSchema } from "@/create-store/types/schema";
  * @param value The value to check.
  * @returns A boolean indicating whether the value is a Standard Schema.
  */
-export function isSchema(value: unknown): value is StandardSchema {
+export function isSchema(value: unknown): value is StandardSchemaV1 {
   return (
     typeof value === "object" &&
     value !== null &&

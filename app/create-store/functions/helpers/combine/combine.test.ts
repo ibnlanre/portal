@@ -43,10 +43,10 @@ describe("combine", () => {
 
   describe("Basic Property Copying", () => {
     it("copies string properties from source to result", () => {
-      const result = { existing: "value" };
+      const target = { existing: "value" };
       const source = { another: 42, newProp: "new" };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result).toEqual({
         another: 42,
@@ -56,10 +56,10 @@ describe("combine", () => {
     });
 
     it("replaces existing properties", () => {
-      const result = { keep: "unchanged", prop: "old" };
+      const target = { keep: "unchanged", prop: "old" };
       const source = { prop: "new" };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result).toEqual({
         keep: "unchanged",
@@ -68,10 +68,10 @@ describe("combine", () => {
     });
 
     it("handles undefined and null values", () => {
-      const result = { a: 1, b: 2 };
+      const target = { a: 1, b: 2 };
       const source = { a: undefined, b: null, c: "value" };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result).toEqual({
         a: undefined,
@@ -81,15 +81,14 @@ describe("combine", () => {
     });
 
     it("handles missing keys gracefully", () => {
-      const result = { existing: "value" };
+      const target = { existing: "value" };
       const source = { a: 1 };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result).toEqual({
         a: 1,
         existing: "value",
-        nonExistent: undefined,
       });
     });
   });
@@ -270,10 +269,10 @@ describe("combine", () => {
     it("copies symbol properties", () => {
       const sym1 = Symbol("test1");
       const sym2 = Symbol("test2");
-      const result = { normalProp: "value" };
+      const target = { normalProp: "value" };
       const source = { [sym1]: "symbol1", [sym2]: 42 };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result).toEqual({
         normalProp: "value",
@@ -284,10 +283,10 @@ describe("combine", () => {
 
     it("handles mixed string and symbol keys", () => {
       const sym = Symbol("mixed");
-      const result = { str: "original" };
+      const target = { str: "original" };
       const source = { num: 123, str: "updated", [sym]: "symbolValue" };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result).toEqual({
         num: 123,
@@ -299,26 +298,26 @@ describe("combine", () => {
 
   describe("Dictionary vs Non-Dictionary Handling", () => {
     it("replaces non-dictionary values with source values", () => {
-      const result = { prop: "string" };
+      const target = { prop: "string" };
       const source = { prop: 42 };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result.prop).toBe(42);
     });
 
     it("replaces arrays with source arrays", () => {
-      const result = { arr: [1, 2] };
+      const target = { arr: [1, 2] };
       const source = { arr: [3, 4, 5] };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result.arr).toEqual([3, 4, 5]);
       expect(result.arr).toBe(source.arr);
     });
 
     it("recursively combines dictionary objects", () => {
-      const result = {
+      const target = {
         nested: {
           a: 1,
           b: 2,
@@ -331,7 +330,7 @@ describe("combine", () => {
         },
       };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result.nested).toEqual({
         a: 1,
@@ -342,7 +341,7 @@ describe("combine", () => {
     });
 
     it("handles mixed dictionary and non-dictionary properties", () => {
-      const result = {
+      const target = {
         num: 1,
         obj: { keep: "this" },
         str: "original",
@@ -353,7 +352,7 @@ describe("combine", () => {
         str: "replaced",
       };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result).toEqual({
         num: 2,
@@ -365,23 +364,22 @@ describe("combine", () => {
 
   describe("Edge Cases", () => {
     it("handles empty keys array", () => {
-      const result = { existing: "value" };
+      const target = { existing: "value" };
       const source = { ignored: "this" };
-      const keys: string[] = [];
 
-      combine(result, source);
+      const result = combine(target, source);
 
-      expect(result).toEqual({ existing: "value" });
+      expect(result).toEqual({ existing: "value", ignored: "this" });
     });
 
     it("handles null and undefined target values", () => {
-      const result = { nullProp: null, undefinedProp: undefined };
+      const target = { nullProp: null, undefinedProp: undefined };
       const source = {
         nullProp: { newObj: "value" },
         undefinedProp: { anotherObj: "value" },
       };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result.nullProp).toBe(source.nullProp);
       expect(result.undefinedProp).toBe(source.undefinedProp);
@@ -390,10 +388,10 @@ describe("combine", () => {
     it("handles function properties", () => {
       const fn1 = () => "original";
       const fn2 = () => "replacement";
-      const result = { func: fn1 };
+      const target = { func: fn1 };
       const source = { func: fn2 };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result.func).toBe(fn2);
     });
@@ -401,10 +399,10 @@ describe("combine", () => {
     it("handles Date objects", () => {
       const date1 = new Date("2023-01-01");
       const date2 = new Date("2023-12-31");
-      const result = { date: date1 };
+      const target = { date: date1 };
       const source = { date: date2 };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result.date).toBe(date2);
     });
@@ -412,10 +410,10 @@ describe("combine", () => {
     it("handles RegExp objects", () => {
       const regex1 = /old/g;
       const regex2 = /new/i;
-      const result = { pattern: regex1 };
+      const target = { pattern: regex1 };
       const source = { pattern: regex2 };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result.pattern).toBe(regex2);
     });
@@ -431,7 +429,7 @@ describe("combine", () => {
         nested: Nested;
       };
 
-      const result: ResultType = {
+      const target: ResultType = {
         nested: {
           circular: null,
           value: "original",
@@ -447,7 +445,7 @@ describe("combine", () => {
       };
       source.nested.circular = source.nested;
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result.nested.value).toBe("updated");
       // combine calls combine internally, which preserves circular structure
@@ -460,7 +458,7 @@ describe("combine", () => {
 
     it("merges dictionaries and assigns primitives directly", () => {
       const sharedObj = { shared: "value" };
-      const result = {
+      const target = {
         prop1: { old: "data" },
         prop2: { other: "data" },
       };
@@ -469,9 +467,9 @@ describe("combine", () => {
         prop2: sharedObj,
       };
 
-      combine(result, source);
+      const result = combine(target, source);
 
-      // When both target and source are dictionaries, they get merged
+      // When both target and source are dictionaries, they get result
       expect(result.prop1).toEqual({ old: "data", shared: "value" });
       expect(result.prop2).toEqual({ other: "data", shared: "value" });
 
@@ -498,7 +496,7 @@ describe("combine", () => {
         };
       };
 
-      const result: ResultType = {
+      const target: ResultType = {
         level1: {
           level2: {
             level3: {
@@ -523,7 +521,7 @@ describe("combine", () => {
         },
       };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result.level1.level2.level3).toEqual({
         add: "new",
@@ -550,7 +548,7 @@ describe("combine", () => {
         };
       };
 
-      const result: ResultType = {
+      const target: ResultType = {
         config: {
           metadata: "original",
           settings: {
@@ -573,7 +571,7 @@ describe("combine", () => {
         },
       };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result.config.settings).toEqual({
         features: ["old"],
@@ -592,7 +590,7 @@ describe("combine", () => {
         special?: string;
       };
 
-      const result: ResultType = { normal: "value" };
+      const target: ResultType = { normal: "value" };
       const source: ResultType = {};
 
       // Define property with custom descriptor
@@ -603,7 +601,7 @@ describe("combine", () => {
         writable: false,
       });
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result.special).toBe("special value");
     });
@@ -614,7 +612,7 @@ describe("combine", () => {
         hidden?: string;
       };
 
-      const result: ResultType = { existing: "value" };
+      const target: ResultType = { existing: "value" };
       const source: ResultType = {};
 
       Object.defineProperty(source, "hidden", {
@@ -623,7 +621,7 @@ describe("combine", () => {
         value: "hidden value",
       });
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result.hidden).toBe("hidden value");
     });
@@ -631,7 +629,7 @@ describe("combine", () => {
 
   describe("Type Safety Edge Cases", () => {
     it("handles source properties that are not objects correctly", () => {
-      const result = {
+      const target = {
         willBeReplaced: {
           nested: "object",
         },
@@ -640,16 +638,16 @@ describe("combine", () => {
         willBeReplaced: "now a string",
       };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result.willBeReplaced).toBe("now a string");
     });
 
     it("handles numeric keys as strings", () => {
-      const result = { existing: "value" };
+      const target = { existing: "value" };
       const source = { 0: "zero", 1: "one" };
 
-      combine(result, source);
+      const result = combine(target, source);
 
       expect(result).toEqual({
         "0": "zero",

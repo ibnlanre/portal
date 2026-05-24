@@ -42,11 +42,6 @@ export type { Paths } from "@/create-store/types/paths";
 export type { PrimitiveStore } from "@/create-store/types/primitive-store";
 export type { Replace } from "@/create-store/types/replace";
 export type { ResolvePath } from "@/create-store/types/resolve-path";
-export type {
-  StandardIssue,
-  StandardResult,
-  StandardSchema,
-} from "@/create-store/types/schema";
 export type { Selector } from "@/create-store/types/selector";
 export type {
   GetSessionStorage,

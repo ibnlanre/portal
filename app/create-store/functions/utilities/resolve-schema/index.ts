@@ -1,4 +1,6 @@
-import type { StandardSchema } from "@/create-store/types/schema";
+import type { StandardSchemaV1 } from "@standard-schema/spec";
+
+import type { InferSchema } from "@/create-store/types/infer-schema";
 
 /**
  * Derives the initial state from a Standard Schema by attempting validation
@@ -8,25 +10,31 @@ import type { StandardSchema } from "@/create-store/types/schema";
  * in the schema to fill in the initial values. For scalar schemas the seed is
  * `undefined`, which triggers any top-level default.
  *
- * Async `validate` calls are ignored — `createStore` is synchronous.
+ * If neither seed produces a valid result, `undefined` is returned — the store
+ * will have no initial state and behaves as a primitive store regardless of the
+ * schema's output shape.
+ *
+ * If `validate` returns a Promise, the result is propagated so the caller can
+ * await the resolved value before constructing the store.
  *
  * @param schema The schema to parse.
- * @returns The schema's default output, or `undefined` if none can be derived.
+ * @returns The schema's default output, a Promise of it, or `undefined` if none can be derived.
  */
-export function resolveSchema<State>(
-  schema: StandardSchema<unknown, State>
-): State | undefined {
-  const objectResult = schema["~standard"].validate({});
+export function resolveSchema<Schema extends StandardSchemaV1>(
+  schema: Schema
+): InferSchema<Schema> | Promise<InferSchema<Schema>> {
+  for (const seed of [{}, undefined]) {
+    const result = schema["~standard"].validate(seed);
 
-  if (!(objectResult instanceof Promise) && !("issues" in objectResult)) {
-    return objectResult.value;
+    if (result instanceof Promise) {
+      return result.then((resolved) => {
+        if ("issues" in resolved) return undefined;
+        return resolved.value;
+      });
+    }
+
+    if (!("issues" in result)) return result.value;
   }
 
-  const primitiveResult = schema["~standard"].validate(undefined);
-
-  if (!(primitiveResult instanceof Promise) && !("issues" in primitiveResult)) {
-    return primitiveResult.value;
-  }
-
-  return undefined as unknown as State;
+  return undefined;
 }

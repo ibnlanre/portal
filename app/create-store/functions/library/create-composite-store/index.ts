@@ -1,3 +1,4 @@
+import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type { DependencyList } from "react";
 
 import type { CompositeStore } from "@/create-store/types/composite-store";
@@ -29,8 +30,9 @@ import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
 export function createCompositeStore<State extends GenericObject>(
-  initialState: State
-) {
+  initialState: State,
+  schema?: StandardSchemaV1
+): CompositeStore<State> {
   let state = initialState;
 
   const cache = new WeakMap<any, CompositeStore<State>>();
@@ -93,6 +95,14 @@ export function createCompositeStore<State extends GenericObject>(
     });
   }
 
+  function applySchema(value: State): State {
+    if (!schema) return value;
+    const validation = schema["~standard"].validate(value);
+    if (validation instanceof Promise) return value;
+    if (validation.issues) throw new Error(validation.issues[0].message);
+    return validation.value as State;
+  }
+
   function setState<Path extends Paths<State>>(value: State, path?: Path) {
     state = value;
     notifySubscribers(value, path);
@@ -110,7 +120,7 @@ export function createCompositeStore<State extends GenericObject>(
     for (const key of keys) current = current[key];
     current[pivot] = value;
 
-    setState(snapshot, path);
+    setState(applySchema(snapshot), path);
   }
 
   function get<
@@ -142,7 +152,7 @@ export function createCompositeStore<State extends GenericObject>(
         : action;
 
       if (path) setProperty(replace(current, next), path);
-      else setState(replace(state, next));
+      else setState(applySchema(replace(state, next)));
     };
   }
 

@@ -1,3 +1,4 @@
+import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type { DependencyList } from "react";
 
 import type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
@@ -16,7 +17,10 @@ import { replace } from "@/create-store/functions/helpers/replace";
 import { useSync } from "@/create-store/functions/hooks/use-sync";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
-export function createPrimitiveStore<State>(initialState: State) {
+export function createPrimitiveStore<State>(
+  initialState: State,
+  schema?: StandardSchemaV1
+): PrimitiveStore<State> {
   let state = initialState;
   const subscribers = new Set<Subscriber<State>>();
   const cache = new WeakMap<object, any>();
@@ -39,7 +43,18 @@ export function createPrimitiveStore<State>(initialState: State) {
       const next = isSetStateActionFunction(action)
         ? action(clone(state, cache))
         : action;
-      setState(replace(state, next));
+      const replaced = replace(state, next);
+      if (!schema) {
+        setState(replaced);
+        return;
+      }
+      const validation = schema["~standard"].validate(replaced);
+      if (validation instanceof Promise) {
+        setState(replaced);
+        return;
+      }
+      if (validation.issues) throw new Error(validation.issues[0].message);
+      setState(validation.value as State);
     }
 
     function $use<Value = State>(
@@ -84,7 +99,7 @@ export function createPrimitiveStore<State>(initialState: State) {
     },
 
     get(target, prop) {
-      if (isAccessor(target, prop)) return (target as any)[prop];
+      if (isAccessor(target, prop)) return target[prop];
       return undefined;
     },
 
@@ -93,7 +108,7 @@ export function createPrimitiveStore<State>(initialState: State) {
         return {
           configurable: true,
           enumerable: false,
-          value: (target as any)[prop],
+          value: target[prop],
           writable: false,
         };
       }

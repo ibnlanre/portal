@@ -1,11 +1,11 @@
+import type { StandardSchemaV1 } from "@standard-schema/spec";
+
 import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { Dictionary } from "@/create-store/types/dictionary";
 import type { InferSchema } from "@/create-store/types/infer-schema";
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
-import type { StandardSchema } from "@/create-store/types/schema";
 
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
-import { isObjectSchema } from "@/create-store/functions/assertions/is-object-schema";
 import { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
 import { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
 import { resolveSchema } from "@/create-store/functions/utilities/resolve-schema";
@@ -51,17 +51,18 @@ import { resolveSchema } from "@/create-store/functions/utilities/resolve-schema
  * store.label.$get(); // "count"
  * ```
  */
-export function createStore<Schema extends StandardSchema>(
+export function createStore<Schema extends StandardSchemaV1>(
   schema: Schema
 ): InferSchema<Schema> extends Dictionary
   ? CompositeStore<InferSchema<Schema>>
   : PrimitiveStore<InferSchema<Schema>>;
-export function createStore<Schema extends StandardSchema>(schema: Schema) {
+export function createStore<Schema extends StandardSchemaV1>(schema: Schema) {
+  const dispatch = (state: InferSchema<Schema>) => {
+    if (isDictionary(state)) return createCompositeStore(state, schema);
+    return createPrimitiveStore(state, schema);
+  };
+
   const state = resolveSchema(schema);
-
-  if (isDictionary(state) || isObjectSchema(schema)) {
-    return createCompositeStore((state ?? {}) as Dictionary);
-  }
-
-  return createPrimitiveStore(state);
+  if (state instanceof Promise) return state.then(dispatch);
+  return dispatch(state);
 }

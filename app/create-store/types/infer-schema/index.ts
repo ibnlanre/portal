@@ -1,4 +1,4 @@
-import type { StandardSchema } from "@/create-store/types/schema";
+import type { StandardSchemaV1 } from "@standard-schema/spec";
 
 /**
  * Infers the output type of a Standard Schema.
@@ -9,6 +9,5 @@ import type { StandardSchema } from "@/create-store/types/schema";
  * type State = InferSchema<typeof schema>; // { count: number }
  * ```
  */
-export type InferSchema<Schema extends StandardSchema> = NonNullable<
-  Schema["~standard"]["types"]
->["output"];
+export type InferSchema<Schema extends StandardSchemaV1> =
+  StandardSchemaV1.InferOutput<Schema>;

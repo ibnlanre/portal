@@ -1,5 +1,6 @@
+import type { StandardSchemaV1 } from "@standard-schema/spec";
+
 import type { Dictionary } from "@/create-store/types/dictionary";
-import type { StandardSchema } from "@/create-store/types/schema";
 
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 
@@ -13,9 +14,9 @@ import { isDictionary } from "@/create-store/functions/assertions/is-dictionary"
  * @returns A boolean indicating whether the schema produces a dictionary output.
  */
 export function isObjectSchema(
-  schema: StandardSchema
-): schema is StandardSchema<unknown, Dictionary> {
-  if ("shape" in schema && isDictionary((schema as any).shape)) return true;
+  schema: StandardSchemaV1
+): schema is StandardSchemaV1<unknown, Dictionary> {
+  if ("shape" in schema && isDictionary(schema.shape)) return true;
 
   const result = schema["~standard"].validate({});
   if (result instanceof Promise) return false;
