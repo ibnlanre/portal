@@ -1,23 +1,13 @@
 import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { Dictionary } from "@/create-store/types/dictionary";
-import type { Factory } from "@/create-store/types/factory";
-import type { GenericObject } from "@/create-store/types/generic-object";
-import type { Initializer } from "@/create-store/types/initializer";
+import type { InferSchema } from "@/create-store/types/infer-schema";
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
-import type { Reference } from "@/create-store/types/reference";
+import type { StandardSchema } from "@/create-store/types/schema";
 
 export interface Store {
-  createStore<State extends Dictionary>(
-    state: Factory<State>
-  ): CompositeStore<State>;
-  createStore<State>(
-    state: Initializer<Promise<State>>
-  ): Promise<PrimitiveStore<State>>;
-  createStore<State extends Reference>(
-    state: Factory<State>
-  ): PrimitiveStore<State>;
-  createStore<State extends GenericObject>(
-    state: Factory<State>
-  ): CompositeStore<State>;
-  createStore<State = undefined>(state?: Factory<State>): PrimitiveStore<State>;
+  createStore<Schema extends StandardSchema>(
+    schema: Schema
+  ): InferSchema<Schema> extends Dictionary
+    ? CompositeStore<InferSchema<Schema>>
+    : PrimitiveStore<InferSchema<Schema>>;
 }

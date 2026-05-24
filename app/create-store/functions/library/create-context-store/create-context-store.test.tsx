@@ -10,9 +10,10 @@ import {
   vi,
 } from "vitest";
 
-import { createStore } from "@/create-store";
 import { combine } from "@/create-store/functions/helpers/combine";
 import { useAsync } from "@/create-store/functions/hooks/use-async";
+import { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
+import { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
 import { ErrorBoundary, setup } from "@/vitest.react";
 
 import { createContextStore } from "./index";
@@ -21,7 +22,7 @@ describe("createContextStore", () => {
   describe("Basic functionality", () => {
     it("should create a provider and useStore hook", () => {
       const [Provider, useStore] = createContextStore(
-        (context: { value: string }) => createStore(context)
+        (context: { value: string }) => createCompositeStore(context)
       );
 
       expect(Provider).toBeDefined();
@@ -35,7 +36,7 @@ describe("createContextStore", () => {
       vi.spyOn(console, "error").mockImplementation(() => {});
 
       const [, useStore] = createContextStore((context: { value: string }) => {
-        return createStore(context.value);
+        return createPrimitiveStore(context.value);
       });
 
       function TestComponent() {
@@ -54,7 +55,7 @@ describe("createContextStore", () => {
 
     it("should provide store through context when wrapped in provider", () => {
       const [Provider, useStore] = createContextStore(
-        (context: { value: string }) => createStore(context.value)
+        (context: { value: string }) => createPrimitiveStore(context.value)
       );
 
       function TestComponent() {
@@ -76,7 +77,7 @@ describe("createContextStore", () => {
   describe("Store initialization with context", () => {
     it("should initialize store with context value", () => {
       const [Provider, useStore] = createContextStore(
-        (context: { count: number }) => createStore(context.count)
+        (context: { count: number }) => createPrimitiveStore(context.count)
       );
 
       function TestComponent() {
@@ -96,7 +97,7 @@ describe("createContextStore", () => {
 
     it("should reinitialize store when context value changes", () => {
       const [Provider, useStore] = createContextStore(
-        (context: { count: number }) => createStore(context.count)
+        (context: { count: number }) => createPrimitiveStore(context.count)
       );
 
       function TestComponent() {
@@ -139,7 +140,7 @@ describe("createContextStore", () => {
             },
           };
 
-          const store = createStore(
+          const store = createCompositeStore(
             combine({ count: context.initialCount }, actions)
           );
           return store;
@@ -209,7 +210,7 @@ describe("createContextStore", () => {
       };
 
       const [UserProvider, useUserStore] = createContextStore(
-        (context: UserContext) => createStore(context)
+        (context: UserContext) => createCompositeStore(context)
       );
 
       function UserProfile() {
@@ -255,10 +256,10 @@ describe("createContextStore", () => {
   describe("Multiple providers", () => {
     it("should support multiple independent providers", () => {
       const [ValueProvider, useValueStore] = createContextStore(
-        (context: { value: string }) => createStore(context.value)
+        (context: { value: string }) => createPrimitiveStore(context.value)
       );
       const [CountProvider, useCountStore] = createContextStore(
-        (context: { count: number }) => createStore(context.count)
+        (context: { count: number }) => createPrimitiveStore(context.count)
       );
 
       function TestComponent() {
@@ -290,7 +291,7 @@ describe("createContextStore", () => {
 
     it("should support nested providers of the same type", () => {
       const [LevelProvider, useLevelStore] = createContextStore(
-        (context: { level: number }) => createStore(context.level)
+        (context: { level: number }) => createPrimitiveStore(context.level)
       );
 
       function InnerComponent() {
@@ -328,7 +329,7 @@ describe("createContextStore", () => {
   describe("Hook stability", () => {
     it("should call the hook on every render", () => {
       const initializerMock = vi.fn((context: { value: string }) => {
-        return createStore(context.value);
+        return createPrimitiveStore(context.value);
       });
       const [Provider, useStore] = createContextStore(initializerMock);
 
@@ -386,7 +387,7 @@ describe("createContextStore", () => {
             },
           };
 
-          const store = createStore(combine(context, actions));
+          const store = createCompositeStore(combine(context, actions));
           return store;
         }
       );
@@ -439,7 +440,7 @@ describe("createContextStore", () => {
   describe("Edge cases", () => {
     it("should handle undefined context values", () => {
       const [Provider, useStore] = createContextStore(
-        (context: { value?: string }) => createStore(context.value)
+        (context: { value?: string }) => createPrimitiveStore(context.value)
       );
 
       function TestComponent() {
@@ -460,7 +461,7 @@ describe("createContextStore", () => {
 
     it("should handle empty object context", () => {
       const [Provider, useStore] = createContextStore((context: {}) => {
-        return createStore(context);
+        return createCompositeStore(context);
       });
 
       function TestComponent() {
@@ -507,7 +508,9 @@ describe("createContextStore", () => {
             },
           };
 
-          return createStore(combine({ baseUrl: context.baseUrl }, actions));
+          return createCompositeStore(
+            combine({ baseUrl: context.baseUrl }, actions)
+          );
         }
       );
 
@@ -558,7 +561,7 @@ describe("createContextStore", () => {
             },
           };
 
-          return createStore(combine(context, actions));
+          return createCompositeStore(combine(context, actions));
         }
       );
 
@@ -626,7 +629,7 @@ describe("createContextStore", () => {
             },
           };
 
-          return createStore(combine(context, actions));
+          return createCompositeStore(combine(context, actions));
         }
       );
 
@@ -689,7 +692,7 @@ describe("createContextStore", () => {
             },
           };
 
-          return createStore(
+          return createCompositeStore(
             combine({ searchTerm: context.searchTerm }, actions)
           );
         }

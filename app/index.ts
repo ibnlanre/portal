@@ -28,6 +28,7 @@ export type {
 export type { DeepPartial } from "@/create-store/types/deep-partial";
 export type { Dictionary } from "@/create-store/types/dictionary";
 export type { Factory } from "@/create-store/types/factory";
+export type { InferSchema } from "@/create-store/types/infer-schema";
 export type { InferType } from "@/create-store/types/infer-type";
 export type { Initializer } from "@/create-store/types/initializer";
 export type {
@@ -41,6 +42,11 @@ export type { Paths } from "@/create-store/types/paths";
 export type { PrimitiveStore } from "@/create-store/types/primitive-store";
 export type { Replace } from "@/create-store/types/replace";
 export type { ResolvePath } from "@/create-store/types/resolve-path";
+export type {
+  StandardIssue,
+  StandardResult,
+  StandardSchema,
+} from "@/create-store/types/schema";
 export type { Selector } from "@/create-store/types/selector";
 export type {
   GetSessionStorage,
@@ -62,7 +68,6 @@ export { combine } from "@/create-store/functions/helpers/combine";
 export { useAsync } from "@/create-store/functions/hooks/use-async";
 export { useSync } from "@/create-store/functions/hooks/use-sync";
 export { useVersion } from "@/create-store/functions/hooks/use-version";
-export { createAtom } from "@/create-store/functions/library/create-atom";
 export { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
 export { createContextStore } from "@/create-store/functions/library/create-context-store";
 export { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";

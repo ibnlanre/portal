@@ -1,70 +1,78 @@
 import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
+import type { StandardSchema } from "@/create-store/types/schema";
 
 import { expectTypeOf } from "vitest";
 import { describe, it } from "vitest";
 
 import { createStore } from "./index";
 
+/**
+ * Minimal typed schema factory for type-level tests.
+ * The `output` type drives TypeScript overload resolution in `createStore`.
+ */
+function typed<Output>(output: Output): StandardSchema<unknown, Output> {
+  return {
+    "~standard": {
+      types: { input: undefined as unknown, output },
+      validate: () => ({ value: output }),
+      vendor: "test",
+      version: 1,
+    },
+  };
+}
+
 describe("createStore - Type Tests", () => {
   describe("Primitive store overloads", () => {
-    it("should return PrimitiveStore<undefined> when called with no arguments", () => {
-      const store = createStore();
-      expectTypeOf(store).toExtend<PrimitiveStore<undefined>>();
-    });
-
-    it("should return PrimitiveStore<number> for number primitives", () => {
-      const store = createStore(42);
+    it("should return PrimitiveStore<number> for number schemas", () => {
+      const store = createStore(typed(0));
       expectTypeOf(store).toExtend<PrimitiveStore<number>>();
     });
 
-    it("should return PrimitiveStore<string> for string primitives", () => {
-      const store = createStore("hello");
+    it("should return PrimitiveStore<string> for string schemas", () => {
+      const store = createStore(typed("hello"));
       expectTypeOf(store).toExtend<PrimitiveStore<string>>();
     });
 
-    it("should return PrimitiveStore<boolean> for boolean primitives", () => {
-      const store = createStore(true);
+    it("should return PrimitiveStore<boolean> for boolean schemas", () => {
+      const store = createStore(typed(true));
       expectTypeOf(store).toExtend<PrimitiveStore<boolean>>();
     });
 
-    it("should return PrimitiveStore<null> for null", () => {
-      const store = createStore(null);
+    it("should return PrimitiveStore<null> for null schemas", () => {
+      const store = createStore(typed(null as null));
       expectTypeOf(store).toExtend<PrimitiveStore<null>>();
     });
 
-    it("should return PrimitiveStore<Date> for Date objects", () => {
-      const store = createStore(new Date());
+    it("should return PrimitiveStore<Date> for Date schemas", () => {
+      const store = createStore(typed(new Date()));
       expectTypeOf(store).toExtend<PrimitiveStore<Date>>();
     });
 
-    it("should return PrimitiveStore<RegExp> for RegExp objects", () => {
-      const store = createStore(/test/);
+    it("should return PrimitiveStore<RegExp> for RegExp schemas", () => {
+      const store = createStore(typed(/test/));
       expectTypeOf(store).toExtend<PrimitiveStore<RegExp>>();
     });
 
-    it("should return PrimitiveStore<number[]> for arrays", () => {
-      const store = createStore([1, 2, 3]);
+    it("should return PrimitiveStore<number[]> for array schemas", () => {
+      const store = createStore(typed([] as number[]));
       expectTypeOf(store).toExtend<PrimitiveStore<number[]>>();
     });
 
-    it("should return PrimitiveStore<Set<string>> for Set objects", () => {
-      const store = createStore(new Set(["a", "b"]));
+    it("should return PrimitiveStore<Set<string>> for Set schemas", () => {
+      const store = createStore(typed(new Set<string>()));
       expectTypeOf(store).toExtend<PrimitiveStore<Set<string>>>();
     });
 
-    it("should return PrimitiveStore<Map<string, number>> for Map objects", () => {
-      const store = createStore(new Map([["key", 1]]));
+    it("should return PrimitiveStore<Map<string, number>> for Map schemas", () => {
+      const store = createStore(typed(new Map<string, number>()));
       expectTypeOf(store).toExtend<PrimitiveStore<Map<string, number>>>();
     });
   });
 
   describe("Composite store overloads", () => {
-    it("should return CompositeStore for plain objects", () => {
-      const store = createStore({
-        count: 0,
-        name: "test",
-      });
+    it("should return CompositeStore for plain object schemas", () => {
+      const store = createStore(typed({ count: 0, name: "test" }));
 
       expectTypeOf(store).toExtend<
         CompositeStore<{
@@ -74,42 +82,30 @@ describe("createStore - Type Tests", () => {
       >();
     });
 
-    it("should return CompositeStore for nested objects", () => {
-      const store = createStore({
-        settings: {
-          notifications: true,
-          theme: "dark",
-        },
-        user: {
-          age: 30,
-          name: "John",
-        },
-      });
+    it("should return CompositeStore for nested object schemas", () => {
+      const store = createStore(
+        typed({
+          settings: { notifications: true, theme: "dark" },
+          user: { age: 30, name: "John" },
+        })
+      );
 
       expectTypeOf(store).toExtend<
         CompositeStore<{
-          settings: {
-            notifications: boolean;
-            theme: string;
-          };
-          user: {
-            age: number;
-            name: string;
-          };
+          settings: { notifications: boolean; theme: string };
+          user: { age: number; name: string };
         }>
       >();
     });
 
-    it("should return CompositeStore for objects with methods", () => {
-      const store = createStore({
-        count: 0,
-        decrement: () => {
-          store.count.$set((prev) => prev - 1);
-        },
-        increment() {
-          store.count.$set((prev) => prev + 1);
-        },
-      });
+    it("should return CompositeStore for objects with method properties", () => {
+      const store = createStore(
+        typed({
+          count: 0,
+          decrement: () => {},
+          increment() {},
+        })
+      );
 
       expectTypeOf(store).toExtend<
         CompositeStore<{
@@ -119,201 +115,79 @@ describe("createStore - Type Tests", () => {
         }>
       >();
     });
-
-    it("should return CompositeStore for objects with mixed property types", () => {
-      const store = createStore({
-        active: true,
-        id: 1,
-        metadata: {
-          created: new Date(),
-          version: "1.0.0",
-        },
-        name: "test",
-        process() {
-          return "processed";
-        },
-        tags: ["tag1", "tag2"],
-      });
-
-      expectTypeOf(store).toExtend<
-        CompositeStore<{
-          active: boolean;
-          id: number;
-          metadata: {
-            created: Date;
-            version: string;
-          };
-          name: string;
-          process(): "processed";
-          tags: string[];
-        }>
-      >();
-    });
-  });
-
-  describe("Promise overloads", () => {
-    it("should return Promise<PrimitiveStore<number>> for async number", async () => {
-      const asyncNumber = async () => 42;
-      const storePromise = createStore(asyncNumber);
-      expectTypeOf(storePromise).toExtend<Promise<PrimitiveStore<number>>>();
-
-      const store = await storePromise;
-      expectTypeOf(store).toExtend<PrimitiveStore<number>>();
-    });
-
-    it("should return Promise<PrimitiveStore<string>> for async string", async () => {
-      const asyncString = async () => "hello";
-      const storePromise = createStore(asyncString);
-      expectTypeOf(storePromise).toExtend<Promise<PrimitiveStore<string>>>();
-
-      const store = await storePromise;
-      expectTypeOf(store).toExtend<PrimitiveStore<string>>();
-    });
-
-    it("should return Promise<PrimitiveStore<object>> for async object", async () => {
-      const asyncObject = async () => ({ count: 0 });
-      const storePromise = createStore(asyncObject);
-      expectTypeOf(storePromise).toExtend<
-        Promise<PrimitiveStore<{ count: number }>>
-      >();
-
-      const store = await storePromise;
-      expectTypeOf(store).toExtend<PrimitiveStore<{ count: number }>>();
-    });
-  });
-
-  describe("Factory function overloads", () => {
-    it("should return PrimitiveStore for factory returning primitive", () => {
-      const factory = () => 42;
-      const store = createStore(factory);
-      expectTypeOf(store).toExtend<PrimitiveStore<number>>();
-    });
-
-    it("should return CompositeStore for factory returning object", () => {
-      const factory = () => ({ count: 0, name: "test" });
-      const store = createStore(factory);
-      expectTypeOf(store).toExtend<
-        CompositeStore<{
-          count: number;
-          name: string;
-        }>
-      >();
-    });
   });
 
   describe("Edge cases and explicit typing", () => {
-    it("should respect explicit generic typing", () => {
-      interface User {
-        age: number;
-        greet(): void;
-        name: string;
-      }
-
-      const store = createStore<User>({
-        age: 30,
-        greet() {
-          console.log("Hello");
-        },
-        name: "John",
-      });
-
-      expectTypeOf(store).toExtend<CompositeStore<User>>();
-    });
-
-    it("should handle union types correctly", () => {
-      const store = createStore<number | string>(42);
+    it("should handle union types", () => {
+      const store = createStore(typed(42 as number | string));
       expectTypeOf(store).toExtend<PrimitiveStore<number | string>>();
     });
 
-    it("should handle optional properties", () => {
-      const store = createStore({
-        optional: undefined as string | undefined,
-        required: "value",
-      });
+    it("should handle optional properties in object schemas", () => {
+      const store = createStore(
+        typed({ optional: undefined as string | undefined, required: "value" })
+      );
       expectTypeOf(store).toExtend<
-        CompositeStore<{
-          optional: string | undefined;
-          required: string;
-        }>
+        CompositeStore<{ optional: string | undefined; required: string }>
       >();
     });
 
-    it("should handle readonly properties", () => {
-      const store = createStore({
-        mutable: "value",
-        readonly: "value" as const,
-      });
-      expectTypeOf(store).toExtend<
-        CompositeStore<{
-          mutable: string;
-          readonly: "value";
-        }>
-      >();
-    });
-
-    it("should handle generic object types", () => {
+    it("should handle generic object schemas", () => {
       interface GenericStore<T> {
         value: T;
       }
 
-      const stringStore = createStore<GenericStore<string>>({
-        value: "hello",
-      });
+      const stringStore = createStore(
+        typed<GenericStore<string>>({ value: "hello" })
+      );
+      expectTypeOf(stringStore.$get()).toExtend<GenericStore<string>>();
+      expectTypeOf(stringStore.$get().value).toExtend<string>();
 
-      expectTypeOf(stringStore).toExtend<
-        CompositeStore<GenericStore<string>>
-      >();
-
-      const numberStore = createStore<GenericStore<number>>({
-        value: 42,
-      });
-
-      expectTypeOf(numberStore).toExtend<
-        CompositeStore<GenericStore<number>>
-      >();
+      const numberStore = createStore(
+        typed<GenericStore<number>>({ value: 42 })
+      );
+      expectTypeOf(numberStore.$get()).toExtend<GenericStore<number>>();
+      expectTypeOf(numberStore.$get().value).toExtend<number>();
     });
   });
 
   describe("Store accessor types", () => {
     it("should have correct accessor types for primitive stores", () => {
-      const primitiveStore = createStore(42);
+      const store = createStore(typed(42));
 
-      expectTypeOf(primitiveStore.$get).toExtend<
+      expectTypeOf(store.$get).toExtend<
         <Value = number>(
           selector?: ((state: number) => Value) | undefined
         ) => Value
       >();
 
-      expectTypeOf(primitiveStore.$set).toExtend<
+      expectTypeOf(store.$set).toExtend<
         (value: ((prev: number) => number) | number) => void
       >();
 
-      expectTypeOf(primitiveStore.$subscribe).toExtend<
+      expectTypeOf(store.$subscribe).toExtend<
         (subscriber: (value: number) => void, immediate?: boolean) => () => void
       >();
     });
 
     it("should have correct accessor types for composite stores", () => {
-      const compositeStore = createStore({
-        count: 0,
-        name: "test",
-      });
+      const store = createStore(typed({ count: 0, name: "test" }));
 
-      expectTypeOf(compositeStore.count).toExtend<{
+      expectTypeOf(store.count).toExtend<{
         $get: <Value = number>(
           selector?: ((state: number) => Value) | undefined
         ) => Value;
         $set: (value: ((prev: number) => number) | number) => void;
       }>();
 
-      expectTypeOf(compositeStore.name).toExtend<{
+      expectTypeOf(store.name).toExtend<{
         $get: <Value = string>(
           selector?: ((state: string) => Value) | undefined
         ) => Value;
         $set: (value: ((prev: string) => string) | string) => void;
       }>();
 
-      expectTypeOf(compositeStore.$get).toExtend<
+      expectTypeOf(store.$get).toExtend<
         <Value = { count: number; name: string }>(
           selector?:
             | ((state: { count: number; name: string }) => Value)

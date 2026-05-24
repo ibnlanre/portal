@@ -84,7 +84,7 @@ export function createPrimitiveStore<State>(initialState: State) {
     },
 
     get(target, prop) {
-      if (isAccessor(target, prop)) return target[prop];
+      if (isAccessor(target, prop)) return (target as any)[prop];
       return undefined;
     },
 
@@ -93,7 +93,7 @@ export function createPrimitiveStore<State>(initialState: State) {
         return {
           configurable: true,
           enumerable: false,
-          value: target[prop],
+          value: (target as any)[prop],
           writable: false,
         };
       }

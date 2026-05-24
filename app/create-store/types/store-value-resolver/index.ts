@@ -1,5 +1,3 @@
-import type { Atomic } from "@/create-store/types/atomic";
-import type { AtomicStore } from "@/create-store/types/atomic-store";
 import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { Defined } from "@/create-store/types/defined";
 import type { GenericFunction } from "@/create-store/types/generic-function";
@@ -16,7 +14,5 @@ export type StoreValueResolver<Value> =
       : Defined<Value> extends GenericFunction
         ? Value
         : Defined<Value> extends GenericObject
-          ? Defined<Value> extends Atomic<GenericObject>
-            ? AtomicStore<Atomic<Defined<Value>>>
-            : CompositeStore<Defined<Value>>
+          ? CompositeStore<Defined<Value>>
           : PrimitiveStore<Value>;

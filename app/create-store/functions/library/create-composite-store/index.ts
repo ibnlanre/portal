@@ -16,7 +16,6 @@ import type { Subscriber } from "@/create-store/types/subscriber";
 import { useCallback, useSyncExternalStore } from "react";
 
 import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
-import { isAtomic } from "@/create-store/functions/assertions/is-atomic";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
@@ -201,9 +200,8 @@ export function createCompositeStore<State extends GenericObject>(
 
     if (isFunction(value)) return value;
 
-    if (isDictionary(value) && !isAtomic(value)) {
-      if (cache.has(value)) return cache.get(value);
-      return createProxy(fullPath);
+    if (isDictionary(value) && cache.has(value)) {
+      return cache.get(value);
     }
 
     return createProxy(fullPath);
