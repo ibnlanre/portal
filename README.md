@@ -27,7 +27,6 @@ Whether you're building a small React component or a large-scale application, `@
   - [What is a store?](#what-is-a-store)
   - [Store types: Primitive and Composite](#store-types-primitive-and-composite)
   - [Immutability and reactivity](#immutability-and-reactivity)
-  - [Atomic objects: Control object update behavior](#atomic-objects-control-object-update-behavior)
 - [Configure your stores](#configure-your-stores)
 - [Use the API: Reference and examples](#use-the-api-reference-and-examples)
   - [Create stores: `createStore()`](#create-stores-createstore)
@@ -284,140 +283,6 @@ Both store types share a consistent API for getting, setting, and subscribing to
 `@ibnlanre/portal` embraces immutability. When you update the state, the library creates a new state object instead of modifying the existing one. This helps prevent bugs and makes state changes predictable.
 
 > **Tip:** Stores are reactive. When a store's state changes, any components or subscribers listening to that store (or its parts) are notified, allowing your UI to update automatically.
-
-### Atomic objects: Control object update behavior
-
-By default, when you update objects in `@ibnlanre/portal`, the library performs **partial updates** (merging). This means only the properties you specify are changed, while other properties remain unchanged. However, sometimes you want to treat an object as a **single value** that should be completely replaced when updated.
-
-Use `z.custom<T>()` in your schema for fields where you want **complete replacement** instead of partial merging. This tells the store to treat that field as an opaque primitive value.
-
-<details>
-<summary><strong>Click to expand: Understanding atomic objects in detail</strong></summary>
-
-#### Understanding the difference
-
-**Regular object fields (default behavior — merging):**
-
-```ts
-import { z } from "zod";
-import { createStore } from "@ibnlanre/portal";
-
-const settingsStore = createStore(
-  z.object({
-    theme: z.string(),
-    fontSize: z.number(),
-    notifications: z.boolean(),
-  }),
-  { theme: "dark", fontSize: 16, notifications: true }
-);
-
-// Partial update — only changes the theme, keeps other properties
-settingsStore.$set({ theme: "light" });
-
-console.log(settingsStore.$get());
-// Output: { theme: "light", fontSize: 16, notifications: true }
-```
-
-**Atomic fields using `z.custom<T>()` (complete replacement):**
-
-```ts
-import { z } from "zod";
-import { createStore } from "@ibnlanre/portal";
-
-interface ApiConfig {
-  baseUrl: string;
-  timeout: number;
-  retries: number;
-}
-
-const appStore = createStore(
-  z.object({
-    // Regular object — supports partial updates
-    user: z.object({
-      name: z.string(),
-      email: z.string(),
-      age: z.number(),
-    }),
-    // Atomic field — complete replacement only
-    apiConfig: z.custom<ApiConfig>(),
-  }),
-  {
-    user: { name: "Alice", email: "alice@example.com", age: 30 },
-    apiConfig: {
-      baseUrl: "https://api.example.com",
-      timeout: 5000,
-      retries: 3,
-    },
-  }
-);
-
-// Partial update on regular object
-appStore.user.$set({ name: "Bob" });
-console.log(appStore.user.$get());
-// Output: { name: "Bob", email: "alice@example.com", age: 30 }
-
-// Complete replacement on atomic field
-appStore.apiConfig.$set({
-  baseUrl: "https://api.dev.com",
-  timeout: 3000,
-  retries: 1,
-});
-console.log(appStore.apiConfig.$get());
-// Output: { baseUrl: "https://api.dev.com", timeout: 3000, retries: 1 }
-```
-
-#### When to use `z.custom<T>()`
-
-Atomic fields are particularly useful for:
-
-1. **Configuration objects** that should be treated as complete units
-2. **API response data** that represents a complete entity
-3. **Form state** where you want to reset to a specific configuration
-4. **Immutable data structures** where partial updates don't make conceptual sense
-5. **Performance optimization** when you know you always want to replace the entire object
-
-#### Handling atomic fields with `fallback()`
-
-When an atomic field may be partially filled or reset, the `fallback()` function provides default values and restores complete types:
-
-```ts
-import { z } from "zod";
-import { createStore, fallback } from "@ibnlanre/portal";
-
-interface UserPreferences {
-  theme: "light" | "dark";
-  language: string;
-  notifications: { email: boolean; push: boolean };
-}
-
-const userStore = createStore(
-  z.object({
-    preferences: z.custom<Partial<UserPreferences>>(),
-  }),
-  { preferences: {} }
-);
-
-const defaultPreferences: UserPreferences = {
-  theme: "light",
-  language: "en",
-  notifications: { email: true, push: false },
-};
-
-// User updates only theme
-userStore.preferences.$set({ theme: "dark" });
-
-// Get preferences with fallback for missing values
-const preferences = userStore.preferences.$get(fallback(defaultPreferences));
-console.log(preferences);
-// Output: { theme: "dark", language: "en", notifications: { email: true, push: false } }
-
-// Type safety: preferences is typed as UserPreferences (not partial)
-preferences.notifications.email; // ✅ TypeScript knows this exists
-```
-
-Understanding atomic fields helps you control exactly how your data updates, leading to more predictable state management and fewer bugs related to unexpected partial updates.
-
-</details>
 
 ## Configure your stores
 
@@ -2116,7 +1981,7 @@ const itemStores = createStore(
 
 ### Provide fallback values: `fallback()`
 
-The `fallback()` function acts as a selector that provides default values for missing properties. This is particularly useful when working with atomic objects that might have been cleared of their values, or any scenario where you want to ensure complete data structures.
+The `fallback()` function acts as a selector that provides default values for missing properties, ensuring you always get complete data structures.
 
 **Syntax:**
 
@@ -2131,7 +1996,6 @@ fallback<State extends object>(outerState: State): (innerState: object) => State
 
 - **Type restoration**: Converts partial data back to complete types
 - **Deep merging**: Combines nested objects intelligently
-- **Atomic object support**: Perfect for handling cleared atomic objects
 - **Flexible usage**: Can be used as a regular function or as a `$get()` selector
 
 **Basic Example:**
@@ -2147,34 +2011,32 @@ interface Profile {
 }
 
 const userStore = createStore(
-  z.object({ profile: z.custom<Partial<Profile>>() }),
+  z.object({
+    profile: z.object({
+      name: z.string(),
+      theme: z.enum(["light", "dark"]),
+      notifications: z.boolean(),
+    }),
+  }),
   { profile: { name: "John", theme: "light", notifications: true } }
 );
 
-// Define defaults for when profile is cleared
 const defaultProfile: Profile = {
   name: "Guest",
   theme: "light",
   notifications: false,
 };
 
-// Clear the profile (simulating data loss)
-userStore.profile.$set({});
-
-// Without fallback - incomplete data
-const incomplete = userStore.profile.$get();
-console.log(incomplete); // {} - empty object
-
-// With fallback - complete data with proper types
-const complete = userStore.profile.$get(fallback(defaultProfile));
-console.log(complete);
-// { name: "Guest", theme: "light", notifications: false }
+// Get profile with fallback for missing values
+const profile = userStore.profile.$get(fallback(defaultProfile));
+console.log(profile);
+// { name: "John", theme: "light", notifications: true }
 
 // Partial updates still work with fallback
 userStore.profile.$set({ name: "Alice" });
 const updated = userStore.profile.$get(fallback(defaultProfile));
 console.log(updated);
-// { name: "Alice", theme: "light", notifications: false }
+// { name: "Alice", theme: "light", notifications: true }
 ```
 
 **Advanced Fallback Patterns:**
@@ -2193,11 +2055,32 @@ interface AppConfig {
 }
 
 const configStore = createStore(
-  z.object({ settings: z.custom<Partial<AppConfig>>() }),
-  { settings: {} }
+  z.object({
+    settings: z.object({
+      api: z.object({
+        baseUrl: z.string(),
+        timeout: z.number(),
+        retries: z.number(),
+      }),
+      ui: z.object({
+        theme: z.enum(["light", "dark"]),
+        language: z.string(),
+        features: z.object({ beta: z.boolean(), analytics: z.boolean() }),
+      }),
+    }),
+  }),
+  {
+    settings: {
+      api: { baseUrl: "https://api.example.com", timeout: 5000, retries: 3 },
+      ui: {
+        theme: "light",
+        language: "en",
+        features: { beta: false, analytics: true },
+      },
+    },
+  }
 );
 
-// Comprehensive default configuration
 const defaultConfig: AppConfig = {
   api: { baseUrl: "https://api.example.com", timeout: 5000, retries: 3 },
   ui: {
@@ -2207,18 +2090,12 @@ const defaultConfig: AppConfig = {
   },
 };
 
-// User sets only partial config
-configStore.settings.$set({
-  ui: { theme: "dark" },
-} as Partial<AppConfig>);
-
-// Get complete config with fallback
+// Get config with fallback defaults
 const config = configStore.settings.$get(fallback(defaultConfig));
 
-// TypeScript knows this is a complete AppConfig
-console.log(config.api.baseUrl); // "https://api.example.com" (from fallback)
-console.log(config.ui.theme); // "dark" (from user setting)
-console.log(config.ui.features.analytics); // true (from fallback)
+console.log(config.api.baseUrl); // "https://api.example.com"
+console.log(config.ui.theme); // "light"
+console.log(config.ui.features.analytics); // true
 ```
 
 **Using with React Components:**
@@ -2234,7 +2111,13 @@ interface ThemePreferences {
 }
 
 const themeStore = createStore(
-  z.object({ preferences: z.custom<Partial<ThemePreferences>>() }),
+  z.object({
+    preferences: z.object({
+      primaryColor: z.string(),
+      fontSize: z.number(),
+      darkMode: z.boolean(),
+    }),
+  }),
   { preferences: { primaryColor: "#007bff", fontSize: 16, darkMode: false } }
 );
 
@@ -2245,7 +2128,6 @@ const defaultTheme: ThemePreferences = {
 };
 
 function ThemedComponent() {
-  // Always get complete theme data, even if preferences were cleared
   const [theme] = themeStore.preferences.$use(fallback(defaultTheme));
 
   return (
@@ -2277,7 +2159,11 @@ interface PlayerSettings {
 
 const gameStore = createStore(
   z.object({
-    playerSettings: z.custom<Partial<PlayerSettings>>(),
+    playerSettings: z.object({
+      difficulty: z.enum(["easy", "medium", "hard"]),
+      volume: z.number(),
+      controls: z.string().optional(),
+    }),
     currentLevel: z.number(),
   }),
   {
@@ -2286,7 +2172,6 @@ const gameStore = createStore(
   }
 );
 
-// Dynamic defaults based on other store state
 function getPlayerDefaults(): PlayerSettings {
   const level = gameStore.currentLevel.$get();
 
@@ -2302,7 +2187,7 @@ const settings = gameStore.playerSettings.$get(fallback(getPlayerDefaults()));
 console.log(settings); // Defaults adjust based on current level
 ```
 
-The `fallback()` function ensures you always have complete, well-typed data structures, making your application more robust and predictable when dealing with potentially incomplete state.
+The `fallback()` function ensures you always have complete, well-typed data structures, making your application more robust and predictable.
 
 ### Infer state types: `InferType`
 
@@ -2556,26 +2441,6 @@ const [displayName] = userStore.$use(
 const [stats] = userStore.$use((user) => ({
   letterCount: user.name.length,
 }));
-```
-
-### Atomic Objects and Type Safety
-
-When using `z.custom<T>()` for atomic fields, use `InferType` to understand the actual type:
-
-```ts
-import { z } from "zod";
-import { createStore, InferType, fallback } from "@ibnlanre/portal";
-
-const configStore = createStore(
-  z.object({ api: z.custom<{ baseUrl: string; timeout: number }>() }),
-  { api: { baseUrl: "https://api.com", timeout: 5000 } }
-);
-
-type ApiConfig = InferType<typeof configStore.api>;
-
-// Always use fallback for complete types when needed
-const defaults = { baseUrl: "https://api.com", timeout: 5000 };
-const safeConfig = configStore.api.$get(fallback(defaults)); // ✅ Complete type
 ```
 
 ### Type-Safe Actions

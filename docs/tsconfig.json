@@ -20,6 +20,5 @@
     "target": "ES2022",
     "types": ["vite/client"]
   },
-  "extends": "../tsconfig.json",
-  "include": ["**/*.ts", "**/*.tsx"]
+  "include": ["./**/*.ts", "./**/*.tsx"]
 }

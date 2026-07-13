@@ -7,14 +7,14 @@
   ],
   "dependencies": {
     "@ibnlanre/portal": "workspace:*",
-    "dexie": "^4.0.11",
-    "react-router-dom": "^7.6.2"
+    "dexie": "^4.4.4",
+    "react-router-dom": "^7.18.1"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.17",
-    "@vitejs/plugin-react": "^5.1.2",
-    "vite": "^7.3.1",
-    "vite-tsconfig-paths": "^6.0.5"
+    "@tailwindcss/vite": "^4.3.2",
+    "@vitejs/plugin-react": "^6.0.3",
+    "vite": "^8.1.4",
+    "vite-tsconfig-paths": "^6.1.1"
   },
   "description": "Example of using createStore with IndexedDB via Dexie",
   "name": "indexeddb-with-dexie-example",

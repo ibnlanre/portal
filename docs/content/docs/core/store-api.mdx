@@ -30,9 +30,9 @@ const countStore = createStore(z.number(), 10);
 const currentCount = countStore.$get(); // 10
 ```
 
-### Derived values
+### Selectors and Fallbacks
 
-You can pass a "selector" function to `$get()` to transform the data before returning it.
+`$get()` accepts a **selector** function to derive a value, or a **fallback** value when the store value is `undefined`:
 
 ```ts
 const userStore = createStore(
@@ -40,16 +40,27 @@ const userStore = createStore(
   { firstName: "Alex", lastName: "Johnson" }
 );
 
-// Compute full name on the fly
-const fullName = userStore.$get((u) => `${u.firstName} ${u.lastName}`);
+// Derive a value with a selector
+userStore.$get((u) => `${u.firstName} ${u.lastName}`);
 // "Alex Johnson"
+```
+
+```ts
+const configStore = createStore(
+  z.object({ apiUrl: z.string().optional() }),
+  { apiUrl: undefined }
+);
+
+// Fallback when the value is undefined
+configStore.apiUrl.$get(); // undefined
+configStore.apiUrl.$get("https://api.default.com"); // "https://api.default.com"
 ```
 
 ---
 
 ## Writing Data: `$set()`
 
-Use `$set()` to update your state. You can pass a new value directly, or a function that receives the previous state.
+Use `$set()` to update your state. You can pass a new value directly, or a **selector function** that receives the previous state and returns the new value.
 
 ```ts
 const countStore = createStore(z.number(), 0);
@@ -113,7 +124,7 @@ unsubscribe();
 > **Note:** By default, `$subscribe` runs immediately when you call it. Pass `false` as the second argument if you only want to react to _future_ changes.
 
 ```ts
-// Only run on changes, not on initial subscribtion
+// Only run on changes, not on initial subscription
 settingsStore.$subscribe(handler, false);
 ```
 

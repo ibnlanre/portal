@@ -2,3 +2,7 @@ packages:
   - "app"
   - "docs"
   - "examples/*"
+allowBuilds:
+  '@swc/core': true
+  esbuild: true
+  unrs-resolver: true

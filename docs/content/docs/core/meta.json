@@ -1,0 +1,4 @@
+{
+  "pages": ["store-api", "reading-state", "setting-state", "subscriptions"],
+  "title": "Core"
+}

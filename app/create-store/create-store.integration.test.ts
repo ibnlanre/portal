@@ -126,6 +126,19 @@ describe("createStore - Integration tests (real schemas, no mocks)", () => {
         } as unknown as { count: number });
         expect(store.count.$get()).toBe(7);
       });
+
+      it("$set with a partial value still applies schema defaults", () => {
+        const store = createStore(
+          z.object({
+            fontSize: z.number().default(14),
+            theme: z.string().default("light"),
+          }),
+          { fontSize: 20, theme: "dark" }
+        );
+
+        store.$set({ theme: "system" });
+        expect(store.$get()).toEqual({ fontSize: 20, theme: "system" });
+      });
     });
 
     describe("Valibot schemas", () => {
@@ -148,6 +161,35 @@ describe("createStore - Integration tests (real schemas, no mocks)", () => {
         );
         expect(store.$get()).toBe(42);
       });
+    });
+  });
+
+  describe("Union schemas", () => {
+    it("number branch produces a primitive store at runtime", () => {
+      const store = createStore(
+        z.union([z.number(), z.object({ count: z.number() })]),
+        42
+      );
+
+      expect(store.$get()).toBe(42);
+    });
+
+    it("object branch works via $get at runtime", () => {
+      const store = createStore(
+        z.union([z.number(), z.object({ count: z.number() })]),
+        { count: 5 }
+      );
+
+      expect(store.$get()).toEqual({ count: 5 });
+    });
+
+    it("valibot union with object branch works via $get at runtime", () => {
+      const store = createStore(
+        v.union([v.number(), v.object({ count: v.number() })]),
+        { count: 10 }
+      );
+
+      expect(store.$get()).toEqual({ count: 10 });
     });
   });
 });

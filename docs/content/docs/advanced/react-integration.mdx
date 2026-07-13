@@ -1,0 +1,64 @@
+---
+title: React Integration
+description: Use store state in components with $use.
+icon: Code
+---
+
+`$use()` is the React bridge. It subscribes to the store and re-renders
+the component whenever the selected value changes.
+
+```tsx
+import { z } from "zod";
+import { createStore } from "@ibnlanre/portal";
+
+const store = createStore(z.object({ count: z.number() }), { count: 0 });
+
+function Counter() {
+  const [count, setCount] = store.count.$use();
+
+  return <button onClick={() => setCount((c) => c + 1)}>Count: {count}</button>;
+}
+```
+
+## Selectors for re-render gating
+
+Pass a selector to subscribe to a derived value. The component only
+re-renders when the derived value changes — not when unrelated fields update.
+
+```tsx
+function SidebarStatus() {
+  // Only re-renders if 'collapsed' changes
+  const [isCollapsed] = store.sidebar.$use((s) => s.collapsed);
+
+  return <div>{isCollapsed ? "Closed" : "Open"}</div>;
+}
+```
+
+## Dependency arrays
+
+When a selector depends on external values, pass them in the dependency array:
+
+```tsx
+function Greeting({ prefix }: { prefix: string }) {
+  const [message] = store.name.$use((name) => `${prefix}: ${name}`, [prefix]);
+
+  return <div>{message}</div>;
+}
+```
+
+## Nested access
+
+Composite stores expose nested nodes, each with their own `$use`:
+
+```tsx
+function Theme() {
+  const [theme] = store.settings.theme.$use();
+  return <div>Theme: {theme}</div>;
+}
+```
+
+## Static usage
+
+`$use()` follows the rules of hooks — call it at the top level of a
+component or custom hook. The store identity is stable, so the selector
+is the only thing that affects subscription behavior.

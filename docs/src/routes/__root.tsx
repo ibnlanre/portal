@@ -23,7 +23,12 @@ export const Route = createRootRoute({
         name: "viewport",
       },
       {
-        title: "Portal Docs",
+        title: "Portal — Type-safe state management for React",
+      },
+      {
+        content:
+          "Portal is a lightweight, type-safe state management library for React with nested state, automatic merging, and full TypeScript inference.",
+        name: "description",
       },
     ],
   }),
@@ -43,7 +48,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body className="flex flex-col min-h-screen">
+      <body className="flex flex-col min-h-screen bg-fd-background text-fd-foreground">
         <RootProvider>{children}</RootProvider>
         <Scripts />
       </body>
