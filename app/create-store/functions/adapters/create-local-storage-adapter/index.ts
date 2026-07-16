@@ -21,7 +21,7 @@ export function createLocalStorageAdapter<State>(
   function getLocalStorageState(fallback: State): State;
 
   function getLocalStorageState(fallback?: State) {
-    if (typeof localStorage === "undefined") return fallback;
+    if (typeof window === "undefined") return fallback;
 
     const value = localStorage.getItem(key);
     if (value) return parse(value);
@@ -30,7 +30,7 @@ export function createLocalStorageAdapter<State>(
   }
 
   const setLocalStorageState = (value?: State) => {
-    if (typeof localStorage === "undefined") return;
+    if (typeof window === "undefined") return;
     if (value === undefined) return localStorage.removeItem(key);
 
     const serializedValue = stringify(value);

@@ -21,7 +21,7 @@ export function createSessionStorageAdapter<State>(
   function getSessionStorageState(fallback: State): State;
 
   function getSessionStorageState(fallback?: State) {
-    if (typeof sessionStorage === "undefined") return fallback;
+    if (typeof window === "undefined") return fallback;
 
     const value = sessionStorage.getItem(key);
     if (value) return parse(value);
@@ -30,7 +30,7 @@ export function createSessionStorageAdapter<State>(
   }
 
   const setSessionStorageState = (value?: State) => {
-    if (typeof sessionStorage === "undefined") return;
+    if (typeof window === "undefined") return;
     if (value === undefined) return sessionStorage.removeItem(key);
 
     const serializedValue = stringify(value);

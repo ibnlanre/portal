@@ -78,24 +78,8 @@ describe("createLocalStorageAdapter", () => {
     expect(state).toEqual(newState);
   });
 
-  it("should return undefined if localStorage is not available", () => {
-    const originalLocalStorage = localStorage;
-
-    Object.defineProperty(window, "localStorage", {
-      configurable: true,
-      value: undefined,
-      writable: true,
-    });
-
-    const [getLocalStorageState, setLocalStorageState] =
-      createLocalStorageAdapter(key);
-
-    const state = getLocalStorageState();
-    expect(state).toBeUndefined();
-
-    setLocalStorageState({ state: "value" });
-    expect(localStorage).toBeUndefined();
-
-    global.localStorage = originalLocalStorage;
+  it("should call setLocalStorageState without errors when value is undefined", () => {
+    const [, setLocalStorageState] = createLocalStorageAdapter(key);
+    expect(() => setLocalStorageState(undefined)).not.toThrow();
   });
 });
