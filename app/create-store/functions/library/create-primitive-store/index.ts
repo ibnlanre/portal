@@ -25,7 +25,11 @@ export function createPrimitiveStore<
   function applySchema(value: State): State {
     const validation = schema["~standard"].validate(value);
     if (validation instanceof Promise) return value;
-    if (validation.issues) throw new Error(validation.issues[0].message);
+    if (validation.issues) {
+      throw new Error("createPrimitiveStore: schema validation failed", {
+        cause: validation.issues,
+      });
+    }
     return validation.value as State;
   }
 
