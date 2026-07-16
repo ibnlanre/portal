@@ -66,3 +66,4 @@ export { useVersion } from "@/create-store/functions/hooks/use-version";
 export { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
 export { createContextStore } from "@/create-store/functions/library/create-context-store";
 export { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
+export { syncStorage } from "@/create-store/functions/utilities/sync-storage";

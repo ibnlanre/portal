@@ -47,6 +47,34 @@ const store = createStore(z.object({ step: z.number() }), get({ step: 1 }));
 store.$subscribe(set, false);
 ```
 
+## Cross-tab Sync
+
+When the same storage key changes in another tab, `syncStorage()` updates the store automatically. SSR-safe — no-ops when `window` is not available.
+
+```ts
+import { z } from "zod";
+import {
+  createStore,
+  createLocalStorageAdapter,
+  syncStorage,
+} from "@ibnlanre/portal";
+
+const [getConsent, setConsent] = createLocalStorageAdapter<
+  "granted" | "denied" | null
+>("consent");
+
+const store = createStore(
+  z.union([z.literal("granted"), z.literal("denied"), z.null()]),
+  getConsent(null)
+);
+
+// Sync store → adapter
+store.$subscribe(setConsent, false);
+
+// Sync adapter → store (cross-tab)
+syncStorage(store, "consent", getConsent);
+```
+
 ## Cookie Storage
 
 Need your state accessible by the server? Or specifically need cookies? We've got you covered.

@@ -47,7 +47,6 @@ Whether you're building a small React component or a large-scale application, `@
   - [Deep dependency tracking: `useVersion`](#deep-dependency-tracking-useversion)
   - [Handle circular references](#handle-circular-references)
   - [Handle arrays in stores](#handle-arrays-in-stores)
-  - [Provide fallback values: `fallback()`](#provide-fallback-values-fallback)
   - [Infer state types: `InferType`](#infer-state-types-infertype)
 - [TypeScript Tips](#typescript-tips)
 - [Persist state](#persist-state)
@@ -55,6 +54,7 @@ Whether you're building a small React component or a large-scale application, `@
   - [Cookie Storage adapter](#cookie-storage-adapter)
   - [Browser Storage adapter](#browser-storage-adapter)
   - [Async Browser Storage adapter](#async-browser-storage-adapter)
+  - [Cross-tab sync: `syncStorage()`](#cross-tab-sync-syncstorage)
 - [Cookie Storage](#cookie-storage)
   - [sign()](#sign)
   - [unsign()](#unsign)
@@ -1979,216 +1979,6 @@ const itemStores = createStore(
 // Now itemStores.item_1 is a store, itemStores.item_1.name is a store, etc.
 ```
 
-### Provide fallback values: `fallback()`
-
-The `fallback()` function acts as a selector that provides default values for missing properties, ensuring you always get complete data structures.
-
-**Syntax:**
-
-```ts
-fallback<State extends object>(outerState: State): (innerState: object) => State
-```
-
-- **`outerState`**: The complete object containing default values
-- **Returns**: A selector function that combines the inner state with the fallback values
-
-**Key Features:**
-
-- **Type restoration**: Converts partial data back to complete types
-- **Deep merging**: Combines nested objects intelligently
-- **Flexible usage**: Can be used as a regular function or as a `$get()` selector
-
-**Basic Example:**
-
-```ts
-import { z } from "zod";
-import { createStore, fallback } from "@ibnlanre/portal";
-
-interface Profile {
-  name: string;
-  theme: "light" | "dark";
-  notifications: boolean;
-}
-
-const userStore = createStore(
-  z.object({
-    profile: z.object({
-      name: z.string(),
-      theme: z.enum(["light", "dark"]),
-      notifications: z.boolean(),
-    }),
-  }),
-  { profile: { name: "John", theme: "light", notifications: true } }
-);
-
-const defaultProfile: Profile = {
-  name: "Guest",
-  theme: "light",
-  notifications: false,
-};
-
-// Get profile with fallback for missing values
-const profile = userStore.profile.$get(fallback(defaultProfile));
-console.log(profile);
-// { name: "John", theme: "light", notifications: true }
-
-// Partial updates still work with fallback
-userStore.profile.$set({ name: "Alice" });
-const updated = userStore.profile.$get(fallback(defaultProfile));
-console.log(updated);
-// { name: "Alice", theme: "light", notifications: true }
-```
-
-**Advanced Fallback Patterns:**
-
-```ts
-import { z } from "zod";
-import { createStore, fallback } from "@ibnlanre/portal";
-
-interface AppConfig {
-  api: { baseUrl: string; timeout: number; retries: number };
-  ui: {
-    theme: "light" | "dark";
-    language: string;
-    features: { beta: boolean; analytics: boolean };
-  };
-}
-
-const configStore = createStore(
-  z.object({
-    settings: z.object({
-      api: z.object({
-        baseUrl: z.string(),
-        timeout: z.number(),
-        retries: z.number(),
-      }),
-      ui: z.object({
-        theme: z.enum(["light", "dark"]),
-        language: z.string(),
-        features: z.object({ beta: z.boolean(), analytics: z.boolean() }),
-      }),
-    }),
-  }),
-  {
-    settings: {
-      api: { baseUrl: "https://api.example.com", timeout: 5000, retries: 3 },
-      ui: {
-        theme: "light",
-        language: "en",
-        features: { beta: false, analytics: true },
-      },
-    },
-  }
-);
-
-const defaultConfig: AppConfig = {
-  api: { baseUrl: "https://api.example.com", timeout: 5000, retries: 3 },
-  ui: {
-    theme: "light",
-    language: "en",
-    features: { beta: false, analytics: true },
-  },
-};
-
-// Get config with fallback defaults
-const config = configStore.settings.$get(fallback(defaultConfig));
-
-console.log(config.api.baseUrl); // "https://api.example.com"
-console.log(config.ui.theme); // "light"
-console.log(config.ui.features.analytics); // true
-```
-
-**Using with React Components:**
-
-```tsx
-import { z } from "zod";
-import { createStore, fallback } from "@ibnlanre/portal";
-
-interface ThemePreferences {
-  primaryColor: string;
-  fontSize: number;
-  darkMode: boolean;
-}
-
-const themeStore = createStore(
-  z.object({
-    preferences: z.object({
-      primaryColor: z.string(),
-      fontSize: z.number(),
-      darkMode: z.boolean(),
-    }),
-  }),
-  { preferences: { primaryColor: "#007bff", fontSize: 16, darkMode: false } }
-);
-
-const defaultTheme: ThemePreferences = {
-  primaryColor: "#007bff",
-  fontSize: 16,
-  darkMode: false,
-};
-
-function ThemedComponent() {
-  const [theme] = themeStore.preferences.$use(fallback(defaultTheme));
-
-  return (
-    <div
-      style={{
-        color: theme.primaryColor,
-        fontSize: theme.fontSize,
-        backgroundColor: theme.darkMode ? "#333" : "#fff",
-      }}
-    >
-      Theme: {theme.darkMode ? "Dark" : "Light"}
-    </div>
-  );
-}
-```
-
-**Fallback with Dynamic Defaults:**
-
-```ts
-import { z } from "zod";
-import { createStore, fallback } from "@ibnlanre/portal";
-
-type Difficulty = "easy" | "medium" | "hard";
-interface PlayerSettings {
-  difficulty: Difficulty;
-  volume: number;
-  controls?: string;
-}
-
-const gameStore = createStore(
-  z.object({
-    playerSettings: z.object({
-      difficulty: z.enum(["easy", "medium", "hard"]),
-      volume: z.number(),
-      controls: z.string().optional(),
-    }),
-    currentLevel: z.number(),
-  }),
-  {
-    playerSettings: { difficulty: "medium", volume: 0.8 },
-    currentLevel: 1,
-  }
-);
-
-function getPlayerDefaults(): PlayerSettings {
-  const level = gameStore.currentLevel.$get();
-
-  return {
-    difficulty: level > 10 ? "hard" : "medium",
-    volume: 0.5,
-    controls: "standard",
-  };
-}
-
-// Use dynamic fallback
-const settings = gameStore.playerSettings.$get(fallback(getPlayerDefaults()));
-console.log(settings); // Defaults adjust based on current level
-```
-
-The `fallback()` function ensures you always have complete, well-typed data structures, making your application more robust and predictable.
-
 ### Infer state types: `InferType`
 
 The `InferType` utility type allows you to extract TypeScript types from your Portal stores. This is especially useful when you need to work with the underlying state type in other parts of your application, such as API calls, form validation, or when passing state to other components.
@@ -2802,6 +2592,36 @@ const store = createStore(result);
 
 // When you set the state, it will be encrypted before being stored.
 store.$subscribe(setEncryptedState, false);
+```
+
+### Cross-tab sync: `syncStorage()`
+
+The `syncStorage()` utility listens for cross-tab `storage` events and syncs
+the value into the store when the matching key changes in another tab.
+SSR-safe — no-ops when `window` is not available.
+
+```ts
+import { z } from "zod";
+import {
+  createStore,
+  createLocalStorageAdapter,
+  syncStorage,
+} from "@ibnlanre/portal";
+
+const [getConsent, setConsent] = createLocalStorageAdapter<
+  "granted" | "denied" | null
+>("consent");
+
+const store = createStore(
+  z.union([z.literal("granted"), z.literal("denied"), z.null()]),
+  getConsent(null)
+);
+
+// Sync from the adapter on every store change
+store.$subscribe(setConsent, false);
+
+// Sync from other tabs into the store
+syncStorage(store, "consent", getConsent);
 ```
 
 ## Cookie Storage
