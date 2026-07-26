@@ -26,9 +26,9 @@ describe("getCookieValueByRegex", () => {
   });
 
   it("should return null if document is undefined", () => {
-    const originalDocument = global.document;
+    const originalDocument = globalThis.document;
 
-    Object.defineProperty(global, "document", {
+    Object.defineProperty(globalThis, "document", {
       value: undefined,
       writable: true,
     });
@@ -36,7 +36,7 @@ describe("getCookieValueByRegex", () => {
     const result = getCookieValueByRegex("testCookie");
     expect(result).toBeNull();
 
-    global.document = originalDocument;
+    globalThis.document = originalDocument;
   });
 
   it("should handle cookies with special characters in the name", () => {

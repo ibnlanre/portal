@@ -23,15 +23,15 @@ describe("clearCookieStorage", () => {
   });
 
   it("should not throw an error if document is undefined", () => {
-    const originalDocument = global.document;
+    const originalDocument = globalThis.document;
 
-    Object.defineProperty(global, "document", {
+    Object.defineProperty(globalThis, "document", {
       value: undefined,
       writable: true,
     });
 
     expect(() => clearCookieStorage()).not.toThrow();
-    global.document = originalDocument;
+    globalThis.document = originalDocument;
   });
 
   it("should handle errors gracefully", () => {

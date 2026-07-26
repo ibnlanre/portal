@@ -4,15 +4,15 @@ import { getCookieByIndex } from "./index";
 
 describe("getCookieByIndex", () => {
   it("should return null if document is undefined", () => {
-    const originalDocument = global.document;
+    const originalDocument = globalThis.document;
 
-    Object.defineProperty(global, "document", {
+    Object.defineProperty(globalThis, "document", {
       value: undefined,
       writable: true,
     });
     expect(getCookieByIndex(0)).toBeNull();
 
-    global.document = originalDocument;
+    globalThis.document = originalDocument;
   });
 
   it("should return null if there are no cookies", () => {

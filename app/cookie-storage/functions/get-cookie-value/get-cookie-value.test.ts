@@ -16,9 +16,9 @@ describe("getCookieValue", () => {
   });
 
   it("should return null if document is undefined", () => {
-    const originalDocument = global.document;
+    const originalDocument = globalThis.document;
 
-    Object.defineProperty(global, "document", {
+    Object.defineProperty(globalThis, "document", {
       value: undefined,
       writable: true,
     });
@@ -26,7 +26,7 @@ describe("getCookieValue", () => {
     const result = getCookieValue("testCookie");
     expect(result).toBeNull();
 
-    global.document = originalDocument;
+    globalThis.document = originalDocument;
   });
 
   it("should return the correct value when multiple cookies are present", () => {

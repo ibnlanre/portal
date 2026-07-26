@@ -49,9 +49,9 @@ describe("setCookieValue", () => {
   });
 
   it("should not set a cookie if document is undefined", () => {
-    const originalDocument = global.document;
+    const originalDocument = globalThis.document;
 
-    Object.defineProperty(global, "document", {
+    Object.defineProperty(globalThis, "document", {
       configurable: true,
       value: undefined,
       writable: true,
@@ -63,7 +63,7 @@ describe("setCookieValue", () => {
     setCookieValue(name, value);
     expect(formatCookieOptions).not.toHaveBeenCalled();
 
-    global.document = originalDocument;
+    globalThis.document = originalDocument;
   });
 
   it("should log an error if an exception occurs", () => {

@@ -4,9 +4,9 @@ import { getCookieStorageLength } from "./index";
 
 describe("getCookieStorageLength", () => {
   it("should return 0 if document is undefined", () => {
-    const originalDocument = global.document;
+    const originalDocument = globalThis.document;
 
-    Object.defineProperty(global, "document", {
+    Object.defineProperty(globalThis, "document", {
       configurable: true,
       value: undefined,
       writable: true,
@@ -15,7 +15,7 @@ describe("getCookieStorageLength", () => {
     expect(() => getCookieStorageLength()).not.toThrow();
     expect(getCookieStorageLength()).toBe(0);
 
-    global.document = originalDocument;
+    globalThis.document = originalDocument;
   });
 
   it("should return 0 if there are no cookies", () => {
