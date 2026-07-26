@@ -1,0 +1,92 @@
+{
+  "name": "@ibnlanre/portal",
+  "version": "5.2.4",
+  "description": "A simple, lightweight and flexible state management library for React applications.",
+  "author": {
+    "email": "olaitanlanre28@gmail.com",
+    "name": "Ridwan Olanrewaju"
+  },
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ibnlanre/portal.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ibnlanre/portal/issues"
+  },
+  "homepage": "https://ibnlanre.github.io/portal/",
+  "keywords": [
+    "redux",
+    "state",
+    "store"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "import": "./dist/index.js",
+    "require": "./dist/index.cjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=14"
+  },
+  "peerDependencies": {
+    "react": ">16.7",
+    "react-dom": ">16.7"
+  },
+  "devDependencies": {
+    "@ibnlanre/clone": "^0.5.1",
+    "@standard-schema/spec": "^1.1.0",
+    "@tailwindcss/vite": "^4.3.2",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "@vitest/coverage-v8": "4.1.10",
+    "happy-dom": "^20.10.6",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "tailwindcss": "^4.3.2",
+    "tsup": "^8.5.1",
+    "valibot": "^1.4.2",
+    "vite": "^8.1.4",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.10",
+    "zod": "^4.4.3"
+  },
+  "scripts": {
+    "bundle": "tsup --config tsup.config.ts",
+    "build": "pnpm run bundle",
+    "check-exports": "attw --pack .",
+    "coverage": "vitest run --coverage --typecheck",
+    "dev": "pnpm run watch",
+    "dry-run": "npm publish --dry-run --no-git-checks",
+    "major": "npm version major",
+    "minor": "npm version minor",
+    "package": "npm publish --access public",
+    "patch": "npm version patch",
+    "postbundle": "pnpm run check-exports",
+    "postpublish": "git push --follow-tags",
+    "posttest": "pnpm run lint",
+    "postversion": "pnpm run package",
+    "pre-major": "npm version premajor",
+    "pre-minor": "npm version preminor",
+    "pre-patch": "npm version prepatch",
+    "prepublishOnly": "pnpm run bundle",
+    "pretest": "pnpm run typecheck",
+    "preversion": "pnpm run check-workspace && pnpm run test",
+    "check-workspace": "git diff-index --quiet HEAD --",
+    "lint": "eslint --fix .",
+    "test": "vitest run",
+    "test:ci": "vitest run --coverage --typecheck",
+    "typecheck": "tsc --pretty --noEmit",
+    "watch": "tsup --config tsup.config.ts --watch"
+  }
+}

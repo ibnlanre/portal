@@ -1,0 +1,94 @@
+---
+title: Cookie Utilities
+description: Low-level tools for managing cookies directly.
+icon: Cookie
+---
+
+Sometimes you don't need a full Store adapter—you just want to read or write a cookie.
+
+Portal exposes its internal cookie engine via `cookieStorage`. It handles the messy parts of `document.cookie` for you.
+
+```ts
+import { cookieStorage } from "@ibnlanre/portal";
+```
+
+## Basic Operations
+
+### Reading Cookies
+
+```ts
+const token = cookieStorage.getItem("auth_token");
+// returns "xyz..." or null
+```
+
+### Writing Cookies
+
+```ts
+cookieStorage.setItem("theme", "dark", {
+  path: "/",
+  maxAge: 3600 * 24 * 7, // 7 days
+  secure: true,
+  sameSite: "strict",
+});
+```
+
+### Deleting Cookies
+
+```ts
+// Note: You must match the path/domain used when creating the cookie!
+cookieStorage.removeItem("theme", { path: "/" });
+```
+
+### Clearing All Cookies
+
+Wipes every cookie accessible to the current page.
+
+```ts
+cookieStorage.clear();
+```
+
+---
+
+## Security (Signing)
+
+If you're storing sensitive data (like user roles or IDs) in a cookie, you don't want users tampering with it in the dev tools.
+
+Portal provides cryptographic signing to prevent this.
+
+### `sign(value, secret)`
+
+Creates a signed string that includes a hash of the value.
+
+```ts
+const safeValue = cookieStorage.sign("admin", "my-super-secret-key");
+// Returns something like "admin.8a7b3c..."
+```
+
+### `unsign(value, secret)`
+
+Verifies the signature. If the user tampered with the value (or the signature doesn't match), it returns `false`.
+
+```ts
+const value = cookieStorage.unsign(cookieValue, "my-super-secret-key");
+
+if (value === false) {
+  throw new Error("Tampered cookie detected!");
+}
+
+console.log("Verified value:", value); // "admin"
+```
+
+---
+
+## Cookie Options
+
+When setting cookies, you can use these options:
+
+| Option     | Type                          | Description                    |
+| :--------- | :---------------------------- | :----------------------------- |
+| `path`     | `string`                      | URL path prefix (default: `/`) |
+| `maxAge`   | `number`                      | Lifetime in seconds            |
+| `expires`  | `Date`                        | Absolute expiration date       |
+| `secure`   | `boolean`                     | Only send over HTTPS           |
+| `sameSite` | `'lax' \| 'strict' \| 'none'` | CORS policy                    |
+| `domain`   | `string`                      | Domain scope                   |

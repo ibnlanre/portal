@@ -1,0 +1,63 @@
+---
+title: Subscriptions
+description: Watch for changes with $subscribe.
+icon: Bell
+---
+
+Use `$subscribe()` to run a side effect whenever the store value changes.
+This is great for logging, persisting to storage, or triggering analytics.
+
+```ts
+import { z } from "zod";
+import { createStore } from "@ibnlanre/portal";
+
+const store = createStore(z.object({ count: z.number() }), { count: 0 });
+
+const unsubscribe = store.$subscribe((state) => {
+  console.log("State changed:", state);
+});
+```
+
+## Immediate invocation
+
+By default, `$subscribe` fires immediately with the current value.
+Pass `false` as the second argument to only react to _future_ changes:
+
+```ts
+// Only runs on subsequent changes
+store.$subscribe(handler, false);
+```
+
+## Unsubscribing
+
+`$subscribe` returns an unsubscribe function. Call it to stop listening:
+
+```ts
+const unsub = store.$subscribe(handler);
+
+// Later...
+unsub();
+```
+
+## Subscribing to nested paths
+
+Composite stores let you subscribe to a specific nested node —
+you only get notified when that branch changes:
+
+```ts
+store.settings.$subscribe((settings) => {
+  console.log("Settings updated:", settings);
+});
+
+store.user.preferences.theme.$subscribe((theme) => {
+  console.log("Theme changed:", theme);
+});
+```
+
+This is more efficient than subscribing to the root and filtering by path.
+
+## SSR safety
+
+`$subscribe` works during server-side rendering. Subscribers fire
+synchronously when `$set` is called, so state is always consistent
+before the render completes.

@@ -1,0 +1,180 @@
+---
+title: Store API
+description: The methods you'll use to interact with your data.
+icon: Braces
+---
+
+Every store in Portal shares the same predictable API. Once you know how to use one store, you know how to use them all—whether it's a simple number or a deeply nested object tree.
+
+## Cheat Sheet
+
+| I want to...            | Method            | Return Value           |
+| :---------------------- | :---------------- | :--------------------- |
+| **Read** the value once | `$get()`          | The current value `S`  |
+| **Update** the value    | `$set(value)`     | `void`                 |
+| **Watch** for changes   | `$subscribe(fn)`  | `unsubscribe` function |
+| **Use** in React        | `$use(selector?)` | `[value, setValue]`    |
+| **Access** a deep path  | `$at(path)`       | `Store` instance       |
+
+---
+
+## Reading Data: `$get()`
+
+Use `$get()` when you need to read the state imperatively—like inside an event handler, a utility function, or an action.
+
+```ts
+import { z } from "zod";
+import { createStore } from "@ibnlanre/portal";
+
+const countStore = createStore(z.number(), 10);
+const currentCount = countStore.$get(); // 10
+```
+
+### Selectors and Fallbacks
+
+`$get()` accepts a **selector** function to derive a value, or a **fallback** value when the store value is `undefined`:
+
+```ts
+const userStore = createStore(
+  z.object({ firstName: z.string(), lastName: z.string() }),
+  { firstName: "Alex", lastName: "Johnson" }
+);
+
+// Derive a value with a selector
+userStore.$get((u) => `${u.firstName} ${u.lastName}`);
+// "Alex Johnson"
+```
+
+```ts
+const configStore = createStore(
+  z.object({ apiUrl: z.string().optional() }),
+  { apiUrl: undefined }
+);
+
+// Fallback when the value is undefined
+configStore.apiUrl.$get(); // undefined
+configStore.apiUrl.$get("https://api.default.com"); // "https://api.default.com"
+```
+
+---
+
+## Writing Data: `$set()`
+
+Use `$set()` to update your state. You can pass a new value directly, or a **selector function** that receives the previous state and returns the new value.
+
+```ts
+const countStore = createStore(z.number(), 0);
+
+// Set directly
+countStore.$set(5);
+
+// Update based on previous value
+countStore.$set((prev) => prev + 1);
+```
+
+### Partial updates
+
+If your store holds an object, `$set()` automatically merges your changes. You don't need to spread the old state manually.
+
+```ts
+const settingsStore = createStore(
+  z.object({
+    theme: z.string(),
+    fontSize: z.number(),
+    sidebar: z.object({ collapsed: z.boolean() }),
+  }),
+  {
+    theme: "light",
+    fontSize: 12,
+    sidebar: { collapsed: false },
+  }
+);
+
+// Updates theme, keeps fontSize and sidebar intact
+settingsStore.$set({ theme: "dark" });
+```
+
+### Updating nested values
+
+Because Portal stores are recursive, you can update nested properties directly.
+
+```ts
+// Update deeply nested property
+settingsStore.sidebar.collapsed.$set(true);
+
+// Or update the parent object
+settingsStore.sidebar.$set({ collapsed: true });
+```
+
+---
+
+## Listening: `$subscribe()`
+
+Use `$subscribe()` to run a side effect whenever the state changes. This is great for logging, syncing to local storage, or triggering analytics.
+
+```ts
+const unsubscribe = settingsStore.$subscribe((newValue, oldValue) => {
+  console.log("Settings changed:", newValue);
+});
+
+// Later... stop listening
+unsubscribe();
+```
+
+> **Note:** By default, `$subscribe` runs immediately when you call it. Pass `false` as the second argument if you only want to react to _future_ changes.
+
+```ts
+// Only run on changes, not on initial subscription
+settingsStore.$subscribe(handler, false);
+```
+
+---
+
+## React Integration: `$use()`
+
+If you're using React, `$use()` is your best friend. It subscribes to the store and re-renders your component whenever the value changes.
+
+```tsx
+function ThemeToggler() {
+  const [theme, setTheme] = settingsStore.theme.$use();
+
+  return (
+    <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+      Current: {theme}
+    </button>
+  );
+}
+```
+
+### Selecting data
+
+Just like `$get()`, you can pass a selector to `$use()` to subscribe only to a derived value. Your component will **only re-render if the derived value changes**.
+
+```tsx
+function SidebarStatus() {
+  // Only re-renders if 'collapsed' changes
+  const [isCollapsed] = settingsStore.sidebar.$use((s) => s.collapsed);
+
+  return <div>{isCollapsed ? "Closed" : "Open"}</div>;
+}
+```
+
+---
+
+## Dynamic Access: `$at()`
+
+Sometimes you don't know the property name ahead of time. `$at()` lets you access nested stores using a string path.
+
+```ts
+const userStore = createStore(
+  z.object({
+    preferences: z.object({ theme: z.string() }),
+  }),
+  { preferences: { theme: "dark" } }
+);
+
+const path = "preferences.theme";
+const themeStore = userStore.$at(path);
+
+console.log(themeStore.$get()); // "dark"
+```

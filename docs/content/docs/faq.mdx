@@ -1,0 +1,31 @@
+---
+title: FAQ
+description: Common questions and gotchas.
+icon: CircleQuestionMark
+---
+
+## Why does my subscriber run immediately?
+
+`$subscribe` calls the subscriber immediately by default so your UI and side effects can initialize from the current state.
+
+If you’re wiring persistence/hydration, pass `false` as the second argument:
+
+```ts
+store.$subscribe((state) => {
+  // persist
+}, false);
+```
+
+## How do I update deep values?
+
+For composite stores you can either navigate through properties:
+
+```ts
+store.user.preferences.theme.$set("dark");
+```
+
+…or select by path:
+
+```ts
+store.$at("user.preferences.theme").$set("dark");
+```

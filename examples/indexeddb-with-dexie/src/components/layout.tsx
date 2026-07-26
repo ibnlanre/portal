@@ -14,7 +14,7 @@ export function Layout({ children }: PropsWithChildren) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-purple-50 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-gray-100 shadow-sm">
         <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -22,7 +22,7 @@ export function Layout({ children }: PropsWithChildren) {
             <div className="flex items-center space-x-3">
               <div className="text-2xl">🗄️</div>
               <div>
-                <h1 className="text-xl font-bold text-transparent bg-gradient-to-r from-portal-blue-600 to-portal-purple-600 bg-clip-text">
+                <h1 className="text-xl font-bold text-transparent bg-linear-to-r from-portal-blue-600 to-portal-purple-600 bg-clip-text">
                   Portal Store
                 </h1>
                 <p className="text-sm text-gray-500">
@@ -57,7 +57,7 @@ export function Layout({ children }: PropsWithChildren) {
           <div className="flex space-x-1 overflow-x-auto">
             {navItems.map((item) => (
               <Link
-                className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                className={`shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                   location.pathname === item.path
                     ? "bg-portal-blue-50 text-portal-blue-700 border border-portal-blue-200"
                     : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"

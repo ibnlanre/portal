@@ -1,0 +1,149 @@
+---
+title: Get Started
+description: Install Portal and build your first store in seconds.
+icon: Play
+---
+
+Refactoring your state management shouldn't track like a migration. **Portal** is designed to be intuitive, minimal, and fully type-safe out of the box.
+
+## Installation
+
+You can add Portal to your project using your favorite package manager:
+
+```bash
+# npm
+npm install @ibnlanre/portal
+
+# pnpm
+pnpm add @ibnlanre/portal
+
+# yarn
+yarn add @ibnlanre/portal
+```
+
+Using TypeScript? Good news—we include type definitions automatically, so you don't need to install any extra `@types` packages.
+
+### Using a CDN
+
+If you're not using a bundler, you can grab Portal directly from a CDN:
+
+```html
+<!-- Skypack -->
+<script type="module">
+  import { createStore } from "https://cdn.skypack.dev/@ibnlanre/portal";
+</script>
+
+<!-- unpkg -->
+<script src="https://unpkg.com/@ibnlanre/portal"></script>
+
+<!-- jsDelivr -->
+<script src="https://cdn.jsdelivr.net/npm/@ibnlanre/portal"></script>
+```
+
+## Your first store
+
+`createStore` takes a schema as its first argument—this defines the shape and type of your state. Pass your initial value as the second argument.
+
+```ts
+import { z } from "zod";
+import { createStore } from "@ibnlanre/portal";
+
+// A store holding a single number
+const countStore = createStore(z.number(), 0);
+
+// Read the value just like a variable
+console.log(countStore.$get()); // 0
+
+// Update it directly
+countStore.$set(5);
+
+// Or update based on the previous value
+countStore.$set((prev) => prev + 1); // 6
+```
+
+## Handling nested state
+
+Portal shines when you have deep objects. You don't need reducers or complex spread operators to update a specific field deep in your tree—just access the property and update it.
+
+```ts
+import { z } from "zod";
+import { createStore } from "@ibnlanre/portal";
+
+const userStore = createStore(
+  z.object({
+    name: z.string(),
+    settings: z.object({
+      theme: z.string(),
+      notifications: z.object({
+        email: z.boolean(),
+        push: z.boolean(),
+      }),
+    }),
+  }),
+  {
+    name: "Alex",
+    settings: {
+      theme: "dark",
+      notifications: { email: true, push: false },
+    },
+  }
+);
+
+// Read a deeply nested value
+console.log(userStore.settings.theme.$get()); // "dark"
+
+// Update ONLY the theme
+userStore.settings.theme.$set("light");
+
+// Update a nested object (merges automatically!)
+userStore.settings.notifications.$set({ push: true });
+// Email notifications preference stays safely set to true
+```
+
+## Reacting to changes
+
+You can listen for changes on any part of your store. Whether it's the root object or a specific leaf node, `$subscribe` has you covered.
+
+By default, the subscription runs immediately with the current value, so you don't miss anything.
+
+```ts
+const unsubscribe = countStore.$subscribe((newValue) => {
+  console.log("Count is now:", newValue);
+});
+
+countStore.$set(10);
+// Console: "Count is now: 10"
+
+// Stop listening when you're done
+unsubscribe();
+```
+
+## Using with React
+
+If you're using React, Portal provides a unified `$use()` hook that serves as both a selector and a subscriber.
+
+```tsx
+import { z } from "zod";
+import { createStore } from "@ibnlanre/portal";
+
+const countStore = createStore(z.number(), 0);
+
+function Counter() {
+  // Automatically re-renders when countStore changes
+  const [count, setCount] = countStore.$use();
+
+  return <button onClick={() => setCount(count + 1)}>Count is {count}</button>;
+}
+```
+
+## Core concepts
+
+Here's a quick map of the concepts you'll use most often:
+
+| Method            | Description                                                     |
+| :---------------- | :-------------------------------------------------------------- |
+| **`createStore`** | Creates a new observable store from a schema and initial state. |
+| **`$get`**        | reads the current value (without subscribing).                  |
+| **`$set`**        | Updates the value (merges objects, replaces primitives).        |
+| **`$use`**        | React hook to read values and re-render on changes.             |
+| **`$subscribe`**  | Native subscription for non-React code (logs, analytics, etc).  |

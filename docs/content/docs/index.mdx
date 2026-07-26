@@ -1,0 +1,64 @@
+---
+title: Introduction
+description: Type-safe state management for React apps.
+icon: Boxes
+---
+
+`@ibnlanre/portal` is a state management library that bridges the gap between simple state hooks and complex state machines.
+
+It gives you:
+
+- A small, consistent store API (`$get`, `$set`, `$subscribe`, `$use`)
+- Nested state via composite stores
+- Great TypeScript inference
+
+## Install
+
+```bash
+pnpm add @ibnlanre/portal
+```
+
+## Quick start
+
+```ts
+import { z } from "zod";
+import { createStore } from "@ibnlanre/portal";
+
+const count = createStore(z.number(), 0);
+
+count.$subscribe((value) => {
+  console.log("count:", value);
+});
+
+count.$set(1);
+count.$set((prev) => prev + 1);
+
+console.log(count.$get());
+```
+
+## Nested state
+
+```ts
+import { z } from "zod";
+import { createStore } from "@ibnlanre/portal";
+
+const user = createStore(
+  z.object({
+    profile: z.object({
+      name: z.string(),
+      preferences: z.object({
+        theme: z.enum(["light", "dark"]),
+      }),
+    }),
+  }),
+  {
+    profile: {
+      name: "Alex",
+      preferences: { theme: "light" },
+    },
+  }
+);
+
+user.profile.name.$set("Taylor");
+user.$at("profile.preferences.theme").$set("dark");
+```

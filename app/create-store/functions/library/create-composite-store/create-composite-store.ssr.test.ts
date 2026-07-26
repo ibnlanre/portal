@@ -1,0 +1,297 @@
+import { describe, expect, it } from "vitest";
+import { z } from "zod";
+
+import { createCompositeStore } from "./index";
+
+describe("createCompositeStore - Server-Side Rendering (Node Environment)", () => {
+  it("should confirm we're running in Node environment (SSR)", () => {
+    expect(typeof window).toBe("undefined");
+    expect(typeof global).toBe("object");
+    expect(typeof process).toBe("object");
+  });
+
+  it("should create a store with proper initial state in SSR", () => {
+    const initialState = { counter: 0, name: "test" };
+    const store = createCompositeStore(
+      z.object({ counter: z.number(), name: z.string() }),
+      initialState
+    );
+
+    expect(store.$get()).toEqual(initialState);
+  });
+
+  it("should handle nested object state in SSR", () => {
+    const initialState = {
+      preferences: { language: "en", theme: "dark" },
+      settings: { notifications: true },
+      user: { id: 1, name: "John" },
+    };
+    const store = createCompositeStore(
+      z.object({
+        preferences: z.object({ language: z.string(), theme: z.string() }),
+        settings: z.object({ notifications: z.boolean() }),
+        user: z.object({ id: z.number(), name: z.string() }),
+      }),
+      initialState
+    );
+
+    expect(store.$get()).toEqual(initialState);
+    expect(store.$get().user.name).toBe("John");
+    expect(store.$get().preferences.theme).toBe("dark");
+  });
+
+  it("should allow state updates via $set in SSR", () => {
+    const store = createCompositeStore(
+      z.object({ count: z.number(), name: z.string() }),
+      { count: 0, name: "initial" }
+    );
+
+    expect(store.$get()).toEqual({ count: 0, name: "initial" });
+
+    store.$set({ count: 42, name: "updated" });
+    expect(store.$get()).toEqual({ count: 42, name: "updated" });
+
+    store.$set((prev) => ({ count: prev.count + 10 }));
+    expect(store.$get()).toEqual({ count: 52, name: "updated" });
+  });
+
+  it("should handle deep state updates in SSR", () => {
+    const store = createCompositeStore(
+      z.object({
+        settings: z.object({ theme: z.string() }),
+        user: z.object({
+          id: z.number(),
+          profile: z.object({ age: z.number(), name: z.string() }),
+        }),
+      }),
+      {
+        settings: { theme: "light" },
+        user: { id: 1, profile: { age: 30, name: "John" } },
+      }
+    );
+
+    store.$set({ user: { profile: { age: 31 } } });
+
+    expect(store.$get().user.profile.age).toBe(31);
+    expect(store.$get().user.id).toBe(1);
+    expect(store.$get().user.profile.name).toBe("John");
+    expect(store.$get().settings.theme).toBe("light");
+  });
+
+  it("should handle subscription in SSR without errors", () => {
+    const store = createCompositeStore(z.object({ value: z.string() }), {
+      value: "initial",
+    });
+    const updates: Array<{ value: string }> = [];
+
+    const unsubscribe = store.$subscribe((state) => {
+      updates.push(state);
+    });
+
+    expect(updates).toEqual([{ value: "initial" }]);
+
+    store.$set({ value: "updated" });
+    expect(updates).toEqual([{ value: "initial" }, { value: "updated" }]);
+
+    unsubscribe();
+    store.$set({ value: "after unsubscribe" });
+    expect(updates).toEqual([{ value: "initial" }, { value: "updated" }]);
+  });
+
+  it("should maintain proper proxy behavior in SSR", () => {
+    const store = createCompositeStore(z.object({ test: z.string() }), {
+      test: "value",
+    });
+
+    expect(typeof store.$get).toBe("function");
+    expect(typeof store.$set).toBe("function");
+    expect(typeof store.$subscribe).toBe("function");
+
+    expect((store as any).value).toBeUndefined();
+    expect(Object.keys(store).sort()).toEqual(["test"]);
+  });
+
+  it("should handle selector function in $get during SSR", () => {
+    const store = createCompositeStore(
+      z.object({ items: z.array(z.number()), multiplier: z.number() }),
+      {
+        items: [1, 2, 3],
+        multiplier: 2,
+      }
+    );
+
+    const total = store.$get((state) =>
+      state.items.reduce((sum, item) => sum + item * state.multiplier, 0)
+    );
+    expect(total).toBe(12);
+
+    store.$set((prev) => ({ multiplier: 3 }));
+    const newTotal = store.$get((state) =>
+      state.items.reduce((sum, item) => sum + item * state.multiplier, 0)
+    );
+    expect(newTotal).toBe(18);
+  });
+
+  it("should handle multiple subscribers in SSR", () => {
+    const store = createCompositeStore(z.object({ counter: z.number() }), {
+      counter: 0,
+    });
+    const updates1: Array<{ counter: number }> = [];
+    const updates2: Array<{ counter: number }> = [];
+
+    const unsubscribe1 = store.$subscribe((state) => updates1.push(state));
+    const unsubscribe2 = store.$subscribe((state) => updates2.push(state));
+
+    expect(updates1).toEqual([{ counter: 0 }]);
+    expect(updates2).toEqual([{ counter: 0 }]);
+
+    store.$set({ counter: 5 });
+    expect(updates1).toEqual([{ counter: 0 }, { counter: 5 }]);
+    expect(updates2).toEqual([{ counter: 0 }, { counter: 5 }]);
+
+    unsubscribe1();
+    store.$set({ counter: 10 });
+    expect(updates1).toEqual([{ counter: 0 }, { counter: 5 }]);
+    expect(updates2).toEqual([{ counter: 0 }, { counter: 5 }, { counter: 10 }]);
+
+    unsubscribe2();
+  });
+
+  it("should handle array state updates in SSR", () => {
+    const store = createCompositeStore(
+      z.object({ count: z.number(), items: z.array(z.string()) }),
+      {
+        count: 2,
+        items: ["a", "b"],
+      }
+    );
+
+    expect(store.$get()).toEqual({ count: 2, items: ["a", "b"] });
+
+    store.$set((prev) => ({
+      count: prev.count + 1,
+      items: [...prev.items, "c"],
+    }));
+
+    expect(store.$get()).toEqual({ count: 3, items: ["a", "b", "c"] });
+
+    store.$set((prev) => ({
+      count: prev.count - 1,
+      items: prev.items.filter((item) => item !== "b"),
+    }));
+
+    expect(store.$get()).toEqual({ count: 2, items: ["a", "c"] });
+  });
+
+  it("should handle complex nested state operations in SSR", () => {
+    const store = createCompositeStore(
+      z.object({
+        filter: z.string(),
+        todos: z.array(
+          z.object({ completed: z.boolean(), id: z.number(), text: z.string() })
+        ),
+      }),
+      {
+        filter: "all",
+        todos: [
+          { completed: false, id: 1, text: "Task 1" },
+          { completed: true, id: 2, text: "Task 2" },
+        ],
+      }
+    );
+
+    store.$set((prev) => ({
+      todos: prev.todos.map((todo) => {
+        return todo.id === 1 ? { ...todo, completed: !todo.completed } : todo;
+      }),
+    }));
+
+    expect(store.$get().todos[0].completed).toBe(true);
+    expect(store.$get().todos[1].completed).toBe(true);
+
+    store.$set((prev) => ({
+      todos: [...prev.todos, { completed: false, id: 3, text: "Task 3" }],
+    }));
+
+    expect(store.$get().todos).toHaveLength(3);
+    expect(store.$get().todos[2].text).toBe("Task 3");
+  });
+
+  it("should handle edge cases in SSR", () => {
+    const emptyStore = createCompositeStore(z.object({}), {});
+    expect(emptyStore.$get()).toEqual({});
+
+    const nullableStore = createCompositeStore(
+      z.object({
+        empty: z.string(),
+        optional: z.undefined(),
+        value: z.null(),
+      }),
+      {
+        empty: "",
+        optional: undefined,
+        value: null,
+      }
+    );
+    expect(nullableStore.$get()).toEqual({
+      empty: "",
+      optional: undefined,
+      value: null,
+    });
+
+    const arrayStore = createCompositeStore(
+      z.object({ items: z.array(z.unknown()), metadata: z.object({}) }),
+      { items: [], metadata: {} }
+    );
+    expect(arrayStore.$get()).toEqual({ items: [], metadata: {} });
+  });
+
+  it("should handle rapid state changes in SSR", () => {
+    const store = createCompositeStore(z.object({ counter: z.number() }), {
+      counter: 0,
+    });
+    const updates: Array<{ counter: number }> = [];
+
+    store.$subscribe((state) => updates.push(state));
+
+    for (let i = 1; i <= 5; i++) {
+      store.$set({ counter: i });
+    }
+
+    expect(updates).toEqual([
+      { counter: 0 },
+      { counter: 1 },
+      { counter: 2 },
+      { counter: 3 },
+      { counter: 4 },
+      { counter: 5 },
+    ]);
+    expect(store.$get().counter).toBe(5);
+  });
+
+  it("should handle immutability in SSR", () => {
+    const initialState = {
+      settings: { theme: "dark" },
+      user: { age: 30, name: "John" },
+    };
+    const store = createCompositeStore(
+      z.object({
+        settings: z.object({ theme: z.string() }),
+        user: z.object({ age: z.number(), name: z.string() }),
+      }),
+      initialState
+    );
+
+    const stateBefore = store.$get();
+
+    store.$set({ user: { age: 31 } });
+
+    const stateAfter = store.$get();
+
+    expect(stateBefore.user.age).toBe(30);
+    expect(stateAfter.user.age).toBe(31);
+    expect(stateBefore).not.toBe(stateAfter);
+    expect(stateBefore.user).not.toBe(stateAfter.user);
+    expect(stateBefore.settings).toStrictEqual(stateAfter.settings);
+  });
+});

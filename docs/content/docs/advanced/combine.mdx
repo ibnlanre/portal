@@ -1,0 +1,95 @@
+---
+title: Organizing with combine()
+description: Split your state and logic into manageable pieces.
+icon: Merge
+---
+
+As your application grows, defining a massive store object in one file can get messy.
+
+`combine()` lets you write your state and actions in separate variables (or even separate files) and merge them together into a single, type-safe store.
+
+## Why use it?
+
+- **Organization**: Keep your initial state separate from your business logic.
+- **Modularity**: Split a large store into smaller domain-specific chunks.
+- **Deep Merging**: Unlike `...spread`, `combine` merges deeply nested objects intelligently.
+
+## Splitting State and Actions
+
+A common pattern is to define state and actions separately, then bind them together.
+
+```ts
+import { createStore, combine } from "@ibnlanre/portal";
+
+// 1. Define your data
+const state = {
+  count: 0,
+  settings: { theme: "dark" },
+};
+
+// 2. Define your logic
+// Note: We reference 'mainStore' which is defined below.
+// This works perfectly fine at runtime!
+const actions = {
+  increment() {
+    mainStore.count.$set((prev) => prev + 1);
+  },
+  toggleTheme() {
+    const current = mainStore.settings.theme.$get();
+    mainStore.settings.theme.$set(current === "dark" ? "light" : "dark");
+  },
+};
+
+// 3. Combine and pass to createStore with a schema
+import { z } from "zod";
+
+export const mainStore = createStore(
+  z.object({
+    count: z.number(),
+    settings: z.object({ theme: z.string() }),
+  }),
+  combine(state, actions)
+);
+```
+
+## Merging Configuration
+
+You can also use `combine()` to layer multiple configuration objects. Later arguments override earlier ones, deeply.
+
+```ts
+const defaultConfig = {
+  api: { endpoint: "https://api.com", timeout: 3000 },
+  logger: { level: "info" },
+};
+
+const devConfig = {
+  api: { endpoint: "localhost:3000" }, // Overrides endpoint, keeps timeout
+  logger: { level: "debug" },
+};
+
+const finalConfig = combine(defaultConfig, devConfig);
+// Result:
+// {
+//   api: { endpoint: "localhost:3000", timeout: 3000 },
+//   logger: { level: "debug" }
+// }
+```
+
+## How is this different from `Object.assign` or `{...spread}`?
+
+Standard JavaScript spreading (`{ ...a, ...b }`) is **shallow**. If you spread two objects with nested properties, the second one will completely overwrite the nested object of the first.
+
+`combine()` is **deep**. It recursively merges nested objects, preserving properties that aren't explicitly overridden.
+
+```ts
+const a = { user: { name: "Alex" } };
+const b = { user: { age: 30 } };
+
+// JavaScript Spread (BAD): 'name' is lost!
+const spread = { ...a, ...b };
+// Result: { user: { age: 30 } }
+
+// Portal Combine (GOOD): 'name' is preserved!
+const combined = combine(a, b);
+// Result: { user: { name: "Alex", age: 30 } }
+```

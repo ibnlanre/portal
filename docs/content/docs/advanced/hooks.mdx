@@ -1,0 +1,101 @@
+---
+title: Helpful Hooks
+description: Built-in utilities for async data, memoization, and deep comparisons.
+icon: RefreshCw
+---
+
+Portal comes with a few extra hooks to make your life easier when dealing with complex state or side effects.
+
+## `useAsync`: Data Fetching Made Easy
+
+Handling loading states and errors for async operations is repetitive. `useAsync` handles it for you.
+
+It's perfect for fetching data inside your store actions.
+
+```tsx
+import { z } from "zod";
+import { createStore, combine, useAsync } from "@ibnlanre/portal";
+
+const state = { data: null };
+const actions = {
+  // A "hook action" that fetches data
+  useFetchUser(id: string) {
+    const { data, loading, error } = useAsync(
+      async ({ signal }) => {
+        const res = await fetch(`/api/users/${id}`, { signal });
+        return res.json();
+      },
+      [id]
+    );
+
+    // Automatically sync successful data to the store
+    if (data) {
+      userStore.data.$set(data);
+    }
+
+    return { loading, error };
+  },
+};
+
+const userStore = createStore(
+  z.object({ data: z.unknown().nullable() }),
+  combine(state, actions)
+);
+```
+
+Now your component is clean:
+
+```tsx
+function UserProfile({ id }) {
+  const { loading, error } = userStore.useFetchUser(id);
+  const [user] = userStore.data.$use();
+
+  if (loading) return <Spinner />;
+  if (error) return <Error msg={error.message} />;
+
+  return <div>{user.name}</div>;
+}
+```
+
+## `useSync`: Deep Memoization
+
+React's `useMemo` is great, but it relies on referential equality. If you pass a new object `{ x: 1 }` every time, `useMemo` will re-run every time.
+
+`useSync` is like `useMemo`, but it performs a **deep comparison** on dependencies. It only re-runs if the _values_ actually change.
+
+```tsx
+import { useSync } from "@ibnlanre/portal";
+
+function Chart({ config }) {
+  // config is an object like { color: 'red', points: [...] }
+  // Even if the parent passes a new object reference,
+  // useSync won't update unless the content changes.
+
+  const processedData = useSync(() => {
+    return expensiveCalculation(config);
+  }, [config]);
+
+  return <Graph data={processedData} />;
+}
+```
+
+## `useVersion`: Deep Dependency Tracking
+
+If you're building your own hooks and need to trigger an effect only when an object deeply changes, `useVersion` is your friend.
+
+It returns a version number that increments only when the provided value changes deeply.
+
+```tsx
+import { useVersion } from "@ibnlanre/portal";
+import { useEffect } from "react";
+
+function AutoSave({ formState }) {
+  // 'version' only bumps when formState deeply changes
+  const version = useVersion(formState);
+
+  useEffect(() => {
+    console.log("Form changed! Saving...");
+    saveToApi(formState);
+  }, [version]); // Dependency is a simple number
+}
+```

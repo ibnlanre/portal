@@ -1,0 +1,99 @@
+---
+title: Scoped Stores (Context)
+description: Create stores that live within the React component tree.
+icon: Layers
+---
+
+Global stores are great, but sometimes you need a store that:
+
+1. Is initialized with data from `props`.
+2. Exists only for a specific part of your app (like a single tab in a dashboard).
+3. Has multiple instances active at once.
+
+`createContextStore()` gives you the best of both worlds: the power of Portal's API with the scoping of React Context.
+
+## The Problem
+
+If you use a global `createStore()`, you can't easily initialize it with data from your component's props, because the store is created _before_ the component mounts.
+
+```tsx
+// ❌ Hard to pass 'initialCount' dynamically
+const globalStore = createStore(z.number(), 0);
+```
+
+## The Solution
+
+`createContextStore` lets you define a "store creator" function. This function runs inside a Provider component, meaning it has access to props and hooks.
+
+```tsx
+import { z } from "zod";
+import { createContextStore, createStore } from "@ibnlanre/portal";
+
+// 1. Create the Context Store factory
+const [CounterProvider, useCounterStore] = createContextStore(
+  // This factory function receives the props passed to the Provider
+  (props: { start: number }) => {
+    return createStore(z.number(), props.start);
+  }
+);
+```
+
+Now you can use it in your app:
+
+```tsx
+function App() {
+  return (
+    <>
+      {/* Two independent stores! */}
+      <CounterProvider value={{ start: 10 }}>
+        <CounterDisplay id="A" />
+      </CounterProvider>
+
+      <CounterProvider value={{ start: 100 }}>
+        <CounterDisplay id="B" />
+      </CounterProvider>
+    </>
+  );
+}
+```
+
+## Consuming the Store
+
+Inside your components, `useCounterStore()` returns the specific store instance for that tree. You can then use the standard `$use()`, `$get()`, and `$set()` methods.
+
+```tsx
+function CounterDisplay({ id }: { id: string }) {
+  // Get the store instance for this context
+  const store = useCounterStore();
+
+  // Use it just like a global store
+  const [count, setCount] = store.$use();
+
+  return (
+    <button onClick={() => setCount(count + 1)}>
+      Counter {id}: {count}
+    </button>
+  );
+}
+```
+
+## Advanced: Memoization
+
+The factory function runs inside a React component, so you can use hooks like `useMemo` (or Portal's `useSync`) to prevent recreating the store on every render.
+
+```tsx
+import { z } from "zod";
+import { createContextStore, createStore, useSync } from "@ibnlanre/portal";
+
+const [UserProvider, useUserStore] = createContextStore(
+  (props: { id: string; name: string }) => {
+    // Only recreate the store if props.id changes
+    return useSync(() => {
+      return createStore(z.object({ id: z.string(), name: z.string() }), {
+        id: props.id,
+        name: props.name,
+      });
+    }, [props.id]);
+  }
+);
+```

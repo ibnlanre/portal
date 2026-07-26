@@ -1,0 +1,94 @@
+---
+title: Setting State
+description: $set merges objects and replaces primitives.
+icon: Shield
+---
+
+`$set` **merges dictionaries and replaces primitives**. When you pass a plain
+object, it's shallow-merged into the current state. Non-dictionary values
+(numbers, strings, arrays, etc.) replace entirely.
+
+You can also pass a **selector function** that receives the current value and returns the new value:
+
+```ts
+import { z } from "zod";
+import { createStore } from "@ibnlanre/portal";
+
+const countStore = createStore(z.number(), 0);
+
+// Set directly
+countStore.$set(5);
+
+// Update based on previous value
+countStore.$set((prev) => prev + 1);
+```
+
+## Object merging
+
+When you pass a plain object to `$set`, it's shallow-merged into the current state:
+
+```ts
+const store = createStore(
+  z.object({
+    settings: z.object({ theme: z.string(), fontSize: z.number() }),
+  }),
+  { settings: { theme: "dark", fontSize: 14 } }
+);
+
+// Merges: theme is updated, fontSize is kept
+store.settings.$set({ theme: "light" });
+// Result: { theme: "light", fontSize: 14 }
+```
+
+The deep merge is powered by `combine()`, which is also available directly:
+
+```ts
+import { combine } from "@ibnlanre/portal";
+
+const merged = combine({ a: 1 }, { b: 2 }); // { a: 1, b: 2 }
+```
+
+## Schema defaults and `$set`
+
+If a schema field has a default (Zod `.default()` or Valibot `v.optional(x, default)`),
+and the current state already holds a value for that field, the existing value
+takes precedence over the schema default.
+
+```ts
+const store = createStore(
+  z.object({
+    fontSize: z.number().default(14),
+    theme: z.string().default("light"),
+  }),
+  { fontSize: 20, theme: "dark" }
+);
+
+store.$set({ theme: "system" });
+
+// fontSize: 20 is preserved (from initial state), not reset to 14
+expect(store.$get()).toEqual({ fontSize: 20, theme: "system" });
+```
+
+This is because `$set` merges the new value with the current state, and
+`applySchema` only fills defaults for fields that are still missing after the merge.
+
+## Union Schemas
+
+When your schema is a union — like `z.union([z.number(), z.object({...})])` — the return type is always `PrimitiveStore`, even if the initial value is an object.
+
+This is intentional. A union means the value can be _any_ branch at any time. Exposing typed dot-access on a value that could be a number tomorrow would be unsound.
+
+```ts
+const store = createStore(
+  z.union([z.number(), z.object({ count: z.number() })]),
+  { count: 5 }
+);
+
+// store is PrimitiveStore<number | { count: number }>
+
+store.$get(); // { count: 5 }
+store.$set(42); // now a number — valid
+store.$set({ count: 10 }); // now an object — also valid
+```
+
+If you need typed dot-access, the schema must be a standalone `z.object(...)` — not wrapped in a union.

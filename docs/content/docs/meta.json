@@ -1,0 +1,23 @@
+{
+  "pages": [
+    "---Getting Started---",
+    "index",
+    "---Core---",
+    "core/store-api",
+    "core/reading-state",
+    "core/setting-state",
+    "core/subscriptions",
+    "---Advanced---",
+    "advanced/actions",
+    "advanced/combine",
+    "advanced/context-store",
+    "advanced/hooks",
+    "advanced/react-integration",
+    "---Guides---",
+    "guides/persistence",
+    "guides/cookie-storage",
+    "---Reference---",
+    "faq"
+  ],
+  "title": "Docs"
+}

@@ -51,7 +51,7 @@ export const profileStore = createStore({
     profileStore.profile.$set(undefined);
   },
   profile: initialProfile,
-  updatePreferences: (preferences: Partial<UserProfile["preferences"]>) => {
+  updatePreferences: (preferences: Partial<Preferences>) => {
     const currentProfile = profileStore.profile.$get();
     if (!currentProfile) return;
 
@@ -72,4 +72,4 @@ export const profileStore = createStore({
 });
 
 // Subscribe to store changes and auto-persist
-profileStore.profile.$act(setStoredProfile);
+profileStore.profile.$subscribe(setStoredProfile);

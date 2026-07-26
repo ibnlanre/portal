@@ -3,9 +3,6 @@
     "allowJs": false,
     "allowSyntheticDefaultImports": true,
     "checkJs": false,
-    "declaration": true,
-    "declarationMap": true,
-    "emitDeclarationOnly": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
@@ -18,15 +15,11 @@
     "noUncheckedIndexedAccess": false,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "paths": {
-      "@/*": ["./*"],
-    },
     "skipLibCheck": true,
     "strict": true,
     "strictNullChecks": true,
     "target": "es2022",
     "verbatimModuleSyntax": true
   },
-  "exclude": ["node_modules", "dist", "build", "coverage", "examples"],
-  "include": ["cookie-storage/**/*", "create-store/**/*", "**/*.ts", "**/*.tsx", "vitest.config.mts", "vitest.setup.ts", "tsup.config.ts",]
+  "exclude": ["node_modules", "dist", "build", "coverage", "examples"]
 }

@@ -59,4 +59,4 @@ export const todoStore = createStore({
 });
 
 // Subscribe to store changes and auto-persist
-todoStore.todos.$act(setStoredTodos);
+todoStore.todos.$subscribe(setStoredTodos);
