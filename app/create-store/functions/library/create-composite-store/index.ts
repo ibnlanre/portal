@@ -114,14 +114,17 @@ export function createCompositeStore<
     Value extends ResolvePath<State, Path>,
   >(value: Value, path: Path) {
     const keys = splitPath(path);
-    const snapshot = clone(state);
     const pivot = keys.pop()!;
+    const spread: any = { ...state };
 
-    let current: any = snapshot;
-    for (const key of keys) current = current[key];
+    let current = spread;
+    for (const key of keys) {
+      current[key] = { ...current[key] };
+      current = current[key];
+    }
     current[pivot] = value;
 
-    setState(applySchema(snapshot), path);
+    setState(applySchema(spread), path);
   }
 
   function get<

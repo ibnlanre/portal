@@ -2059,6 +2059,80 @@ describe("createCompositeStore", () => {
       });
     });
 
+    describe("$at().$set() immutability", () => {
+      it("should not mutate the original state when updating a leaf property", () => {
+        const store = createCompositeStore(
+          z.object({
+            settings: z.object({
+              notifications: z.boolean(),
+              theme: z.string(),
+            }),
+            user: z.object({ age: z.number(), name: z.string() }),
+          }),
+          {
+            settings: { notifications: true, theme: "light" },
+            user: { age: 30, name: "John" },
+          }
+        );
+
+        const stateBefore = store.$get();
+
+        store.settings.theme.$set("dark");
+
+        expect(stateBefore.settings.theme).toBe("light");
+        expect(store.settings.theme.$get()).toBe("dark");
+      });
+
+      it("should not mutate the original state when updating a nested property", () => {
+        const store = createCompositeStore(
+          z.object({
+            a: z.object({
+              b: z.object({ c: z.number(), d: z.number() }),
+            }),
+          }),
+          {
+            a: { b: { c: 1, d: 2 } },
+          }
+        );
+
+        const stateBefore = store.$get();
+
+        store.a.b.c.$set(10);
+
+        expect(stateBefore.a.b.c).toBe(1);
+        expect(stateBefore.a.b.d).toBe(2);
+        expect(store.a.b.c.$get()).toBe(10);
+        expect(store.a.b.d.$get()).toBe(2);
+      });
+
+      it("should not share references between siblings after an update", () => {
+        const store = createCompositeStore(
+          z.object({
+            items: z.object({
+              left: z.object({ value: z.string() }),
+              right: z.object({ value: z.string() }),
+            }),
+          }),
+          {
+            items: { left: { value: "a" }, right: { value: "b" } },
+          }
+        );
+
+        const leftBefore = store.items.left.$get();
+        const rightBefore = store.items.right.$get();
+
+        store.items.left.value.$set("changed");
+
+        expect(leftBefore.value).toBe("a");
+        expect(store.items.left.value.$get()).toBe("changed");
+
+        expect(rightBefore.value).toBe("b");
+        expect(store.items.right.value.$get()).toBe("b");
+
+        expect(leftBefore).not.toBe(store.items.left.$get());
+      });
+    });
+
     describe("Reference equality checks", () => {
       it("should ensure original state references are not shared with snapshots", () => {
         const originalObject = { shared: { value: "original" } };

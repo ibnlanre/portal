@@ -1,17 +1,16 @@
-import { defineConfig } from "tsup";
+import { defineConfig } from "tsdown";
 
 export default defineConfig({
   clean: true,
-  dts: {
-    resolve: true,
-  },
+  dts: true,
   entry: ["index.ts"],
-  external: ["react", "react-dom"],
   format: ["esm", "cjs"],
   minify: true,
-  minifyWhitespace: true,
   outDir: "dist",
   platform: "browser",
   sourcemap: true,
   treeshake: true,
+  deps: {
+    neverBundle: ["react", "react-dom"],
+  },
 });

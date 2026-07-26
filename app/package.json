@@ -54,7 +54,7 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "tailwindcss": "^4.3.2",
-    "tsup": "^8.5.1",
+    "tsdown": "^0.22.14",
     "valibot": "^1.4.2",
     "vite": "^8.1.4",
     "vite-tsconfig-paths": "^6.1.1",
@@ -62,7 +62,7 @@
     "zod": "^4.4.3"
   },
   "scripts": {
-    "bundle": "tsup --config tsup.config.ts",
+    "bundle": "tsdown --config tsdown.config.ts",
     "build": "pnpm run bundle",
     "check-exports": "attw --pack .",
     "coverage": "vitest run --coverage --typecheck",
@@ -87,6 +87,6 @@
     "test": "vitest run",
     "test:ci": "vitest run --coverage --typecheck",
     "typecheck": "tsc --pretty --noEmit",
-    "watch": "tsup --config tsup.config.ts --watch"
+    "watch": "tsdown --config tsdown.config.ts --watch"
   }
 }
