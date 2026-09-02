@@ -116,6 +116,22 @@ describe("createStore - Type Tests", () => {
         }>
       >();
     });
+
+    it("should infer function properties from initialState without schema entries", () => {
+      const store = createStore(z.object({ count: z.number() }), {
+        count: 0,
+        increment: () => {},
+        reset: () => {},
+      });
+
+      expectTypeOf(store).toExtend<
+        CompositeStore<{
+          count: number;
+          increment: () => void;
+          reset: () => void;
+        }>
+      >();
+    });
   });
 
   describe("Edge cases and explicit typing", () => {

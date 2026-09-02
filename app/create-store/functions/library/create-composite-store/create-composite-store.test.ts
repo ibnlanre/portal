@@ -201,6 +201,51 @@ describe("createCompositeStore", () => {
       expect((store.asyncFn as any).$set).toBeUndefined();
     });
 
+    it("should preserve functions not described by the schema", () => {
+      const increment = () => {};
+      const reset = () => {};
+
+      const store = createCompositeStore(z.object({ count: z.number() }), {
+        count: 0,
+        increment,
+        reset,
+      });
+
+      expect(store.increment).toBe(increment);
+      expect(store.reset).toBe(reset);
+      expect(store.increment()).toBeUndefined();
+      expect(store.$get()).toEqual({ count: 0, increment, reset });
+    });
+
+    it("should keep functions intact across schema validation and $set", () => {
+      const increment = () => {};
+      const store = createCompositeStore(z.object({ count: z.number() }), {
+        count: 0,
+        increment,
+      });
+
+      expect(store.increment).toBe(increment);
+
+      store.count.$set(5);
+      expect(store.$get()).toEqual({ count: 5, increment });
+      expect(store.increment).toBe(increment);
+    });
+
+    it("should preserve nested functions not described by the schema", () => {
+      const load = () => {};
+      const store = createCompositeStore(
+        z.object({
+          user: z.object({ name: z.string() }),
+        }),
+        {
+          user: { name: "John", load },
+        }
+      );
+
+      expect(store.user.load).toBe(load);
+      expect(store.$get()).toEqual({ user: { name: "John", load } });
+    });
+
     it("should handle circular references without infinite recursion", () => {
       const obj: any = { name: "circular" };
       obj.self = obj;

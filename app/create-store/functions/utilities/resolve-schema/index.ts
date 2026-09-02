@@ -2,6 +2,8 @@ import type { StandardSchemaV1 } from "@standard-schema/spec";
 
 import type { InferSchema } from "@/create-store/types/infer-schema";
 
+import { isSchema } from "@/create-store/functions/assertions/is-schema";
+
 /**
  * Derives the initial state from a Standard Schema by attempting validation
  * with sensible seed inputs.
@@ -23,6 +25,12 @@ import type { InferSchema } from "@/create-store/types/infer-schema";
 export function resolveSchema<Schema extends StandardSchemaV1>(
   schema: Schema
 ): InferSchema<Schema> | Promise<InferSchema<Schema>> {
+  if (!isSchema(schema)) {
+    throw new Error(
+      "resolveSchema: schema must implement the Standard Schema V1 protocol"
+    );
+  }
+
   for (const seed of [{}, undefined]) {
     const result = schema["~standard"].validate(seed);
 

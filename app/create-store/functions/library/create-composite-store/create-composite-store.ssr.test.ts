@@ -6,7 +6,7 @@ import { createCompositeStore } from "./index";
 describe("createCompositeStore - Server-Side Rendering (Node Environment)", () => {
   it("should confirm we're running in Node environment (SSR)", () => {
     expect(typeof window).toBe("undefined");
-    expect(typeof global).toBe("object");
+    expect(typeof globalThis).toBe("object");
     expect(typeof process).toBe("object");
   });
 
@@ -283,7 +283,6 @@ describe("createCompositeStore - Server-Side Rendering (Node Environment)", () =
     );
 
     const stateBefore = store.$get();
-
     store.$set({ user: { age: 31 } });
 
     const stateAfter = store.$get();

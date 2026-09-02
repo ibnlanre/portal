@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import { z } from "zod";
 
 import { createStore } from "./index";
@@ -66,6 +66,42 @@ describe("createStore - Integration tests (real schemas, no mocks)", () => {
     it("valibot primitive schema with explicit initialState produces working primitive store", () => {
       const store = createStore(v.number(), 7);
       expect(store.$get()).toBe(7);
+    });
+  });
+
+  describe("Functions without schema entries", () => {
+    it("creates a composite store with methods from initialState", () => {
+      const increment = () => {};
+
+      const store = createStore(z.object({ count: z.number() }), {
+        count: 0,
+        increment,
+      });
+
+      expect(store.increment).toBe(increment);
+      expect(store.count.$get()).toBe(0);
+      expect(store.$get()).toEqual({ count: 0, increment });
+    });
+
+    it("keeps methods intact across $set", () => {
+      const increment = () => {};
+      const store = createStore(z.object({ count: z.number() }), {
+        count: 0,
+        increment,
+      });
+
+      store.count.$set(5);
+      expect(store.increment).toBe(increment);
+      expect(store.$get()).toEqual({ count: 5, increment });
+    });
+
+    it("infers method types without z.custom", () => {
+      const store = createStore(z.object({ count: z.number() }), {
+        count: 0,
+        increment: () => {},
+      });
+
+      expectTypeOf(store.increment).toEqualTypeOf<() => void>();
     });
   });
 

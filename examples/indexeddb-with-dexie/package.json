@@ -8,7 +8,8 @@
   "dependencies": {
     "@ibnlanre/portal": "workspace:*",
     "dexie": "^4.4.4",
-    "react-router-dom": "^7.18.1"
+    "react-router-dom": "^7.18.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.2",

@@ -1,23 +1,29 @@
+import { z } from "zod";
+
 import { createStore } from "@ibnlanre/portal";
 
 import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
 
-export interface UserProfile {
-  avatar?: string;
-  email: string;
-  lastLogin: Date;
-  name: string;
-  preferences: Preferences;
-}
+export const preferencesSchema = z.object({
+  notifications: z.boolean(),
+  theme: z.enum(["dark", "light"]),
+});
 
-interface Preferences {
-  notifications: boolean;
-  theme: "dark" | "light";
-}
+export type Preferences = z.infer<typeof preferencesSchema>;
 
-interface StoredUserProfile extends Omit<UserProfile, "lastLogin"> {
+export const userProfileSchema = z.object({
+  avatar: z.string().optional(),
+  email: z.string(),
+  lastLogin: z.date(),
+  name: z.string(),
+  preferences: preferencesSchema,
+});
+
+export type UserProfile = z.infer<typeof userProfileSchema>;
+
+type StoredUserProfile = Omit<UserProfile, "lastLogin"> & {
   lastLogin: string; // Store as ISO string for IndexedDB
-}
+};
 
 const [getStoredProfile, setStoredProfile] = createIndexedDBAdapter<
   UserProfile,
@@ -40,18 +46,21 @@ const [getStoredProfile, setStoredProfile] = createIndexedDBAdapter<
 // Load initial state from IndexedDB
 const initialProfile = await getStoredProfile();
 
-export const profileStore = createStore({
-  login: (profile: UserProfile) => {
+export const profileStore = {
+  profile: createStore(userProfileSchema, initialProfile),
+
+  login(profile: UserProfile) {
     const loginProfile = { ...profile, lastLogin: new Date() };
     profileStore.profile.$set(loginProfile);
   },
-  logout: () => {
+
+  logout() {
     console.log("Logging out...");
     // Clear profile (from store, and IndexedDB)
-    profileStore.profile.$set(undefined);
+    profileStore.profile.$set(undefined as unknown as UserProfile);
   },
-  profile: initialProfile,
-  updatePreferences: (preferences: Partial<Preferences>) => {
+
+  updatePreferences(preferences: Partial<Preferences>) {
     const currentProfile = profileStore.profile.$get();
     if (!currentProfile) return;
 
@@ -62,14 +71,15 @@ export const profileStore = createStore({
 
     profileStore.profile.$set(updatedProfile);
   },
-  updateProfile: (updates: Partial<UserProfile>) => {
+
+  updateProfile(updates: Partial<UserProfile>) {
     const currentProfile = profileStore.profile.$get();
     if (!currentProfile) return;
 
     const updatedProfile = { ...currentProfile, ...updates };
     profileStore.profile.$set(updatedProfile);
   },
-});
+};
 
 // Subscribe to store changes and auto-persist
 profileStore.profile.$subscribe(setStoredProfile);

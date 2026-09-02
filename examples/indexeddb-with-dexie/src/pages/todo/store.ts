@@ -1,12 +1,18 @@
+import { z } from "zod";
+
 import { createStore } from "@ibnlanre/portal";
 
 import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
 
-export interface Todo {
-  completed: boolean;
-  id: string;
-  text: string;
-}
+export const todoSchema = z.object({
+  completed: z.boolean(),
+  id: z.string(),
+  text: z.string(),
+});
+
+export type Todo = z.infer<typeof todoSchema>;
+
+const todoListSchema = z.array(todoSchema);
 
 const [getStoredTodos, setStoredTodos] =
   createIndexedDBAdapter<Todo[]>("todos");
@@ -14,49 +20,45 @@ const [getStoredTodos, setStoredTodos] =
 // Load initial state from IndexedDB
 const initialTodos = await getStoredTodos([]);
 
-// Create the store with initial state
-export const todoStore = createStore({
-  addTodo: () => {
+export const todoStore = {
+  todos: createStore(todoListSchema, initialTodos),
+  newTodoText: createStore(z.string(), ""),
+
+  addTodo() {
     const newTodo: Todo = {
       completed: false,
       id: crypto.randomUUID(),
       text: todoStore.newTodoText.$get(),
     };
 
-    const currentTodos = todoStore.todos.$get();
-    const updatedTodos = [...currentTodos, newTodo];
-
-    todoStore.todos.$set(updatedTodos);
-  },
-  clearCompleted: () => {
-    const currentTodos = todoStore.todos.$get();
-    const updatedTodos = currentTodos.filter((todo) => !todo.completed);
-
-    todoStore.todos.$set(updatedTodos);
-  },
-  clearNewTodoText: () => {
+    todoStore.todos.$set((prev) => [...prev, newTodo]);
     todoStore.newTodoText.$set("");
   },
-  newTodoText: "",
-  removeTodo: (id: string) => {
-    const currentTodos = todoStore.todos.$get();
-    const updatedTodos = currentTodos.filter((todo) => todo.id !== id);
 
-    todoStore.todos.$set(updatedTodos);
+  clearCompleted() {
+    todoStore.todos.$set((prev) => prev.filter((todo) => !todo.completed));
   },
-  setNewTodoText: (text: string) => {
+
+  clearNewTodoText() {
+    todoStore.newTodoText.$set("");
+  },
+
+  removeTodo(id: string) {
+    todoStore.todos.$set((prev) => prev.filter((todo) => todo.id !== id));
+  },
+
+  setNewTodoText(text: string) {
     todoStore.newTodoText.$set(text);
   },
-  todos: initialTodos,
-  toggleTodo: (id: string) => {
-    const currentTodos = todoStore.todos.$get();
-    const updatedTodos = currentTodos.map((todo) =>
-      todo.id === id ? { ...todo, completed: !todo.completed } : todo
-    );
 
-    todoStore.todos.$set(updatedTodos);
+  toggleTodo(id: string) {
+    todoStore.todos.$set((prev) =>
+      prev.map((todo) =>
+        todo.id === id ? { ...todo, completed: !todo.completed } : todo
+      )
+    );
   },
-});
+};
 
 // Subscribe to store changes and auto-persist
 todoStore.todos.$subscribe(setStoredTodos);

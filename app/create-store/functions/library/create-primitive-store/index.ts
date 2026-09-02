@@ -12,8 +12,10 @@ import { useSyncExternalStore } from "react";
 
 import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
+import { isSchema } from "@/create-store/functions/assertions/is-schema";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { clone } from "@/create-store/functions/helpers/clone";
+import { mergeFunctions } from "@/create-store/functions/helpers/merge-functions";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { useSync } from "@/create-store/functions/hooks/use-sync";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
@@ -23,6 +25,12 @@ export function createPrimitiveStore<
   State extends InferSchema<Schema>,
 >(schema: Schema, initialState: NoInfer<State>): PrimitiveStore<State> {
   function applySchema(value: State): State {
+    if (!isSchema(schema)) {
+      throw new Error(
+        "createPrimitiveStore: schema must implement the Standard Schema V1 protocol"
+      );
+    }
+
     const validation = schema["~standard"].validate(value);
     if (validation instanceof Promise) return value;
     if (validation.issues) {
@@ -30,7 +38,7 @@ export function createPrimitiveStore<
         cause: validation.issues,
       });
     }
-    return validation.value as State;
+    return mergeFunctions(validation.value as State, value);
   }
 
   let state = applySchema(initialState);

@@ -3,9 +3,11 @@ import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { Dictionary } from "@/create-store/types/dictionary";
 import type { InferSchema } from "@/create-store/types/infer-schema";
+import type { OnlyFunctions } from "@/create-store/types/only-functions";
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
 
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
+import { isSchema } from "@/create-store/functions/assertions/is-schema";
 import { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
 import { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
 
@@ -29,8 +31,11 @@ import { createPrimitiveStore } from "@/create-store/functions/library/create-pr
  */
 export function createStore<
   Schema extends StandardSchemaV1<Dictionary>,
-  State extends InferSchema<Schema>,
->(schema: Schema, initialState: NoInfer<State>): CompositeStore<State>;
+  Initial extends Dictionary & InferSchema<Schema>,
+>(
+  schema: Schema,
+  initialState: Initial
+): CompositeStore<InferSchema<Schema> & OnlyFunctions<Initial>>;
 /**
  * Creates a primitive store from a schema whose output is not a plain object.
  * The store holds a single value accessible and updatable via `$get`, `$set`,
@@ -62,6 +67,12 @@ export function createStore<
   Schema extends StandardSchemaV1,
   State extends InferSchema<Schema>,
 >(schema: Schema, initialState: NoInfer<State>) {
+  if (!isSchema(schema)) {
+    throw new Error(
+      "createStore: schema must implement the Standard Schema V1 protocol"
+    );
+  }
+
   if (isDictionary(initialState))
     return createCompositeStore(
       schema as StandardSchemaV1<typeof initialState>,

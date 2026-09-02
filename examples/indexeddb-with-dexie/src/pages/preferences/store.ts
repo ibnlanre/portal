@@ -1,21 +1,25 @@
+import { z } from "zod";
+
 import { createStore } from "@ibnlanre/portal";
 
 import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
 
-export type AppPreferences = {
-  autoSave: boolean;
-  language: string;
-  layout: {
-    compactMode: boolean;
-    sidebar: boolean;
-  };
-  notifications: {
-    desktop: boolean;
-    email: boolean;
-    push: boolean;
-  };
-  theme: "dark" | "light" | "system";
-};
+export const preferencesSchema = z.object({
+  autoSave: z.boolean(),
+  language: z.string(),
+  layout: z.object({
+    compactMode: z.boolean(),
+    sidebar: z.boolean(),
+  }),
+  notifications: z.object({
+    desktop: z.boolean(),
+    email: z.boolean(),
+    push: z.boolean(),
+  }),
+  theme: z.enum(["dark", "light", "system"]),
+});
+
+export type AppPreferences = z.infer<typeof preferencesSchema>;
 
 export const initialValue: AppPreferences = {
   autoSave: true,
@@ -36,7 +40,7 @@ const [getStoredValue, setStoredValue] =
   createIndexedDBAdapter<AppPreferences>("appPreferences");
 
 // Initialize with stored value or fallback to initial value
-export const preferencesStore = createStore(initialValue);
+export const preferencesStore = createStore(preferencesSchema, initialValue);
 
 // Load from IndexedDB when store is created
 getStoredValue(initialValue).then(preferencesStore.$set);

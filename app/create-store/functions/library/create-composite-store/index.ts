@@ -20,10 +20,12 @@ import { useCallback, useSyncExternalStore } from "react";
 import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
+import { isSchema } from "@/create-store/functions/assertions/is-schema";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { clone } from "@/create-store/functions/helpers/clone";
 import { createPathComponents } from "@/create-store/functions/helpers/create-path-components";
 import { createPaths } from "@/create-store/functions/helpers/create-paths";
+import { mergeFunctions } from "@/create-store/functions/helpers/merge-functions";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { splitPath } from "@/create-store/functions/helpers/split-path";
 import { useSync } from "@/create-store/functions/hooks/use-sync";
@@ -38,6 +40,12 @@ export function createCompositeStore<
   const originalPaths = new Set<string>();
 
   function applySchema(value: State): State {
+    if (!isSchema(schema)) {
+      throw new Error(
+        "createCompositeStore: schema must implement the Standard Schema V1 protocol"
+      );
+    }
+
     const validation = schema["~standard"].validate(value);
     if (validation instanceof Promise) return value;
     if (validation.issues) {
@@ -45,7 +53,7 @@ export function createCompositeStore<
         cause: validation.issues,
       });
     }
-    return validation.value;
+    return mergeFunctions(validation.value, value);
   }
 
   function trackOriginalPaths(
