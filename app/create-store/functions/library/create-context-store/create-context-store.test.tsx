@@ -9,7 +9,6 @@ import {
   it,
   vi,
 } from "vitest";
-import { z } from "zod";
 
 import { combine } from "@/create-store/functions/helpers/combine";
 import { useAsync } from "@/create-store/functions/hooks/use-async";
@@ -23,8 +22,7 @@ describe("createContextStore", () => {
   describe("Basic functionality", () => {
     it("should create a provider and useStore hook", () => {
       const [Provider, useStore] = createContextStore(
-        (context: { value: string }) =>
-          createCompositeStore(z.custom<typeof context>(), context)
+        (context: { value: string }) => createCompositeStore(context)
       );
 
       expect(Provider).toBeDefined();
@@ -38,7 +36,7 @@ describe("createContextStore", () => {
       vi.spyOn(console, "error").mockImplementation(() => {});
 
       const [, useStore] = createContextStore((context: { value: string }) => {
-        return createPrimitiveStore(z.string(), context.value);
+        return createPrimitiveStore(context.value);
       });
 
       function TestComponent() {
@@ -57,8 +55,7 @@ describe("createContextStore", () => {
 
     it("should provide store through context when wrapped in provider", () => {
       const [Provider, useStore] = createContextStore(
-        (context: { value: string }) =>
-          createPrimitiveStore(z.string(), context.value)
+        (context: { value: string }) => createPrimitiveStore(context.value)
       );
 
       function TestComponent() {
@@ -80,8 +77,7 @@ describe("createContextStore", () => {
   describe("Store initialization with context", () => {
     it("should initialize store with context value", () => {
       const [Provider, useStore] = createContextStore(
-        (context: { count: number }) =>
-          createPrimitiveStore(z.number(), context.count)
+        (context: { count: number }) => createPrimitiveStore(context.count)
       );
 
       function TestComponent() {
@@ -101,8 +97,7 @@ describe("createContextStore", () => {
 
     it("should reinitialize store when context value changes", () => {
       const [Provider, useStore] = createContextStore(
-        (context: { count: number }) =>
-          createPrimitiveStore(z.number(), context.count)
+        (context: { count: number }) => createPrimitiveStore(context.count)
       );
 
       function TestComponent() {
@@ -149,10 +144,7 @@ describe("createContextStore", () => {
             { count: context.initialCount },
             actions
           );
-          const store = createCompositeStore(
-            z.custom<typeof initialState>(),
-            initialState
-          );
+          const store = createCompositeStore(initialState);
           return store;
         }
       );
@@ -220,8 +212,7 @@ describe("createContextStore", () => {
       };
 
       const [UserProvider, useUserStore] = createContextStore(
-        (context: UserContext) =>
-          createCompositeStore(z.custom<typeof context>(), context)
+        (context: UserContext) => createCompositeStore(context)
       );
 
       function UserProfile() {
@@ -267,12 +258,10 @@ describe("createContextStore", () => {
   describe("Multiple providers", () => {
     it("should support multiple independent providers", () => {
       const [ValueProvider, useValueStore] = createContextStore(
-        (context: { value: string }) =>
-          createPrimitiveStore(z.string(), context.value)
+        (context: { value: string }) => createPrimitiveStore(context.value)
       );
       const [CountProvider, useCountStore] = createContextStore(
-        (context: { count: number }) =>
-          createPrimitiveStore(z.number(), context.count)
+        (context: { count: number }) => createPrimitiveStore(context.count)
       );
 
       function TestComponent() {
@@ -304,8 +293,7 @@ describe("createContextStore", () => {
 
     it("should support nested providers of the same type", () => {
       const [LevelProvider, useLevelStore] = createContextStore(
-        (context: { level: number }) =>
-          createPrimitiveStore(z.number(), context.level)
+        (context: { level: number }) => createPrimitiveStore(context.level)
       );
 
       function InnerComponent() {
@@ -343,7 +331,7 @@ describe("createContextStore", () => {
   describe("Hook stability", () => {
     it("should call the hook on every render", () => {
       const initializerMock = vi.fn((context: { value: string }) => {
-        return createPrimitiveStore(z.string(), context.value);
+        return createPrimitiveStore(context.value);
       });
       const [Provider, useStore] = createContextStore(initializerMock);
 
@@ -402,10 +390,7 @@ describe("createContextStore", () => {
           };
 
           const initialState = combine(context, actions);
-          const store = createCompositeStore(
-            z.custom<typeof initialState>(),
-            initialState
-          );
+          const store = createCompositeStore(initialState);
           return store;
         }
       );
@@ -459,7 +444,7 @@ describe("createContextStore", () => {
     it("should handle undefined context values", () => {
       const [Provider, useStore] = createContextStore(
         (context: { value?: string }) =>
-          createPrimitiveStore(z.string().optional(), context.value)
+          createPrimitiveStore<string | undefined>(context.value)
       );
 
       function TestComponent() {
@@ -480,7 +465,7 @@ describe("createContextStore", () => {
 
     it("should handle empty object context", () => {
       const [Provider, useStore] = createContextStore((context: {}) => {
-        return createCompositeStore(z.custom<typeof context>(), context);
+        return createCompositeStore(context);
       });
 
       function TestComponent() {
@@ -528,10 +513,7 @@ describe("createContextStore", () => {
           };
 
           const initialState = combine({ baseUrl: context.baseUrl }, actions);
-          return createCompositeStore(
-            z.custom<typeof initialState>(),
-            initialState
-          );
+          return createCompositeStore(initialState);
         }
       );
 
@@ -583,10 +565,7 @@ describe("createContextStore", () => {
           };
 
           const initialState = combine(context, actions);
-          return createCompositeStore(
-            z.custom<typeof initialState>(),
-            initialState
-          );
+          return createCompositeStore(initialState);
         }
       );
 
@@ -655,10 +634,7 @@ describe("createContextStore", () => {
           };
 
           const initialState = combine(context, actions);
-          return createCompositeStore(
-            z.custom<typeof initialState>(),
-            initialState
-          );
+          return createCompositeStore(initialState);
         }
       );
 
@@ -725,10 +701,7 @@ describe("createContextStore", () => {
             { searchTerm: context.searchTerm },
             actions
           );
-          return createCompositeStore(
-            z.custom<typeof initialState>(),
-            initialState
-          );
+          return createCompositeStore(initialState);
         }
       );
 

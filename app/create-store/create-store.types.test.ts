@@ -3,72 +3,60 @@ import type { PrimitiveStore } from "@/create-store/types/primitive-store";
 
 import { expectTypeOf } from "vitest";
 import { describe, it } from "vitest";
-import { z } from "zod";
 
 import { createStore } from "./index";
 
-import * as v from "valibot";
-
 describe("createStore - Type Tests", () => {
-  describe("Primitive store overloads", () => {
-    it("should return PrimitiveStore<number> for number schemas", () => {
-      const store = createStore(z.number(), 0);
+  describe("Primitive store inference", () => {
+    it("should return PrimitiveStore<number> for a number value", () => {
+      const store = createStore(0);
       expectTypeOf(store).toExtend<PrimitiveStore<number>>();
     });
 
-    it("should return PrimitiveStore<string> for string schemas", () => {
-      const store = createStore(z.string(), "");
+    it("should return PrimitiveStore<string> for a string value", () => {
+      const store = createStore("");
       expectTypeOf(store).toExtend<PrimitiveStore<string>>();
     });
 
-    it("should return PrimitiveStore<boolean> for boolean schemas", () => {
-      const store = createStore(z.boolean(), false);
+    it("should return PrimitiveStore<boolean> for a boolean value", () => {
+      const store = createStore(false);
       expectTypeOf(store).toExtend<PrimitiveStore<boolean>>();
     });
 
-    it("should return PrimitiveStore<null> for null schemas", () => {
-      const store = createStore(z.null(), null);
+    it("should return PrimitiveStore<null> for null", () => {
+      const store = createStore(null);
       expectTypeOf(store).toExtend<PrimitiveStore<null>>();
     });
 
-    it("should return PrimitiveStore<Date> for Date schemas", () => {
-      const store = createStore(z.date(), new Date(0));
+    it("should return PrimitiveStore<Date> for a Date value", () => {
+      const store = createStore(new Date(0));
       expectTypeOf(store).toExtend<PrimitiveStore<Date>>();
     });
 
-    it("should return PrimitiveStore<RegExp> for RegExp schemas", () => {
-      const store = createStore(z.instanceof(RegExp), /./u);
+    it("should return PrimitiveStore<RegExp> for a RegExp value", () => {
+      const store = createStore(/./u);
       expectTypeOf(store).toExtend<PrimitiveStore<RegExp>>();
     });
 
-    it("should return PrimitiveStore<number[]> for array schemas", () => {
-      const store = createStore(z.array(z.number()), []);
+    it("should return PrimitiveStore<number[]> for an array value", () => {
+      const store = createStore<number[]>([1, 2, 3]);
       expectTypeOf(store.$get()).toEqualTypeOf<number[]>();
     });
 
-    it("should return PrimitiveStore<Set<string>> for Set schemas", () => {
-      const store = createStore(z.set(z.string()), new Set<string>());
+    it("should return PrimitiveStore<Set<string>> for a Set value", () => {
+      const store = createStore(new Set<string>());
       expectTypeOf(store.$get()).toEqualTypeOf<Set<string>>();
     });
 
-    it("should return PrimitiveStore<Map<string, number>> for Map schemas", () => {
-      const store = createStore(
-        z.map(z.string(), z.number()),
-        new Map<string, number>()
-      );
+    it("should return PrimitiveStore<Map<string, number>> for a Map value", () => {
+      const store = createStore(new Map<string, number>());
       expectTypeOf(store.$get()).toEqualTypeOf<Map<string, number>>();
     });
   });
 
-  describe("Composite store overloads", () => {
-    it("should return CompositeStore for plain object schemas", () => {
-      const store = createStore(
-        z.object({ count: z.number(), name: z.string() }),
-        {
-          count: 0,
-          name: "",
-        }
-      );
+  describe("Composite store inference", () => {
+    it("should return CompositeStore for a plain object value", () => {
+      const store = createStore({ count: 0, name: "" });
 
       expectTypeOf(store).toExtend<
         CompositeStore<{
@@ -78,17 +66,11 @@ describe("createStore - Type Tests", () => {
       >();
     });
 
-    it("should return CompositeStore for nested object schemas", () => {
-      const store = createStore(
-        z.object({
-          settings: z.object({ notifications: z.boolean(), theme: z.string() }),
-          user: z.object({ age: z.number(), name: z.string() }),
-        }),
-        {
-          settings: { notifications: false, theme: "" },
-          user: { age: 0, name: "" },
-        }
-      );
+    it("should return CompositeStore for a nested object value", () => {
+      const store = createStore({
+        settings: { notifications: false, theme: "" },
+        user: { age: 0, name: "" },
+      });
 
       expectTypeOf(store).toExtend<
         CompositeStore<{
@@ -99,14 +81,11 @@ describe("createStore - Type Tests", () => {
     });
 
     it("should return CompositeStore for objects with function properties", () => {
-      const store = createStore(
-        z.object({
-          count: z.number(),
-          decrement: z.custom<() => void>(),
-          increment: z.custom<() => void>(),
-        }),
-        { count: 0, decrement: () => {}, increment: () => {} }
-      );
+      const store = createStore({
+        count: 0,
+        decrement: () => {},
+        increment: () => {},
+      });
 
       expectTypeOf(store).toExtend<
         CompositeStore<{
@@ -117,57 +96,48 @@ describe("createStore - Type Tests", () => {
       >();
     });
 
-    it("should infer function properties from initialState without schema entries", () => {
-      const store = createStore(z.object({ count: z.number() }), {
+    it("should expose function properties as methods", () => {
+      const store = createStore({
         count: 0,
         increment: () => {},
         reset: () => {},
       });
 
-      expectTypeOf(store).toExtend<
-        CompositeStore<{
-          count: number;
-          increment: () => void;
-          reset: () => void;
-        }>
-      >();
+      expectTypeOf(store.increment).toEqualTypeOf<() => void>();
+      expectTypeOf(store.reset).toEqualTypeOf<() => void>();
     });
   });
 
   describe("Edge cases and explicit typing", () => {
-    it("should handle union types", () => {
-      const store = createStore(z.union([z.number(), z.string()]), 0);
+    it("should support explicit primitive state types", () => {
+      const store = createStore<number | string>(0);
       expectTypeOf(store.$get()).toEqualTypeOf<number | string>();
     });
 
-    it("should handle optional properties in object schemas", () => {
-      const store = createStore(
-        z.object({
-          optional: z.union([z.string(), z.undefined()]),
-          required: z.string(),
-        }),
-        { optional: undefined, required: "" }
-      );
+    it("should support explicit object state types", () => {
+      const store = createStore<{
+        optional: string | undefined;
+        required: string;
+      }>({
+        optional: undefined,
+        required: "",
+      });
       expectTypeOf(store.$get()).toEqualTypeOf<{
         optional: string | undefined;
         required: string;
       }>();
     });
 
-    it("should handle generic object schemas", () => {
+    it("should preserve generic object shape", () => {
       interface GenericStore<T> {
         value: T;
       }
 
-      const stringStore = createStore(z.object({ value: z.string() }), {
-        value: "",
-      });
+      const stringStore = createStore({ value: "" });
       expectTypeOf(stringStore.$get()).toExtend<GenericStore<string>>();
       expectTypeOf(stringStore.$get().value).toExtend<string>();
 
-      const numberStore = createStore(z.object({ value: z.number() }), {
-        value: 0,
-      });
+      const numberStore = createStore({ value: 0 });
       expectTypeOf(numberStore.$get()).toExtend<GenericStore<number>>();
       expectTypeOf(numberStore.$get().value).toExtend<number>();
     });
@@ -175,7 +145,7 @@ describe("createStore - Type Tests", () => {
 
   describe("Store accessor types", () => {
     it("should have correct accessor types for primitive stores", () => {
-      const store = createStore(z.number(), 0);
+      const store = createStore(0);
 
       expectTypeOf(store.$get).toExtend<
         <Value = number>(
@@ -193,10 +163,7 @@ describe("createStore - Type Tests", () => {
     });
 
     it("should have correct accessor types for composite stores", () => {
-      const store = createStore(
-        z.object({ count: z.number(), name: z.string() }),
-        { count: 0, name: "" }
-      );
+      const store = createStore({ count: 0, name: "" });
 
       expectTypeOf(store.count).toExtend<{
         $get: <Value = number>(
@@ -222,76 +189,41 @@ describe("createStore - Type Tests", () => {
     });
   });
 
-  describe("Cross-library compatibility (Valibot)", () => {
-    it("should work with valibot string schema", () => {
-      const store = createStore(v.string(), "");
-      expectTypeOf(store).toExtend<PrimitiveStore<string>>();
-    });
-
-    it("should work with valibot number schema", () => {
-      const store = createStore(v.number(), 0);
-      expectTypeOf(store).toExtend<PrimitiveStore<number>>();
-    });
-
-    it("should work with valibot object schema", () => {
-      const store = createStore(
-        v.object({ count: v.number(), label: v.string() }),
-        { count: 0, label: "" }
-      );
-      expectTypeOf(store).toExtend<
-        CompositeStore<{ count: number; label: string }>
-      >();
-    });
-  });
-
   describe("Real-world edge cases", () => {
-    it("record schema produces CompositeStore since the output extends Dictionary", () => {
-      const store = createStore(z.record(z.string(), z.number()), {});
+    it("record-shaped object produces a CompositeStore", () => {
+      const store = createStore<Record<string, number>>({});
       expectTypeOf(store.$get()).toEqualTypeOf<Record<string, number>>();
     });
 
-    it("array schema produces PrimitiveStore since arrays are not plain objects", () => {
-      const store = createStore(z.array(z.number()), []);
+    it("array value produces a PrimitiveStore since arrays are not plain objects", () => {
+      const store = createStore<number[]>([1, 2, 3]);
       expectTypeOf(store.$get()).toEqualTypeOf<number[]>();
     });
 
-    it("union of object and primitive produces PrimitiveStore since the union does not extend Dictionary", () => {
-      const store = createStore(
-        z.union([z.object({ a: z.number() }), z.number()]),
-        0
-      );
+    it("explicit union state types produce a PrimitiveStore", () => {
+      const store = createStore<number | { a: number }>(0);
       expectTypeOf(store.$get()).toEqualTypeOf<number | { a: number }>();
     });
 
-    it("optional object schema produces PrimitiveStore since undefined breaks the Dictionary constraint", () => {
-      const store = createStore(
-        z.optional(z.object({ value: z.number() })),
-        undefined
-      );
-      expectTypeOf(store.$get()).toEqualTypeOf<undefined | { value: number }>();
-    });
-
-    it("object schema types as CompositeStore based on InferSchema", () => {
-      const store = createStore(z.object({ value: z.number() }), { value: 0 });
+    it("object value types as a CompositeStore", () => {
+      const store = createStore({ value: 0 });
       expectTypeOf(store).toExtend<CompositeStore<{ value: number }>>();
     });
   });
 
-  describe("Explicit initialState overload", () => {
-    it("object schema with explicit dictionary initialState produces CompositeStore", () => {
-      const store = createStore(z.object({ value: z.number() }), { value: 0 });
+  describe("Dispatch overloads", () => {
+    it("object value produces CompositeStore", () => {
+      const store = createStore({ value: 0 });
       expectTypeOf(store).toExtend<CompositeStore<{ value: number }>>();
     });
 
-    it("primitive schema with explicit initialState produces PrimitiveStore", () => {
-      const store = createStore(z.number(), 42);
+    it("primitive value produces PrimitiveStore", () => {
+      const store = createStore(42);
       expectTypeOf(store).toExtend<PrimitiveStore<number>>();
     });
 
-    it("explicit initialState overload is synchronous", () => {
-      // When initialState is provided, schema resolution is bypassed entirely —
-      // the return is always a store, never a Promise.
-      const store = createStore(z.object({ value: z.number() }), { value: 0 });
+    it("return is always a store, never a Promise", () => {
+      const store = createStore({ value: 0 });
       expectTypeOf(store).not.toMatchTypeOf<Promise<unknown>>();
     });
   });

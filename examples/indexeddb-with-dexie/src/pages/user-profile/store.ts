@@ -47,7 +47,7 @@ const [getStoredProfile, setStoredProfile] = createIndexedDBAdapter<
 const initialProfile = await getStoredProfile();
 
 export const profileStore = {
-  profile: createStore(userProfileSchema, initialProfile),
+  profile: createStore(initialProfile),
 
   login(profile: UserProfile) {
     const loginProfile = { ...profile, lastLogin: new Date() };

@@ -5,8 +5,33 @@ import type { InferSchema } from "@/create-store/types/infer-schema";
 import { isSchema } from "@/create-store/functions/assertions/is-schema";
 
 /**
- * Derives the initial state from a Standard Schema by attempting validation
- * with sensible seed inputs.
+ * Runs a single schema validation and returns the synchronous result, throwing
+ * when the schema turns out to be async.
+ *
+ * A Standard Schema is uniformly sync or async — if its `validate` returns a
+ * Promise once, it always will. So this guard only needs to inspect the first
+ * call; the throw tells the caller they picked the wrong entry point.
+ *
+ * @param schema The schema to validate against.
+ * @param value  The seed value to validate.
+ * @returns The synchronous validation result.
+ */
+function validateSync<Schema extends StandardSchemaV1>(
+  schema: Schema,
+  value: unknown
+): StandardSchemaV1.Result<InferSchema<Schema>> {
+  const result = schema["~standard"].validate(value);
+  if (result instanceof Promise) {
+    throw new Error(
+      "This schema is async — call resolveSchemaAsync(schema) instead"
+    );
+  }
+  return result as StandardSchemaV1.Result<InferSchema<Schema>>;
+}
+
+/**
+ * Derives a synchronous initial state from a Standard Schema by attempting
+ * validation with sensible seed inputs.
  *
  * For object schemas the seed is `{}`, allowing field-level `.default()` calls
  * in the schema to fill in the initial values. For scalar schemas the seed is
@@ -16,40 +41,55 @@ import { isSchema } from "@/create-store/functions/assertions/is-schema";
  * will have no initial state and behaves as a primitive store regardless of the
  * schema's output shape.
  *
- * If `validate` returns a Promise, the result is propagated so the caller can
- * await the resolved value before constructing the store.
+ * Async schemas are not supported here — use `resolveSchemaAsync` for schemas
+ * whose `validate` returns a Promise.
  *
  * @param schema The schema to parse.
- * @returns The schema's default output, a Promise of it, or `undefined` if none can be derived.
+ * @returns The schema's default output, or `undefined` if none can be derived.
  */
 export function resolveSchema<Schema extends StandardSchemaV1>(
   schema: Schema
-): InferSchema<Schema> | Promise<InferSchema<Schema>> {
+): InferSchema<Schema> | undefined {
   if (!isSchema(schema)) {
     throw new Error(
-      "resolveSchema: schema must implement the Standard Schema V1 protocol"
+      "Expected a value implementing the Standard Schema V1 protocol."
     );
   }
 
-  for (const seed of [{}, undefined]) {
-    const result = schema["~standard"].validate(seed);
-
-    if (result instanceof Promise) {
-      return result.then((resolved) => {
-        if (!("issues" in resolved)) return resolved.value;
-        if (seed === undefined) return undefined;
-
-        // Object seed failed asynchronously — try the scalar seed as fallback.
-        const fallback = schema["~standard"].validate(undefined);
-        if (fallback instanceof Promise) {
-          return fallback.then((r) => ("issues" in r ? undefined : r.value));
-        }
-        return "issues" in fallback ? undefined : fallback.value;
-      });
-    }
-
-    if (!("issues" in result)) return result.value;
+  const objectSeed = validateSync(schema, {});
+  if (!("issues" in objectSeed)) {
+    return objectSeed.value;
   }
 
-  return undefined;
+  const scalarSeed = validateSync(schema, undefined);
+  if ("issues" in scalarSeed) return undefined;
+  return scalarSeed.value;
+}
+
+/**
+ * Derives an initial state from a Standard Schema, handling async schemas
+ * whose `validate` returns a Promise.
+ *
+ * Behaves like `resolveSchema` but awaits schema validation before resolving.
+ *
+ * @param schema The schema to parse.
+ * @returns A Promise of the schema's default output, or `undefined` if none can be derived.
+ */
+export async function resolveSchemaAsync<Schema extends StandardSchemaV1>(
+  schema: Schema
+): Promise<InferSchema<Schema> | undefined> {
+  if (!isSchema(schema)) {
+    throw new Error(
+      "Expected a value implementing the Standard Schema V1 protocol."
+    );
+  }
+
+  const objectSeed = await schema["~standard"].validate({});
+  if (!("issues" in objectSeed)) {
+    return objectSeed.value;
+  }
+
+  const scalarSeed = await schema["~standard"].validate(undefined);
+  if ("issues" in scalarSeed) return undefined;
+  return scalarSeed.value;
 }

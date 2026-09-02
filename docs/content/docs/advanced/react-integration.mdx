@@ -8,10 +8,9 @@ icon: Code
 the component whenever the selected value changes.
 
 ```tsx
-import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 
-const store = createStore(z.object({ count: z.number() }), { count: 0 });
+const store = createStore({ count: 0 });
 
 function Counter() {
   const [count, setCount] = store.count.$use();

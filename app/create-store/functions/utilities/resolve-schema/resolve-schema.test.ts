@@ -3,7 +3,7 @@ import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { resolveSchema } from "./index";
+import { resolveSchema, resolveSchemaAsync } from "./index";
 
 import * as v from "valibot";
 
@@ -101,7 +101,7 @@ describe("resolveSchema", () => {
   });
 
   describe("Async schemas", () => {
-    it("should return a Promise when validate returns a Promise", async () => {
+    it("should reject async schemas with a clear error", () => {
       const schema: StandardSchemaV1<number> = {
         "~standard": {
           validate: () => Promise.resolve({ value: 7 }),
@@ -110,9 +110,37 @@ describe("resolveSchema", () => {
         },
       };
 
-      const result = resolveSchema(schema);
-      expect(result).toBeInstanceOf(Promise);
-      await expect(result).resolves.toBe(7);
+      expect(() => resolveSchema(schema)).toThrow(/resolveSchemaAsync/);
+    });
+  });
+
+  describe("Custom schemas", () => {
+    it("should return undefined for a schema that rejects all seeds and has no shape", () => {
+      const schema: StandardSchemaV1<number> = {
+        "~standard": {
+          validate: () => ({ issues: [{ message: "required" }] }),
+          vendor: "test",
+          version: 1,
+        },
+      };
+
+      expect(resolveSchema(schema)).toBeUndefined();
+    });
+  });
+});
+
+describe("resolveSchemaAsync", () => {
+  describe("Async schemas", () => {
+    it("should resolve the default value when validate returns a Promise", async () => {
+      const schema: StandardSchemaV1<number> = {
+        "~standard": {
+          validate: () => Promise.resolve({ value: 7 }),
+          vendor: "test",
+          version: 1,
+        },
+      };
+
+      await expect(resolveSchemaAsync(schema)).resolves.toBe(7);
     });
 
     it("should resolve to undefined when the async result has issues", async () => {
@@ -124,9 +152,7 @@ describe("resolveSchema", () => {
         },
       };
 
-      const result = resolveSchema(schema);
-      expect(result).toBeInstanceOf(Promise);
-      await expect(result).resolves.toBeUndefined();
+      await expect(resolveSchemaAsync(schema)).resolves.toBeUndefined();
     });
 
     it("should fall back to the scalar seed when the object seed fails asynchronously", async () => {
@@ -143,23 +169,7 @@ describe("resolveSchema", () => {
         },
       };
 
-      const result = resolveSchema(schema);
-      expect(result).toBeInstanceOf(Promise);
-      await expect(result).resolves.toBe(42);
-    });
-  });
-
-  describe("Custom schemas", () => {
-    it("should return undefined for a schema that rejects all seeds and has no shape", () => {
-      const schema: StandardSchemaV1<number> = {
-        "~standard": {
-          validate: () => ({ issues: [{ message: "required" }] }),
-          vendor: "test",
-          version: 1,
-        },
-      };
-
-      expect(resolveSchema(schema)).toBeUndefined();
+      await expect(resolveSchemaAsync(schema)).resolves.toBe(42);
     });
   });
 });

@@ -3,6 +3,7 @@
     "declaration": true,
     "declarationMap": true,
     "emitDeclarationOnly": true,
+    "jsx": "react-jsx",
     "outDir": "./dist",
     "types": ["node"],
     "paths": { "@/*": ["./*"] },

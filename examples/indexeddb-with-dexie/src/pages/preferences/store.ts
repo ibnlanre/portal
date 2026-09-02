@@ -40,7 +40,7 @@ const [getStoredValue, setStoredValue] =
   createIndexedDBAdapter<AppPreferences>("appPreferences");
 
 // Initialize with stored value or fallback to initial value
-export const preferencesStore = createStore(preferencesSchema, initialValue);
+export const preferencesStore = createStore(initialValue);
 
 // Load from IndexedDB when store is created
 getStoredValue(initialValue).then(preferencesStore.$set);

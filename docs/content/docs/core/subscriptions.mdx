@@ -8,10 +8,9 @@ Use `$subscribe()` to run a side effect whenever the store value changes.
 This is great for logging, persisting to storage, or triggering analytics.
 
 ```ts
-import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 
-const store = createStore(z.object({ count: z.number() }), { count: 0 });
+const store = createStore({ count: 0 });
 
 const unsubscribe = store.$subscribe((state) => {
   console.log("State changed:", state);

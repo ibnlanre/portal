@@ -13,7 +13,7 @@
  * @example
  * ```ts
  * const [getCount, setCount] = createLocalStorageAdapter("count");
- * const store = createStore(z.number(), getCount(0));
+ * const store = createStore(getCount(0));
  *
  * syncStorage(store, "count", getCount);
  * ```

@@ -42,14 +42,13 @@ If you're not using a bundler, you can grab Portal directly from a CDN:
 
 ## Your first store
 
-`createStore` takes a schema as its first argument—this defines the shape and type of your state. Pass your initial value as the second argument.
+`createStore` takes your state's initial value as its single argument — Portal infers the state's type directly from that value, so no schema is required.
 
 ```ts
-import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 
 // A store holding a single number
-const countStore = createStore(z.number(), 0);
+const countStore = createStore(0);
 
 // Read the value just like a variable
 console.log(countStore.$get()); // 0
@@ -66,28 +65,15 @@ countStore.$set((prev) => prev + 1); // 6
 Portal shines when you have deep objects. You don't need reducers or complex spread operators to update a specific field deep in your tree—just access the property and update it.
 
 ```ts
-import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 
-const userStore = createStore(
-  z.object({
-    name: z.string(),
-    settings: z.object({
-      theme: z.string(),
-      notifications: z.object({
-        email: z.boolean(),
-        push: z.boolean(),
-      }),
-    }),
-  }),
-  {
-    name: "Alex",
-    settings: {
-      theme: "dark",
-      notifications: { email: true, push: false },
-    },
-  }
-);
+const userStore = createStore({
+  name: "Alex",
+  settings: {
+    theme: "dark",
+    notifications: { email: true, push: false },
+  },
+});
 
 // Read a deeply nested value
 console.log(userStore.settings.theme.$get()); // "dark"
@@ -123,10 +109,9 @@ unsubscribe();
 If you're using React, Portal provides a unified `$use()` hook that serves as both a selector and a subscriber.
 
 ```tsx
-import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 
-const countStore = createStore(z.number(), 0);
+const countStore = createStore(0);
 
 function Counter() {
   // Automatically re-renders when countStore changes
@@ -140,10 +125,10 @@ function Counter() {
 
 Here's a quick map of the concepts you'll use most often:
 
-| Method            | Description                                                     |
-| :---------------- | :-------------------------------------------------------------- |
-| **`createStore`** | Creates a new observable store from a schema and initial state. |
-| **`$get`**        | reads the current value (without subscribing).                  |
-| **`$set`**        | Updates the value (merges objects, replaces primitives).        |
-| **`$use`**        | React hook to read values and re-render on changes.             |
-| **`$subscribe`**  | Native subscription for non-React code (logs, analytics, etc).  |
+| Method            | Description                                                           |
+| :---------------- | :-------------------------------------------------------------------- |
+| **`createStore`** | Creates a new observable store from an initial value (type inferred). |
+| **`$get`**        | reads the current value (without subscribing).                        |
+| **`$set`**        | Updates the value (merges objects, replaces primitives).              |
+| **`$use`**        | React hook to read values and re-render on changes.                   |
+| **`$subscribe`**  | Native subscription for non-React code (logs, analytics, etc).        |

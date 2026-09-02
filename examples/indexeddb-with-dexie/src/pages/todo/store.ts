@@ -12,8 +12,6 @@ export const todoSchema = z.object({
 
 export type Todo = z.infer<typeof todoSchema>;
 
-const todoListSchema = z.array(todoSchema);
-
 const [getStoredTodos, setStoredTodos] =
   createIndexedDBAdapter<Todo[]>("todos");
 
@@ -21,8 +19,8 @@ const [getStoredTodos, setStoredTodos] =
 const initialTodos = await getStoredTodos([]);
 
 export const todoStore = {
-  todos: createStore(todoListSchema, initialTodos),
-  newTodoText: createStore(z.string(), ""),
+  todos: createStore(initialTodos),
+  newTodoText: createStore(""),
 
   addTodo() {
     const newTodo: Todo = {

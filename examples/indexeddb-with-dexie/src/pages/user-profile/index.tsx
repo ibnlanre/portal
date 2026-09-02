@@ -1,18 +1,8 @@
-import { z } from "zod";
-
 import { createStore } from "@ibnlanre/portal";
 
 import { profileStore } from "./store";
 
-const loginSchema = z.object({
-  form: z.object({
-    avatar: z.string(),
-    email: z.string(),
-    name: z.string(),
-  }),
-});
-
-const loginStore = createStore(loginSchema, {
+const loginStore = createStore({
   form: {
     avatar: "",
     email: "",

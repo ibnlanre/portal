@@ -23,7 +23,7 @@ const features = [
   },
   {
     description:
-      "Full TypeScript inference from Zod or Valibot schemas. No manual type annotations.",
+      "Full TypeScript inference from your initial value. No manual type annotations.",
     icon: Code2,
     title: "Type-Safe",
   },
@@ -37,18 +37,14 @@ const features = [
 
 const steps = [
   {
-    code: `import { z } from "zod";
-import { createStore } from "@ibnlanre/portal";
+    code: `import { createStore } from "@ibnlanre/portal";
 
-const userStore = createStore(
-  z.object({
-    name: z.string(),
-    theme: z.enum(["light", "dark"]),
-  }),
-  { name: "Alex", theme: "dark" }
-);`,
+const userStore = createStore({
+  name: "Alex",
+  theme: "dark",
+});`,
     step: "1",
-    title: "Define your schema",
+    title: "Define your store",
   },
   {
     code: `// Read
@@ -101,9 +97,9 @@ function Home() {
           </h1>
 
           <p className="mt-5 text-lg text-fd-muted-foreground max-w-xl leading-relaxed">
-            Portal is a type-safe state management library for React. Define
-            your state with a schema, and get infinite nesting, automatic
-            merging, and full TypeScript inference — for free.
+            Portal is a type-safe state management library for React. Pass an
+            initial value and get infinite nesting, automatic merging, and full
+            TypeScript inference — for free.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
@@ -142,22 +138,17 @@ function Home() {
               <pre className="p-4 text-sm font-mono text-fd-foreground overflow-x-auto leading-relaxed">
                 <code>
                   <span className="text-fd-muted-foreground">
-                    {"// Define state with a schema"}
+                    {"// Define your state"}
                   </span>
                   {"\n"}
                   <span className="text-fd-primary">const</span>
                   {" count = "}
                   <span className="text-fd-primary">createStore</span>
                   {"("}
-                  {"\n  "}
-                  <span className="text-emerald-600 dark:text-emerald-400">
-                    z.number()
-                  </span>
-                  {", "}
                   <span className="text-orange-600 dark:text-orange-400">
                     0
                   </span>
-                  {"\n);"}
+                  {");"}
                   {"\n\n"}
                   <span className="text-fd-muted-foreground">
                     {"// Read, write, subscribe"}
@@ -217,7 +208,7 @@ function Home() {
               Three steps to state
             </h2>
             <p className="mt-3 text-center text-fd-muted-foreground max-w-lg mx-auto">
-              From schema to working component in seconds.
+              From store to working component in seconds.
             </p>
             <div className="mt-12 space-y-8">
               {steps.map((s) => (
@@ -264,16 +255,15 @@ function Home() {
                 </thead>
                 <tbody>
                   {[
-                    ["Schema validation", "Built-in (Zod/Valibot)", "Manual"],
+                    [
+                      "Type inference",
+                      "Full, automatic",
+                      "Requires manual types",
+                    ],
                     [
                       "Deep nesting",
                       "Automatic dot-access",
                       "Manual selectors",
-                    ],
-                    [
-                      "TypeScript inference",
-                      "Full, automatic",
-                      "Requires manual types",
                     ],
                     [
                       "Object merging",

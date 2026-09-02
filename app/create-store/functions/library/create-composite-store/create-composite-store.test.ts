@@ -1,17 +1,13 @@
 import { renderHook } from "@testing-library/react";
 import { act, useMemo } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
 
 import { createCompositeStore } from "./index";
 
 describe("createCompositeStore", () => {
   it("creates store with initial state", () => {
     const initialState = { key: "value" };
-    const store = createCompositeStore(
-      z.object({ key: z.string() }),
-      initialState
-    );
+    const store = createCompositeStore(initialState);
     expect(store).toBeDefined();
     expect(store.$get()).toEqual(initialState);
   });
@@ -30,14 +26,7 @@ describe("createCompositeStore", () => {
         },
       };
 
-      const store = createCompositeStore(
-        z.object({
-          count: z.number(),
-          settings: z.object({ notifications: z.boolean(), theme: z.string() }),
-          user: z.object({ age: z.number(), name: z.string() }),
-        }),
-        initialState
-      );
+      const store = createCompositeStore(initialState);
 
       expect(store.count).toBeDefined();
       expect(store.user).toBeDefined();
@@ -61,22 +50,13 @@ describe("createCompositeStore", () => {
     });
 
     it("should handle nested primitive-like values in composite store", () => {
-      const compositeStore = createCompositeStore(
-        z.object({
-          booleanValue: z.boolean(),
-          nullValue: z.null(),
-          numberValue: z.number(),
-          stringValue: z.string(),
-          undefinedValue: z.undefined(),
-        }),
-        {
-          booleanValue: true,
-          nullValue: null,
-          numberValue: 42,
-          stringValue: "hello",
-          undefinedValue: undefined,
-        }
-      );
+      const compositeStore = createCompositeStore({
+        booleanValue: true,
+        nullValue: null,
+        numberValue: 42,
+        stringValue: "hello",
+        undefinedValue: undefined,
+      });
 
       const compositeStoreKeys = Object.keys(compositeStore).filter((key) =>
         key.startsWith("$")
@@ -98,18 +78,11 @@ describe("createCompositeStore", () => {
     });
 
     it("should handle property enumeration correctly", () => {
-      const store = createCompositeStore(
-        z.object({
-          nested: z.object({ prop3: z.string() }),
-          prop1: z.string(),
-          prop2: z.string(),
-        }),
-        {
-          nested: { prop3: "value3" },
-          prop1: "value1",
-          prop2: "value2",
-        }
-      );
+      const store = createCompositeStore({
+        nested: { prop3: "value3" },
+        prop1: "value1",
+        prop2: "value2",
+      });
 
       const keys = Object.keys(store);
       expect(keys).toContain("prop1");
@@ -123,16 +96,10 @@ describe("createCompositeStore", () => {
     });
 
     it("should handle 'in' operator correctly", () => {
-      const store = createCompositeStore(
-        z.object({
-          existing: z.string(),
-          nested: z.object({ prop: z.string() }),
-        }),
-        {
-          existing: "value",
-          nested: { prop: "value" },
-        }
-      );
+      const store = createCompositeStore({
+        existing: "value",
+        nested: { prop: "value" },
+      });
 
       expect("existing" in store).toBe(true);
       expect("nested" in store).toBe(true);
@@ -150,16 +117,10 @@ describe("createCompositeStore", () => {
     });
 
     it("should handle property descriptors correctly", () => {
-      const store = createCompositeStore(
-        z.object({
-          myProp: z.string(),
-          nested: z.object({ innerProp: z.string() }),
-        }),
-        {
-          myProp: "value",
-          nested: { innerProp: "innerValue" },
-        }
-      );
+      const store = createCompositeStore({
+        myProp: "value",
+        nested: { innerProp: "innerValue" },
+      });
 
       const getDescriptor = Object.getOwnPropertyDescriptor(store, "$get");
       expect(getDescriptor).toBeDefined();
@@ -178,18 +139,11 @@ describe("createCompositeStore", () => {
       const myFunction = () => "hello world";
       const asyncFunction = async () => "async hello";
 
-      const store = createCompositeStore(
-        z.object({
-          asyncFn: z.custom<() => Promise<string>>(),
-          regularProp: z.string(),
-          syncFn: z.custom<() => string>(),
-        }),
-        {
-          asyncFn: asyncFunction,
-          regularProp: "value",
-          syncFn: myFunction,
-        }
-      );
+      const store = createCompositeStore({
+        asyncFn: asyncFunction,
+        regularProp: "value",
+        syncFn: myFunction,
+      });
 
       expect(store.syncFn).toBe(myFunction);
       expect(store.asyncFn).toBe(asyncFunction);
@@ -205,7 +159,7 @@ describe("createCompositeStore", () => {
       const increment = () => {};
       const reset = () => {};
 
-      const store = createCompositeStore(z.object({ count: z.number() }), {
+      const store = createCompositeStore({
         count: 0,
         increment,
         reset,
@@ -219,7 +173,7 @@ describe("createCompositeStore", () => {
 
     it("should keep functions intact across schema validation and $set", () => {
       const increment = () => {};
-      const store = createCompositeStore(z.object({ count: z.number() }), {
+      const store = createCompositeStore({
         count: 0,
         increment,
       });
@@ -233,14 +187,9 @@ describe("createCompositeStore", () => {
 
     it("should preserve nested functions not described by the schema", () => {
       const load = () => {};
-      const store = createCompositeStore(
-        z.object({
-          user: z.object({ name: z.string() }),
-        }),
-        {
-          user: { name: "John", load },
-        }
-      );
+      const store = createCompositeStore({
+        user: { name: "John", load },
+      });
 
       expect(store.user.load).toBe(load);
       expect(store.$get()).toEqual({ user: { name: "John", load } });
@@ -250,7 +199,7 @@ describe("createCompositeStore", () => {
       const obj: any = { name: "circular" };
       obj.self = obj;
 
-      const store = createCompositeStore(z.any(), obj);
+      const store = createCompositeStore(obj);
 
       expect(store.self).toBeDefined();
       expect(store.self.name.$get()).toBe("circular");
@@ -263,7 +212,7 @@ describe("createCompositeStore", () => {
     });
 
     it("should NOT allow setting new properties (strict shape preservation)", () => {
-      const store = createCompositeStore(z.object({ existing: z.string() }), {
+      const store = createCompositeStore({
         existing: "value",
       });
 
@@ -282,18 +231,11 @@ describe("createCompositeStore", () => {
     });
 
     it("should prevent direct property assignment (only allow $set method)", () => {
-      const store = createCompositeStore(
-        z.object({
-          counter: z.number(),
-          name: z.string(),
-          settings: z.object({ enabled: z.boolean(), theme: z.string() }),
-        }),
-        {
-          counter: 0,
-          name: "initial",
-          settings: { enabled: true, theme: "dark" },
-        }
-      );
+      const store = createCompositeStore({
+        counter: 0,
+        name: "initial",
+        settings: { enabled: true, theme: "dark" },
+      });
 
       const initialName = store.name.$get();
       const initialTheme = store.settings.theme.$get();
@@ -318,16 +260,10 @@ describe("createCompositeStore", () => {
 
     it("should reuse proxies for the same object references", () => {
       const sharedObject = { shared: "value" };
-      const store = createCompositeStore(
-        z.object({
-          ref1: z.object({ shared: z.string() }),
-          ref2: z.object({ shared: z.string() }),
-        }),
-        {
-          ref1: sharedObject,
-          ref2: sharedObject,
-        }
-      );
+      const store = createCompositeStore({
+        ref1: sharedObject,
+        ref2: sharedObject,
+      });
 
       expect(store.ref1.$get()).toEqual(store.ref2.$get());
     });
@@ -338,7 +274,7 @@ describe("createCompositeStore", () => {
         largeObject[`prop${i}`] = `value${i}`;
       }
 
-      const store = createCompositeStore(z.any(), largeObject);
+      const store = createCompositeStore(largeObject);
 
       for (let i = 0; i < 100; i++) {
         expect(store[`prop${i}`]).toBeDefined();
@@ -350,16 +286,10 @@ describe("createCompositeStore", () => {
     });
 
     it("should prevent property additions and maintain strict shape", () => {
-      const store = createCompositeStore(
-        z.object({
-          nested: z.object({ prop: z.string() }),
-          original: z.string(),
-        }),
-        {
-          nested: { prop: "nested value" },
-          original: "value",
-        }
-      );
+      const store = createCompositeStore({
+        nested: { prop: "nested value" },
+        original: "value",
+      });
 
       (store as any).newProp = "should not work";
       expect((store as any).newProp).toBeUndefined();
@@ -375,16 +305,10 @@ describe("createCompositeStore", () => {
     });
 
     it("should allow modification of existing properties only through $set method", () => {
-      const store = createCompositeStore(
-        z.object({
-          count: z.number(),
-          user: z.object({ age: z.number(), name: z.string() }),
-        }),
-        {
-          count: 0,
-          user: { age: 30, name: "John" },
-        }
-      );
+      const store = createCompositeStore({
+        count: 0,
+        user: { age: 30, name: "John" },
+      });
 
       store.$set({ count: 42 });
       expect(store.$get()).toHaveProperty("count", 42);
@@ -421,19 +345,7 @@ describe("createCompositeStore", () => {
       },
     };
 
-    const store = createCompositeStore(
-      z.object({
-        count: z.number(),
-        user: z.object({
-          name: z.string(),
-          preferences: z.object({
-            notifications: z.boolean(),
-            theme: z.string(),
-          }),
-        }),
-      }),
-      state
-    );
+    const store = createCompositeStore(state);
 
     describe("$get() method", () => {
       beforeEach(() => {
@@ -506,7 +418,7 @@ describe("createCompositeStore", () => {
           },
         });
 
-        store.$set((state) => ({ count: state.count + 10 }));
+        store.$set((state) => ({ ...state, count: state.count + 10 }));
 
         expect(state).toEqual({
           count: 0,
@@ -692,23 +604,12 @@ describe("createCompositeStore", () => {
       });
 
       it("replaces array values completely", () => {
-        const store = createCompositeStore(
-          z.object({
-            todos: z.array(
-              z.object({
-                completed: z.boolean(),
-                id: z.number(),
-                text: z.string(),
-              })
-            ),
-          }),
-          {
-            todos: [
-              { completed: false, id: 1, text: "Learn React" },
-              { completed: false, id: 2, text: "Build App" },
-            ],
-          }
-        );
+        const store = createCompositeStore({
+          todos: [
+            { completed: false, id: 1, text: "Learn React" },
+            { completed: false, id: 2, text: "Build App" },
+          ],
+        });
 
         store.todos.$set((todos) => [
           ...todos,
@@ -812,13 +713,10 @@ describe("createCompositeStore", () => {
   describe("React Integration", () => {
     describe("$use() method", () => {
       describe("Basic usage", () => {
-        const store = createCompositeStore(
-          z.object({ count: z.number(), text: z.string() }),
-          {
-            count: 0,
-            text: "hello",
-          }
-        );
+        const store = createCompositeStore({
+          count: 0,
+          text: "hello",
+        });
 
         beforeEach(() => {
           store.$set({ count: 0, text: "hello" });
@@ -891,35 +789,21 @@ describe("createCompositeStore", () => {
         });
 
         it("supports deep partial updates with $use hook", () => {
-          const complexStore = createCompositeStore(
-            z.object({
-              settings: z.object({ autoplay: z.boolean(), volume: z.number() }),
-              user: z.object({
-                age: z.number(),
-                name: z.string(),
-                preferences: z.object({
-                  language: z.string(),
-                  notifications: z.boolean(),
-                  theme: z.string(),
-                }),
-              }),
-            }),
-            {
-              settings: {
-                autoplay: false,
-                volume: 80,
+          const complexStore = createCompositeStore({
+            settings: {
+              autoplay: false,
+              volume: 80,
+            },
+            user: {
+              age: 30,
+              name: "John",
+              preferences: {
+                language: "en",
+                notifications: true,
+                theme: "light",
               },
-              user: {
-                age: 30,
-                name: "John",
-                preferences: {
-                  language: "en",
-                  notifications: true,
-                  theme: "light",
-                },
-              },
-            }
-          );
+            },
+          });
 
           const { result: rootResult } = renderHook(() => complexStore.$use());
           const { result: userResult } = renderHook(() =>
@@ -1005,30 +889,15 @@ describe("createCompositeStore", () => {
             { id: 3, ownedBy: 1, value: "Item 3" },
           ];
 
-          const commonStore = createCompositeStore(
-            z.object({
-              getUserItems: z.custom<(userId: number) => Item[]>(),
-              items: z.array(
-                z.object({
-                  id: z.number(),
-                  ownedBy: z.number(),
-                  value: z.string(),
-                })
-              ),
-              users: z.array(
-                z.object({ age: z.number(), id: z.number(), name: z.string() })
-              ),
-            }),
-            {
-              getUserItems(userId: number): Item[] {
-                return commonStore.items
-                  .$get()
-                  .filter((item) => item.ownedBy === userId);
-              },
-              items,
-              users,
-            }
-          );
+          const commonStore = createCompositeStore({
+            getUserItems(userId: number): Item[] {
+              return commonStore.items
+                .$get()
+                .filter((item) => item.ownedBy === userId);
+            },
+            items,
+            users,
+          });
 
           const userId = 1;
 
@@ -1114,33 +983,18 @@ describe("createCompositeStore", () => {
         });
 
         it("handles dynamic user selection with derived state", () => {
-          const commonStore = createCompositeStore(
-            z.object({
-              items: z.array(
-                z.object({
-                  id: z.number(),
-                  ownedBy: z.number(),
-                  value: z.string(),
-                })
-              ),
-              selectedUserId: z.number(),
-              users: z.array(
-                z.object({ age: z.number(), id: z.number(), name: z.string() })
-              ),
-            }),
-            {
-              items: [
-                { id: 1, ownedBy: 1, value: "Item 1" },
-                { id: 2, ownedBy: 0, value: "Item 2" },
-                { id: 3, ownedBy: 1, value: "Item 3" },
-              ],
-              selectedUserId: 1,
-              users: [
-                { age: 25, id: 0, name: "Alice" },
-                { age: 30, id: 1, name: "Bob" },
-              ],
-            }
-          );
+          const commonStore = createCompositeStore({
+            items: [
+              { id: 1, ownedBy: 1, value: "Item 1" },
+              { id: 2, ownedBy: 0, value: "Item 2" },
+              { id: 3, ownedBy: 1, value: "Item 3" },
+            ],
+            selectedUserId: 1,
+            users: [
+              { age: 25, id: 0, name: "Alice" },
+              { age: 30, id: 1, name: "Bob" },
+            ],
+          });
 
           const { result } = renderHook(() => {
             const [selectedUserId] = commonStore.selectedUserId.$use();
@@ -1191,22 +1045,14 @@ describe("createCompositeStore", () => {
 
   describe("Advanced Store Patterns", () => {
     describe("Selector Functions", () => {
-      const store = createCompositeStore(
-        z.object({
-          filters: z.object({ showActive: z.boolean() }),
-          users: z.array(
-            z.object({ active: z.boolean(), id: z.number(), name: z.string() })
-          ),
-        }),
-        {
-          filters: { showActive: true },
-          users: [
-            { active: true, id: 1, name: "John" },
-            { active: false, id: 2, name: "Jane" },
-            { active: true, id: 3, name: "Bob" },
-          ],
-        }
-      );
+      const store = createCompositeStore({
+        filters: { showActive: true },
+        users: [
+          { active: true, id: 1, name: "John" },
+          { active: false, id: 2, name: "Jane" },
+          { active: true, id: 3, name: "Bob" },
+        ],
+      });
 
       beforeEach(() => {
         store.$set({
@@ -1268,30 +1114,21 @@ describe("createCompositeStore", () => {
 
     describe("Method-based patterns", () => {
       describe("Reducer Pattern", () => {
-        const count = createCompositeStore(
-          z.object({
-            decrease: z.custom<(value?: number) => void>(),
-            increase: z.custom<(value?: number) => void>(),
-            reset: z.custom<() => void>(),
-            set: z.custom<(value: number) => void>(),
-            value: z.number(),
-          }),
-          {
-            decrease(value: number = 1) {
-              count.value.$set((state) => state - value);
-            },
-            increase(value: number = 1) {
-              count.value.$set((state) => state + value);
-            },
-            reset() {
-              count.value.$set(0);
-            },
-            set(value: number) {
-              count.value.$set(value);
-            },
-            value: 0,
-          }
-        );
+        const count = createCompositeStore({
+          decrease(value: number = 1) {
+            count.value.$set((state) => state - value);
+          },
+          increase(value: number = 1) {
+            count.value.$set((state) => state + value);
+          },
+          reset() {
+            count.value.$set(0);
+          },
+          set(value: number) {
+            count.value.$set(value);
+          },
+          value: 0,
+        });
 
         beforeEach(() => {
           count.reset();
@@ -1349,36 +1186,26 @@ describe("createCompositeStore", () => {
       });
 
       describe("Complex Business Logic", () => {
-        const store = createCompositeStore(
-          z.object({
-            bears: z.number(),
-            eatFish: z.custom<() => void>(),
-            fish: z.number(),
-            increasePopulation: z.custom<(by?: number) => void>(),
-            removeAllBears: z.custom<() => void>(),
-            reset: z.custom<() => void>(),
-          }),
-          {
-            bears: 0,
-            eatFish: () => {
-              store.fish.$set((state) => Math.max(0, state - 1));
-              if (store.fish.$get() === 0) {
-                store.bears.$set((state) => Math.max(0, state - 1));
-              }
-            },
-            fish: 10,
-            increasePopulation: (by: number = 1) => {
-              store.bears.$set((state) => state + by);
-            },
-            removeAllBears: () => {
-              store.bears.$set(0);
-            },
-            reset: () => {
-              store.bears.$set(0);
-              store.fish.$set(10);
-            },
-          }
-        );
+        const store = createCompositeStore({
+          bears: 0,
+          eatFish: () => {
+            store.fish.$set((state) => Math.max(0, state - 1));
+            if (store.fish.$get() === 0) {
+              store.bears.$set((state) => Math.max(0, state - 1));
+            }
+          },
+          fish: 10,
+          increasePopulation: (by: number = 1) => {
+            store.bears.$set((state) => state + by);
+          },
+          removeAllBears: () => {
+            store.bears.$set(0);
+          },
+          reset: () => {
+            store.bears.$set(0);
+            store.fish.$set(10);
+          },
+        });
 
         beforeEach(() => {
           store.$set({ bears: 0, fish: 10 });
@@ -1460,12 +1287,9 @@ describe("createCompositeStore", () => {
         const circularObj: { ref: null | typeof circularObj } = { ref: null };
         circularObj.ref = circularObj;
 
-        const store = createCompositeStore(
-          z.object({ data: z.object({ value: z.any() }) }),
-          {
-            data: { value: circularObj },
-          }
-        );
+        const store = createCompositeStore({
+          data: { value: circularObj },
+        });
 
         expect(() => store.data.value.$get()).not.toThrow();
 
@@ -1479,12 +1303,9 @@ describe("createCompositeStore", () => {
         circularObj.ref = circularObj;
 
         expect(() => {
-          const store = createCompositeStore(
-            z.object({ data: z.object({ value: z.any() }) }),
-            {
-              data: { value: circularObj },
-            }
-          );
+          const store = createCompositeStore({
+            data: { value: circularObj },
+          });
         }).not.toThrow();
       });
 
@@ -1492,12 +1313,9 @@ describe("createCompositeStore", () => {
         const circularObj: { ref: null | typeof circularObj } = { ref: null };
         circularObj.ref = circularObj;
 
-        const store = createCompositeStore(
-          z.object({ data: z.object({ value: z.any() }) }),
-          {
-            data: { value: circularObj },
-          }
-        );
+        const store = createCompositeStore({
+          data: { value: circularObj },
+        });
 
         expect(() => store.data.value.$get()).not.toThrow();
       });
@@ -1508,13 +1326,10 @@ describe("createCompositeStore", () => {
         };
         circularObj.ref = circularObj;
 
-        const store = createCompositeStore(
-          z.object({ data: z.any(), other: z.any() }),
-          {
-            data: circularObj,
-            other: circularObj,
-          }
-        );
+        const store = createCompositeStore({
+          data: circularObj,
+          other: circularObj,
+        });
 
         expect(store.data).toBe(store.other);
 
@@ -1536,17 +1351,12 @@ describe("createCompositeStore", () => {
         };
         objA.ref = objB;
 
-        const store = createCompositeStore(
-          z.object({
-            container: z.object({ a: z.any(), b: z.any() }),
-          }),
-          {
-            container: {
-              a: objA,
-              b: objB,
-            },
-          }
-        );
+        const store = createCompositeStore({
+          container: {
+            a: objA,
+            b: objB,
+          },
+        });
 
         expect(() => store.container.a.$get()).not.toThrow();
         expect(() => store.container.b.$get()).not.toThrow();
@@ -1567,12 +1377,7 @@ describe("createCompositeStore", () => {
           id: i,
           value: `item-${i}`,
         }));
-        const store = createCompositeStore(
-          z.object({
-            data: z.array(z.object({ id: z.number(), value: z.string() })),
-          }),
-          { data }
-        );
+        const store = createCompositeStore({ data });
 
         let lastResult: typeof data | undefined;
         for (let i = 0; i < 10; i++) {
@@ -1590,10 +1395,7 @@ describe("createCompositeStore", () => {
 
       it("should allow garbage collection of returned states", () => {
         const items = Array.from({ length: 100 }, (_, i) => `item-${i}`);
-        const store = createCompositeStore(
-          z.object({ data: z.object({ items: z.array(z.string()) }) }),
-          { data: { items } }
-        );
+        const store = createCompositeStore({ data: { items } });
 
         const results: Array<{ items: string[] }> = [];
         for (let i = 0; i < 5; i++) {
@@ -1624,12 +1426,12 @@ describe("createCompositeStore", () => {
           largeState[`key${i}`] = { nested: { data: i * 2 }, value: i };
         }
 
-        const store = createCompositeStore(z.any(), largeState);
+        const store = createCompositeStore(largeState);
         expect(store.key99?.value?.$get()).toBe(99);
       });
 
       it("should properly clean up subscribers on unsubscribe", () => {
-        const store = createCompositeStore(z.object({ count: z.number() }), {
+        const store = createCompositeStore({
           count: 0,
         });
         const subscribers = [];
@@ -1655,19 +1457,7 @@ describe("createCompositeStore", () => {
           })),
         };
 
-        const store = createCompositeStore(
-          z.object({
-            settings: z.object({ language: z.string(), theme: z.string() }),
-            users: z.array(
-              z.object({
-                id: z.number(),
-                name: z.string(),
-                profile: z.object({ active: z.boolean(), age: z.number() }),
-              })
-            ),
-          }),
-          largeState
-        );
+        const store = createCompositeStore(largeState);
 
         const results: (typeof largeState)[] = [];
         for (let i = 0; i < 10; i++) {
@@ -1690,16 +1480,10 @@ describe("createCompositeStore", () => {
 
     describe("State isolation and immutability", () => {
       it("should isolate state returned by $get from store mutations", () => {
-        const store = createCompositeStore(
-          z.object({
-            settings: z.object({ theme: z.string() }),
-            user: z.object({ age: z.number(), name: z.string() }),
-          }),
-          {
-            settings: { theme: "dark" },
-            user: { age: 30, name: "John" },
-          }
-        );
+        const store = createCompositeStore({
+          settings: { theme: "dark" },
+          user: { age: 30, name: "John" },
+        });
 
         const state1 = store.$get();
         const state2 = store.$get();
@@ -1719,20 +1503,12 @@ describe("createCompositeStore", () => {
       });
 
       it("should isolate nested state returned by $get", () => {
-        const store = createCompositeStore(
-          z.object({
-            data: z.object({
-              items: z.array(z.number()),
-              metadata: z.object({ count: z.number(), type: z.string() }),
-            }),
-          }),
-          {
-            data: {
-              items: [1, 2, 3],
-              metadata: { count: 3, type: "array" },
-            },
-          }
-        );
+        const store = createCompositeStore({
+          data: {
+            items: [1, 2, 3],
+            metadata: { count: 3, type: "array" },
+          },
+        });
 
         const items1 = store.data.items.$get();
         const items2 = store.data.items.$get();
@@ -1746,23 +1522,12 @@ describe("createCompositeStore", () => {
       });
 
       it("should isolate state with selectors", () => {
-        const store = createCompositeStore(
-          z.object({
-            users: z.array(
-              z.object({
-                active: z.boolean(),
-                id: z.number(),
-                name: z.string(),
-              })
-            ),
-          }),
-          {
-            users: [
-              { active: true, id: 1, name: "Alice" },
-              { active: false, id: 2, name: "Bob" },
-            ],
-          }
-        );
+        const store = createCompositeStore({
+          users: [
+            { active: true, id: 1, name: "Alice" },
+            { active: false, id: 2, name: "Bob" },
+          ],
+        });
 
         const activeUsers1 = store.users.$get((users) =>
           users.filter((u) => u.active)
@@ -1793,19 +1558,7 @@ describe("createCompositeStore", () => {
         },
       };
 
-      const store = createCompositeStore(
-        z.object({
-          profile: z.object({
-            age: z.number(),
-            name: z.string(),
-            settings: z.object({
-              notifications: z.boolean(),
-              theme: z.string(),
-            }),
-          }),
-        }),
-        userState
-      );
+      const store = createCompositeStore(userState);
 
       expect(store.profile.name.$get()).toBe("John");
       expect(store.profile.age.$get()).toBe(30);
@@ -1816,20 +1569,12 @@ describe("createCompositeStore", () => {
     });
 
     it("should handle optional properties correctly", () => {
-      const store = createCompositeStore(
-        z.object({
-          user: z.object({
-            email: z.union([z.string(), z.undefined()]),
-            name: z.string(),
-          }),
-        }),
-        {
-          user: {
-            email: undefined as string | undefined,
-            name: "John",
-          },
-        }
-      );
+      const store = createCompositeStore({
+        user: {
+          email: undefined as string | undefined,
+          name: "John",
+        },
+      });
 
       expect(store.user.name.$get()).toBe("John");
       expect(store.user.email.$get()).toBeUndefined();
@@ -1847,16 +1592,7 @@ describe("createCompositeStore", () => {
           user: { age: 30, name: "John" },
         };
 
-        const store = createCompositeStore(
-          z.object({
-            settings: z.object({
-              notifications: z.boolean(),
-              theme: z.string(),
-            }),
-            user: z.object({ age: z.number(), name: z.string() }),
-          }),
-          originalState
-        );
+        const store = createCompositeStore(originalState);
         const stateBefore = store.$get();
 
         store.$set((state) => {
@@ -1882,13 +1618,7 @@ describe("createCompositeStore", () => {
           metadata: { count: 2 },
         };
 
-        const store = createCompositeStore(
-          z.object({
-            items: z.array(z.object({ id: z.number(), name: z.string() })),
-            metadata: z.object({ count: z.number() }),
-          }),
-          originalState
-        );
+        const store = createCompositeStore(originalState);
         const stateBefore = store.$get();
 
         store.$set((state) => {
@@ -1908,25 +1638,13 @@ describe("createCompositeStore", () => {
 
     describe("Nested state setter protection", () => {
       it("should prevent mutations to original nested objects", () => {
-        const store = createCompositeStore(
-          z.object({
-            settings: z.object({ language: z.string() }),
-            user: z.object({
-              preferences: z.object({
-                notifications: z.boolean(),
-                theme: z.string(),
-              }),
-              profile: z.object({ age: z.number(), name: z.string() }),
-            }),
-          }),
-          {
-            settings: { language: "en" },
-            user: {
-              preferences: { notifications: true, theme: "light" },
-              profile: { age: 30, name: "John" },
-            },
-          }
-        );
+        const store = createCompositeStore({
+          settings: { language: "en" },
+          user: {
+            preferences: { notifications: true, theme: "light" },
+            profile: { age: 30, name: "John" },
+          },
+        });
 
         const userBefore = store.user.$get();
 
@@ -1946,25 +1664,16 @@ describe("createCompositeStore", () => {
       });
 
       it("should prevent mutations to original nested arrays", () => {
-        const store = createCompositeStore(
-          z.object({
-            data: z.object({
-              items: z.array(z.object({ id: z.number(), name: z.string() })),
-              tags: z.array(z.string()),
-            }),
-            metadata: z.object({ version: z.number() }),
-          }),
-          {
-            data: {
-              items: [
-                { id: 1, name: "Item 1" },
-                { id: 2, name: "Item 2" },
-              ],
-              tags: ["tag1", "tag2"],
-            },
-            metadata: { version: 1 },
-          }
-        );
+        const store = createCompositeStore({
+          data: {
+            items: [
+              { id: 1, name: "Item 1" },
+              { id: 2, name: "Item 2" },
+            ],
+            tags: ["tag1", "tag2"],
+          },
+          metadata: { version: 1 },
+        });
 
         const dataBefore = store.data.$get();
 
@@ -1985,27 +1694,14 @@ describe("createCompositeStore", () => {
 
     describe("Deep path setter protection", () => {
       it("should prevent mutations when using $at path notation", () => {
-        const store = createCompositeStore(
-          z.object({
-            app: z.object({
-              user: z.object({
-                permissions: z.array(z.string()),
-                profile: z.object({
-                  name: z.string(),
-                  settings: z.object({ theme: z.string() }),
-                }),
-              }),
-            }),
-          }),
-          {
-            app: {
-              user: {
-                permissions: ["read", "write"],
-                profile: { name: "John", settings: { theme: "light" } },
-              },
+        const store = createCompositeStore({
+          app: {
+            user: {
+              permissions: ["read", "write"],
+              profile: { name: "John", settings: { theme: "light" } },
             },
-          }
-        );
+          },
+        });
 
         const profileBefore = store.$at("app.user.profile").$get();
 
@@ -2046,27 +1742,7 @@ describe("createCompositeStore", () => {
           },
         };
 
-        const store = createCompositeStore(
-          z.object({
-            app: z.object({
-              global: z.object({
-                features: z.object({ beta: z.boolean() }),
-                version: z.string(),
-              }),
-              modules: z.array(
-                z.object({
-                  config: z.object({
-                    enabled: z.boolean(),
-                    settings: z.object({ debug: z.boolean() }),
-                  }),
-                  dependencies: z.array(z.string()),
-                  id: z.number(),
-                })
-              ),
-            }),
-          }),
-          complexState
-        );
+        const store = createCompositeStore(complexState);
         const modulesBefore = store.app.modules.$get();
 
         store.app.modules.$set((modules) => {
@@ -2106,19 +1782,10 @@ describe("createCompositeStore", () => {
 
     describe("$at().$set() immutability", () => {
       it("should not mutate the original state when updating a leaf property", () => {
-        const store = createCompositeStore(
-          z.object({
-            settings: z.object({
-              notifications: z.boolean(),
-              theme: z.string(),
-            }),
-            user: z.object({ age: z.number(), name: z.string() }),
-          }),
-          {
-            settings: { notifications: true, theme: "light" },
-            user: { age: 30, name: "John" },
-          }
-        );
+        const store = createCompositeStore({
+          settings: { notifications: true, theme: "light" },
+          user: { age: 30, name: "John" },
+        });
 
         const stateBefore = store.$get();
 
@@ -2129,16 +1796,9 @@ describe("createCompositeStore", () => {
       });
 
       it("should not mutate the original state when updating a nested property", () => {
-        const store = createCompositeStore(
-          z.object({
-            a: z.object({
-              b: z.object({ c: z.number(), d: z.number() }),
-            }),
-          }),
-          {
-            a: { b: { c: 1, d: 2 } },
-          }
-        );
+        const store = createCompositeStore({
+          a: { b: { c: 1, d: 2 } },
+        });
 
         const stateBefore = store.$get();
 
@@ -2151,17 +1811,9 @@ describe("createCompositeStore", () => {
       });
 
       it("should not share references between siblings after an update", () => {
-        const store = createCompositeStore(
-          z.object({
-            items: z.object({
-              left: z.object({ value: z.string() }),
-              right: z.object({ value: z.string() }),
-            }),
-          }),
-          {
-            items: { left: { value: "a" }, right: { value: "b" } },
-          }
-        );
+        const store = createCompositeStore({
+          items: { left: { value: "a" }, right: { value: "b" } },
+        });
 
         const leftBefore = store.items.left.$get();
         const rightBefore = store.items.right.$get();
@@ -2181,16 +1833,10 @@ describe("createCompositeStore", () => {
     describe("Reference equality checks", () => {
       it("should ensure original state references are not shared with snapshots", () => {
         const originalObject = { shared: { value: "original" } };
-        const store = createCompositeStore(
-          z.object({
-            data: z.object({ shared: z.object({ value: z.string() }) }),
-            other: z.object({ value: z.string() }),
-          }),
-          {
-            data: originalObject,
-            other: { value: "test" },
-          }
-        );
+        const store = createCompositeStore({
+          data: originalObject,
+          other: { value: "test" },
+        });
 
         let capturedState: any;
 
@@ -2212,16 +1858,9 @@ describe("createCompositeStore", () => {
 
   describe("Edge Cases and Error Handling", () => {
     it("should handle undefined and null values", () => {
-      const store = createCompositeStore(
-        z.object({
-          data: z.object({
-            value: z.union([z.number(), z.null(), z.undefined()]),
-          }),
-        }),
-        {
-          data: { value: 42 as null | number | undefined },
-        }
-      );
+      const store = createCompositeStore({
+        data: { value: 42 as null | number | undefined },
+      });
 
       store.data.$set({ value: undefined });
       expect(store.data.value.$get()).toBeUndefined();
@@ -2231,14 +1870,9 @@ describe("createCompositeStore", () => {
     });
 
     it("should handle deep path navigation", () => {
-      const store = createCompositeStore(
-        z.object({
-          nested: z.object({ deep: z.object({ value: z.string() }) }),
-        }),
-        {
-          nested: { deep: { value: "test" } },
-        }
-      );
+      const store = createCompositeStore({
+        nested: { deep: { value: "test" } },
+      });
 
       const deepPath = store.$at("nested.deep.value");
       expect(deepPath.$get()).toBe("test");
@@ -2248,12 +1882,9 @@ describe("createCompositeStore", () => {
     });
 
     it("should handle array-like objects", () => {
-      const store = createCompositeStore(
-        z.object({ data: z.object({ items: z.array(z.number()) }) }),
-        {
-          data: { items: [1, 2, 3] },
-        }
-      );
+      const store = createCompositeStore({
+        data: { items: [1, 2, 3] },
+      });
 
       expect(store.data.items.$get()).toEqual([1, 2, 3]);
 
@@ -2262,12 +1893,9 @@ describe("createCompositeStore", () => {
     });
 
     it("should handle numeric keys", () => {
-      const store = createCompositeStore(
-        z.object({ data: z.object({ "0": z.string(), "1": z.string() }) }),
-        {
-          data: { "0": "first", "1": "second" },
-        }
-      );
+      const store = createCompositeStore({
+        data: { "0": "first", "1": "second" },
+      });
 
       expect(store.data["0"].$get()).toBe("first");
       expect(store.data["1"].$get()).toBe("second");
@@ -2277,7 +1905,7 @@ describe("createCompositeStore", () => {
       const sym = Symbol("test");
       const objWithSymbol = { regular: "regular", [sym]: "symbol value" };
 
-      const store = createCompositeStore(z.any(), {
+      const store = createCompositeStore({
         data: objWithSymbol,
       });
 
@@ -2292,108 +1920,13 @@ describe("createCompositeStore", () => {
         user: { age: 30, name: "John" },
       };
 
-      const store = createCompositeStore(
-        z.object({
-          settings: z.object({ theme: z.string() }),
-          user: z.object({ age: z.number(), name: z.string() }),
-        }),
-        initialState
-      );
+      const store = createCompositeStore(initialState);
 
       const serialized = JSON.stringify(store.$get());
       const deserialized = JSON.parse(serialized);
 
-      const newStore = createCompositeStore(
-        z.object({
-          settings: z.object({ theme: z.string() }),
-          user: z.object({ age: z.number(), name: z.string() }),
-        }),
-        deserialized
-      );
+      const newStore = createCompositeStore(deserialized);
       expect(newStore.$get()).toEqual(initialState);
-    });
-  });
-
-  describe("Schema defaults applied at initialization", () => {
-    it("fills all missing fields with schema defaults when initialState is empty", () => {
-      const store = createCompositeStore(
-        z.object({
-          count: z.number().default(0),
-          name: z.string().default("world"),
-        }),
-        {} as { count: number; name: string }
-      );
-      expect(store.$get()).toEqual({ count: 0, name: "world" });
-      expect(store.count.$get()).toBe(0);
-      expect(store.name.$get()).toBe("world");
-    });
-
-    it("preserves provided values and only fills missing fields with defaults", () => {
-      const store = createCompositeStore(
-        z.object({
-          count: z.number().default(0),
-          name: z.string().default("world"),
-        }),
-        { count: 5 } as { count: number; name: string }
-      );
-      expect(store.count.$get()).toBe(5);
-      expect(store.name.$get()).toBe("world");
-    });
-
-    it("exposes schema-defaulted fields as accessible store nodes via proxy", () => {
-      const store = createCompositeStore(
-        z.object({ enabled: z.boolean().default(true) }),
-        {} as { enabled: boolean }
-      );
-      expect(store.enabled.$get()).toBe(true);
-      store.enabled.$set(false);
-      expect(store.enabled.$get()).toBe(false);
-    });
-
-    it("applies defaults to nested object fields", () => {
-      const store = createCompositeStore(
-        z.object({
-          settings: z.object({
-            notifications: z.boolean().default(true),
-            theme: z.string().default("light"),
-          }),
-        }),
-        { settings: {} } as {
-          settings: { notifications: boolean; theme: string };
-        }
-      );
-      expect(store.settings.theme.$get()).toBe("light");
-      expect(store.settings.notifications.$get()).toBe(true);
-    });
-
-    it("throws at creation time when initialState is invalid against the schema", () => {
-      expect(() =>
-        createCompositeStore(z.object({ count: z.number() }), {
-          count: "not-a-number",
-        } as any)
-      ).toThrow();
-    });
-
-    it("subsequent $set calls also apply schema defaults for missing fields", () => {
-      const store = createCompositeStore(
-        z.object({
-          label: z.string().default("default"),
-          value: z.number().default(42),
-        }),
-        {} as { label: string; value: number }
-      );
-      expect(store.$get()).toEqual({ label: "default", value: 42 });
-      store.$set({ value: 99 });
-      expect(store.value.$get()).toBe(99);
-      expect(store.label.$get()).toBe("default");
-    });
-
-    it("coerces initialState values when schema uses coercion", () => {
-      const store = createCompositeStore(
-        z.object({ count: z.coerce.number() }),
-        { count: "7" } as unknown as { count: number }
-      );
-      expect(store.count.$get()).toBe(7);
     });
   });
 });

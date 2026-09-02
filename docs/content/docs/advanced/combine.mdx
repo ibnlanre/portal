@@ -40,16 +40,8 @@ const actions = {
   },
 };
 
-// 3. Combine and pass to createStore with a schema
-import { z } from "zod";
-
-export const mainStore = createStore(
-  z.object({
-    count: z.number(),
-    settings: z.object({ theme: z.string() }),
-  }),
-  combine(state, actions)
-);
+// 3. Combine and pass the result to createStore
+export const mainStore = createStore(combine(state, actions));
 ```
 
 ## Merging Configuration

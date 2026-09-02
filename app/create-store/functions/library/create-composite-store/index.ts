@@ -1,9 +1,7 @@
-import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type { DependencyList } from "react";
 
 import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { GenericObject } from "@/create-store/types/generic-object";
-import type { InferSchema } from "@/create-store/types/infer-schema";
 import type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
 import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 import type { PartialStatePath } from "@/create-store/types/partial-state-path";
@@ -20,41 +18,26 @@ import { useCallback, useSyncExternalStore } from "react";
 import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
-import { isSchema } from "@/create-store/functions/assertions/is-schema";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { clone } from "@/create-store/functions/helpers/clone";
 import { createPathComponents } from "@/create-store/functions/helpers/create-path-components";
 import { createPaths } from "@/create-store/functions/helpers/create-paths";
-import { mergeFunctions } from "@/create-store/functions/helpers/merge-functions";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { splitPath } from "@/create-store/functions/helpers/split-path";
 import { useSync } from "@/create-store/functions/hooks/use-sync";
 import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
-export function createCompositeStore<
-  Schema extends StandardSchemaV1<GenericObject>,
-  State extends InferSchema<Schema>,
->(schema: Schema, initialState: NoInfer<State>): CompositeStore<State> {
+/**
+ * Creates a composite store from an initial state that is a plain object.
+ * Every property becomes a nested store node, accessible via dot notation and
+ * the `$at` path accessor. Function properties are exposed directly as methods.
+ */
+export function createCompositeStore<State extends GenericObject>(
+  initialState: State
+): CompositeStore<State> {
   const cache = new WeakMap<any, CompositeStore<State>>();
   const originalPaths = new Set<string>();
-
-  function applySchema(value: State): State {
-    if (!isSchema(schema)) {
-      throw new Error(
-        "createCompositeStore: schema must implement the Standard Schema V1 protocol"
-      );
-    }
-
-    const validation = schema["~standard"].validate(value);
-    if (validation instanceof Promise) return value;
-    if (validation.issues) {
-      throw new Error("createCompositeStore: schema validation failed", {
-        cause: validation.issues,
-      });
-    }
-    return mergeFunctions(validation.value, value);
-  }
 
   function trackOriginalPaths(
     obj: any,
@@ -79,7 +62,7 @@ export function createCompositeStore<
     }
   }
 
-  let state = applySchema(initialState);
+  let state = initialState;
   trackOriginalPaths(state);
 
   const subscribers = new Map<
@@ -132,7 +115,7 @@ export function createCompositeStore<
     }
     current[pivot] = value;
 
-    setState(applySchema(spread), path);
+    setState(spread, path);
   }
 
   function get<
@@ -164,7 +147,7 @@ export function createCompositeStore<
         : action;
 
       if (path) setProperty(replace(current, next), path);
-      else setState(applySchema(replace(state, next)));
+      else setState(replace(state, next));
     };
   }
 

@@ -11,7 +11,6 @@ Data structure and business logic belong together. With Portal, you don't need s
 Define your state and actions separately, then merge them with `combine()`. Actions reference the store variable directly—this works because function bodies are evaluated lazily, after the store is assigned.
 
 ```ts
-import { z } from "zod";
 import { createStore, combine } from "@ibnlanre/portal";
 
 const state = { count: 0 };
@@ -34,10 +33,7 @@ const actions = {
   },
 };
 
-const counterStore = createStore(
-  z.object({ count: z.number() }),
-  combine(state, actions)
-);
+const counterStore = createStore(combine(state, actions));
 
 // Usage
 counterStore.increment();
@@ -60,7 +56,6 @@ increment(); // Works perfectly!
 Do you prefer the predictability of reducers? Currently using Redux? You can easily implement a dispatch pattern if you like.
 
 ```ts
-import { z } from "zod";
 import { createStore, combine } from "@ibnlanre/portal";
 
 type Action = { type: "INC" } | { type: "DEC" };
@@ -77,10 +72,7 @@ const actions = {
   },
 };
 
-const store = createStore(
-  z.object({ value: z.number() }),
-  combine(state, actions)
-);
+const store = createStore(combine(state, actions));
 
 store.dispatch({ type: "INC" });
 ```
@@ -92,7 +84,6 @@ Here's where things get powerful. If you prefix an action with `use`, Portal tre
 This allows you to bundle React logic (like `useEffect`, `useState`, or other hooks) directly with the store that controls it.
 
 ```tsx
-import { z } from "zod";
 import { createStore, combine } from "@ibnlanre/portal";
 import { useEffect } from "react";
 
@@ -114,10 +105,7 @@ const actions = {
   },
 };
 
-const notificationStore = createStore(
-  z.object({ message: z.string().nullable() }),
-  combine(state, actions)
-);
+const notificationStore = createStore(combine(state, actions));
 
 // Use it in your component
 function NotificationBanner() {

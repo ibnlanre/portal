@@ -18,7 +18,7 @@ If you use a global `createStore()`, you can't easily initialize it with data fr
 
 ```tsx
 // ❌ Hard to pass 'initialCount' dynamically
-const globalStore = createStore(z.number(), 0);
+const globalStore = createStore(0);
 ```
 
 ## The Solution
@@ -26,14 +26,13 @@ const globalStore = createStore(z.number(), 0);
 `createContextStore` lets you define a "store creator" function. This function runs inside a Provider component, meaning it has access to props and hooks.
 
 ```tsx
-import { z } from "zod";
 import { createContextStore, createStore } from "@ibnlanre/portal";
 
 // 1. Create the Context Store factory
 const [CounterProvider, useCounterStore] = createContextStore(
   // This factory function receives the props passed to the Provider
   (props: { start: number }) => {
-    return createStore(z.number(), props.start);
+    return createStore(props.start);
   }
 );
 ```
@@ -82,17 +81,13 @@ function CounterDisplay({ id }: { id: string }) {
 The factory function runs inside a React component, so you can use hooks like `useMemo` (or Portal's `useSync`) to prevent recreating the store on every render.
 
 ```tsx
-import { z } from "zod";
 import { createContextStore, createStore, useSync } from "@ibnlanre/portal";
 
 const [UserProvider, useUserStore] = createContextStore(
   (props: { id: string; name: string }) => {
     // Only recreate the store if props.id changes
     return useSync(() => {
-      return createStore(z.object({ id: z.string(), name: z.string() }), {
-        id: props.id,
-        name: props.name,
-      });
+      return createStore({ id: props.id, name: props.name });
     }, [props.id]);
   }
 );

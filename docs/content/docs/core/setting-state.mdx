@@ -11,10 +11,9 @@ object, it's shallow-merged into the current state. Non-dictionary values
 You can also pass a **selector function** that receives the current value and returns the new value:
 
 ```ts
-import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 
-const countStore = createStore(z.number(), 0);
+const countStore = createStore(0);
 
 // Set directly
 countStore.$set(5);
@@ -28,12 +27,7 @@ countStore.$set((prev) => prev + 1);
 When you pass a plain object to `$set`, it's shallow-merged into the current state:
 
 ```ts
-const store = createStore(
-  z.object({
-    settings: z.object({ theme: z.string(), fontSize: z.number() }),
-  }),
-  { settings: { theme: "dark", fontSize: 14 } }
-);
+const store = createStore({ settings: { theme: "dark", fontSize: 14 } });
 
 // Merges: theme is updated, fontSize is kept
 store.settings.$set({ theme: "light" });
@@ -48,47 +42,99 @@ import { combine } from "@ibnlanre/portal";
 const merged = combine({ a: 1 }, { b: 2 }); // { a: 1, b: 2 }
 ```
 
-## Schema defaults and `$set`
+## Schema defaults with `resolveSchema()`
 
-If a schema field has a default (Zod `.default()` or Valibot `v.optional(x, default)`),
-and the current state already holds a value for that field, the existing value
-takes precedence over the schema default.
+`createStore()` is schema-less — it never validates state or fills in defaults.
+If you prefer to keep your state's shape and defaults in one place, define them
+with a [Standard Schema](https://standardschema.dev/)–compatible library (Zod,
+Valibot, ArkType, etc.), then let `resolveSchema()` derive the typed initial
+value from it (using its `.default()`s) and pass the result to `createStore()`.
 
 ```ts
+import { z } from "zod";
+import { createStore, resolveSchema } from "@ibnlanre/portal";
+
 const store = createStore(
-  z.object({
-    fontSize: z.number().default(14),
-    theme: z.string().default("light"),
-  }),
-  { fontSize: 20, theme: "dark" }
+  resolveSchema(
+    z.object({
+      fontSize: z.number().default(14),
+      theme: z.string().default("light"),
+    })
+  )
 );
+
+store.$get(); // { fontSize: 14, theme: "light" }
 
 store.$set({ theme: "system" });
 
-// fontSize: 20 is preserved (from initial state), not reset to 14
-expect(store.$get()).toEqual({ fontSize: 20, theme: "system" });
+// fontSize stays 14 — defaults are applied once, at creation; $set only merges
+expect(store.$get()).toEqual({ fontSize: 14, theme: "system" });
 ```
 
-This is because `$set` merges the new value with the current state, and
-`applySchema` only fills defaults for fields that are still missing after the merge.
+Defaults are applied exactly once — when you call `resolveSchema()`. After the
+store is created, `$set` simply merges the new value into the current state; it
+never re-applies schema defaults.
 
-## Union Schemas
+> **Note:** `resolveSchema()` derives the initial value by validating seed
+> inputs (`{}` for object schemas, `undefined` for scalars). If neither seed
+> validates — e.g. the schema has required fields without defaults — it returns
+> `undefined`, and `createStore(undefined)` creates a primitive store you seed
+> later.
 
-When your schema is a union — like `z.union([z.number(), z.object({...})])` — the return type is always `PrimitiveStore`, even if the initial value is an object.
+### Async schemas: `resolveSchemaAsync()`
 
-This is intentional. A union means the value can be _any_ branch at any time. Exposing typed dot-access on a value that could be a number tomorrow would be unsound.
+A schema is uniformly sync or async — the moment it contains an async step (an
+async `.refine()` in Zod, for example), its `validate` returns a Promise, so
+`resolveSchema()` can't use it synchronously and throws. Call
+`resolveSchemaAsync()` instead and `await` it before creating the store.
 
 ```ts
-const store = createStore(
-  z.union([z.number(), z.object({ count: z.number() })]),
-  { count: 5 }
-);
+import { z } from "zod";
+import { createStore, resolveSchemaAsync } from "@ibnlanre/portal";
+
+const settingsSchema = z.object({
+  language: z.string().default("en"),
+  // An async refine makes the whole schema async — e.g. a uniqueness check
+  username: z
+    .string()
+    .default("alex")
+    .refine(async (name) => name.length > 0),
+});
+
+// resolveSchemaAsync returns a Promise — await it before creating the store
+const initial = await resolveSchemaAsync(settingsSchema);
+
+const settingsStore = createStore(initial);
+
+settingsStore.$get(); // { language: "en", username: "alex" }
+```
+
+**Which one do I use?**
+
+| Schema                                  | Use                    | Returns                |
+| :-------------------------------------- | :--------------------- | :--------------------- |
+| Fully synchronous (no async validation) | `resolveSchema()`      | the value directly     |
+| Has any async validation step           | `resolveSchemaAsync()` | a `Promise` (await it) |
+
+`resolveSchemaAsync()` also accepts plain sync schemas — it just awaits their
+synchronous result. Prefer `resolveSchema()` when your schema is fully
+synchronous so you don't need an `await`; reach for `resolveSchemaAsync()` the
+moment any validation step is async.
+
+## Union Values
+
+Sometimes a single value needs to be one of several types — like a number or an object. `createStore()` derives the store type from the initial value, so when that value's type is a union, declare it explicitly (via a type argument or `as`), and the store is a `PrimitiveStore`.
+
+```ts
+const store = createStore<number | { count: number }>(5);
 
 // store is PrimitiveStore<number | { count: number }>
 
-store.$get(); // { count: 5 }
+store.$get(); // 5
 store.$set(42); // now a number — valid
 store.$set({ count: 10 }); // now an object — also valid
 ```
 
-If you need typed dot-access, the schema must be a standalone `z.object(...)` — not wrapped in a union.
+This is intentional. A union means the value can be _any_ branch at any time. Because the initial value is a primitive, `store` is a `PrimitiveStore` — exposing typed dot-access on a value that could be a number tomorrow would be unsound.
+
+If you need typed dot-access, seed the store with an object (e.g. `createStore({ count: 5 })`) so a `CompositeStore` is created — a primitive-backed store can't expose property access.

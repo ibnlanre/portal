@@ -7,10 +7,9 @@ icon: Eye
 Use `$get()` to read state imperatively — inside event handlers, utilities, or actions.
 
 ```ts
-import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 
-const countStore = createStore(z.number(), 10);
+const countStore = createStore(10);
 countStore.$get(); // 10
 ```
 
@@ -19,10 +18,7 @@ countStore.$get(); // 10
 `$get()` accepts a **selector** function to derive a value, or a **fallback** value when the store value is `undefined`:
 
 ```ts
-const userStore = createStore(
-  z.object({ firstName: z.string(), lastName: z.string() }),
-  { firstName: "Alex", lastName: "Johnson" }
-);
+const userStore = createStore({ firstName: "Alex", lastName: "Johnson" });
 
 // Derive a value with a selector
 userStore.$get((u) => `${u.firstName} ${u.lastName}`);
@@ -30,10 +26,9 @@ userStore.$get((u) => `${u.firstName} ${u.lastName}`);
 ```
 
 ```ts
-const configStore = createStore(
-  z.object({ apiUrl: z.string().optional() }),
-  { apiUrl: undefined }
-);
+const configStore = createStore({
+  apiUrl: undefined as string | undefined,
+});
 
 // Fallback when the value is undefined
 configStore.apiUrl.$get(); // undefined
@@ -48,10 +43,7 @@ so use them for cheap computations.
 Each nested node is itself a store with `$get`:
 
 ```ts
-const store = createStore(
-  z.object({ settings: z.object({ theme: z.string() }) }),
-  { settings: { theme: "dark" } }
-);
+const store = createStore({ settings: { theme: "dark" } });
 
 store.settings.$get(); // { theme: "dark" }
 store.settings.theme.$get(); // "dark"

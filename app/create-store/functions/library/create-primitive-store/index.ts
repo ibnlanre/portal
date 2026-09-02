@@ -1,7 +1,5 @@
-import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type { DependencyList } from "react";
 
-import type { InferSchema } from "@/create-store/types/infer-schema";
 import type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
 import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
@@ -12,36 +10,21 @@ import { useSyncExternalStore } from "react";
 
 import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
-import { isSchema } from "@/create-store/functions/assertions/is-schema";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { clone } from "@/create-store/functions/helpers/clone";
-import { mergeFunctions } from "@/create-store/functions/helpers/merge-functions";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { useSync } from "@/create-store/functions/hooks/use-sync";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
-export function createPrimitiveStore<
-  const Schema extends StandardSchemaV1,
-  State extends InferSchema<Schema>,
->(schema: Schema, initialState: NoInfer<State>): PrimitiveStore<State> {
-  function applySchema(value: State): State {
-    if (!isSchema(schema)) {
-      throw new Error(
-        "createPrimitiveStore: schema must implement the Standard Schema V1 protocol"
-      );
-    }
-
-    const validation = schema["~standard"].validate(value);
-    if (validation instanceof Promise) return value;
-    if (validation.issues) {
-      throw new Error("createPrimitiveStore: schema validation failed", {
-        cause: validation.issues,
-      });
-    }
-    return mergeFunctions(validation.value as State, value);
-  }
-
-  let state = applySchema(initialState);
+/**
+ * Creates a primitive store from an initial value that is not a plain object.
+ * The store holds a single value accessible and updatable via `$get`, `$set`,
+ * `$use`, and `$subscribe`.
+ */
+export function createPrimitiveStore<State>(
+  initialState: State
+): PrimitiveStore<State> {
+  let state = initialState;
 
   const subscribers = new Set<Subscriber<State>>();
   const cache = new WeakMap<object, any>();
@@ -64,7 +47,7 @@ export function createPrimitiveStore<
       const next = isSetStateActionFunction(action)
         ? action(clone(state, cache))
         : action;
-      setState(applySchema(replace(state, next)));
+      setState(replace(state, next));
     }
 
     function $use<Value = State>(

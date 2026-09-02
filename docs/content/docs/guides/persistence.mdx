@@ -17,14 +17,13 @@ The pattern is always the same:
 Use `createLocalStorageAdapter` to persist data in the browser permanently (until cleared).
 
 ```ts
-import { z } from "zod";
 import { createStore, createLocalStorageAdapter } from "@ibnlanre/portal";
 
 // 1. Create the adapter
 const [get, set] = createLocalStorageAdapter<number>("my-counter-key");
 
 // 2. Initialize store with saved data (or 0 if empty)
-const counterStore = createStore(z.number(), get(0));
+const counterStore = createStore(get(0));
 
 // 3. Save changes automatically
 counterStore.$subscribe(set, false); // 'false' skips initial save
@@ -37,12 +36,13 @@ That's it! Your counter now survives reloads.
 If you only want data to persist while the tab is open, use `createSessionStorageAdapter`.
 
 ```ts
-import { z } from "zod";
 import { createStore, createSessionStorageAdapter } from "@ibnlanre/portal";
 
-const [get, set] = createSessionStorageAdapter("session-data");
+const [get, set] = createSessionStorageAdapter<{ step: number }>(
+  "session-data"
+);
 
-const store = createStore(z.object({ step: z.number() }), get({ step: 1 }));
+const store = createStore(get({ step: 1 }));
 
 store.$subscribe(set, false);
 ```
@@ -52,7 +52,6 @@ store.$subscribe(set, false);
 When the same storage key changes in another tab, `syncStorage()` updates the store automatically. SSR-safe — no-ops when `window` is not available.
 
 ```ts
-import { z } from "zod";
 import {
   createStore,
   createLocalStorageAdapter,
@@ -63,10 +62,7 @@ const [getConsent, setConsent] = createLocalStorageAdapter<
   "granted" | "denied" | null
 >("consent");
 
-const store = createStore(
-  z.union([z.literal("granted"), z.literal("denied"), z.null()]),
-  getConsent(null)
-);
+const store = createStore(getConsent(null));
 
 // Sync store → adapter
 store.$subscribe(setConsent, false);
@@ -82,20 +78,16 @@ Need your state accessible by the server? Or specifically need cookies? We've go
 **Note:** You can optional sign your cookies with a secret to prevent tampering!
 
 ```ts
-import { z } from "zod";
 import { createStore, createCookieStorageAdapter } from "@ibnlanre/portal";
 
-const [get, set] = createCookieStorageAdapter("user-prefs", {
+const [get, set] = createCookieStorageAdapter<{ theme: string }>("user-prefs", {
   path: "/",
   secure: true,
   maxAge: 3600 * 24 * 365, // 1 year
   secret: "my-secret-key", // Enables signing!
 });
 
-const prefsStore = createStore(
-  z.object({ theme: z.string() }),
-  get({ theme: "dark" })
-);
+const prefsStore = createStore(get({ theme: "dark" }));
 
 prefsStore.$subscribe(set, false);
 ```
@@ -133,7 +125,7 @@ const [get, set] = createAsyncBrowserStorageAdapter("secure-data", {
 
 // Use 'await' to get the initial state
 const initialState = await get({ sensitive: "default" });
-const store = createStore(z.object({ sensitive: z.string() }), initialState);
+const store = createStore(initialState);
 
 store.$subscribe(set, false);
 ```

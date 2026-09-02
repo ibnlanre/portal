@@ -1,16 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { z } from "zod";
 
 import { createLocalStorageAdapter } from "@/create-store/functions/adapters/create-local-storage-adapter";
 import { createStore } from "@/create-store";
 
-const consentSchema = z.union([
-  z.literal("granted"),
-  z.literal("denied"),
-  z.null(),
-]);
-
-type Consent = z.infer<typeof consentSchema>;
+type Consent = "granted" | "denied" | null;
 
 describe("real-world storage pattern (SSR)", () => {
   it("adapter returns fallback without typeof window guard at call site", () => {
@@ -23,7 +16,7 @@ describe("real-world storage pattern (SSR)", () => {
   it("createStore works with adapter-sourced initial value in SSR", () => {
     const [getConsent] = createLocalStorageAdapter<Consent>("consent");
 
-    const store = createStore(consentSchema, getConsent(null));
+    const store = createStore(getConsent(null));
     expect(store.$get()).toBeNull();
   });
 
@@ -31,7 +24,7 @@ describe("real-world storage pattern (SSR)", () => {
     const [getConsent, setConsent] =
       createLocalStorageAdapter<Consent>("consent");
 
-    const store = createStore(consentSchema, getConsent(null));
+    const store = createStore(getConsent(null));
     store.$subscribe(setConsent, false);
 
     expect(() => store.$set("granted")).not.toThrow();
@@ -41,7 +34,7 @@ describe("real-world storage pattern (SSR)", () => {
   it("cross-tab storage event listener is a no-op in SSR", () => {
     const [getConsent] = createLocalStorageAdapter<Consent>("consent");
 
-    const store = createStore(consentSchema, getConsent(null));
+    const store = createStore(getConsent(null));
     expect(store.$get()).toBeNull();
   });
 });

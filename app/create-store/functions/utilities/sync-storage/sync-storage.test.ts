@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { z } from "zod";
 
 import { createLocalStorageAdapter } from "@/create-store/functions/adapters/create-local-storage-adapter";
 import { createStore } from "@/create-store";
@@ -15,7 +14,7 @@ describe("syncStorage", () => {
 
   it("updates the store when storage changes in another tab", () => {
     const [getCount] = createLocalStorageAdapter<number>(key);
-    const store = createStore(z.number(), getCount(0));
+    const store = createStore(getCount(0));
 
     syncStorage(store, key, getCount);
 
@@ -30,7 +29,7 @@ describe("syncStorage", () => {
 
   it("ignores storage events for other keys", () => {
     const [getCount] = createLocalStorageAdapter<number>(key);
-    const store = createStore(z.number(), getCount(0));
+    const store = createStore(getCount(0));
 
     syncStorage(store, key, getCount);
 
@@ -48,7 +47,7 @@ describe("syncStorage", () => {
 
   it("does nothing when get returns undefined", () => {
     const [getCount] = createLocalStorageAdapter<number>(key);
-    const store = createStore(z.number(), getCount(0));
+    const store = createStore(getCount(0));
 
     syncStorage(store, key, getCount);
 

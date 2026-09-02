@@ -21,10 +21,9 @@ pnpm add @ibnlanre/portal
 ## Quick start
 
 ```ts
-import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 
-const count = createStore(z.number(), 0);
+const count = createStore(0);
 
 count.$subscribe((value) => {
   console.log("count:", value);
@@ -39,25 +38,14 @@ console.log(count.$get());
 ## Nested state
 
 ```ts
-import { z } from "zod";
 import { createStore } from "@ibnlanre/portal";
 
-const user = createStore(
-  z.object({
-    profile: z.object({
-      name: z.string(),
-      preferences: z.object({
-        theme: z.enum(["light", "dark"]),
-      }),
-    }),
-  }),
-  {
-    profile: {
-      name: "Alex",
-      preferences: { theme: "light" },
-    },
-  }
-);
+const user = createStore({
+  profile: {
+    name: "Alex",
+    preferences: { theme: "light" },
+  },
+});
 
 user.profile.name.$set("Taylor");
 user.$at("profile.preferences.theme").$set("dark");
