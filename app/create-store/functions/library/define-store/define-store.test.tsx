@@ -77,6 +77,59 @@ describe("defineStore - runtime", () => {
       /Standard Schema/
     );
   });
+
+  it("throws when the schema defines no default value", () => {
+    const required = defineStore(z.object({ name: z.string() }));
+
+    expect(() => required()).toThrow(
+      /does not define a complete default value/
+    );
+    expect(required({ name: "Ridwan" }).$get()).toEqual({ name: "Ridwan" });
+  });
+});
+
+const isolationSchema = z.object({
+  settings: z
+    .object({
+      preferences: z
+        .object({ theme: z.string().default("dark") })
+        .default({ theme: "dark" }),
+    })
+    .default({ preferences: { theme: "dark" } }),
+  tags: z.array(z.string()).default(["alpha"]),
+});
+
+const Isolation = defineStore(isolationSchema);
+
+describe("defineStore - instance isolation", () => {
+  it("isolates deeply nested defaults between instances", () => {
+    const one = Isolation();
+    const two = Isolation();
+
+    one.settings.preferences.theme.$set("light");
+
+    expect(one.settings.preferences.theme.$get()).toBe("light");
+    expect(two.settings.preferences.theme.$get()).toBe("dark");
+  });
+
+  it("isolates array defaults between instances", () => {
+    const one = Isolation();
+    const two = Isolation();
+
+    one.tags.$set(["alpha", "beta"]);
+
+    expect(one.tags.$get()).toEqual(["alpha", "beta"]);
+    expect(two.tags.$get()).toEqual(["alpha"]);
+  });
+
+  it("isolates default-derived references from direct mutation", () => {
+    const one = Isolation();
+    const two = Isolation();
+
+    one.tags.$get().push("mutated");
+
+    expect(two.tags.$get()).toEqual(["alpha"]);
+  });
 });
 
 describe("defineStore - type level", () => {

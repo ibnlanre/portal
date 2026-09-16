@@ -7,9 +7,9 @@ icon: Layers
 Use a context store when a state tree belongs to a component boundary rather
 than the whole application. It is especially useful when you need:
 
-1. Is initialized with data from `props`.
-2. Exists only for a specific part of your app (like a single tab in a dashboard).
-3. Has multiple instances active at once.
+1. It is initialized with data from `props`.
+2. It exists only for a specific part of your app (like a single tab in a dashboard).
+3. It has multiple instances active at once.
 
 `createContextStore()` gives you the best of both worlds: the power of Portal's API with the scoping of React Context.
 
@@ -55,6 +55,71 @@ function App() {
 }
 ```
 
+## Reusable definitions with `defineStore()`
+
+Creating a store inline works well for a single call site. When the same store shape is needed in more than one place — or when its shape should be described by a schema — define it once with `defineStore()`. A definition is itself a store creator, so `createContextStore()` accepts it directly.
+
+```tsx
+import { z } from "zod";
+import { createContextStore, defineStore } from "@ibnlanre/portal";
+
+const counterSchema = z.object({
+  count: z.number().default(0),
+  label: z.string().default("Counter"),
+});
+
+// Define the store once...
+const Counter = defineStore(counterSchema);
+
+// ...and scope it to a component boundary
+const [CounterProvider, useCounterStore] = createContextStore(Counter);
+```
+
+The definition carries the schema's types to both sides of the Provider: `value` is typed as the schema's **input**, and `useCounterStore()` returns a store typed as its **output**. Because both fields have defaults, `value` may omit them:
+
+```tsx
+<CounterProvider value={{ label: "Tab A" }}>
+  <CounterDisplay id="A" />
+</CounterProvider>
+```
+
+Calling the definition with no value at all is also valid, which is useful outside React:
+
+```ts
+const counter = Counter(); // { count: 0, label: "Counter" }
+```
+
+### When a value is required
+
+Defaults only apply where you declare them. If the schema has required fields, the definition cannot build a store on its own — a value must be supplied:
+
+```tsx
+const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+});
+
+const User = defineStore(userSchema);
+const [UserProvider, useUserStore] = createContextStore(User);
+
+User(); // ❌ Throws — the schema does not define a complete default value
+```
+
+```tsx
+<UserProvider value={{ id: "1", name: "Ridwan" }}>
+  <UserCard />
+</UserProvider>
+```
+
+An explicit `value` is parsed through the schema before the store is created, so defaults are filled in and invalid input throws.
+
+> **Note:** Defaults do not create missing intermediate objects. In
+> `z.object({ settings: z.object({ theme: z.string().default("dark") }) })`,
+> `settings` has no default of its own, so calling the definition with no value
+> throws. Give each required object a default: `.default({ theme: "dark" })`.
+
+The schema stays available on the definition as `Counter.schema`.
+
 ## Consuming the Store
 
 Inside your components, `useCounterStore()` returns the specific store instance for that tree. You can then use the standard `$use()`, `$get()`, and `$set()` methods.
@@ -77,7 +142,7 @@ function CounterDisplay({ id }: { id: string }) {
 
 ## Advanced: Memoization
 
-The factory function runs inside a React component, so you can use hooks like `useMemo` (or Portal's `useSync`) to prevent recreating the store on every render.
+A store creator runs inside a React component, so you can use hooks like `useMemo` (or Portal's `useSync`) to prevent recreating the store on every render. Creators remain fully general — they can call any hook and build a store from anything, including values a schema cannot describe.
 
 ```tsx
 import { createContextStore, createStore, useSync } from "@ibnlanre/portal";

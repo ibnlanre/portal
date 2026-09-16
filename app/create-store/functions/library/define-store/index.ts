@@ -41,15 +41,26 @@ export function defineStore<Schema extends StandardSchemaV1>(
  * With no value the store is seeded from the schema's defaults. With a value,
  * the value is parsed through the schema — which applies defaults for missing
  * fields and rejects non-conforming input — before the store is created.
+ *
+ * Each call re-validates the schema, so every instance receives freshly
+ * produced state — defaults must never be cached or shared between instances.
  */
 function createInstance<Schema extends StandardSchemaV1>(
   schema: Schema,
   state?: StandardSchemaV1.InferInput<Schema>
 ): StoreValueResolver<InferSchema<Schema>> {
   if (state === undefined) {
-    return createStore(
-      resolveSchema(schema) as InferSchema<Schema>
-    ) as StoreValueResolver<InferSchema<Schema>>;
+    const initial = resolveSchema(schema);
+
+    if (initial === undefined) {
+      throw new Error(
+        "Unable to create a store without a value — the schema does not define a complete default value."
+      );
+    }
+
+    return createStore(initial as InferSchema<Schema>) as StoreValueResolver<
+      InferSchema<Schema>
+    >;
   }
 
   const result = schema["~standard"].validate(state);

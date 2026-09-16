@@ -49,6 +49,7 @@ export type {
 } from "@/create-store/types/session-storage";
 export type { StatePath } from "@/create-store/types/state-path";
 export type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
+export type { StoreDefinition } from "@/create-store/types/store-definition";
 export type { StoreValueResolver } from "@/create-store/types/store-value-resolver";
 export type { Subscriber } from "@/create-store/types/subscriber";
 
@@ -66,6 +67,7 @@ export { useVersion } from "@/create-store/functions/hooks/use-version";
 export { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
 export { createContextStore } from "@/create-store/functions/library/create-context-store";
 export { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
+export { defineStore } from "@/create-store/functions/library/define-store";
 export { resolveSchema } from "@/create-store/functions/utilities/resolve-schema";
 export { resolveSchemaAsync } from "@/create-store/functions/utilities/resolve-schema";
 export { syncStorage } from "@/create-store/functions/utilities/sync-storage";
