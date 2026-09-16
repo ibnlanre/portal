@@ -3,30 +3,29 @@
 @import "fumadocs-ui/css/preset.css";
 
 @theme {
-  --color-fd-primary: oklch(0.44 0.09 222);
-  --color-fd-primary-foreground: oklch(0.985 0.01 220);
-  --color-fd-background: oklch(0.985 0.004 220);
-  --color-fd-foreground: oklch(0.19 0.02 236);
-  --color-fd-muted: oklch(0.95 0.009 220);
-  --color-fd-muted-foreground: oklch(0.43 0.018 235);
-  --color-fd-card: oklch(0.99 0.004 220);
-  --color-fd-border: oklch(0.87 0.018 224);
-  --color-fd-accent: oklch(0.93 0.025 220);
-
-  --font-sans: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  --color-fd-primary: #326352;
+  --color-fd-primary-foreground: #faf7ed;
+  --color-fd-background: #f7f5ed;
+  --color-fd-foreground: #243e35;
+  --color-fd-muted: #eeeee3;
+  --color-fd-muted-foreground: #626f63;
+  --color-fd-card: #fcfaf3;
+  --color-fd-border: #d9dece;
+  --color-fd-accent: #e5eadc;
+  --font-sans: "Avenir Next", "Trebuchet MS", sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, monospace;
 }
 
 .dark {
-  --color-fd-primary: oklch(0.74 0.1 213);
-  --color-fd-primary-foreground: oklch(0.16 0.02 230);
-  --color-fd-background: oklch(0.16 0.015 232);
-  --color-fd-foreground: oklch(0.92 0.012 218);
-  --color-fd-muted: oklch(0.22 0.018 230);
-  --color-fd-muted-foreground: oklch(0.7 0.018 220);
-  --color-fd-card: oklch(0.19 0.018 230);
-  --color-fd-border: oklch(0.32 0.02 226);
-  --color-fd-accent: oklch(0.26 0.035 224);
+  --color-fd-primary: #bad0a2;
+  --color-fd-primary-foreground: #172f28;
+  --color-fd-background: #162c26;
+  --color-fd-foreground: #f1efdf;
+  --color-fd-muted: #203930;
+  --color-fd-muted-foreground: #adbba9;
+  --color-fd-card: #1b332b;
+  --color-fd-border: #395246;
+  --color-fd-accent: #2b4638;
 }
 
 * { border-color: var(--color-fd-border); }
@@ -289,4 +288,67 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}
+
+/* Courtyard: warm paper, architectural lines, and botanical greens. */
+::selection { background: #a9bf8c66; }
+.portal-page, .dark .portal-page { background-image: none; }
+.portal-wordmark { display: inline-flex; align-items: center; gap: 10px; font-family: Georgia, serif; font-size: 29px; font-weight: 400; letter-spacing: -1.4px; }
+.portal-brand-label { margin-left: 5px; font: 11px var(--font-mono); letter-spacing: 0; color: var(--color-fd-muted-foreground); }
+.portal-mark { width: 20px; height: 26px; border: 1.5px solid currentColor; border-radius: 12px 12px 0 0; position: relative; }
+.portal-mark::after { content: ""; position: absolute; inset: 5px 5px -1px; border: 1px solid currentColor; border-radius: 8px 8px 0 0; }
+#nd-nav { background: color-mix(in srgb, var(--color-fd-background) 94%, transparent); }
+.portal-hero { grid-template-columns: 1.05fr 0.95fr; gap: 5rem; padding-block: 3rem 4rem; min-height: 0; }
+.portal-hero-copy { padding-block: 4rem; }
+.portal-eyebrow, .portal-kicker { font-weight: 500; font-size: 10px; letter-spacing: .15em; }
+.portal-hero h1, .portal-section h2, .portal-cta h2 { font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif; font-weight: 400; letter-spacing: -.055em; }
+.portal-hero h1 { font-size: clamp(5rem, 8.5vw, 8rem); line-height: .98; max-width: 8ch; margin-top: 1.6rem; }
+.portal-lede { max-width: 36ch; font-size: 1rem; line-height: 1.85; margin-top: 1.8rem; }
+.portal-actions { gap: 1rem; }
+.portal-button { border-radius: 2px; font-size: 12px; min-height: 46px; padding-inline: 19px; font-weight: 500; }
+.portal-button-secondary { background: transparent; border-color: transparent; border-bottom-color: var(--color-fd-border); }
+.portal-button-primary:hover, .portal-run:hover { background: #254a3d; color: #faf7ed; }
+.portal-install { margin-top: 2rem; font-size: 11px; }
+.portal-art { margin: 0; height: 600px; position: relative; overflow: hidden; border-radius: 230px 230px 3px 3px; background: #294c3e; }
+.portal-art img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 57%; }
+.portal-art::after { content: ""; position: absolute; inset: 60% 0 0; background: linear-gradient(transparent, #112d27b3); pointer-events: none; }
+.portal-art figcaption { position: absolute; z-index: 1; bottom: 25px; left: 30px; right: 30px; display: flex; justify-content: space-between; gap: 12px; color: #fffbea; font-family: Georgia, serif; font-style: italic; font-size: 14px; }
+.portal-specimen-strip { display: flex; justify-content: space-between; gap: 1rem; width: min(100% - 3rem, 72rem); margin: auto; padding: 1.4rem 0; border-block: 1px solid var(--color-fd-border); font: 10px var(--font-mono); letter-spacing: .06em; color: var(--color-fd-muted-foreground); }
+.portal-specimen-strip span::before { content: "✳"; margin-right: 12px; color: var(--color-fd-primary); }
+.portal-demo { display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: center; }
+.portal-section h2 { font-size: clamp(2.6rem, 4.5vw, 4rem); line-height: 1.1; }
+.portal-text-link { display: inline-flex; align-items: center; gap: 16px; margin-top: 2rem; font-size: 13px; border-bottom: 1px solid var(--color-fd-border); padding-bottom: 10px; }
+.portal-playground { border-radius: 3px; box-shadow: 10px 10px 0 var(--color-fd-muted); }
+.portal-code { background: #193b31; color: #ebeede; border-color: #395246; }
+.portal-code-keyword, .dark .portal-code-keyword { color: #b5c7ae; }
+.portal-code-value, .dark .portal-code-value { color: #dddba0; }
+.portal-code-method { color: #9ecdc0; }
+.portal-run { border-radius: 2px; font-weight: 500; font-size: 12px; }
+.portal-principle-number { font-weight: 400; }
+.portal-principle h3 { font-family: Georgia, serif; font-size: 23px; font-weight: 400; }
+.portal-cta { border-radius: 2px; background: var(--color-fd-muted); border-top: 3px solid var(--color-fd-primary); }
+.portal-cta h2 { max-width: 20ch; }
+#nd-sidebar { background: var(--color-fd-muted); }
+#nd-page h1, #nd-page h2, .portal-docs h1, .portal-docs h2 { font-family: "Iowan Old Style", Georgia, serif; font-weight: 400; letter-spacing: -.035em; }
+.portal-docs h1 { font-size: clamp(2.8rem, 5vw, 4rem); }
+.portal-docs { --fd-heading-scroll-margin: 5rem; }
+.portal-docs > h1 { padding-top: 1rem; }
+.portal-docs .prose { line-height: 1.85; }
+.portal-docs figure { border-radius: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--color-fd-primary); outline-offset: 4px; }
+@media (max-width: 54rem) {
+  .portal-hero { gap: 2rem; grid-template-columns: 1fr 0.85fr; }
+  .portal-hero h1 { font-size: clamp(4rem, 10vw, 6rem); }
+  .portal-art { height: 510px; }
+  .portal-demo { gap: 2.5rem; }
+}
+@media (max-width: 42rem) {
+  .portal-hero { grid-template-columns: 1fr; padding-top: 1rem; gap: 1rem; }
+  .portal-hero-copy { padding-block: 2.2rem; }
+  .portal-hero h1 { max-width: none; font-size: 4.8rem; }
+  .portal-art { height: 420px; border-radius: 180px 180px 2px 2px; }
+  .portal-demo { grid-template-columns: 1fr; }
+  .portal-specimen-strip { width: calc(100% - 2rem); flex-wrap: wrap; font-size: 9px; }
+  .portal-brand-label { display: none; }
+  .portal-art figcaption { font-size: 12px; left: 20px; right: 20px; }
 }

@@ -67,16 +67,15 @@ function Home() {
       <main className="portal-page">
         <section className="portal-hero" aria-labelledby="portal-title">
           <div className="portal-hero-copy">
-            <p className="portal-eyebrow">Nested state, kept legible</p>
-            <h1 id="portal-title">Treat any part of your state like a store.</h1>
+            <p className="portal-eyebrow">A little structure. Room to grow.</p>
+            <h1 id="portal-title">State, naturally.</h1>
             <p className="portal-lede">
-              Portal gives deeply nested React state one composable model. Follow
-              a path, focus the branch you need, and use the same store API from
-              there.
+              A thoughtful home for your React state. Start with a root, follow
+              a branch, and find the same simple API wherever your application grows.
             </p>
             <div className="portal-actions">
               <Link className="portal-button portal-button-primary" params={{ _splat: "" }} to="/docs/$">
-                Read the documentation <ArrowRight aria-hidden="true" size={16} />
+                Start growing <ArrowRight aria-hidden="true" size={16} />
               </Link>
               <a
                 className="portal-button portal-button-secondary"
@@ -84,12 +83,28 @@ function Home() {
                 rel="noreferrer"
                 target="_blank"
               >
-                View source
+                Explore the source
               </a>
             </div>
             <p className="portal-install" aria-label="Install Portal with pnpm">
               <span aria-hidden="true">$</span> pnpm add @ibnlanre/portal
             </p>
+          </div>
+
+          <figure className="portal-art">
+            <img src="/images/courtyard.jpg" alt="Sunlight falling through a jade-green courtyard filled with white orchids and leafy branches" fetchPriority="high" />
+            <figcaption><span>Rooted in simplicity.</span><span>Built to branch out.</span></figcaption>
+          </figure>
+        </section>
+
+        <div className="portal-specimen-strip"><span>Made for React</span><span>TypeScript, from root to leaf</span><span>One API. Every branch.</span></div>
+
+        <section className="portal-demo portal-section" aria-labelledby="demo-title">
+          <div className="portal-section-intro">
+            <p className="portal-eyebrow">01 / A living example</p>
+            <h2 id="demo-title">Small changes.<br />Deep roots.</h2>
+            <p>Your state has a shape. Work with it. Reach into any branch and read, update, or subscribe with the same familiar methods.</p>
+            <Link className="portal-text-link" params={{ _splat: "getting-started" }} to="/docs/$">Meet your first store <ArrowRight size={16} aria-hidden="true" /></Link>
           </div>
 
           <div className="portal-playground" aria-label="Interactive nested-state example">
@@ -104,9 +119,9 @@ function Home() {
             <div className="portal-code" aria-label="Portal code example">
               <pre>
                 <code>
-                  <span className="portal-code-keyword">const</span> app = createStore({"\n"}
-                  {"  "}user: {"\n"}
-                  {"    "}profile: {"\n"}
+                  <span className="portal-code-keyword">const</span> app = createStore({"{"}{"\n"}
+                  {"  "}user: {"{"}{"\n"}
+                  {"    "}profile: {"{"}{"\n"}
                   {"      "}preferences: {'{ theme: '}
                   <span className="portal-code-value">&quot;{theme}&quot;</span>
                   {" },"}{"\n"}
@@ -152,7 +167,7 @@ function Home() {
 
         <section className="portal-section portal-principles" aria-labelledby="principles-title">
           <div className="portal-section-intro">
-            <p className="portal-eyebrow">One idea, all the way down</p>
+            <p className="portal-eyebrow">02 / The essentials</p>
             <h2 id="principles-title">Deep state should not create a second API.</h2>
           </div>
           <div className="portal-principle-list">
@@ -172,11 +187,11 @@ function Home() {
 
         <section className="portal-section portal-model" aria-labelledby="model-title">
           <div className="portal-section-intro">
-            <p className="portal-eyebrow">The store model</p>
+            <p className="portal-eyebrow">03 / A field guide</p>
             <h2 id="model-title">Work at the level your feature understands.</h2>
             <p>
-              These are Portal capabilities, not a competitor scorecard. Each
-              example is a direct expression of the same recursive store model.
+              A few familiar methods, wherever you are in the tree. Read a leaf,
+              update a branch, or let your component grow with the state.
             </p>
           </div>
           <dl className="portal-model-list">
@@ -193,8 +208,8 @@ function Home() {
         </section>
 
         <section className="portal-cta" aria-labelledby="cta-title">
-          <p className="portal-eyebrow">Start with the model</p>
-          <h2 id="cta-title">Build from one root. Focus what matters.</h2>
+          <p className="portal-eyebrow">Make yourself at home</p>
+          <h2 id="cta-title">Good things grow from simple roots.</h2>
           <p>
             See the API, nested-state examples, and React integration in the
             documentation.

@@ -70,7 +70,7 @@ function Page() {
     <DocsLayout {...baseOptions()} tree={docsTree}>
       <Suspense>
         {clientLoader.useContent(data.path, {
-          className: "",
+          className: "portal-docs",
         })}
       </Suspense>
     </DocsLayout>
