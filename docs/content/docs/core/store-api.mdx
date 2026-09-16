@@ -1,10 +1,12 @@
 ---
 title: Store API
-description: The methods you'll use to interact with your data.
+description: The small store API you can use at the root or any nested branch.
 icon: Braces
 ---
 
-Every store in Portal shares the same predictable API. Once you know how to use one store, you know how to use them all—whether it's a simple number or a deeply nested object tree.
+Every Portal store has the same API. A root store, an object branch, and a
+single nested value all support the operations that make sense for state:
+read, write, subscribe, use in React, and—on composite stores—focus a path.
 
 ## Cheat Sheet
 

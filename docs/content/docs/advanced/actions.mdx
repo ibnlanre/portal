@@ -1,10 +1,12 @@
 ---
 title: Actions & Logic
-description: Encapsulate your business logic right where your data lives.
+description: Keep state-changing logic close to the store branches it changes.
 icon: Zap
 ---
 
-Data structure and business logic belong together. With Portal, you don't need separate "action files" or complex dispatchers. You just write functions and combine them with your state.
+Actions are ordinary functions placed alongside the state they change. They can
+read or update focused branches directly; no dispatch layer is required. Keep
+them small and name them after the domain operation they perform.
 
 ## Defining Actions
 

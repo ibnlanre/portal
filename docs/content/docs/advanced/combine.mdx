@@ -1,10 +1,12 @@
 ---
 title: Organizing with combine()
-description: Split your state and logic into manageable pieces.
+description: Compose state and actions into one store without losing its nested shape.
 icon: Merge
 ---
 
-As your application grows, defining a massive store object in one file can get messy.
+As an application grows, a single root store can become difficult to scan.
+`combine()` lets you compose state and actions into that root while preserving a
+coherent nested shape for the branches your features use.
 
 `combine()` lets you write your state and actions in separate variables (or even separate files) and merge them together into a single, type-safe store.
 

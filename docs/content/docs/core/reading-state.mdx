@@ -1,10 +1,11 @@
 ---
 title: Reading State
-description: Read values with $get and transform them with selectors.
+description: Read the root, a branch, or a leaf with $get and selectors.
 icon: Eye
 ---
 
-Use `$get()` to read state imperatively — inside event handlers, utilities, or actions.
+Use `$get()` for an imperative snapshot: in an event handler, a utility, or an
+action. Call it on the smallest store that contains the value you need.
 
 ```ts
 import { createStore } from "@ibnlanre/portal";

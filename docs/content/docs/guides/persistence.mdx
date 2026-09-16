@@ -1,10 +1,13 @@
 ---
 title: Persistence
-description: Keep your state alive across reloads and sessions.
+description: Persist a root store or focused branch without obscuring its state model.
 icon: Database
 ---
 
-Want your data to stick around after the user hits refresh? Portal makes it easy to sync your store with LocalStorage, SessionStorage, or any custom backend.
+Persistence is a boundary around a store, not a second state model. Read an
+initial value, create the store, then subscribe to the state you want to save.
+Use a root store for a small application or a focused branch when only one
+feature needs persistence.
 
 The pattern is always the same:
 

@@ -1,16 +1,18 @@
 ---
 title: Introduction
-description: Type-safe state management for React apps.
+description: Give every branch of your React state the same composable store API.
 icon: Boxes
 ---
 
-`@ibnlanre/portal` is a state management library that bridges the gap between simple state hooks and complex state machines.
+`@ibnlanre/portal` is a state-management library for React applications whose
+state has structure. Start from one root store, then read, update, subscribe to,
+or use the branch a feature actually owns.
 
 It gives you:
 
-- A small, consistent store API (`$get`, `$set`, `$subscribe`, `$use`)
-- Nested state via composite stores
-- Great TypeScript inference
+- One store API at the root and at every nested branch
+- Direct property access when the path is known, and `$at()` when it is dynamic
+- Type inference from the value used to create the store
 
 ## Install
 
@@ -18,24 +20,27 @@ It gives you:
 pnpm add @ibnlanre/portal
 ```
 
-## Quick start
+## Start with a branch
 
 ```ts
 import { createStore } from "@ibnlanre/portal";
 
-const count = createStore(0);
-
-count.$subscribe((value) => {
-  console.log("count:", value);
+const app = createStore({
+  user: {
+    profile: {
+      name: "Taylor",
+      preferences: { theme: "light" },
+    },
+  },
 });
 
-count.$set(1);
-count.$set((prev) => prev + 1);
+const preferences = app.$at("user.profile.preferences");
 
-console.log(count.$get());
+preferences.theme.$set("dark");
+console.log(preferences.$get()); // { theme: "dark" }
 ```
 
-## Nested state
+## Two ways to reach the same store
 
 ```ts
 import { createStore } from "@ibnlanre/portal";

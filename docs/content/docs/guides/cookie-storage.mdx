@@ -1,10 +1,12 @@
 ---
 title: Cookie Utilities
-description: Low-level tools for managing cookies directly.
+description: Low-level cookie utilities for browser-readable values and signed payloads.
 icon: Cookie
 ---
 
-Sometimes you don't need a full Store adapter—you just want to read or write a cookie.
+Use `cookieStorage` when you need direct cookie access instead of a store
+adapter. It is appropriate for small browser-readable values; do not place
+sensitive information in a cookie merely because it can be signed.
 
 Portal exposes its internal cookie engine via `cookieStorage`. It handles the messy parts of `document.cookie` for you.
 

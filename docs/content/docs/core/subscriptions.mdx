@@ -1,11 +1,11 @@
 ---
 title: Subscriptions
-description: Watch for changes with $subscribe.
+description: Subscribe at the root, a focused branch, or an individual value.
 icon: Bell
 ---
 
-Use `$subscribe()` to run a side effect whenever the store value changes.
-This is great for logging, persisting to storage, or triggering analytics.
+Use `$subscribe()` for side effects outside React: persistence, logging, and
+integration work. Subscribe to the narrowest branch that owns the concern.
 
 ```ts
 import { createStore } from "@ibnlanre/portal";

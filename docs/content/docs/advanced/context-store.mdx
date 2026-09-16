@@ -1,10 +1,11 @@
 ---
 title: Scoped Stores (Context)
-description: Create stores that live within the React component tree.
+description: Create scoped store instances from component context and props.
 icon: Layers
 ---
 
-Global stores are great, but sometimes you need a store that:
+Use a context store when a state tree belongs to a component boundary rather
+than the whole application. It is especially useful when you need:
 
 1. Is initialized with data from `props`.
 2. Exists only for a specific part of your app (like a single tab in a dashboard).
@@ -31,9 +32,7 @@ import { createContextStore, createStore } from "@ibnlanre/portal";
 // 1. Create the Context Store factory
 const [CounterProvider, useCounterStore] = createContextStore(
   // This factory function receives the props passed to the Provider
-  (props: { start: number }) => {
-    return createStore(props.start);
-  }
+  (props: { start: number }) => createStore(props.start)
 );
 ```
 

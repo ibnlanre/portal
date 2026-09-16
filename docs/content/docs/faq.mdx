@@ -1,6 +1,6 @@
 ---
 title: FAQ
-description: Common questions and gotchas.
+description: Practical answers for subscriptions, nested paths, and store boundaries.
 icon: CircleQuestionMark
 ---
 
@@ -29,3 +29,7 @@ store.user.preferences.theme.$set("dark");
 ```ts
 store.$at("user.preferences.theme").$set("dark");
 ```
+
+Use dot access when the branch is already known in your feature. Use `$at()`
+when the path is dynamic or when you want to pass a focused store boundary to
+reusable code.

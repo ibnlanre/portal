@@ -21,7 +21,9 @@ export default defineConfig({
     react(),
   ],
   resolve: {
-    conditions: ["node", "default"],
+    alias: {
+      tslib: "tslib/tslib.es6.js",
+    },
   },
   server: {
     port: 3000,

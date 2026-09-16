@@ -10,6 +10,7 @@ import {
 import { Suspense } from "react";
 
 import { baseOptions } from "@/lib/layout.shared";
+import { docsTree } from "@/lib/docs-tree";
 import { source } from "@/lib/source";
 
 import defaultMdxComponents from "fumadocs-ui/mdx";
@@ -29,7 +30,7 @@ export const Route = createFileRoute("/docs/$")({
 const serverLoader = createServerFn({
   method: "GET",
 })
-  .inputValidator((slugs: string[]) => slugs)
+  .validator((slugs: string[]) => slugs)
   .handler(async ({ data: slugs }) => {
     const page = source.getPage(slugs);
     if (!page) throw notFound();
@@ -66,7 +67,7 @@ function Page() {
   const data = Route.useLoaderData();
 
   return (
-    <DocsLayout {...baseOptions()} tree={source.getPageTree()}>
+    <DocsLayout {...baseOptions()} tree={docsTree}>
       <Suspense>
         {clientLoader.useContent(data.path, {
           className: "",

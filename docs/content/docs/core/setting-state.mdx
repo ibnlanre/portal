@@ -1,12 +1,12 @@
 ---
 title: Setting State
-description: $set merges objects and replaces primitives.
+description: Update a leaf directly or merge the object branch that owns it.
 icon: Shield
 ---
 
-`$set` **merges dictionaries and replaces primitives**. When you pass a plain
-object, it's shallow-merged into the current state. Non-dictionary values
-(numbers, strings, arrays, etc.) replace entirely.
+`$set` merges plain-object updates into the current store value and replaces
+non-object values such as numbers, strings, and arrays. Use it on the leaf when
+you have one value to change, or on the branch when the update belongs together.
 
 You can also pass a **selector function** that receives the current value and returns the new value:
 

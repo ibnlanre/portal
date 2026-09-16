@@ -1,11 +1,12 @@
 ---
 title: React Integration
-description: Use store state in components with $use.
+description: Use a root store or focused branch in React with $use.
 icon: Code
 ---
 
-`$use()` is the React bridge. It subscribes to the store and re-renders
-the component whenever the selected value changes.
+`$use()` is the React bridge. It works on the root store and on every nested
+store, so a component can subscribe to the branch it renders instead of pulling
+the whole application state into its boundary.
 
 ```tsx
 import { createStore } from "@ibnlanre/portal";
