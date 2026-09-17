@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
+    "prebuild": "node scripts/generate-search-index.mjs",
     "build": "vite build",
     "start": "vite preview",
     "postinstall": "fumadocs-mdx"

@@ -49,7 +49,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="flex flex-col min-h-screen bg-fd-background text-fd-foreground">
-        <RootProvider>{children}</RootProvider>
+        <RootProvider
+          search={{ options: { api: "/search-index.json", type: "static" } }}
+        >
+          {children}
+        </RootProvider>
         <Scripts />
       </body>
     </html>

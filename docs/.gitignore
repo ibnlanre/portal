@@ -18,3 +18,5 @@ node_modules
 dist
 src/routeTree.gen.ts
 .source
+public/search-index.json
+.env*
