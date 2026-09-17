@@ -28,6 +28,27 @@
   --color-fd-accent: #2b4638;
 }
 
+/* Neutral reading surfaces for docs; retain the courtyard palette elsewhere. */
+.dark:has(#nd-docs-layout) {
+  --color-fd-background: #1c1c1e;
+  --color-fd-foreground: #ececea;
+  --color-fd-muted: #262628;
+  --color-fd-muted-foreground: #b4b4b2;
+  --color-fd-card: #222224;
+  --color-fd-border: #3b3b3e;
+  --color-fd-accent: #303033;
+}
+
+.dark #nd-sidebar {
+  --color-fd-background: #162c26;
+  --color-fd-foreground: #f1efdf;
+  --color-fd-muted: #203930;
+  --color-fd-muted-foreground: #adbba9;
+  --color-fd-card: #1b332b;
+  --color-fd-border: #395246;
+  --color-fd-accent: #2b4638;
+}
+
 * { border-color: var(--color-fd-border); }
 
 body {
