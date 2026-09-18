@@ -40,7 +40,6 @@
   },
   "devDependencies": {
     "@ibnlanre/clone": "^0.5.1",
-    "@standard-schema/spec": "^1.1.0",
     "@tailwindcss/vite": "^4.3.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -56,11 +55,9 @@
     "react-dom": "^19.2.7",
     "tailwindcss": "^4.3.2",
     "tsdown": "^0.22.14",
-    "valibot": "^1.4.2",
     "vite": "^8.1.4",
     "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.1.10",
-    "zod": "^4.4.3"
+    "vitest": "^4.1.10"
   },
   "scripts": {
     "bench": "vitest bench --run --config vitest.bench.config.mts",

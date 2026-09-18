@@ -544,7 +544,8 @@ describe("createPrimitiveStore", () => {
       const date = new Date("2024-01-01");
       const store = createPrimitiveStore(date);
 
-      expect(store.$get()).toBe(date);
+      expect(store.$get()).not.toBe(date);
+      expect(store.$get()).toBe(store.$get());
       expect(store.$get().getFullYear()).toBe(2024);
 
       const newDate = new Date("2025-01-01");

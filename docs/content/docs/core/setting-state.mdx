@@ -8,7 +8,7 @@ icon: Shield
 non-object values such as numbers, strings, and arrays. Use it on the leaf when
 you have one value to change, or on the branch when the update belongs together.
 
-You can also pass a **selector function** that receives the current value and returns the new value:
+You can also pass an **updater function** that receives a mutable defensive copy of the current value and returns an update:
 
 ```ts
 import { createStore } from "@ibnlanre/portal";
@@ -34,7 +34,8 @@ store.settings.$set({ theme: "light" });
 // Result: { theme: "light", fontSize: 14 }
 ```
 
-The deep merge is powered by `combine()`, which is also available directly:
+`$set()` preserves references for unchanged plain-object and array branches.
+The separate `combine()` utility is available for general object merging:
 
 ```ts
 import { combine } from "@ibnlanre/portal";
@@ -67,3 +68,24 @@ If you need typed dot-access, seed the store with an object (e.g. `createStore({
 to `undefined` retains its key; it does not delete it. Direct assignment or
 `delete` on a store proxy does not mutate state. Portal does not currently expose
 an explicit object-replacement or key-deletion method.
+
+## Defensive updater drafts
+
+Updater functions receive an isolated copy, so they can mutate that draft and
+return it. Portal copies the returned update before storing it; retaining and
+mutating the draft afterward cannot silently alter state. If the updater throws,
+its draft is discarded and no write is published.
+
+```ts
+const store = createStore({ user: { name: "A" }, tags: ["portal"] });
+store.$set((draft) => {
+  draft.user.name = "Ridwan";
+  draft.tags.push("react");
+  return draft;
+});
+```
+
+Return the draft or a partial update explicitly. This is not a recipe API that
+commits a draft when the callback returns `undefined`. The returned value still
+follows normal `$set` merge/replacement semantics. See [ownership boundaries](/docs/core/reading-state#ownership-boundaries)
+for opaque values that are retained by reference.

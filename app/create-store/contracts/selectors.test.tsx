@@ -3,6 +3,37 @@ import { describe, expect, it } from "vitest";
 import { createStore } from "../index";
 
 describe("selector subscription contract", () => {
+  it("shares the imperative snapshot with hooks and selectors across root merges", () => {
+    const store = createStore({ user: { name: "A" }, count: 0 });
+    let renders = 0;
+    const hook = renderHook(() => {
+      renders++;
+      return store.$use((s) => {
+        expect(s).toBe(store.$get());
+        return s.user;
+      })[0];
+    });
+    const before = store.user.$get();
+    const initial = renders;
+    expect(hook.result.current).toBe(before);
+    act(() => store.$set({ count: 1 }));
+    expect(renders).toBe(initial);
+    expect(hook.result.current).toBe(before);
+    act(() => store.$set({ user: { name: "A" } }));
+    expect(renders).toBe(initial);
+    act(() => store.$set({ user: { name: "B" } }));
+    expect(renders).toBe(initial + 1);
+    expect(hook.result.current).toBe(store.user.$get());
+  });
+
+  it("uses the same snapshot for unselected hooks and imperative reads", () => {
+    const store = createStore([1, 2]);
+    const hook = renderHook(() => store.$use()[0]);
+    expect(hook.result.current).toBe(store.$get());
+    act(() => store.$set([3]));
+    expect(hook.result.current).toBe(store.$get());
+  });
+
   it("renders only when the selected snapshot changes", () => {
     const store = createStore({ count: 0, name: "A" });
     let renders = 0;

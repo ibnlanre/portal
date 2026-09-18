@@ -13,17 +13,22 @@ read, write, subscribe, use in React, and—on composite stores—focus a path.
 
 ## Cheat Sheet
 
-| I want to...            | Method            | Return Value           |
-| :---------------------- | :---------------- | :--------------------- |
-| **Read** the value once | `$get()`          | The current value `S`  |
-| **Update** the value    | `$set(value)`     | `void`                 |
-| **Watch** for changes   | `$subscribe(fn)`  | `unsubscribe` function |
-| **Use** in React        | `$use(selector?)` | `[value, setValue]`    |
-| **Access** a deep path  | `$at(path)`       | `Store` instance       |
+| I want to...            | Method            | Return Value              |
+| :---------------------- | :---------------- | :------------------------ |
+| **Read** the value once | `$get()`          | A read-only `Snapshot<S>` |
+| **Update** the value    | `$set(value)`     | `void`                    |
+| **Watch** for changes   | `$subscribe(fn)`  | `unsubscribe` function    |
+| **Use** in React        | `$use(selector?)` | `[value, setValue]`       |
+| **Access** a deep path  | `$at(path)`       | `Store` instance          |
 
 ---
 
 ## Reading Data: `$get()`
+
+Reads return stable, read-only snapshots. Portal copies supported incoming values
+and preserves unchanged plain-object and array branches across writes. Use
+`$set()` to mutate state. See [Reading State](/docs/core/reading-state) for identity and
+ownership guarantees.
 
 Use `$get()` when you need to read the state imperatively—like inside an event handler, a utility function, or an action.
 

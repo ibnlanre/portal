@@ -14,9 +14,61 @@ const countStore = createStore(10);
 countStore.$get(); // 10
 ```
 
+## Stable, read-only snapshots
+
+Portal owns its data: it copies supported values when they enter the store, not
+on every read. `$get()`, `$use()`, selector inputs, and subscriber values share
+read-only snapshots. Use `$set()` to change state; do not mutate a snapshot.
+The exported `Snapshot<State>` type describes this read-only view. Snapshots
+are not frozen at runtime, so JavaScript consumers must follow the same rule.
+
+Repeated reads return the same reference until that branch changes. Partial
+object writes preserve untouched branches, whether you write a leaf or the root:
+
+```ts
+const store = createStore({
+  user: { name: "A" },
+  settings: { theme: "dark" },
+});
+const before = store.$get();
+store.$set({ user: { name: "B" } });
+const after = store.$get();
+
+before !== after; // true
+before.user !== after.user; // true
+before.settings === after.settings; // true
+store.settings.$get() === after.settings; // true
+before.user.name; // "A": earlier snapshots keep their values
+```
+
+Plain objects and arrays share unchanged nested values; primitive equality uses
+`Object.is`. An unchanged merge retains the snapshot, but still notifies raw
+subscribers. Arrays replace as complete values: sharing an equal element does
+not merge omitted properties into that element.
+
+Selectors receive the snapshot itself. A selector may allocate a derived result,
+but any references it retains from its input are still read-only store data.
+
+## Ownership boundaries
+
+Initial values and `$set` inputs are copied, including mutable drafts returned
+by updater functions. Mutating a retained input or draft later does not change
+stored data. Plain objects, arrays, dates, maps, sets, regular expressions,
+ArrayBuffers, and their typed views are copied. Frozen records also become owned
+data; accessor properties are evaluated on ingestion.
+
+Structural sharing compares plain objects and arrays. Other supported built-ins
+are atomic replacements when supplied in an update; equal dates or maps are not
+compared by contents. Functions, custom class instances, promises, weak
+collections, and other opaque objects remain references. Their internal mutable
+state is outside Portal's ownership guarantee. Avoid mutating them in snapshots
+or drafts; prefer plain data for state that Portal should isolate and track.
+Mutable built-in methods such as `Date.setTime` must not be called on snapshots,
+even where TypeScript permits them.
+
 ## Selectors and Fallbacks
 
-`$get()` accepts a **selector** function to derive a value, or a **fallback** value when the store value is `undefined`:
+`$get()` accepts a **selector** function to derive a value. Use `??` on its result for a fallback:
 
 ```ts
 const userStore = createStore({ firstName: "Alex", lastName: "Johnson" });
@@ -33,7 +85,7 @@ const configStore = createStore({
 
 // Fallback when the value is undefined
 configStore.apiUrl.$get(); // undefined
-configStore.apiUrl.$get("https://api.default.com"); // "https://api.default.com"
+configStore.apiUrl.$get() ?? "https://api.default.com"; // "https://api.default.com"
 ```
 
 Selectors are pure functions — the store never caches derived results,

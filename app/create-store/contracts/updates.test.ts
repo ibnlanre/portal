@@ -31,14 +31,9 @@ describe("update semantics", () => {
     Reflect.set(store, "age", 99);
     expect(store.$get()).toEqual({ name: "B", age: 20 });
   });
-  it("protects state from mutations inside read selectors and updater drafts", () => {
+  it("protects initial values from updater mutations", () => {
     const initial = { user: { name: "A" } };
     const store = createStore(initial);
-    store.$get((s) => {
-      s.user.name = "outside";
-      return s;
-    });
-    expect(store.user.name.$get()).toBe("A");
     store.user.$set((s) => {
       s.name = "B";
       return s;

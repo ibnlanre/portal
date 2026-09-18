@@ -24,10 +24,24 @@ Run `pnpm --dir app test:contracts` from the repository root. Run
 - **Selectors:** React subscribes to the selected snapshot. `Object.is` determines
   whether a selected result changed. Allocating selectors are cached between
   source changes; fresh object results on a new source snapshot count as changes.
-  Unchanged source subtrees retain their cloned identity across leaf writes.
-  Treat hook snapshots as read-only. This is not deep equality. Captured
+  Unchanged plain-object/array subtrees retain their snapshot identity across
+  leaf and partial root writes. Hooks read the same snapshots as `$get`, without
+  cloning. Treat all read snapshots as read-only. Selector gating is not deep equality. Captured
   props/dependencies refresh selection.
   The hook still returns `[selectedValue, branchSetter]`.
+- **Ownership and snapshots:** supported input data is copied at creation and on
+  writes. `$get`, `$use`, selector input, and subscriber values share read-only
+  snapshots. Repeated reads retain identity. Earlier snapshots stay unchanged.
+  Functional updaters get defensive mutable copies; returned drafts are copied
+  again, so retaining a draft cannot mutate committed state. A thrown updater
+  publishes nothing. Plain objects/arrays share unchanged branches, including
+  unchanged merges and complete array replacements with equal contents. Missing
+  properties differ from explicit `undefined`; primitive equality is `Object.is`.
+  Cyclic full drafts are supported. Snapshots are not runtime-frozen. Supported
+  built-ins (Date, Map, Set, RegExp, ArrayBuffer and views) are copied but treated
+  as atomic replacements when supplied; they are not compared by contents.
+  Functions, custom classes, promises, weak collections and other opaque values
+  remain references and are outside the data-isolation guarantee.
 - **Updates:** plain objects deep-merge; omitted keys survive. Primitives, arrays,
   `null`, and `undefined` replace the addressed value. Assigning `undefined`
   keeps the key. Direct assignment/deletion on store proxies is ignored.
@@ -74,3 +88,18 @@ Run `pnpm --dir app test:contracts` from the repository root. Run
 The contracts do not promise a transaction API, key deletion, deep selector
 comparison, or performance targets. Changes to those promises need an explicit
 contract decision, not just an implementation tweak.
+
+## Snapshot ownership pass
+
+1. Six snapshot/ingestion/draft contracts failed before changing the read and
+   write boundaries; all six passed afterward.
+2. Eleven of twelve structural-sharing contracts failed before replacing the
+   cloning merge. Root/parent/leaf writes, arrays, no-op notification separation,
+   `Object.is` edge cases and cyclic updater drafts now pass.
+3. Read-only type checks failed against mutable read surfaces. Reads now use
+   `Snapshot<State>`; setters accept those snapshots and retain updater typing.
+4. Frozen input and mutable built-in ownership probes failed before introducing
+   the store-specific ingestion copy. General-purpose `combine()` is unchanged.
+5. React contracts verify shared imperative/hook snapshots and render gating for
+   unchanged selections across partial root merges. Raw notification propagation
+   remains write-based; this pass does not narrow root notifications.

@@ -40,17 +40,17 @@ describe("createStore - Type Tests", () => {
 
     it("should return PrimitiveStore<number[]> for an array value", () => {
       const store = createStore<number[]>([1, 2, 3]);
-      expectTypeOf(store.$get()).toEqualTypeOf<number[]>();
+      expectTypeOf(store.$get()).toEqualTypeOf<readonly number[]>();
     });
 
     it("should return PrimitiveStore<Set<string>> for a Set value", () => {
       const store = createStore(new Set<string>());
-      expectTypeOf(store.$get()).toEqualTypeOf<Set<string>>();
+      expectTypeOf(store.$get()).toEqualTypeOf<ReadonlySet<string>>();
     });
 
     it("should return PrimitiveStore<Map<string, number>> for a Map value", () => {
       const store = createStore(new Map<string, number>());
-      expectTypeOf(store.$get()).toEqualTypeOf<Map<string, number>>();
+      expectTypeOf(store.$get()).toEqualTypeOf<ReadonlyMap<string, number>>();
     });
   });
 
@@ -123,8 +123,8 @@ describe("createStore - Type Tests", () => {
         required: "",
       });
       expectTypeOf(store.$get()).toEqualTypeOf<{
-        optional: string | undefined;
-        required: string;
+        readonly optional: string | undefined;
+        readonly required: string;
       }>();
     });
 
@@ -182,8 +182,7 @@ describe("createStore - Type Tests", () => {
       expectTypeOf(store.$get).toExtend<
         <Value = { count: number; name: string }>(
           selector?:
-            | ((state: { count: number; name: string }) => Value)
-            | undefined
+            ((state: { count: number; name: string }) => Value) | undefined
         ) => Value
       >();
     });
@@ -192,17 +191,21 @@ describe("createStore - Type Tests", () => {
   describe("Real-world edge cases", () => {
     it("record-shaped object produces a CompositeStore", () => {
       const store = createStore<Record<string, number>>({});
-      expectTypeOf(store.$get()).toEqualTypeOf<Record<string, number>>();
+      expectTypeOf(store.$get()).toEqualTypeOf<
+        Readonly<Record<string, number>>
+      >();
     });
 
     it("array value produces a PrimitiveStore since arrays are not plain objects", () => {
       const store = createStore<number[]>([1, 2, 3]);
-      expectTypeOf(store.$get()).toEqualTypeOf<number[]>();
+      expectTypeOf(store.$get()).toEqualTypeOf<readonly number[]>();
     });
 
     it("explicit union state types produce a PrimitiveStore", () => {
       const store = createStore<number | { a: number }>(0);
-      expectTypeOf(store.$get()).toEqualTypeOf<number | { a: number }>();
+      expectTypeOf(store.$get()).toEqualTypeOf<
+        number | { readonly a: number }
+      >();
     });
 
     it("object value types as a CompositeStore", () => {

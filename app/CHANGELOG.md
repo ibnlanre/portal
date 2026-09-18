@@ -2,8 +2,40 @@
 
 ### BREAKING CHANGES
 
-- `createStore()` no longer accepts a schema. It takes the initial value as its single argument, and the store type is inferred from that value.
-- remove `resolveSchema()` and `resolveSchemaAsync()`. Portal no longer ships schema helpers; rely on your schema library for values and types.
+- Store reads now return stable, read-only snapshots instead of defensive copies.
+  In 5.2.4 every `$get()`, `$use()`, and subscriber call cloned the state. Do not
+  mutate `$get()`, `$use()`, selector inputs, or subscriber values; use `$set()`
+  instead. `Snapshot<State>` describes the read surface.
+- `createStore()` now requires an argument. The 5.2.4 overload that accepted no
+  argument and returned `PrimitiveStore<State | undefined>` is gone.
+- `createStore()` no longer resolves an initializer. In 5.2.4 a function argument
+  was treated as a lazy factory, and a promise argument returned a
+  `Promise<PrimitiveStore<State>>` that you could await. Both are now ordinary
+  values, so `await createStore(fetchCount)` becomes
+  `createStore(await fetchCount())`.
+- the React peer requirement is now `^19.0.0`, up from `>16.7`.
+- remove the `normalizeObject` export.
+- remove the `Normalize`, `SetPartial`, and `SetPartialStateAction` types.
+  `SetPartialStateAction` is replaced by `PartialSetStateAction`.
+
+> Schema helpers developed during this cycle (`resolveSchema`,
+> `resolveSchemaAsync`, `InferSchema`, and the schema argument to `createStore()`)
+> were withdrawn before release. None of them ever appeared in a published
+> version, so they are not consumer-facing changes and are not listed above.
+
+### Owned inputs and stable snapshots
+
+Portal copies supported values at creation and on writes, including drafts
+returned by functional updaters. Earlier snapshots remain unchanged, and partial
+writes preserve references for unchanged plain-object and array branches. React
+selectors consume those references directly, including across root merges.
+Updater inputs remain defensive copies. General-purpose `combine()` is unchanged.
+
+Raw subscribers still receive same-value writes, and root writes still notify
+all registered paths. Notification precision remains a separate contract decision.
+Snapshots are not runtime-frozen. Mutable built-ins are copied but treated as
+atomic replacements; functions and opaque instances remain references outside
+Portal's data-isolation guarantee.
 
 ### Core semantics hardening
 

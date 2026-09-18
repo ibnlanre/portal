@@ -26,7 +26,9 @@ Pass a selector to subscribe to a derived value. Store updates trigger a render 
 to `Object.is`. Parent renders and other hooks can still render the component.
 A selector returning a fresh object or array counts as changed on a new source
 snapshot, even when its contents are equal. Selecting an unchanged source
-subtree preserves its identity across unrelated leaf writes. Treat returned
+subtree preserves its identity across unrelated leaf writes and partial root
+merges. Hooks and `$get()` read the same snapshots; React selection adds no
+defensive clone. Treat returned
 hook snapshots as read-only and change state through the setter.
 
 ```tsx

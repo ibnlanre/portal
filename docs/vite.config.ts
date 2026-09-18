@@ -16,6 +16,11 @@ export default defineConfig({
     tanstackStart({
       prerender: {
         enabled: true,
+        // In-page anchors are not pages. The crawler treats
+        // "/docs/core/reading-state#section" as its own route, which
+        // prerenders the parent document twice. The fragment adds nothing
+        // to a static file, so skip any crawled path carrying one.
+        filter: ({ path }) => !path.includes("#"),
       },
     }),
     react(),

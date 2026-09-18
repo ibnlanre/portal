@@ -1,14 +1,12 @@
+import type { Snapshot } from "@/create-store/types/snapshot";
 import type { Selector } from "@/create-store/types/selector";
 
 import { isFunction } from "@/create-store/functions/assertions/is-function";
-import { clone } from "@/create-store/functions/helpers/clone";
 
-export function resolveSelectorValue<State, Value = State>(
+export function resolveSelectorValue<State, Value = Snapshot<State>>(
   state: State,
-  selector?: Selector<State, Value>,
-  cache?: WeakMap<object, any>
+  selector?: Selector<State, Value>
 ) {
-  const value = clone(state, cache);
-  if (isFunction(selector)) return selector(value);
-  return value as unknown as Value;
+  if (isFunction(selector)) return selector(state as Snapshot<State>);
+  return state as unknown as Value;
 }

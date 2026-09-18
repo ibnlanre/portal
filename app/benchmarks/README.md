@@ -34,4 +34,6 @@ Source maps, CJS, and declarations contribute to distribution size. These are
 separate from runtime costs.
 
 No claim of being faster or smaller than another library follows from this suite.
-No implementation optimizations were made as part of these benchmark additions.
+The original baseline predates input ownership and stable snapshots. Creation
+now includes copying incoming data; root reads return an existing snapshot. Keep
+that semantic change in mind when comparing runs.

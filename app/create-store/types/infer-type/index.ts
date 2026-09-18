@@ -11,9 +11,11 @@ export type InferType<
   > = never,
 > =
   IsNever<Path> extends 1
-    ? Store extends PrimitiveStore<infer State>
+    ? Store extends CompositeStore<infer State>
       ? State
-      : never
+      : Store extends PrimitiveStore<infer State>
+        ? State
+        : never
     : Store extends CompositeStore<infer State>
       ? ResolvePath<State, Path>
       : never;

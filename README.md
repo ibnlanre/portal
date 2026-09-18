@@ -560,7 +560,7 @@ All store instances, whether primitive or composite, provide a core set of metho
 
 | Method         | Use Case                                                          | Returns                   |
 | -------------- | ----------------------------------------------------------------- | ------------------------- |
-| `$get()`       | Retrieve current state or compute a derived value                 | `S` or derived value `R`  |
+| `$get()`       | Retrieve current state or compute a derived value                 | `Snapshot<S>` or derived `R`  |
 | `$set()`       | Update state with a new value or updater function                 | `void`                    |
 | `$subscribe()` | Subscribe to state changes and react to updates                   | `unsubscribe` function    |
 | `$use()`       | Connect store to React component (hook)                           | `[state, setState]` tuple |
@@ -568,17 +568,26 @@ All store instances, whether primitive or composite, provide a core set of metho
 
 #### `$get()`
 
-Retrieves the current state of the store. Optionally, you can provide a selector function to compute a derived value from the state without altering the stored state.
+Returns a stable, read-only snapshot of the store. `$get()`, `$use()`, selectors,
+and subscribers share snapshots; mutate through `$set()`, not through a read.
+Portal copies supported incoming data and keeps unchanged plain-object and array
+branches shared across writes. Updater functions receive isolated mutable drafts.
+Snapshots are not runtime-frozen. Opaque values such as functions and custom
+instances remain references; built-ins such as dates and maps are copied but
+replaced atomically when supplied in an update. See the
+[ownership contract](docs/content/docs/core/reading-state.mdx#ownership-boundaries).
+
+Optionally, provide a pure selector to derive a value from the snapshot.
 
 **Syntax:**
 
 ```ts
-$get(): S
-$get<R>(selector: (currentState: S) => R): R
+$get(): Snapshot<S>
+$get<R>(selector: (currentState: Snapshot<S>) => R): R
 ```
 
-- **`selector`** (optional): A function that takes the current state (`S`) as an argument and returns a derived value (`R`).
-- **Returns**: The current state (`S`) if no selector is provided, or the derived value (`R`) if a selector is provided.
+- **`selector`** (optional): A function that takes the read-only snapshot (`Snapshot<S>`) as an argument and returns a derived value (`R`).
+- **Returns**: The current snapshot (`Snapshot<S>`) if no selector is provided, or the derived value (`R`) if a selector is provided.
 
 **Examples:**
 

@@ -41,7 +41,7 @@ for (const keys of [10, 100, 1000]) {
         options
       );
       bench(
-        "root $get (defensive clone)",
+        "root $get (stable snapshot)",
         () => {
           store.$get();
         },

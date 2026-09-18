@@ -1,3 +1,4 @@
+import type { Snapshot } from "@/create-store/types/snapshot";
 import type { DependencyList } from "react";
 import type { Selector } from "@/create-store/types/selector";
 import { useMemo, useSyncExternalStore } from "react";
@@ -5,7 +6,7 @@ import { useVersion } from "@/create-store/functions/hooks/use-version";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
 /** Cache each selected snapshot until the source or selector changes. */
-export function useStoreSnapshot<State, Value = State>(
+export function useStoreSnapshot<State, Value = Snapshot<State>>(
   subscribe: (listener: () => void) => () => void,
   getSnapshot: () => State,
   selector?: Selector<State, Value>,
@@ -13,15 +14,13 @@ export function useStoreSnapshot<State, Value = State>(
 ): Value {
   const version = useVersion(dependencies);
   const getSelection = useMemo(() => {
-    // Preserve cloned subtrees when a write shares their source identity.
-    const clones = new WeakMap<object, unknown>();
     let initialized = false;
     let previousState: State;
     let selection: Value;
     return () => {
       const state = getSnapshot();
       if (!initialized || !Object.is(previousState, state)) {
-        const next = resolveSelectorValue(state, selector, clones);
+        const next = resolveSelectorValue(state, selector);
         previousState = state;
         if (!initialized || !Object.is(selection, next)) selection = next;
         initialized = true;

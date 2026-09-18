@@ -2,16 +2,14 @@ import { describe, expect, it, vi } from "vitest";
 
 import { resolveSelectorValue } from "./index";
 
-import * as helpers from "@/create-store/functions/helpers/clone";
-
 type State = { count: number; nested?: { value: string } };
 
 describe("resolveSelectorValue", () => {
-  it("returns a cloned state when selector is undefined", () => {
+  it("returns the current snapshot when selector is undefined", () => {
     const state: State = { count: 1, nested: { value: "a" } };
     const result = resolveSelectorValue(state);
     expect(result).toEqual(state);
-    expect(result).not.toBe(state);
+    expect(result).toBe(state);
   });
 
   it("returns the selector result when selector is a function", () => {
@@ -21,21 +19,12 @@ describe("resolveSelectorValue", () => {
     expect(result).toBe(4);
   });
 
-  it("calls clone with the state", () => {
-    const state: State = { count: 3 };
-
-    const clone = vi.spyOn(helpers, "clone");
-
-    resolveSelectorValue(state);
-    expect(clone).toHaveBeenCalledWith(state, undefined);
-  });
-
-  it("calls selector with the cloned state", () => {
+  it("calls selector with the current snapshot", () => {
     const state: State = { count: 5 };
     const selector = vi.fn((s: State) => s.count);
 
     resolveSelectorValue(state, selector);
-    expect(selector).toHaveBeenCalledWith(expect.objectContaining(state));
+    expect(selector.mock.calls[0][0]).toBe(state);
   });
 
   it("works with primitive state", () => {

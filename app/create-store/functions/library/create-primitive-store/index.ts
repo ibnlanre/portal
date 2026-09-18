@@ -1,3 +1,4 @@
+import type { Snapshot } from "@/create-store/types/snapshot";
 import type { DependencyList } from "react";
 
 import type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
@@ -9,7 +10,7 @@ import type { Subscriber } from "@/create-store/types/subscriber";
 import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
-import { clone } from "@/create-store/functions/helpers/clone";
+import { cloneState } from "@/create-store/functions/helpers/clone-state";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { useStoreSnapshot } from "@/create-store/functions/hooks/use-store-snapshot";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
@@ -22,10 +23,9 @@ import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve
 export function createPrimitiveStore<State>(
   initialState: State
 ): PrimitiveStore<State> {
-  let state = initialState;
+  let state = cloneState(initialState);
 
   const subscribers = new Set<Subscriber<State>>();
-  const cache = new WeakMap<object, any>();
 
   function setState(value: State) {
     state = value;
@@ -33,24 +33,24 @@ export function createPrimitiveStore<State>(
   }
 
   function notifySubscribers(value: State) {
-    subscribers.forEach((subscriber) => subscriber(value));
+    subscribers.forEach((subscriber) => subscriber(value as Snapshot<State>));
   }
 
   function buildStore() {
     const getSnapshot = () => state;
     const subscribe = (listener: () => void) => $subscribe(listener, false);
-    function $get<Value = State>(selector?: Selector<State, Value>) {
-      return resolveSelectorValue(state, selector, cache);
+    function $get<Value = Snapshot<State>>(selector?: Selector<State, Value>) {
+      return resolveSelectorValue(state, selector);
     }
 
     function $set(action: PartialSetStateAction<State>) {
       const next = isSetStateActionFunction(action)
-        ? action(clone(state, cache))
+        ? action(cloneState(state))
         : action;
-      setState(replace(state, next));
+      setState(replace(state, cloneState(next)));
     }
 
-    function $use<Value = State>(
+    function $use<Value = Snapshot<State>>(
       selector?: Selector<State, Value>,
       dependencies?: DependencyList
     ): PartialStateManager<State, Value> {
@@ -66,7 +66,7 @@ export function createPrimitiveStore<State>(
 
     function $subscribe(subscriber: Subscriber<State>, immediate = true) {
       subscribers.add(subscriber);
-      if (immediate) subscriber(state);
+      if (immediate) subscriber(state as Snapshot<State>);
 
       return () => {
         subscribers.delete(subscriber);

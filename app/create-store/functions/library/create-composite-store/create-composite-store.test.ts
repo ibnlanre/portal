@@ -1,3 +1,4 @@
+import type { Snapshot } from "@/create-store/types/snapshot";
 import { renderHook } from "@testing-library/react";
 import { act, useMemo } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -1097,7 +1098,7 @@ describe("createCompositeStore", () => {
 
       it("should handle async selector scenarios", async () => {
         const asyncSelector = async (
-          users: {
+          users: readonly {
             active: boolean;
             id: number;
             name: string;
@@ -1379,7 +1380,7 @@ describe("createCompositeStore", () => {
         }));
         const store = createCompositeStore({ data });
 
-        let lastResult: typeof data | undefined;
+        let lastResult: Snapshot<typeof data> | undefined;
         for (let i = 0; i < 10; i++) {
           const result = store.data.$get();
 
@@ -1393,11 +1394,11 @@ describe("createCompositeStore", () => {
         expect(lastResult?.[99]).toEqual({ id: 99, value: "item-99" });
       });
 
-      it("should allow garbage collection of returned states", () => {
+      it("should share repeated branch snapshots", () => {
         const items = Array.from({ length: 100 }, (_, i) => `item-${i}`);
         const store = createCompositeStore({ data: { items } });
 
-        const results: Array<{ items: string[] }> = [];
+        const results: Array<Snapshot<{ items: string[] }>> = [];
         for (let i = 0; i < 5; i++) {
           const state = store.data.$get();
           results.push(state);
@@ -1408,11 +1409,11 @@ describe("createCompositeStore", () => {
 
         expect(results).toHaveLength(5);
 
-        expect(results[0]).not.toBe(results[1]);
-        expect(results[0].items).not.toBe(results[1].items);
+        expect(results[0]).toBe(results[1]);
+        expect(results[0].items).toBe(results[1].items);
         expect(results[0].items).toBeInstanceOf(Array);
 
-        results[0].items[0] = "modified";
+        store.data.items.$set(["modified"]);
         expect(results[1].items[0]).toBe("item-0");
       });
 
@@ -1447,7 +1448,7 @@ describe("createCompositeStore", () => {
         expect(store.count.$get()).toBe(42);
       });
 
-      it("should benchmark clone vs no-clone performance", () => {
+      it("should reuse the snapshot for repeated reads", () => {
         const largeState = {
           settings: { language: "en", theme: "dark" },
           users: Array.from({ length: 50 }, (_, i) => ({
@@ -1459,7 +1460,7 @@ describe("createCompositeStore", () => {
 
         const store = createCompositeStore(largeState);
 
-        const results: (typeof largeState)[] = [];
+        const results: Snapshot<typeof largeState>[] = [];
         for (let i = 0; i < 10; i++) {
           const state = store.$get();
           results.push(state);
@@ -1471,7 +1472,7 @@ describe("createCompositeStore", () => {
 
         expect(results).toHaveLength(10);
 
-        results[0].settings.language = "fr";
+        expect(results.every((result) => result === results[0])).toBe(true);
         expect(results[1].settings.language).toBe("en");
 
         expect(store.settings.language.$get()).toBe("en");
@@ -1489,14 +1490,14 @@ describe("createCompositeStore", () => {
         const state2 = store.$get();
 
         expect(state1).toEqual(state2);
-        expect(state1).not.toBe(state2);
-        expect(state1.user).not.toBe(state2.user);
+        expect(state1).toBe(state2);
+        expect(state1.user).toBe(state2.user);
 
-        state1.user.name = "Jane";
-        state1.settings.theme = "light";
+        store.user.$set({ name: "Jane" });
+        store.settings.$set({ theme: "light" });
 
-        expect(store.user.name.$get()).toBe("John");
-        expect(store.settings.theme.$get()).toBe("dark");
+        expect(store.user.name.$get()).toBe("Jane");
+        expect(store.settings.theme.$get()).toBe("light");
 
         expect(state2.user.name).toBe("John");
         expect(state2.settings.theme).toBe("dark");
@@ -1514,14 +1515,14 @@ describe("createCompositeStore", () => {
         const items2 = store.data.items.$get();
 
         expect(items1).toEqual(items2);
-        expect(items1).not.toBe(items2);
+        expect(items1).toBe(items2);
 
-        items1.push(4);
-        expect(store.data.items.$get()).toEqual([1, 2, 3]);
+        store.data.items.$set([4]);
+        expect(store.data.items.$get()).toEqual([4]);
         expect(items2).toEqual([1, 2, 3]);
       });
 
-      it("should isolate state with selectors", () => {
+      it("should share snapshot elements with selectors", () => {
         const store = createCompositeStore({
           users: [
             { active: true, id: 1, name: "Alice" },
@@ -1539,7 +1540,7 @@ describe("createCompositeStore", () => {
         expect(activeUsers1).toEqual(activeUsers2);
         expect(activeUsers1).not.toBe(activeUsers2);
 
-        activeUsers1[0].name = "Modified";
+        expect(activeUsers1[0]).toBe(store.users.$get()[0]);
         expect(store.users.$get()[0].name).toBe("Alice");
       });
     });

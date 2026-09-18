@@ -1,3 +1,4 @@
+import type { Snapshot } from "@/create-store/types/snapshot";
 import type { DependencyList } from "react";
 
 import type { CompositeStore } from "@/create-store/types/composite-store";
@@ -17,7 +18,7 @@ import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
-import { clone } from "@/create-store/functions/helpers/clone";
+import { cloneState } from "@/create-store/functions/helpers/clone-state";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { splitPath } from "@/create-store/functions/helpers/split-path";
 import { useStoreSnapshot } from "@/create-store/functions/hooks/use-store-snapshot";
@@ -33,10 +34,11 @@ export function createCompositeStore<State extends GenericObject>(
   initialState: State
 ): CompositeStore<State> {
   const cache = new Map<string, CompositeStore<State>>();
-  let state = initialState;
+  const baseline = cloneState(initialState);
+  let state = baseline;
 
   function hasProperty(path: Paths<State> | undefined, property: string) {
-    const parent = resolvePath(initialState, path);
+    const parent = resolvePath(baseline, path);
     const current = resolvePath(state, path);
     return (
       (isDictionary(parent) &&
@@ -80,17 +82,18 @@ export function createCompositeStore<State extends GenericObject>(
 
   function setProperty<Path extends Paths<State>>(value: unknown, path: Path) {
     const keys = splitPath(path);
-    const pivot = keys.pop()!;
-    const spread: any = { ...state };
-
-    let current = spread;
-    for (const key of keys) {
-      current[key] = { ...current[key] };
-      current = current[key];
+    function update(current: any, index: number): any {
+      const key = keys[index];
+      const exists =
+        isDictionary(current) &&
+        Object.prototype.hasOwnProperty.call(current, key);
+      const previous = exists ? current[key] : undefined;
+      const next =
+        index === keys.length - 1 ? value : update(previous, index + 1);
+      if (exists && Object.is(previous, next)) return current;
+      return { ...current, [key]: next };
     }
-    current[pivot] = value;
-
-    setState(spread, path);
+    setState(update(state, 0), path);
   }
 
   function read<Path extends Paths<State> = never>(
@@ -103,7 +106,7 @@ export function createCompositeStore<State extends GenericObject>(
 
   function get<
     Path extends Paths<State> = never,
-    Result = StatePath<State, Path>,
+    Result = Snapshot<StatePath<State, Path>>,
   >(path?: Path, selector?: Selector<StatePath<State, Path>, Result>): Result {
     return resolveSelectorValue(read(path), selector);
   }
@@ -114,10 +117,10 @@ export function createCompositeStore<State extends GenericObject>(
     return (action) => {
       const current = read(path);
       const next = isSetStateActionFunction(action)
-        ? action(clone(current))
+        ? action(cloneState(current))
         : action;
-      if (path) setProperty(replace(current, next), path);
-      else setState(replace(state, next));
+      if (path) setProperty(replace(current, cloneState(next)), path);
+      else setState(replace(state, cloneState(next)));
     };
   }
 
@@ -131,7 +134,7 @@ export function createCompositeStore<State extends GenericObject>(
       Subscriber<StatePath<State, Path>>
     >;
     listeners.add(subscriber);
-    if (immediate) subscriber(read(path));
+    if (immediate) subscriber(read(path) as Snapshot<StatePath<State, Path>>);
     return () => {
       listeners.delete(subscriber);
     };
@@ -143,7 +146,7 @@ export function createCompositeStore<State extends GenericObject>(
 
   function use<
     Path extends Paths<State> = never,
-    Result = StatePath<State, Path>,
+    Result = Snapshot<StatePath<State, Path>>,
   >(
     path?: Path,
     selector?: Selector<StatePath<State, Path>, Result>,
@@ -199,7 +202,7 @@ export function createCompositeStore<State extends GenericObject>(
       ) {
         return sub(subscriber, chain, immediate);
       },
-      $use<Result = StatePath<State, Path>>(
+      $use<Result = Snapshot<StatePath<State, Path>>>(
         selector?: Selector<StatePath<State, Path>, Result>,
         dependencies?: DependencyList
       ) {

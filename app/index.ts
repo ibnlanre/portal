@@ -28,7 +28,6 @@ export type {
 export type { DeepPartial } from "@/create-store/types/deep-partial";
 export type { Dictionary } from "@/create-store/types/dictionary";
 export type { Factory } from "@/create-store/types/factory";
-export type { InferSchema } from "@/create-store/types/infer-schema";
 export type { InferType } from "@/create-store/types/infer-type";
 export type { Initializer } from "@/create-store/types/initializer";
 export type {
@@ -47,6 +46,7 @@ export type {
   GetSessionStorage,
   SetSessionStorage,
 } from "@/create-store/types/session-storage";
+export type { Snapshot } from "@/create-store/types/snapshot";
 export type { StatePath } from "@/create-store/types/state-path";
 export type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 export type { StoreValueResolver } from "@/create-store/types/store-value-resolver";
