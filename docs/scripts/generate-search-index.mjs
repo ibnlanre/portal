@@ -1,11 +1,10 @@
+import { createSearchAPI } from "fumadocs-core/search/server";
 // Generates the static search index consumed by `fumadocs-ui`'s search dialog
 // (`type: "static"`). The docs site is exported statically, so the index must be
 // produced at build time instead of served from an API route.
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-
-import { createSearchAPI } from "fumadocs-core/search/server";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const contentDir = join(root, "content", "docs");
@@ -33,13 +32,12 @@ function parseFrontmatter(source) {
   return { body, description: read("description"), title: read("title") };
 }
 
-function toUrl(file) {
-  const slug = relative(contentDir, file)
-    .replace(/\\/g, "/")
-    .replace(/\.mdx?$/, "");
-  const path = slug.endsWith("/index") ? slug.slice(0, -"/index".length) : slug;
-
-  return path ? `/docs/${path}` : "/docs";
+function slugify(heading) {
+  return heading
+    .toLowerCase()
+    .replace(/[^\da-z\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
 }
 
 function stripMarkdown(markdown) {
@@ -55,14 +53,6 @@ function stripMarkdown(markdown) {
     .replace(/[*_>~]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function slugify(heading) {
-  return heading
-    .toLowerCase()
-    .replace(/[^\da-z\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-");
 }
 
 /**
@@ -99,6 +89,15 @@ function toStructuredData(markdown) {
   flush();
 
   return { contents, headings };
+}
+
+function toUrl(file) {
+  const slug = relative(contentDir, file)
+    .replace(/\\/g, "/")
+    .replace(/\.mdx?$/, "");
+  const path = slug.endsWith("/index") ? slug.slice(0, -"/index".length) : slug;
+
+  return path ? `/docs/${path}` : "/docs";
 }
 
 const indexes = collectPages(contentDir).map((file) => {

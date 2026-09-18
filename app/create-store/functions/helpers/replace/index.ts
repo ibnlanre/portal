@@ -1,20 +1,14 @@
-function isPlainObject(value: unknown): value is Record<PropertyKey, any> {
-  if (value === null || typeof value !== "object") return false;
-  const prototype = Object.getPrototypeOf(value);
-  return prototype === Object.prototype || prototype === null;
-}
-
-type Value = { value: unknown; node?: MergeNode };
 type MergeNode = {
-  target: any;
-  source: any;
-  merge: boolean;
-  fields: Map<PropertyKey, Value>;
-  parents: Set<MergeNode>;
   changed: boolean;
+  fields: Map<PropertyKey, Value>;
+  merge: boolean;
+  parents: Set<MergeNode>;
   result?: any;
+  source: any;
+  target: any;
 };
 
+type Value = { node?: MergeNode; value: unknown };
 /**
  * Merge an owned patch without cloning untouched state. Arrays replace rather
  * than merge, but equal elements can still share their previous snapshots.
@@ -36,22 +30,22 @@ export function replace<Target>(target: Target, source: unknown): Target {
     let sources = cache.get(target);
     if (!sources) cache.set(target, (sources = new WeakMap()));
     const cached = sources.get(source);
-    if (cached) return { value: undefined, node: cached };
+    if (cached) return { node: cached, value: undefined };
 
     const keys = Reflect.ownKeys(source).filter(
       (key) => !arrays || key !== "length"
     );
     const node: MergeNode = {
-      target,
-      source,
-      merge,
-      fields: new Map(),
-      parents: new Set(),
       changed:
         Object.getPrototypeOf(target) !== Object.getPrototypeOf(source) ||
         (arrays && target.length !== source.length) ||
         (!merge &&
           Reflect.ownKeys(target).length !== Reflect.ownKeys(source).length),
+      fields: new Map(),
+      merge,
+      parents: new Set(),
+      source,
+      target,
     };
     sources.set(source, node);
     nodes.push(node);
@@ -71,7 +65,7 @@ export function replace<Target>(target: Target, source: unknown): Target {
         node.changed = true;
       }
     }
-    return { value: undefined, node };
+    return { node, value: undefined };
   }
 
   const root = visit(target, source, true);
@@ -97,27 +91,33 @@ export function replace<Target>(target: Target, source: unknown): Target {
     if (node.merge) {
       for (const key of Reflect.ownKeys(node.target)) {
         Object.defineProperty(node.result, key, {
-          value: node.target[key],
-          writable: true,
           configurable: true,
           enumerable: Object.prototype.propertyIsEnumerable.call(
             node.target,
             key
           ),
+          value: node.target[key],
+          writable: true,
         });
       }
     }
     for (const [key, child] of node.fields) {
       Object.defineProperty(node.result, key, {
-        value: child.node ? child.node.result : child.value,
-        writable: true,
         configurable: true,
         enumerable: Object.prototype.propertyIsEnumerable.call(
           node.source,
           key
         ),
+        value: child.node ? child.node.result : child.value,
+        writable: true,
       });
     }
   }
   return (root.node ? root.node.result : root.value) as Target;
+}
+
+function isPlainObject(value: unknown): value is Record<PropertyKey, any> {
+  if (value === null || typeof value !== "object") return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }

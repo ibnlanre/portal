@@ -208,9 +208,7 @@ describe("LastOfUnion Type", () => {
       };
 
       type GenericUnion =
-        | Container<boolean>
-        | Container<number>
-        | Container<string>;
+        Container<boolean> | Container<number> | Container<string>;
       type LastGeneric = LastOfUnion<GenericUnion>;
 
       expectTypeOf<LastGeneric>().toExtend<

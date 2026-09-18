@@ -259,6 +259,25 @@ const prettierConfig = tseslint.config({
   },
 });
 
+// Portal is a hooks library, so the hook rules do not model it. It exposes
+// React hooks through `$use` (a name the rules cannot recognise), it deliberately
+// supports calling those hooks from store actions, and it keys re-runs to a
+// caller-supplied dependency list rather than to callback identity, which is why
+// the dependency arrays below omit the callbacks by design. Both rules are
+// scoped off for those files rather than silenced line by line.
+const portalHookLayerConfig = tseslint.config({
+  files: [
+    "app/create-store/functions/hooks/**",
+    "app/create-store/functions/library/create-composite-store/index.ts",
+    "app/create-store/functions/library/create-primitive-store/index.ts",
+    "app/create-store/functions/library/create-context-store/create-context-store.test.tsx",
+  ],
+  rules: {
+    "@eslint-react/exhaustive-deps": "off",
+    "@eslint-react/rules-of-hooks": "off",
+  },
+});
+
 export default defineConfig([
   ignoresConfig,
   vitestConfig,
@@ -268,4 +287,5 @@ export default defineConfig([
   perfectionistConfig,
   prettierConfig,
   storybookConfig,
+  portalHookLayerConfig,
 ]);

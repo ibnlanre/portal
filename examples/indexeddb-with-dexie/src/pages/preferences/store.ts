@@ -1,6 +1,5 @@
-import { z } from "zod";
-
 import { createStore } from "@ibnlanre/portal";
+import { z } from "zod";
 
 import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
 

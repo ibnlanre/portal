@@ -8,8 +8,8 @@ import {
 } from "fumadocs-ui/page";
 import { Suspense } from "react";
 
-import { baseOptions } from "@/lib/layout.shared";
 import { docsTree } from "@/lib/docs-tree";
+import { baseOptions } from "@/lib/layout.shared";
 
 import defaultMdxComponents from "fumadocs-ui/mdx";
 

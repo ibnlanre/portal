@@ -28,17 +28,16 @@ type PathsHelper<
                 ? NonNullable<Value> extends GenericObject
                   ? NonNullable<Value> extends readonly unknown[]
                     ? `${Key}`
-                    :
-                        | `${Key}`
-                        | JoinPaths<
-                            `${Key}`,
-                            PathsHelper<
-                              NonNullable<Value>,
-                              Delimiter,
-                              readonly [...Visited, Store]
-                            >,
-                            Delimiter
-                          >
+                    : | `${Key}`
+                      | JoinPaths<
+                          `${Key}`,
+                          PathsHelper<
+                            NonNullable<Value>,
+                            Delimiter,
+                            readonly [...Visited, Store]
+                          >,
+                          Delimiter
+                        >
                   : `${Key}`
                 : never
               : never;

@@ -2,6 +2,9 @@ import { defineConfig } from "tsdown";
 
 export default defineConfig({
   clean: true,
+  deps: {
+    neverBundle: ["react", "react-dom"],
+  },
   dts: true,
   entry: ["index.ts"],
   format: ["esm", "cjs"],
@@ -10,7 +13,4 @@ export default defineConfig({
   platform: "browser",
   sourcemap: true,
   treeshake: true,
-  deps: {
-    neverBundle: ["react", "react-dom"],
-  },
 });

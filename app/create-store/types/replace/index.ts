@@ -39,8 +39,8 @@ type ReplaceHelper<
 > = Prettify<
   Pick<Source, Exclude<keyof Source, keyof Target>> &
     Pick<Target, Exclude<keyof Target, keyof Source>> & {
-      [Key in keyof Source as Key extends keyof Target
-        ? Key
-        : never]-?: Replace<Target[Key], Source[Key]>;
+      [
+        Key in keyof Source as Key extends keyof Target ? Key : never
+      ]-?: Replace<Target[Key], Source[Key]>;
     }
 >;

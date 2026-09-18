@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
+
 import { createStore } from "../index";
 
 describe("notification contract", () => {
   it("notifies a descendant when its ancestor is updated", () => {
-    const store = createStore({ user: { name: "A", age: 20 } });
+    const store = createStore({ user: { age: 20, name: "A" } });
     const listener = vi.fn();
     store.user.name.$subscribe(listener, false);
-    store.user.$set({ name: "B", age: 20 });
+    store.user.$set({ age: 20, name: "B" });
     expect(store.user.name.$get()).toBe("B");
     expect(listener).toHaveBeenCalledExactlyOnceWith("B");
   });
@@ -21,7 +22,7 @@ describe("notification contract", () => {
     "%s writes invalidate only overlapping paths",
     (write, counts) => {
       const store = createStore({
-        user: { name: "A", age: 20 },
+        user: { age: 20, name: "A" },
         username: "other",
       });
       const listeners = Array.from({ length: 5 }, () => vi.fn());
@@ -44,10 +45,10 @@ describe("notification contract", () => {
     }
   );
 
-  it.each([{}, { name: "A", age: 20 }])(
+  it.each([{}, { age: 20, name: "A" }])(
     "notifies overlapping paths for an unchanged object merge: %j",
     (patch) => {
-      const store = createStore({ user: { name: "A", age: 20 }, other: 0 });
+      const store = createStore({ other: 0, user: { age: 20, name: "A" } });
       const root = vi.fn();
       const user = vi.fn();
       const name = vi.fn();
@@ -57,16 +58,16 @@ describe("notification contract", () => {
       store.user.name.$subscribe(name, false);
       store.other.$subscribe(other, false);
       store.user.$set(patch);
-      expect(store.$get()).toEqual({ user: { name: "A", age: 20 }, other: 0 });
+      expect(store.$get()).toEqual({ other: 0, user: { age: 20, name: "A" } });
       expect(root).toHaveBeenCalledTimes(1);
-      expect(user).toHaveBeenCalledExactlyOnceWith({ name: "A", age: 20 });
+      expect(user).toHaveBeenCalledExactlyOnceWith({ age: 20, name: "A" });
       expect(name).toHaveBeenCalledExactlyOnceWith("A");
       expect(other).not.toHaveBeenCalled();
     }
   );
 
   it("invalidates descendants that disappear when a nullable ancestor is cleared", () => {
-    const store = createStore<{ user: { name: string } | null }>({
+    const store = createStore<{ user: null | { name: string } }>({
       user: { name: "A" },
     });
     const listener = vi.fn();

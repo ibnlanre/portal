@@ -26,8 +26,7 @@ export interface CreateCookieKeyOptions<
    * @example [2, 3]
    */
   cookieFragmentSizes?:
-    | number[]
-    | WordMappingSegments<CookieFragmentDescription>;
+    number[] | WordMappingSegments<CookieFragmentDescription>;
 
   /**
    * Prefix added to the generated cookie key, e.g. for internal or system cookies.
@@ -90,14 +89,7 @@ export interface CreateCookieKeyOptions<
    * @default ""
    */
   cookieService?:
-    | ""
-    | "auth"
-    | "cache"
-    | "config"
-    | "data"
-    | "log"
-    | "store"
-    | (string & {});
+    "" | "auth" | "cache" | "config" | "data" | "log" | "store" | (string & {});
 
   /**
    * A suffix appended at the end of the cookie key, if required for differentiation.

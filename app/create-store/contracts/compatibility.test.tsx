@@ -1,10 +1,12 @@
-import { renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
-import { useState } from "react";
 import type { PropsWithChildren } from "react";
+
+import { renderHook } from "@testing-library/react";
 import { readFileSync } from "node:fs";
-import { createStore } from "../index";
+import { useState } from "react";
+import { describe, expect, it } from "vitest";
+
 import { createContextStore } from "../functions/library/create-context-store";
+import { createStore } from "../index";
 
 describe("React compatibility contract", () => {
   it("declares React 19 as the minimum supported major for the context API", () => {
@@ -16,9 +18,10 @@ describe("React compatibility contract", () => {
     }
   });
   it("supports React 19 context with an explicitly instance-stable factory", () => {
-    const [Provider, useStore] = createContextStore(
-      (value: number) => useState(() => createStore(value))[0]
-    );
+    const [Provider, useStore] = createContextStore((value: number) => {
+      const [store] = useState(() => createStore(value));
+      return store;
+    });
     const wrapper = ({ children }: PropsWithChildren) => (
       <Provider value={1}>{children}</Provider>
     );

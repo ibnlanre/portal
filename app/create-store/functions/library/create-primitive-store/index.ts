@@ -1,10 +1,10 @@
-import type { Snapshot } from "@/create-store/types/snapshot";
 import type { DependencyList } from "react";
 
 import type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
 import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
 import type { Selector } from "@/create-store/types/selector";
+import type { Snapshot } from "@/create-store/types/snapshot";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
 import { isAccessor } from "@/create-store/functions/assertions/is-accessor";

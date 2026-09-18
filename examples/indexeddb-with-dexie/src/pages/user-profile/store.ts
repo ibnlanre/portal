@@ -1,6 +1,5 @@
-import { z } from "zod";
-
 import { createStore } from "@ibnlanre/portal";
+import { z } from "zod";
 
 import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
 
@@ -47,8 +46,6 @@ const [getStoredProfile, setStoredProfile] = createIndexedDBAdapter<
 const initialProfile = await getStoredProfile();
 
 export const profileStore = {
-  profile: createStore(initialProfile),
-
   login(profile: UserProfile) {
     const loginProfile = { ...profile, lastLogin: new Date() };
     profileStore.profile.$set(loginProfile);
@@ -59,6 +56,8 @@ export const profileStore = {
     // Clear profile (from store, and IndexedDB)
     profileStore.profile.$set(undefined as unknown as UserProfile);
   },
+
+  profile: createStore(initialProfile),
 
   updatePreferences(preferences: Partial<Preferences>) {
     const currentProfile = profileStore.profile.$get();

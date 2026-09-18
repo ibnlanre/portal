@@ -10,7 +10,6 @@ const initialCount = await getStoredCount(0);
 
 // Create the store
 export const counterStore = createStore({
-  value: initialCount,
   decrement() {
     counterStore.value.$set((prev) => prev - 1);
   },
@@ -20,6 +19,7 @@ export const counterStore = createStore({
   reset() {
     counterStore.value.$set(0);
   },
+  value: initialCount,
 });
 
 // Subscribe to store changes and auto-persist

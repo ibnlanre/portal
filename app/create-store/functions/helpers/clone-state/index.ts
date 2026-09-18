@@ -48,10 +48,10 @@ export function cloneState<State>(
     )
       continue;
     Object.defineProperty(result, key, {
-      value: cloneState((value as any)[key], seen),
-      enumerable: Object.prototype.propertyIsEnumerable.call(value, key),
-      writable: true,
       configurable: true,
+      enumerable: Object.prototype.propertyIsEnumerable.call(value, key),
+      value: cloneState((value as any)[key], seen),
+      writable: true,
     });
   }
   return result;

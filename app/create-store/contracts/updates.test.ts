@@ -1,16 +1,17 @@
 import { describe, expect, it } from "vitest";
+
 import { createStore } from "../index";
 
 describe("update semantics", () => {
   it("deep-merges objects, preserves omitted keys, and replaces arrays", () => {
     const store = createStore({
-      user: { name: "A", settings: { dark: false, size: 12 } },
       items: [1, 2],
+      user: { name: "A", settings: { dark: false, size: 12 } },
     });
-    store.$set({ user: { settings: { dark: true } }, items: [3] });
+    store.$set({ items: [3], user: { settings: { dark: true } } });
     expect(store.$get()).toEqual({
-      user: { name: "A", settings: { dark: true, size: 12 } },
       items: [3],
+      user: { name: "A", settings: { dark: true, size: 12 } },
     });
     store.user.$set({});
     expect(store.user.settings.size.$get()).toBe(12);
@@ -25,11 +26,11 @@ describe("update semantics", () => {
     }
   );
   it("does not delete omitted properties or accept direct proxy mutation", () => {
-    const store = createStore({ name: "A", age: 20 });
+    const store = createStore({ age: 20, name: "A" });
     store.$set({ name: "B" });
     Reflect.deleteProperty(store, "age");
     Reflect.set(store, "age", 99);
-    expect(store.$get()).toEqual({ name: "B", age: 20 });
+    expect(store.$get()).toEqual({ age: 20, name: "B" });
   });
   it("protects initial values from updater mutations", () => {
     const initial = { user: { name: "A" } };

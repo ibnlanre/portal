@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { createLocalStorageAdapter } from "@/create-store/functions/adapters/create-local-storage-adapter";
 import { createStore } from "@/create-store";
+import { createLocalStorageAdapter } from "@/create-store/functions/adapters/create-local-storage-adapter";
 
-type Consent = "granted" | "denied" | null;
+type Consent = "denied" | "granted" | null;
 
 describe("real-world storage pattern (SSR)", () => {
   it("adapter returns fallback without typeof window guard at call site", () => {

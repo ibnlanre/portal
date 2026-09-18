@@ -1,4 +1,5 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
+
 import { createStore } from "../index";
 
 describe("dynamic shape contract", () => {
@@ -30,7 +31,7 @@ describe("dynamic shape contract", () => {
     expect(name.$get()).toBe("B");
   });
   it("keeps null as a value and allows an explicit path to restore descendants", () => {
-    const store = createStore<{ profile: { name: string } | null }>({
+    const store = createStore<{ profile: null | { name: string } }>({
       profile: null,
     });
     const name = store.$at("profile.name");

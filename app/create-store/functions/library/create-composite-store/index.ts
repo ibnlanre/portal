@@ -1,4 +1,3 @@
-import type { Snapshot } from "@/create-store/types/snapshot";
 import type { DependencyList } from "react";
 
 import type { CompositeStore } from "@/create-store/types/composite-store";
@@ -9,6 +8,7 @@ import type { PartialStateSetter } from "@/create-store/types/partial-state-sett
 import type { Paths } from "@/create-store/types/paths";
 import type { Property } from "@/create-store/types/property";
 import type { Selector } from "@/create-store/types/selector";
+import type { Snapshot } from "@/create-store/types/snapshot";
 import type { StatePath } from "@/create-store/types/state-path";
 import type { Subscriber } from "@/create-store/types/subscriber";
 

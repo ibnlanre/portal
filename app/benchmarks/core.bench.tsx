@@ -1,13 +1,14 @@
 import { act, renderHook } from "@testing-library/react";
 import { bench, describe } from "vitest";
+
 import { createStore } from "../create-store";
 
 // Short local baseline; increase duration for publication-quality measurements.
 const options = {
-  time: 100,
   iterations: 20,
-  warmupTime: 30,
+  time: 100,
   warmupIterations: 5,
+  warmupTime: 30,
 };
 
 function fixture(keys: number, depth: number): Record<string, unknown> {

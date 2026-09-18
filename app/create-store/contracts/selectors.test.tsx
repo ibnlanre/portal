@@ -1,10 +1,11 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+
 import { createStore } from "../index";
 
 describe("selector subscription contract", () => {
   it("shares the imperative snapshot with hooks and selectors across root merges", () => {
-    const store = createStore({ user: { name: "A" }, count: 0 });
+    const store = createStore({ count: 0, user: { name: "A" } });
     let renders = 0;
     const hook = renderHook(() => {
       renders++;
@@ -50,7 +51,7 @@ describe("selector subscription contract", () => {
   });
 
   it("preserves an unchanged selected object across an unrelated leaf write", () => {
-    const store = createStore({ user: { name: "A" }, count: 0 });
+    const store = createStore({ count: 0, user: { name: "A" } });
     let renders = 0;
     const hook = renderHook(() => {
       renders++;
@@ -67,7 +68,7 @@ describe("selector subscription contract", () => {
   });
 
   it("gates focused branches and still observes ancestor writes", () => {
-    const store = createStore({ user: { name: "A", age: 20 } });
+    const store = createStore({ user: { age: 20, name: "A" } });
     let renders = 0;
     const hook = renderHook(() => {
       renders++;

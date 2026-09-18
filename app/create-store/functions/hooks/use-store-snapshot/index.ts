@@ -1,7 +1,10 @@
-import type { Snapshot } from "@/create-store/types/snapshot";
 import type { DependencyList } from "react";
+
 import type { Selector } from "@/create-store/types/selector";
+import type { Snapshot } from "@/create-store/types/snapshot";
+
 import { useMemo, useSyncExternalStore } from "react";
+
 import { useVersion } from "@/create-store/functions/hooks/use-version";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 

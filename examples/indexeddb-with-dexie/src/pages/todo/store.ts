@@ -1,6 +1,5 @@
-import { z } from "zod";
-
 import { createStore } from "@ibnlanre/portal";
+import { z } from "zod";
 
 import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
 
@@ -19,9 +18,6 @@ const [getStoredTodos, setStoredTodos] =
 const initialTodos = await getStoredTodos([]);
 
 export const todoStore = {
-  todos: createStore(initialTodos),
-  newTodoText: createStore(""),
-
   addTodo() {
     const newTodo: Todo = {
       completed: false,
@@ -32,7 +28,6 @@ export const todoStore = {
     todoStore.todos.$set((prev) => [...prev, newTodo]);
     todoStore.newTodoText.$set("");
   },
-
   clearCompleted() {
     todoStore.todos.$set((prev) => prev.filter((todo) => !todo.completed));
   },
@@ -41,6 +36,8 @@ export const todoStore = {
     todoStore.newTodoText.$set("");
   },
 
+  newTodoText: createStore(""),
+
   removeTodo(id: string) {
     todoStore.todos.$set((prev) => prev.filter((todo) => todo.id !== id));
   },
@@ -48,6 +45,8 @@ export const todoStore = {
   setNewTodoText(text: string) {
     todoStore.newTodoText.$set(text);
   },
+
+  todos: createStore(initialTodos),
 
   toggleTodo(id: string) {
     todoStore.todos.$set((prev) =>

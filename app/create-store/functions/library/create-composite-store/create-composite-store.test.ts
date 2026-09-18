@@ -1,4 +1,5 @@
 import type { Snapshot } from "@/create-store/types/snapshot";
+
 import { renderHook } from "@testing-library/react";
 import { act, useMemo } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -189,11 +190,11 @@ describe("createCompositeStore", () => {
     it("should preserve nested functions not described by the schema", () => {
       const load = () => {};
       const store = createCompositeStore({
-        user: { name: "John", load },
+        user: { load, name: "John" },
       });
 
       expect(store.user.load).toBe(load);
-      expect(store.$get()).toEqual({ user: { name: "John", load } });
+      expect(store.$get()).toEqual({ user: { load, name: "John" } });
     });
 
     it("should handle circular references without infinite recursion", () => {

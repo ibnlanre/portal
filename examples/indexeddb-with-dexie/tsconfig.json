@@ -19,7 +19,7 @@
     "strict": true,
     "target": "ES2022"
   },
-  "include": ["*.ts", "*.tsx", "src/**/*"],
   "exclude": ["vite.config.ts"],
+  "include": ["*.ts", "*.tsx", "src/**/*"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

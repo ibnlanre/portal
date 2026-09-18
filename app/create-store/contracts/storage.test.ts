@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createStore } from "../index";
+
 import { syncStorage } from "../functions/utilities/sync-storage";
+import { createStore } from "../index";
 
 const cleanup: Array<() => void> = [];
 afterEach(() => {

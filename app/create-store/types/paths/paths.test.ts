@@ -94,11 +94,7 @@ describe("Paths type", () => {
     type Result = Paths<PartialStore>;
 
     type Expected =
-      | "settings"
-      | "settings.theme"
-      | "user"
-      | "user.email"
-      | "user.name";
+      "settings" | "settings.theme" | "user" | "user.email" | "user.name";
     expectTypeOf<Result>().toEqualTypeOf<Expected>();
   });
 
@@ -117,11 +113,7 @@ describe("Paths type", () => {
     type Result = Paths<Store>;
 
     type Expected =
-      | "data"
-      | "data.value"
-      | "user"
-      | "user.profile"
-      | "user.profile.name";
+      "data" | "data.value" | "user" | "user.profile" | "user.profile.name";
     expectTypeOf<Result>().toEqualTypeOf<Expected>();
   });
 
@@ -307,11 +299,7 @@ describe("Paths type", () => {
       }>;
 
       type Expected =
-        | "array"
-        | "nested"
-        | "nested.value"
-        | "primitive"
-        | "tuple";
+        "array" | "nested" | "nested.value" | "primitive" | "tuple";
       expectTypeOf<Result>().toEqualTypeOf<Expected>();
     });
 
@@ -355,11 +343,7 @@ describe("Paths type", () => {
       }>;
 
       type Expected =
-        | "config"
-        | "config.apiUrl"
-        | "config.timeout"
-        | "id"
-        | "mutable";
+        "config" | "config.apiUrl" | "config.timeout" | "id" | "mutable";
       expectTypeOf<Result>().toEqualTypeOf<Expected>();
     });
 
@@ -477,12 +461,7 @@ describe("Paths type", () => {
       }>;
 
       type Expected =
-        | "0"
-        | "1"
-        | "name"
-        | "nested"
-        | "nested.0"
-        | "nested.value";
+        "0" | "1" | "name" | "nested" | "nested.0" | "nested.value";
       expectTypeOf<Result>().toEqualTypeOf<Expected>();
     });
   });

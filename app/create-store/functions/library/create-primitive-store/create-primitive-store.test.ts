@@ -516,14 +516,14 @@ describe("createPrimitiveStore", () => {
 
   describe("Edge Cases", () => {
     it("should handle null and undefined states", () => {
-      const nullStore = createPrimitiveStore<string | null>(null);
+      const nullStore = createPrimitiveStore<null | string>(null);
       expect(nullStore.$get()).toBe(null);
 
       nullStore.$set("not null");
       expect(nullStore.$get()).toBe("not null");
 
       const undefinedStore = createPrimitiveStore<
-        { defined: boolean } | undefined
+        undefined | { defined: boolean }
       >(undefined);
       expect(undefinedStore.$get()).toBeUndefined();
 

@@ -1,15 +1,17 @@
-import { expectTypeOf, it } from "vitest";
-import { createStore } from "../index";
 import type { InferType } from "../types/infer-type";
 import type { PrimitiveStore } from "../types/primitive-store";
+
+import { expectTypeOf, it } from "vitest";
+
 import { syncStorage } from "../functions/utilities/sync-storage";
+import { createStore } from "../index";
 
 it("exposes read-only snapshots while keeping updater drafts mutable", () => {
-  const store = createStore({ user: { name: "A" }, tags: ["a"] });
+  const store = createStore({ tags: ["a"], user: { name: "A" } });
   const snapshot = store.$get();
   expectTypeOf<InferType<typeof store>>().toEqualTypeOf<{
-    user: { name: string };
     tags: string[];
+    user: { name: string };
   }>();
   expectTypeOf<InferType<PrimitiveStore<{ tags: string[] }>>>().toEqualTypeOf<{
     tags: string[];

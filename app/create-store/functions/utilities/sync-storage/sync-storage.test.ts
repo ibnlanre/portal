@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { createLocalStorageAdapter } from "@/create-store/functions/adapters/create-local-storage-adapter";
 import { createStore } from "@/create-store";
+import { createLocalStorageAdapter } from "@/create-store/functions/adapters/create-local-storage-adapter";
 
 import { syncStorage } from "./index";
 

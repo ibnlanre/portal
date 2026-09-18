@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
+
 import { createStore } from "../index";
 
 const initial = () => ({
-  user: { name: "A", preferences: { email: true } },
-  settings: { theme: "dark" },
   projects: [{ id: 1, title: "Portal" }],
+  settings: { theme: "dark" },
+  user: { name: "A", preferences: { email: true } },
 });
 
 describe("structural sharing", () => {
@@ -68,7 +69,7 @@ describe("structural sharing", () => {
   });
 
   it("distinguishes absent properties, undefined, and Object.is primitive values", () => {
-    const store = createStore<{ optional?: string; number: number }>({
+    const store = createStore<{ number: number; optional?: string }>({
       number: NaN,
     });
     const before = store.$get();

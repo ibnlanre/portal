@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { createStore } from "../index";
 
 describe("snapshot ownership", () => {
@@ -24,7 +25,7 @@ describe("snapshot ownership", () => {
     const map = new Map([["item", { value: 1 }]]);
     const set = new Set([{ value: 1 }]);
     const bytes = new Uint8Array([1]);
-    const store = createStore({ date, map, set, bytes });
+    const store = createStore({ bytes, date, map, set });
     date.setTime(1);
     map.get("item")!.value = 2;
     [...set][0].value = 2;
@@ -48,7 +49,7 @@ describe("snapshot ownership", () => {
   });
 
   it("returns one snapshot across reads, selectors, and subscribers", () => {
-    const store = createStore({ user: { name: "A" }, tags: ["a"] });
+    const store = createStore({ tags: ["a"], user: { name: "A" } });
     const snapshot = store.$get();
     expect(store.$get()).toBe(snapshot);
     expect(store.user.$get()).toBe(snapshot.user);

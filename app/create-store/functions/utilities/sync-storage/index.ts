@@ -26,7 +26,7 @@ import type { Snapshot } from "@/create-store/types/snapshot";
 export function syncStorage<State>(
   store: {
     $get: () => Snapshot<State>;
-    $set: (value: State | Snapshot<State>) => void;
+    $set: (value: Snapshot<State> | State) => void;
   },
   key: string,
   get: (fallback?: State) => State | undefined

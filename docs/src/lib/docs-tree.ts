@@ -1,42 +1,74 @@
 import type { Root } from "fumadocs-core/page-tree";
 
 export const docsTree: Root = {
-  name: "Portal documentation",
   children: [
-    { type: "page", name: "Getting Started", url: "/docs/getting-started" },
-    { type: "page", name: "Introduction", url: "/docs" },
+    { name: "Getting Started", type: "page", url: "/docs/getting-started" },
+    { name: "Introduction", type: "page", url: "/docs" },
     {
-      type: "folder",
+      children: [
+        { name: "Store API", type: "page", url: "/docs/core/store-api" },
+        {
+          name: "Reading State",
+          type: "page",
+          url: "/docs/core/reading-state",
+        },
+        {
+          name: "Setting State",
+          type: "page",
+          url: "/docs/core/setting-state",
+        },
+        {
+          name: "Subscriptions",
+          type: "page",
+          url: "/docs/core/subscriptions",
+        },
+      ],
+      defaultOpen: true,
       name: "Core",
-      defaultOpen: true,
-      children: [
-        { type: "page", name: "Store API", url: "/docs/core/store-api" },
-        { type: "page", name: "Reading State", url: "/docs/core/reading-state" },
-        { type: "page", name: "Setting State", url: "/docs/core/setting-state" },
-        { type: "page", name: "Subscriptions", url: "/docs/core/subscriptions" },
-      ],
+      type: "folder",
     },
     {
-      type: "folder",
+      children: [
+        {
+          name: "Actions & Logic",
+          type: "page",
+          url: "/docs/advanced/actions",
+        },
+        {
+          name: "Organizing with combine()",
+          type: "page",
+          url: "/docs/advanced/combine",
+        },
+        {
+          name: "Scoped Stores (Context)",
+          type: "page",
+          url: "/docs/advanced/context-store",
+        },
+        { name: "Helpful Hooks", type: "page", url: "/docs/advanced/hooks" },
+        {
+          name: "React Integration",
+          type: "page",
+          url: "/docs/advanced/react-integration",
+        },
+      ],
+      defaultOpen: true,
       name: "Advanced",
-      defaultOpen: true,
-      children: [
-        { type: "page", name: "Actions & Logic", url: "/docs/advanced/actions" },
-        { type: "page", name: "Organizing with combine()", url: "/docs/advanced/combine" },
-        { type: "page", name: "Scoped Stores (Context)", url: "/docs/advanced/context-store" },
-        { type: "page", name: "Helpful Hooks", url: "/docs/advanced/hooks" },
-        { type: "page", name: "React Integration", url: "/docs/advanced/react-integration" },
-      ],
+      type: "folder",
     },
     {
-      type: "folder",
-      name: "Guides",
-      defaultOpen: true,
       children: [
-        { type: "page", name: "Persistence", url: "/docs/guides/persistence" },
-        { type: "page", name: "Cookie Utilities", url: "/docs/guides/cookie-storage" },
+        { name: "Persistence", type: "page", url: "/docs/guides/persistence" },
+        {
+          name: "Cookie Utilities",
+          type: "page",
+          url: "/docs/guides/cookie-storage",
+        },
       ],
+      defaultOpen: true,
+      name: "Guides",
+      type: "folder",
     },
-    { type: "page", name: "FAQ", url: "/docs/faq" },
+    { name: "FAQ", type: "page", url: "/docs/faq" },
   ],
+  name: "Portal documentation",
 };
