@@ -3,13 +3,14 @@ import type {
   AsyncGetBrowserStorage,
   AsyncSetBrowserStorage,
 } from "@/create-store/types/async-browser-storage-adapter";
+import type { Snapshot } from "@/create-store/types/snapshot";
 
 import { isNullish } from "@/create-store/functions/assertions/is-nullish";
 
 export function createAsyncBrowserStorageAdapter<State, StoredState = State>(
   key: string,
   {
-    beforeStorage = (value: State) => value as unknown as StoredState,
+    beforeStorage = (value: Snapshot<State>) => value as unknown as StoredState,
     beforeUsage = (value: StoredState) => value as unknown as State,
     getItem,
     removeItem,
@@ -28,7 +29,7 @@ export function createAsyncBrowserStorageAdapter<State, StoredState = State>(
     return beforeUsage(value);
   }
 
-  async function setStorageState(value?: State): Promise<void> {
+  async function setStorageState(value?: Snapshot<State>): Promise<void> {
     if (value === undefined) return removeItem(key);
     const transformedValue = beforeStorage(value);
     await setItem(key, transformedValue);

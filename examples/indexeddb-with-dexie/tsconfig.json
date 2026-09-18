@@ -20,5 +20,6 @@
     "target": "ES2022"
   },
   "include": ["*.ts", "*.tsx", "src/**/*"],
+  "exclude": ["vite.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

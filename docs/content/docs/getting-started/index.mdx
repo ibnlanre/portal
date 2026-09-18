@@ -65,6 +65,46 @@ preferences.$set({ compact: true });
 preferences.theme.$set("light");
 ```
 
+## Other ways to supply the initial value
+
+A value written inline is the usual form, and it is the only one that infers the
+state's type from the value itself. Three other forms are accepted.
+
+A factory defers the work of building the value until the store is created:
+
+```ts
+import { createStore } from "@ibnlanre/portal";
+
+const count = createStore(() => 0);
+count.$get(); // 0
+```
+
+An async initializer returns a promise for the store, so `await` it before
+reading. A promise of a value is accepted directly as well.
+
+```ts
+const fetchCount = async () => {
+  const response = await fetch("https://api.example.com/count");
+  const data = await response.json();
+  return data.count;
+};
+
+const count = await createStore(fetchCount);
+count.$set(78);
+```
+
+An omitted value creates a store typed `State | undefined`, which you seed once
+the value becomes available:
+
+```ts
+const selection = createStore<string>();
+selection.$get(); // undefined
+```
+
+An async initializer that resolves to a plain object is held by a primitive
+store. It wraps that object instead of creating a node per key, so await the
+data yourself when you want to reach properties by dot access.
+
 ## Reach a branch directly or by path
 
 Use dot access when the path is known in code. Use `$at()` when a path is

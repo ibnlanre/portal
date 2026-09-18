@@ -4,6 +4,7 @@ import type {
   GetCookieStorage,
   SetCookieStorage,
 } from "@/create-store/types/cookie-storage";
+import type { Snapshot } from "@/create-store/types/snapshot";
 
 import { cookieStorage } from "@/cookie-storage";
 import { isNullish } from "@/create-store/functions/assertions/is-nullish";
@@ -48,7 +49,7 @@ export function createCookieStorageAdapter<State>(
   }
 
   const setCookieStorageState = (
-    value?: State,
+    value?: Snapshot<State>,
     options: CookieOptions = {}
   ) => {
     if (value === undefined) return cookieStorage.removeItem(key);

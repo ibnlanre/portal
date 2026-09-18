@@ -2,6 +2,7 @@ import type {
   GetSessionStorage,
   SetSessionStorage,
 } from "@/create-store/types/session-storage";
+import type { Snapshot } from "@/create-store/types/snapshot";
 import type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 
 import { safeStringify } from "@/create-store/functions/utilities/safe-stringify";
@@ -29,7 +30,7 @@ export function createSessionStorageAdapter<State>(
     return fallback;
   }
 
-  const setSessionStorageState = (value?: State) => {
+  const setSessionStorageState = (value?: Snapshot<State>) => {
     if (typeof window === "undefined") return;
     if (value === undefined) return sessionStorage.removeItem(key);
 

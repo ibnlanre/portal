@@ -1,3 +1,5 @@
+import type { Snapshot } from "@/create-store/types/snapshot";
+
 export interface StorageAdapterOptions<State> {
   /**
    * A function to parse the state from a string.
@@ -17,5 +19,5 @@ export interface StorageAdapterOptions<State> {
    *
    * @returns The serialized state.
    */
-  stringify?: (value: State) => string;
+  stringify?: (value: Snapshot<State>) => string;
 }

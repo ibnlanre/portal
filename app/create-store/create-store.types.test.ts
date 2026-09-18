@@ -225,9 +225,31 @@ describe("createStore - Type Tests", () => {
       expectTypeOf(store).toExtend<PrimitiveStore<number>>();
     });
 
-    it("return is always a store, never a Promise", () => {
+    it("an object value returns a store synchronously", () => {
       const store = createStore({ value: 0 });
       expectTypeOf(store).not.toMatchTypeOf<Promise<unknown>>();
+    });
+  });
+
+  describe("Initializer support", () => {
+    it("factory returning a primitive produces PrimitiveStore", () => {
+      const store = createStore(() => 42);
+      expectTypeOf(store).toExtend<PrimitiveStore<number>>();
+    });
+
+    it("factory returning an object produces CompositeStore", () => {
+      const store = createStore(() => ({ value: 0 }));
+      expectTypeOf(store).toExtend<CompositeStore<{ value: number }>>();
+    });
+
+    it("async initializer produces Promise<PrimitiveStore>", () => {
+      const store = createStore(async () => 42);
+      expectTypeOf(store).toEqualTypeOf<Promise<PrimitiveStore<number>>>();
+    });
+
+    it("an omitted initial value produces PrimitiveStore<State | undefined>", () => {
+      const store = createStore<number>();
+      expectTypeOf(store).toExtend<PrimitiveStore<number | undefined>>();
     });
   });
 });

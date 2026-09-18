@@ -6,13 +6,6 @@
   In 5.2.4 every `$get()`, `$use()`, and subscriber call cloned the state. Do not
   mutate `$get()`, `$use()`, selector inputs, or subscriber values; use `$set()`
   instead. `Snapshot<State>` describes the read surface.
-- `createStore()` now requires an argument. The 5.2.4 overload that accepted no
-  argument and returned `PrimitiveStore<State | undefined>` is gone.
-- `createStore()` no longer resolves an initializer. In 5.2.4 a function argument
-  was treated as a lazy factory, and a promise argument returned a
-  `Promise<PrimitiveStore<State>>` that you could await. Both are now ordinary
-  values, so `await createStore(fetchCount)` becomes
-  `createStore(await fetchCount())`.
 - the React peer requirement is now `^19.0.0`, up from `>16.7`.
 - remove the `normalizeObject` export.
 - remove the `Normalize`, `SetPartial`, and `SetPartialStateAction` types.
@@ -30,6 +23,9 @@ returned by functional updaters. Earlier snapshots remain unchanged, and partial
 writes preserve references for unchanged plain-object and array branches. React
 selectors consume those references directly, including across root merges.
 Updater inputs remain defensive copies. General-purpose `combine()` is unchanged.
+Storage adapters accept the read surface on their write path, so
+`$subscribe(set, false)` and `set(store.$get())` typecheck for state containing
+arrays without a cast.
 
 Raw subscribers still receive same-value writes, and root writes still notify
 all registered paths. Notification precision remains a separate contract decision.
@@ -61,8 +57,10 @@ it does not promise exact object restoration.
 - React and React DOM peers now require version 19.
 - `syncStorage()` now requires `$get` alongside `$set` and returns cleanup.
 - Performance benchmarks are tracked separately from correctness tests.
-- Tests, typechecking, builds, and export checks pass. ESLint remains a tooling
-  validation gap because of the current TypeScript 7 integration.
+- Tests, typechecking, builds, and export checks pass. ESLint cannot run yet:
+  `typescript-eslint` accepts TypeScript `>=4.8.4 <6.1.0` and rejects this
+  project's 7.0.2, which also dropped the compiler API that the linter loads, so
+  `lint` and the `posttest` hook fail.
 
 ## [5.2.4](https://github.com/ibnlanre/portal/compare/v5.2.3...v5.2.4) (2025-08-08)
 

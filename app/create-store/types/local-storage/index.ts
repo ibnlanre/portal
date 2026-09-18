@@ -1,3 +1,5 @@
+import type { Snapshot } from "@/create-store/types/snapshot";
+
 export interface GetLocalStorage<State> {
   /**
    * Get the state from local storage.
@@ -20,4 +22,4 @@ export interface GetLocalStorage<State> {
  *
  * @param value The state to set in local storage.
  */
-export type SetLocalStorage<State> = (value?: State) => void;
+export type SetLocalStorage<State> = (value?: Snapshot<State>) => void;

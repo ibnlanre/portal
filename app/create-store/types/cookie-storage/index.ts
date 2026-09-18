@@ -1,4 +1,5 @@
 import type { CookieOptions } from "@/cookie-storage/types/cookie-options";
+import type { Snapshot } from "@/create-store/types/snapshot";
 import type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 
 export type CookieStorageAdapterOptions<State> = CookieDataOptions<State> &
@@ -28,7 +29,7 @@ export interface GetCookieStorage<State> {
  * @param options The options to use when setting the cookie.
  */
 export type SetCookieStorage<State> = (
-  value?: State,
+  value?: Snapshot<State>,
   options?: CookieOptions
 ) => void;
 

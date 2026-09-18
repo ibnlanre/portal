@@ -1,3 +1,4 @@
+import type { Snapshot } from "@/create-store/types/snapshot";
 import type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 
 export interface BrowserStorageAdapterOptions<State>
@@ -26,7 +27,7 @@ export interface GetBrowserStorage<State> {
  *
  * @param value The state to set in storage.
  */
-export type SetBrowserStorage<State> = (value?: State) => void;
+export type SetBrowserStorage<State> = (value?: Snapshot<State>) => void;
 
 /**
  * An interface for a storage object.

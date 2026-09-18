@@ -3,6 +3,7 @@ import type {
   GetBrowserStorage,
   SetBrowserStorage,
 } from "@/create-store/types/browser-storage-adapter";
+import type { Snapshot } from "@/create-store/types/snapshot";
 
 import { isNullish } from "@/create-store/functions/assertions/is-nullish";
 import { safeStringify } from "@/create-store/functions/utilities/safe-stringify";
@@ -30,7 +31,7 @@ export function createBrowserStorageAdapter<State>(
     return parse(value);
   }
 
-  const setStorageState = (value?: State) => {
+  const setStorageState = (value?: Snapshot<State>) => {
     if (value === undefined) return removeItem(key);
     const serializedValue = stringify(value);
     setItem(key, serializedValue);

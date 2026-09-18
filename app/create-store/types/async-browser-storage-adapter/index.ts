@@ -1,3 +1,5 @@
+import type { Snapshot } from "@/create-store/types/snapshot";
+
 /**
  * An interface for a storage object.
  */
@@ -40,7 +42,7 @@ export interface AsyncBrowserStorageTransforms<State, StoredState = State> {
    * @param value The value to transform.
    * @returns The transformed value.
    */
-  beforeStorage?: (value: State) => StoredState;
+  beforeStorage?: (value: Snapshot<State>) => StoredState;
 
   /**
    * A function to transform the value after getting it from storage.
@@ -75,4 +77,6 @@ export interface AsyncGetBrowserStorage<State> {
  *
  * @param value The state to set in storage.
  */
-export type AsyncSetBrowserStorage<State> = (value?: State) => Promise<void>;
+export type AsyncSetBrowserStorage<State> = (
+  value?: Snapshot<State>
+) => Promise<void>;

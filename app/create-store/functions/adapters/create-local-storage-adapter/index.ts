@@ -2,6 +2,7 @@ import type {
   GetLocalStorage,
   SetLocalStorage,
 } from "@/create-store/types/local-storage";
+import type { Snapshot } from "@/create-store/types/snapshot";
 import type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
 
 import { safeStringify } from "@/create-store/functions/utilities/safe-stringify";
@@ -29,7 +30,7 @@ export function createLocalStorageAdapter<State>(
     return fallback;
   }
 
-  const setLocalStorageState = (value?: State) => {
+  const setLocalStorageState = (value?: Snapshot<State>) => {
     if (typeof window === "undefined") return;
     if (value === undefined) return localStorage.removeItem(key);
 

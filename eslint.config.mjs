@@ -12,7 +12,6 @@ import jsxA11y from "eslint-plugin-jsx-a11y";
 import tsPaths from "eslint-plugin-paths";
 import perfectionist from "eslint-plugin-perfectionist";
 import prettier from "eslint-plugin-prettier";
-import reactRedux from "eslint-plugin-react-redux";
 import risxss from "eslint-plugin-risxss";
 import storybookPlugin from "eslint-plugin-storybook";
 import globals from "globals";
@@ -60,6 +59,8 @@ const ignoresConfig = tseslint.config({
     "**/lerna-debug.log",
     "**/lerna.json",
     "**/tsconfig*.tsbuildinfo",
+    "**/.source/**",
+    "**/results/**",
     "**/*.d.ts",
   ],
 });
@@ -142,11 +143,9 @@ const reactConfig = tseslint.config({
   plugins: {
     "@stylistic/jsx": stylisticJsx,
     jsxA11y,
-    "react-redux": reactRedux,
     risxss,
   },
   rules: {
-    ...reactRedux.configs.recommended.rules,
     "@stylistic/jsx/jsx-self-closing-comp": "warn",
     "risxss/catch-potential-xss-react": "warn",
   },
@@ -158,7 +157,7 @@ const reactConfig = tseslint.config({
 });
 
 const perfectionistConfig = tseslint.config({
-  files: [EXT.COMMONJS, EXT.JS, EXT.MODULE, EXT.TS, EXT.JSON, EXT.YML],
+  files: [EXT.COMMONJS, EXT.JS, EXT.MODULE, EXT.TS, EXT.JSON],
   ignores: ["**/*.d.ts"],
   languageOptions: {
     parser: tseslint.parser,

@@ -1,3 +1,5 @@
+import type { Snapshot } from "@/create-store/types/snapshot";
+
 export interface GetSessionStorage<State> {
   /**
    * Get the state from session storage.
@@ -20,4 +22,4 @@ export interface GetSessionStorage<State> {
  *
  * @param value The state to set in session storage.
  */
-export type SetSessionStorage<State> = (value?: State) => void;
+export type SetSessionStorage<State> = (value?: Snapshot<State>) => void;
