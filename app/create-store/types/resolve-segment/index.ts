@@ -9,9 +9,12 @@ export type ResolveSegment<
   ? Head extends keyof Store
     ? Tail extends []
       ? Store[Head]
-      : Store[Head] extends GenericObject
-        ? Tail extends Segments<Store[Head], Delimiter>
-          ? ResolveSegment<Store[Head], Tail, Delimiter>
+      : NonNullable<Store[Head]> extends GenericObject
+        ? Tail extends Segments<NonNullable<Store[Head]>, Delimiter>
+          ? | ResolveSegment<NonNullable<Store[Head]>, Tail, Delimiter>
+            | (Extract<Store[Head], null | undefined> extends never
+                ? never
+                : undefined)
           : never
         : never
     : never

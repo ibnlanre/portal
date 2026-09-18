@@ -60,3 +60,12 @@ This is more efficient than subscribing to the root and filtering by path.
 `$subscribe` works during server-side rendering. Subscribers fire
 synchronously when `$set` is called, so state is always consistent
 before the render completes.
+
+## Notification boundaries
+
+Raw subscriptions are write-based. A write notifies the addressed path, its
+ancestors, and all subscribed descendants, including descendants cleared to
+`undefined`. A root write notifies every subscriber. Unrelated sibling paths do
+not fire. Every successful `$set()` notifies these raw subscribers, including same-value
+leaf writes, empty object merges, and object merges whose contents are unchanged.
+React selector equality is a separate contract.

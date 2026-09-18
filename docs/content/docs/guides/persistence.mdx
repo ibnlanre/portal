@@ -71,7 +71,9 @@ const store = createStore(getConsent(null));
 store.$subscribe(setConsent, false);
 
 // Sync adapter → store (cross-tab)
-syncStorage(store, "consent", getConsent);
+const stopSync = syncStorage(store, "consent", getConsent);
+// When this store owner is disposed:
+// stopSync();
 ```
 
 ## Cookie Storage
@@ -132,3 +134,15 @@ const store = createStore(initialState);
 
 store.$subscribe(set, false);
 ```
+
+## Cross-tab synchronization lifetime
+
+Call the cleanup returned by `syncStorage()` when its owner is disposed. On the
+server the cleanup is a no-op. Removing the external value, or clearing local storage, **restores the baseline
+through normal `$set` semantics**. The baseline is the value captured when
+synchronization began. This helper requires both `$get` and `$set`.
+
+This is not exact object restoration. If the baseline is `{ a: 1 }` and the
+current value is `{ a: 9, b: 2 }`, restoring the baseline yields `{ a: 1, b: 2 }`.
+The extra key survives because objects deep-merge. Arrays and primitives replace
+the addressed value under the same normal `$set` rules.

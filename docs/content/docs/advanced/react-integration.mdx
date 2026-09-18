@@ -22,8 +22,12 @@ function Counter() {
 
 ## Selectors for re-render gating
 
-Pass a selector to subscribe to a derived value. The component only
-re-renders when the derived value changes — not when unrelated fields update.
+Pass a selector to subscribe to a derived value. Store updates trigger a render only when the selected result changes according
+to `Object.is`. Parent renders and other hooks can still render the component.
+A selector returning a fresh object or array counts as changed on a new source
+snapshot, even when its contents are equal. Selecting an unchanged source
+subtree preserves its identity across unrelated leaf writes. Treat returned
+hook snapshots as read-only and change state through the setter.
 
 ```tsx
 function SidebarStatus() {

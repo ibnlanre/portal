@@ -8,6 +8,11 @@ icon: Boxes
 state has structure. Start from one root store, then read, update, subscribe to,
 or use the branch a feature actually owns.
 
+**A branch is a store identified by its location in the state tree.**
+Its handle stays useful as the value at that location changes. Writes propagate
+through the tree; selectors gate store-driven React renders separately from raw
+subscriptions.
+
 It gives you:
 
 - One store API at the root and at every nested branch
@@ -55,3 +60,41 @@ const user = createStore({
 user.profile.name.$set("Taylor");
 user.$at("profile.preferences.theme").$set("dark");
 ```
+
+## Branches are durable handles
+
+Retain a branch once, then read its current value after an ancestor update:
+
+```ts
+const store = createStore({ user: { profile: { name: "Alex" } } });
+const profile = store.user.profile;
+const nextProfile = { name: "Taylor" };
+
+store.user.$set({ profile: nextProfile });
+
+profile.$get(); // { name: "Taylor" }
+profile === store.$at("user.profile"); // true
+```
+
+The handle identifies `user.profile`, not the object that initially occupied it.
+Object updates still deep-merge: fields omitted from `nextProfile` would survive.
+
+## Reach beyond the initial shape
+
+**Types do not create runtime properties.** Use `$at()` to address a declared
+path that is not present yet:
+
+```ts
+const account = createStore<{ profile?: { name: string } }>({});
+const name = account.$at("profile.name");
+
+name.$get(); // undefined
+name.$set("Taylor");
+account.$get(); // { profile: { name: "Taylor" } }
+
+account.$at("profile").$set(undefined);
+name.$get(); // undefined — the handle still addresses the same location
+```
+
+Writing through the handle creates missing object parents. Reading through it
+does not materialize them.

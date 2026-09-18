@@ -6,14 +6,12 @@ import type { PrimitiveStore } from "@/create-store/types/primitive-store";
 import type { Selector } from "@/create-store/types/selector";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
-import { useSyncExternalStore } from "react";
-
 import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { clone } from "@/create-store/functions/helpers/clone";
 import { replace } from "@/create-store/functions/helpers/replace";
-import { useSync } from "@/create-store/functions/hooks/use-sync";
+import { useStoreSnapshot } from "@/create-store/functions/hooks/use-store-snapshot";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
 /**
@@ -39,6 +37,8 @@ export function createPrimitiveStore<State>(
   }
 
   function buildStore() {
+    const getSnapshot = () => state;
+    const subscribe = (listener: () => void) => $subscribe(listener, false);
     function $get<Value = State>(selector?: Selector<State, Value>) {
       return resolveSelectorValue(state, selector, cache);
     }
@@ -54,11 +54,12 @@ export function createPrimitiveStore<State>(
       selector?: Selector<State, Value>,
       dependencies?: DependencyList
     ): PartialStateManager<State, Value> {
-      const value = useSyncExternalStore($subscribe, $get, $get);
-
-      const resolvedValue = useSync(() => {
-        return resolveSelectorValue(value, selector);
-      }, [value, dependencies]);
+      const resolvedValue = useStoreSnapshot(
+        subscribe,
+        getSnapshot,
+        selector,
+        dependencies
+      );
 
       return [resolvedValue, $set];
     }

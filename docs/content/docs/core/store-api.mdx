@@ -4,6 +4,9 @@ description: The small store API you can use at the root or any nested branch.
 icon: Braces
 ---
 
+**A branch is a store identified by its location in the state tree.**
+Retained handles follow subsequent values at that location.
+
 Every Portal store has the same API. A root store, an object branch, and a
 single nested value all support the operations that make sense for state:
 read, write, subscribe, use in React, and—on composite stores—focus a path.
@@ -33,7 +36,7 @@ const currentCount = countStore.$get(); // 10
 
 ### Selectors and Fallbacks
 
-`$get()` accepts a **selector** function to derive a value, or a **fallback** value when the store value is `undefined`:
+`$get()` accepts a **selector** function to derive a value. Use `??` on its result when you need a fallback:
 
 ```ts
 const userStore = createStore({ firstName: "Alex", lastName: "Johnson" });
@@ -50,7 +53,7 @@ const configStore = createStore({
 
 // Fallback when the value is undefined
 configStore.apiUrl.$get(); // undefined
-configStore.apiUrl.$get("https://api.default.com"); // "https://api.default.com"
+configStore.apiUrl.$get() ?? "https://api.default.com"; // "https://api.default.com"
 ```
 
 ---
@@ -100,10 +103,10 @@ settingsStore.sidebar.$set({ collapsed: true });
 
 ## Listening: `$subscribe()`
 
-Use `$subscribe()` to run a side effect whenever the state changes. This is great for logging, syncing to local storage, or triggering analytics.
+Use `$subscribe()` to run a side effect when a write invalidates the subscribed path, even if its value is unchanged. This is great for logging, syncing to local storage, or triggering analytics.
 
 ```ts
-const unsubscribe = settingsStore.$subscribe((newValue, oldValue) => {
+const unsubscribe = settingsStore.$subscribe((newValue) => {
   console.log("Settings changed:", newValue);
 });
 
@@ -138,11 +141,11 @@ function ThemeToggler() {
 
 ### Selecting data
 
-Just like `$get()`, you can pass a selector to `$use()` to subscribe only to a derived value. Your component will **only re-render if the derived value changes**.
+Just like `$get()`, you can pass a selector to `$use()` to subscribe only to a derived value. The selected result gates **store-driven renders using `Object.is`**. Parent renders and other hooks can still render the component.
 
 ```tsx
 function SidebarStatus() {
-  // Only re-renders if 'collapsed' changes
+  // Store-driven renders are gated by the selected boolean
   const [isCollapsed] = settingsStore.sidebar.$use((s) => s.collapsed);
 
   return <div>{isCollapsed ? "Closed" : "Open"}</div>;
@@ -163,3 +166,11 @@ const themeStore = userStore.$at(path);
 
 console.log(themeStore.$get()); // "dark"
 ```
+
+## Dynamic and optional paths
+
+A property absent from the initial value has no dot-access handle until it is
+present in state. Use `$at()` for an absent declared path. It reads `undefined`
+until populated, and a write can create missing object parents. Handles remain
+bound to their paths when values are cleared and restored. Dictionary properties
+added through `$set()` become available through both dot access and `$at()`.

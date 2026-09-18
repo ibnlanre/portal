@@ -1,7 +1,7 @@
 {
   "name": "@ibnlanre/portal",
-  "version": "5.2.4",
-  "description": "A simple, lightweight and flexible state management library for React applications.",
+  "version": "6.0.0-alpha.0",
+  "description": "Typed, branch-oriented state for structured React applications.",
   "author": {
     "email": "olaitanlanre28@gmail.com",
     "name": "Ridwan Olanrewaju"
@@ -35,8 +35,8 @@
     "node": ">=14"
   },
   "peerDependencies": {
-    "react": ">16.7",
-    "react-dom": ">16.7"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@ibnlanre/clone": "^0.5.1",
@@ -63,6 +63,9 @@
     "zod": "^4.4.3"
   },
   "scripts": {
+    "bench": "vitest bench --run --config vitest.bench.config.mts",
+    "bench:size": "node benchmarks/size.mjs",
+    "test:contracts": "vitest run create-store/contracts",
     "bundle": "tsdown --config tsdown.config.ts",
     "build": "pnpm run bundle",
     "check-exports": "attw --pack .",

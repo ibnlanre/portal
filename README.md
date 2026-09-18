@@ -276,8 +276,7 @@ Both store types share a consistent API for getting, setting, and subscribing to
 `@ibnlanre/portal` is designed to work with minimal configuration. The primary configuration points are:
 
 1.  **Initial Value**: When you call `createStore()`, you provide your state's starting value as the single argument. The store type is inferred directly from this value, so no separate schema is required.
-2.  **Schema defaults (optional)**: If you prefer to define your state's types and defaults with a [Standard Schema](https://standardschema.dev/) compatible library (Zod, Valibot, ArkType, etc.), use the `resolveSchema()` utility to derive a typed initial value from your schema (using its `.default()`s) and pass the result to `createStore()`. Async schemas (whose `validate` returns a Promise) use `resolveSchemaAsync()` instead — `await` it before calling `createStore()`.
-3.  **Persistence Adapters**: If you use state persistence, you configure adapters with options like storage keys and serialization functions.
+2.  **Persistence Adapters**: If you use state persistence, you configure adapters with options like storage keys and serialization functions.
 
 Refer to the [Persist state](#persist-state) section for detailed configuration of each adapter.
 
@@ -311,16 +310,12 @@ createStore<State>(initialState: State): PrimitiveStore<State>
 1.  **Creating a primitive store:**
 
     ```ts
-    import { z } from "zod";
-    import { createStore, resolveSchema } from "@ibnlanre/portal";
+    import { createStore } from "@ibnlanre/portal";
 
     const countStore = createStore(0);
     console.log(countStore.$get()); // Output: 0
 
-    // Schema defaults — derive the initial value with resolveSchema
-    const messageStore = createStore(
-      resolveSchema(z.string().default("Hello, world!"))
-    );
+    const messageStore = createStore("Hello, world!");
     console.log(messageStore.$get()); // Output: "Hello, world!"
     ```
 

@@ -4,27 +4,23 @@ import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { GenericObject } from "@/create-store/types/generic-object";
 import type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
 import type { PartialStateManager } from "@/create-store/types/partial-state-manager";
-import type { PartialStatePath } from "@/create-store/types/partial-state-path";
 import type { PartialStateSetter } from "@/create-store/types/partial-state-setter";
 import type { Paths } from "@/create-store/types/paths";
 import type { Property } from "@/create-store/types/property";
-import type { ResolvePath } from "@/create-store/types/resolve-path";
 import type { Selector } from "@/create-store/types/selector";
 import type { StatePath } from "@/create-store/types/state-path";
 import type { Subscriber } from "@/create-store/types/subscriber";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback } from "react";
 
 import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { clone } from "@/create-store/functions/helpers/clone";
-import { createPathComponents } from "@/create-store/functions/helpers/create-path-components";
-import { createPaths } from "@/create-store/functions/helpers/create-paths";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { splitPath } from "@/create-store/functions/helpers/split-path";
-import { useSync } from "@/create-store/functions/hooks/use-sync";
+import { useStoreSnapshot } from "@/create-store/functions/hooks/use-store-snapshot";
 import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
@@ -36,39 +32,21 @@ import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve
 export function createCompositeStore<State extends GenericObject>(
   initialState: State
 ): CompositeStore<State> {
-  const cache = new WeakMap<any, CompositeStore<State>>();
-  const originalPaths = new Set<string>();
+  const cache = new Map<string, CompositeStore<State>>();
+  let state = initialState;
 
-  function trackOriginalPaths(
-    obj: any,
-    currentPath = "",
-    visited = new WeakSet()
-  ): void {
-    if (isDictionary(obj)) {
-      if (currentPath) originalPaths.add(currentPath);
-
-      for (const key in obj) {
-        const fullPath = currentPath ? `${currentPath}.${key}` : key;
-        originalPaths.add(fullPath);
-      }
-
-      if (visited.has(obj)) return;
-
-      visited.add(obj);
-      for (const key in obj) {
-        const fullPath = currentPath ? `${currentPath}.${key}` : key;
-        trackOriginalPaths(obj[key], fullPath, visited);
-      }
-    }
+  function hasProperty(path: Paths<State> | undefined, property: string) {
+    const parent = resolvePath(initialState, path);
+    const current = resolvePath(state, path);
+    return (
+      (isDictionary(parent) &&
+        Object.prototype.hasOwnProperty.call(parent, property)) ||
+      (isDictionary(current) &&
+        Object.prototype.hasOwnProperty.call(current, property))
+    );
   }
 
-  let state = initialState;
-  trackOriginalPaths(state);
-
-  const subscribers = new Map<
-    Paths<State>,
-    Set<(value: ResolvePath<State, Paths<State>>) => void>
-  >();
+  const subscribers = new Map<Paths<State>, Set<Subscriber<unknown>>>();
 
   function getSubscribersByPath<Path extends Paths<State>>(
     path: Path = "" as Path
@@ -78,19 +56,19 @@ export function createCompositeStore<State extends GenericObject>(
   }
 
   function notifySubscribers(state: State, path?: Paths<State>) {
-    const resolvedValue = resolvePath(state, path);
-    const valuePaths = createPaths(resolvedValue);
-    const pathComponents = createPathComponents(path);
-    const paths = new Set([...pathComponents, ...valuePaths]);
-
+    // A write invalidates its subtree and ancestors, including removed paths.
+    // Segment boundaries prevent `user` from invalidating `username`.
+    const written = path ?? "";
     subscribers.forEach((set, pathKey) => {
-      if (pathKey === "") {
-        set.forEach((subscriber) => {
-          subscriber(state as ResolvePath<State, Paths<State>>);
-        });
-      } else if (paths.has(pathKey)) {
-        const resolvedValue = resolvePath(state, pathKey);
-        set.forEach((subscriber) => subscriber(resolvedValue));
+      if (
+        !written ||
+        !pathKey ||
+        pathKey === written ||
+        pathKey.startsWith(`${written}.`) ||
+        written.startsWith(`${pathKey}.`)
+      ) {
+        const value = resolvePath(state, pathKey);
+        set.forEach((subscriber) => subscriber(value));
       }
     });
   }
@@ -100,10 +78,7 @@ export function createCompositeStore<State extends GenericObject>(
     notifySubscribers(value, path);
   }
 
-  function setProperty<
-    Path extends Paths<State>,
-    Value extends ResolvePath<State, Path>,
-  >(value: Value, path: Path) {
+  function setProperty<Path extends Paths<State>>(value: unknown, path: Path) {
     const keys = splitPath(path);
     const pivot = keys.pop()!;
     const spread: any = { ...state };
@@ -118,51 +93,47 @@ export function createCompositeStore<State extends GenericObject>(
     setState(spread, path);
   }
 
-  function get<
-    Path extends Paths<State>,
-    Value = StatePath<State, Path>,
-    Result = Value,
-  >(path?: Path, selector?: Selector<Value, Result>): Result {
-    const value = resolvePath(state, path);
-    return resolveSelectorValue(value, selector);
+  function read<Path extends Paths<State> = never>(
+    path?: Path
+  ): StatePath<State, Path> {
+    // The runtime resolver returns the root for an absent path. Public path
+    // types express that distinction through StatePath.
+    return resolvePath(state, path) as StatePath<State, Path>;
   }
 
-  function set<
-    Path extends Paths<State>,
-    Value extends ResolvePath<State, Path>,
-  >(path: Path): PartialStateSetter<Value>;
+  function get<
+    Path extends Paths<State> = never,
+    Result = StatePath<State, Path>,
+  >(path?: Path, selector?: Selector<StatePath<State, Path>, Result>): Result {
+    return resolveSelectorValue(read(path), selector);
+  }
 
   function set<Path extends Paths<State> = never>(
     path?: Path
-  ): PartialStateSetter<State>;
-
-  function set<Path extends Paths<State>>(path?: Path) {
-    return <Value extends ResolvePath<State, Path>>(
-      action: PartialSetStateAction<Value>
-    ) => {
-      const current = resolvePath(state, path);
-
+  ): PartialStateSetter<StatePath<State, Path>> {
+    return (action) => {
+      const current = read(path);
       const next = isSetStateActionFunction(action)
         ? action(clone(current))
         : action;
-
       if (path) setProperty(replace(current, next), path);
       else setState(replace(state, next));
     };
   }
 
-  function sub<
-    Path extends Paths<State>,
-    Value extends ResolvePath<State, Path>,
-  >(subscriber: (value: Value) => void, path?: Path, immediate?: boolean) {
-    const subscribers = getSubscribersByPath(path);
-    const value = resolvePath(state, path);
-
-    subscribers.add(subscriber);
-    if (immediate) subscriber(value);
-
+  function sub<Path extends Paths<State> = never>(
+    subscriber: Subscriber<StatePath<State, Path>>,
+    path?: Path,
+    immediate?: boolean
+  ) {
+    // The registry is heterogeneous; each set belongs to exactly one path.
+    const listeners = getSubscribersByPath(path) as Set<
+      Subscriber<StatePath<State, Path>>
+    >;
+    listeners.add(subscriber);
+    if (immediate) subscriber(read(path));
     return () => {
-      subscribers.delete(subscriber);
+      listeners.delete(subscriber);
     };
   }
 
@@ -171,23 +142,25 @@ export function createCompositeStore<State extends GenericObject>(
   }
 
   function use<
-    Value extends StatePath<State, Path>,
-    Path extends Paths<State>,
-    Result = Value,
+    Path extends Paths<State> = never,
+    Result = StatePath<State, Path>,
   >(
     path?: Path,
-    selector?: Selector<Value, Result>,
+    selector?: Selector<StatePath<State, Path>, Result>,
     dependencies?: DependencyList
-  ): PartialStateManager<State, Result> {
-    const getSnapshot = useCallback(() => resolvePath(state, path), [path]);
-    const subscribe = useCallback(createSubscribe(path), [path]);
-    const setter = useCallback(set(path), [path]);
-
-    const value = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-    const resolvedValue = useSync(() => {
-      return resolveSelectorValue(value, selector);
-    }, [value, dependencies]);
-
+  ): PartialStateManager<StatePath<State, Path>, Result> {
+    const getSnapshot = useCallback(() => read(path), [path, read]);
+    const subscribe = useCallback(createSubscribe(path), [
+      path,
+      createSubscribe,
+    ]);
+    const setter = useCallback(set(path), [path, set]);
+    const resolvedValue = useStoreSnapshot(
+      subscribe,
+      getSnapshot,
+      selector,
+      dependencies
+    );
     return [resolvedValue, setter];
   }
 
@@ -200,14 +173,10 @@ export function createCompositeStore<State extends GenericObject>(
     return `${basePath}.${property}` as Path;
   }
 
-  function resolveProperty<Path extends Paths<State>>(fullPath: Path) {
+  function resolveProperty<Path extends Paths<State>>(fullPath: Path): unknown {
     const value = resolvePath(state, fullPath);
 
     if (isFunction(value)) return value;
-
-    if (isDictionary(value) && cache.has(value)) {
-      return cache.get(value);
-    }
 
     return createProxy(fullPath);
   }
@@ -221,14 +190,17 @@ export function createCompositeStore<State extends GenericObject>(
       $get(selector?: Selector<StatePath<State, Path>>) {
         return get(chain, selector);
       },
-      $set(value: PartialStatePath<State, Path>) {
+      $set(value: PartialSetStateAction<StatePath<State, Path>>) {
         return set(chain)(value);
       },
-      $subscribe(subscriber: Subscriber<State>, immediate = true) {
+      $subscribe(
+        subscriber: Subscriber<StatePath<State, Path>>,
+        immediate = true
+      ) {
         return sub(subscriber, chain, immediate);
       },
-      $use(
-        selector?: Selector<State, ResolvePath<State, Path>>,
+      $use<Result = StatePath<State, Path>>(
+        selector?: Selector<StatePath<State, Path>, Result>,
         dependencies?: DependencyList
       ) {
         return use(chain, selector, dependencies);
@@ -237,11 +209,8 @@ export function createCompositeStore<State extends GenericObject>(
   }
 
   function createProxy<Path extends Paths<State>>(path?: Path) {
-    const value = resolvePath(state, path);
-
-    if (isDictionary(value) && cache.has(value)) {
-      return cache.get(value)!;
-    }
+    const key = path ?? "";
+    if (cache.has(key)) return cache.get(key)!;
 
     const node = buildStore(path) as CompositeStore<State>;
 
@@ -261,9 +230,9 @@ export function createCompositeStore<State extends GenericObject>(
           }
 
           const fullPath = joinPaths(path, prop);
-          const pathExistedInOriginal = originalPaths.has(fullPath);
+          const propertyExists = hasProperty(path, prop);
 
-          if (pathExistedInOriginal) {
+          if (propertyExists) {
             return resolveProperty(fullPath);
           }
         }
@@ -282,9 +251,9 @@ export function createCompositeStore<State extends GenericObject>(
           }
 
           const fullPath = joinPaths(path, prop);
-          const pathExistedInOriginal = originalPaths.has(fullPath);
+          const propertyExists = hasProperty(path, prop);
 
-          if (pathExistedInOriginal) {
+          if (propertyExists) {
             return {
               configurable: true,
               enumerable: true,
@@ -300,8 +269,7 @@ export function createCompositeStore<State extends GenericObject>(
         if (typeof prop === "string") {
           if (isAccessor(target, prop)) return true;
 
-          const fullPath = joinPaths(path, prop);
-          return originalPaths.has(fullPath);
+          return hasProperty(path, prop);
         }
         return false;
       },
@@ -317,9 +285,7 @@ export function createCompositeStore<State extends GenericObject>(
       },
     });
 
-    if (isDictionary(value)) {
-      cache.set(value, proxy);
-    }
+    cache.set(key, proxy);
 
     return proxy;
   }

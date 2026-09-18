@@ -1320,7 +1320,7 @@ describe("createCompositeStore", () => {
         expect(() => store.data.value.$get()).not.toThrow();
       });
 
-      it("should reuse augmented objects for circular references", () => {
+      it("should keep circular values readable through distinct path handles", () => {
         const circularObj: { ref?: typeof circularObj; value: number } = {
           value: 42,
         };
@@ -1331,7 +1331,7 @@ describe("createCompositeStore", () => {
           other: circularObj,
         });
 
-        expect(store.data).toBe(store.other);
+        expect(store.data === store.other).toBe(false);
 
         expect(store.data.$get).toBeDefined();
         expect(store.data.value.$get).toBeDefined();
@@ -1339,7 +1339,7 @@ describe("createCompositeStore", () => {
 
         expect(() => store.data.ref?.$get()).not.toThrow();
         expect(store.data.ref?.$get()).toEqual(circularObj);
-        expect(store.data.ref).toEqual(store.data);
+        expect(store.data.ref?.$get()).toEqual(store.data.$get());
         expect(store.other.ref?.$get()?.ref).toEqual(circularObj);
       });
 
@@ -1361,8 +1361,8 @@ describe("createCompositeStore", () => {
         expect(() => store.container.a.$get()).not.toThrow();
         expect(() => store.container.b.$get()).not.toThrow();
 
-        expect(store.container.a.ref).toEqual(store.container.b);
-        expect(store.container.b.ref).toEqual(store.container.a);
+        expect(store.container.a.ref?.$get()).toEqual(store.container.b.$get());
+        expect(store.container.b.ref.$get()).toEqual(store.container.a.$get());
 
         expect(store.container.a.name.$get()).toBe("A");
         expect(store.container.b.name.$get()).toBe("B");

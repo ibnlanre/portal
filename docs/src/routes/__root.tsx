@@ -27,7 +27,7 @@ export const Route = createRootRoute({
       },
       {
         content:
-          "Portal is a lightweight, type-safe state management library for React with nested state, automatic merging, and full TypeScript inference.",
+          "Portal is a type-safe, branch-oriented state management library for React with nested state, automatic merging, and full TypeScript inference.",
         name: "description",
       },
     ],
