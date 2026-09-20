@@ -68,8 +68,8 @@ are bytes.
 
 | Artifact           |   Bytes |
 | ------------------ | ------: |
-| npm tarball        |  87,172 |
-| Unpacked package   | 353,275 |
+| npm tarball        |  87,164 |
+| Unpacked package   | 353,267 |
 | Built distribution | 346,301 |
 | Full ESM entry     |  18,512 |
 | Full ESM gzip      |   6,497 |
