@@ -1,16 +1,10 @@
 import type { GenericObject } from "@/create-store/types/generic-object";
 import type { Paths } from "@/create-store/types/paths";
 import type { ResolveSegment } from "@/create-store/types/resolve-segment";
-import type { Segments } from "@/create-store/types/segments";
-import type { Split } from "@/create-store/types/split";
+import type { SplitStorePath } from "@/create-store/types/store-path";
 
 export type ResolvePath<
   Store extends GenericObject,
-  Key extends Paths<Store> = never,
+  Key extends Paths<Store, Delimiter> = never,
   Delimiter extends string = ".",
-> =
-  Split<Key, Delimiter> extends infer Segment
-    ? Segment extends Segments<Store, Delimiter>
-      ? ResolveSegment<Store, Segment, Delimiter>
-      : never
-    : never;
+> = ResolveSegment<Store, SplitStorePath<Key, Delimiter>, Delimiter>;

@@ -11,6 +11,7 @@ import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
 import { cloneState } from "@/create-store/functions/helpers/clone-state";
+import { createNotificationQueue } from "@/create-store/functions/helpers/create-notification-queue";
 import { replace } from "@/create-store/functions/helpers/replace";
 import { useStoreSnapshot } from "@/create-store/functions/hooks/use-store-snapshot";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
@@ -32,8 +33,14 @@ export function createPrimitiveStore<State>(
     notifySubscribers(value);
   }
 
+  const enqueue = createNotificationQueue();
+
   function notifySubscribers(value: State) {
-    subscribers.forEach((subscriber) => subscriber(value as Snapshot<State>));
+    enqueue(
+      Array.from(subscribers, (subscriber) => () => {
+        if (subscribers.has(subscriber)) subscriber(value as Snapshot<State>);
+      })
+    );
   }
 
   function buildStore() {
@@ -66,7 +73,12 @@ export function createPrimitiveStore<State>(
 
     function $subscribe(subscriber: Subscriber<State>, immediate = true) {
       subscribers.add(subscriber);
-      if (immediate) subscriber(state as Snapshot<State>);
+      try {
+        if (immediate) subscriber(state as Snapshot<State>);
+      } catch (error) {
+        subscribers.delete(subscriber);
+        throw error;
+      }
 
       return () => {
         subscribers.delete(subscriber);

@@ -42,7 +42,7 @@ export function createCookieStorageAdapter<State>(
 
     if (secret) {
       const parsedValue = cookieStorage.unsign(value, secret);
-      if (parsedValue) return parse(parsedValue);
+      return parsedValue === null ? fallback : parse(parsedValue);
     }
 
     return parse(value);

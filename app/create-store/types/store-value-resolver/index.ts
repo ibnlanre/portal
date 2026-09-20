@@ -1,3 +1,4 @@
+import type { BuiltIn } from "@/create-store/types/built-in";
 import type { CompositeStore } from "@/create-store/types/composite-store";
 import type { Defined } from "@/create-store/types/defined";
 import type { GenericFunction } from "@/create-store/types/generic-function";
@@ -13,6 +14,8 @@ export type StoreValueResolver<Value> =
       ? PrimitiveStore<Value>
       : Defined<Value> extends GenericFunction
         ? Value
-        : Defined<Value> extends GenericObject
-          ? CompositeStore<Defined<Value>>
-          : PrimitiveStore<Value>;
+        : [Defined<Value>] extends [BuiltIn]
+          ? PrimitiveStore<Value>
+          : Defined<Value> extends GenericObject
+            ? CompositeStore<Defined<Value>>
+            : PrimitiveStore<Value>;

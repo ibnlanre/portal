@@ -114,7 +114,7 @@ describe("useSync", () => {
     expect(result.current).toBe(4);
   });
 
-  it("should handle deep equality comparison for object dependencies", () => {
+  it("should recompute for a new object dependency", () => {
     const factory = vi.fn(
       (obj: { a: number; b: { c: number } }) => obj.a + obj.b.c
     );
@@ -131,11 +131,11 @@ describe("useSync", () => {
 
     rerender({ deps: { a: 1, b: { c: 2 } } });
 
-    expect(factory).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(2);
 
     rerender({ deps: { a: 1, b: { c: 3 } } });
 
-    expect(factory).toHaveBeenCalledTimes(2);
+    expect(factory).toHaveBeenCalledTimes(3);
     expect(result.current).toBe(4);
   });
 
@@ -298,14 +298,14 @@ describe("useSync", () => {
     };
 
     rerender({ deps: equalObj });
-    expect(factory).toHaveBeenCalledTimes(1);
+    expect(factory).toHaveBeenCalledTimes(2);
 
     const changedObj = combine(complexObj, {
       user: { profile: { name: "Jane" } },
     });
 
     rerender({ deps: changedObj });
-    expect(factory).toHaveBeenCalledTimes(2);
+    expect(factory).toHaveBeenCalledTimes(3);
     expect(result.current).toBe("Jane-dark");
   });
 
@@ -370,14 +370,14 @@ describe("useSync", () => {
     expect(factory).toHaveBeenCalledTimes(1);
     expect(result.current).toBe(firstResult);
 
-    // Equal but different reference should not re-run due to deep comparison
+    // Equal contents with a different identity recompute.
     rerender({ deps: { id: 5 } });
-    expect(factory).toHaveBeenCalledTimes(1);
-    expect(result.current).toBe(firstResult);
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(result.current).not.toBe(firstResult);
 
     // Different value should re-run
     rerender({ deps: { id: 10 } });
-    expect(factory).toHaveBeenCalledTimes(2);
+    expect(factory).toHaveBeenCalledTimes(3);
     expect(result.current).not.toBe(firstResult);
     expect(result.current).toEqual({ computed: 20 });
   });

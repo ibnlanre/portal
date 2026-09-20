@@ -5,11 +5,24 @@
     "emitDeclarationOnly": true,
     "jsx": "react-jsx",
     "outDir": "./dist",
-    "paths": { "@/*": ["./*"] },
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    },
     "rootDir": "./",
     "skipLibCheck": true,
-    "types": ["node"]
+    "strict": true,
+    "types": [
+      "node"
+    ]
   },
-  "exclude": ["dist", "node_modules"],
-  "include": ["**/*.ts", "**/*.tsx"]
+  "exclude": [
+    "dist",
+    "node_modules"
+  ],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
 }

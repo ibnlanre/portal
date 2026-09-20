@@ -1429,7 +1429,7 @@ describe("createCompositeStore", () => {
         }
 
         const store = createCompositeStore(largeState);
-        expect(store.key99?.value?.$get()).toBe(99);
+        expect(store.key99?.$get()?.value).toBe(99);
       });
 
       it("should properly clean up subscribers on unsubscribe", () => {

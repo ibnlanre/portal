@@ -13,7 +13,7 @@ describe("dynamic shape contract", () => {
     store.users.$set({ ridwan: { online: true } });
     expect(store.users.ridwan).toBe(pending);
     expect(store.users.$at("ridwan")).toBe(pending);
-    expect(store.users.ridwan.online.$get()).toBe(true);
+    expect(store.users.ridwan?.$get()?.online).toBe(true);
     expect(Object.keys(store.users)).toEqual(["ridwan"]);
     expect("ridwan" in store.users).toBe(true);
   });

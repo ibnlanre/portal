@@ -18,11 +18,11 @@ import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
+import { createNotificationQueue } from "@/create-store/functions/helpers/create-notification-queue";
 import { cloneState } from "@/create-store/functions/helpers/clone-state";
 import { replace } from "@/create-store/functions/helpers/replace";
-import { splitPath } from "@/create-store/functions/helpers/split-path";
+import { escapeKey, overlappingPaths, readStorePath as resolvePath, splitStorePath as splitPath } from "@/create-store/functions/helpers/store-path";
 import { useStoreSnapshot } from "@/create-store/functions/hooks/use-store-snapshot";
-import { resolvePath } from "@/create-store/functions/utilities/resolve-path";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
 /**
@@ -33,7 +33,7 @@ import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve
 export function createCompositeStore<State extends GenericObject>(
   initialState: State
 ): CompositeStore<State> {
-  const cache = new Map<string, CompositeStore<State>>();
+  const cache = new Map<string | undefined, CompositeStore<State>>();
   const baseline = cloneState(initialState);
   let state = baseline;
 
@@ -48,31 +48,28 @@ export function createCompositeStore<State extends GenericObject>(
     );
   }
 
-  const subscribers = new Map<Paths<State>, Set<Subscriber<unknown>>>();
+  const subscribers = new Map<Paths<State> | undefined, Set<Subscriber<unknown>>>();
 
   function getSubscribersByPath<Path extends Paths<State>>(
-    path: Path = "" as Path
+    path?: Path
   ) {
     if (!subscribers.has(path)) subscribers.set(path, new Set());
     return subscribers.get(path)!;
   }
 
+  const enqueue = createNotificationQueue();
+
   function notifySubscribers(state: State, path?: Paths<State>) {
-    // A write invalidates its subtree and ancestors, including removed paths.
-    // Segment boundaries prevent `user` from invalidating `username`.
-    const written = path ?? "";
+    const delivery: Array<() => void> = [];
     subscribers.forEach((set, pathKey) => {
-      if (
-        !written ||
-        !pathKey ||
-        pathKey === written ||
-        pathKey.startsWith(`${written}.`) ||
-        written.startsWith(`${pathKey}.`)
-      ) {
+      if (overlappingPaths(path, pathKey)) {
         const value = resolvePath(state, pathKey);
-        set.forEach((subscriber) => subscriber(value));
+        set.forEach((subscriber) => delivery.push(() => {
+          if (set.has(subscriber)) subscriber(value);
+        }));
       }
     });
+    enqueue(delivery);
   }
 
   function setState<Path extends Paths<State>>(value: State, path?: Path) {
@@ -91,7 +88,16 @@ export function createCompositeStore<State extends GenericObject>(
       const next =
         index === keys.length - 1 ? value : update(previous, index + 1);
       if (exists && Object.is(previous, next)) return current;
-      return { ...current, [key]: next };
+      const record = isDictionary(current)
+        ? Object.create(Object.getPrototypeOf(current), Object.getOwnPropertyDescriptors(current))
+        : {};
+      Object.defineProperty(record, key, {
+        configurable: true,
+        enumerable: exists ? Object.prototype.propertyIsEnumerable.call(current, key) : true,
+        value: next,
+        writable: true,
+      });
+      return record;
     }
     setState(update(state, 0), path);
   }
@@ -119,7 +125,7 @@ export function createCompositeStore<State extends GenericObject>(
       const next = isSetStateActionFunction(action)
         ? action(cloneState(current))
         : action;
-      if (path) setProperty(replace(current, cloneState(next)), path);
+      if (path !== undefined) setProperty(replace(current, cloneState(next)), path);
       else setState(replace(state, cloneState(next)));
     };
   }
@@ -134,10 +140,17 @@ export function createCompositeStore<State extends GenericObject>(
       Subscriber<StatePath<State, Path>>
     >;
     listeners.add(subscriber);
-    if (immediate) subscriber(read(path) as Snapshot<StatePath<State, Path>>);
-    return () => {
+    const unsubscribe = () => {
       listeners.delete(subscriber);
+      if (!listeners.size) subscribers.delete(path);
     };
+    try {
+      if (immediate) subscriber(read(path) as Snapshot<StatePath<State, Path>>);
+    } catch (error) {
+      unsubscribe();
+      throw error;
+    }
+    return unsubscribe;
   }
 
   function createSubscribe<Path extends Paths<State>>(path?: Path) {
@@ -171,8 +184,8 @@ export function createCompositeStore<State extends GenericObject>(
     basePath?: Path,
     property?: string
   ): Path {
-    if (!basePath) return property as Path;
-    if (!property) return basePath;
+    if (basePath === undefined) return property as Path;
+    if (property === undefined) return basePath;
     return `${basePath}.${property}` as Path;
   }
 
@@ -187,6 +200,7 @@ export function createCompositeStore<State extends GenericObject>(
   function buildStore<Path extends Paths<State>>(chain?: Path) {
     return {
       $at(path: Path) {
+        splitPath(path);
         const fullPath = joinPaths(chain, path);
         return resolveProperty(fullPath) as Property<State, Path>;
       },
@@ -212,7 +226,7 @@ export function createCompositeStore<State extends GenericObject>(
   }
 
   function createProxy<Path extends Paths<State>>(path?: Path) {
-    const key = path ?? "";
+    const key = path;
     if (cache.has(key)) return cache.get(key)!;
 
     const node = buildStore(path) as CompositeStore<State>;
@@ -232,14 +246,14 @@ export function createCompositeStore<State extends GenericObject>(
             return target[prop];
           }
 
-          const fullPath = joinPaths(path, prop);
+          const fullPath = joinPaths(path, escapeKey(prop));
           const propertyExists = hasProperty(path, prop);
 
           if (propertyExists) {
             return resolveProperty(fullPath);
           }
         }
-        return target[prop];
+        return undefined;
       },
 
       getOwnPropertyDescriptor(target, prop) {
@@ -253,7 +267,7 @@ export function createCompositeStore<State extends GenericObject>(
             };
           }
 
-          const fullPath = joinPaths(path, prop);
+          const fullPath = joinPaths(path, escapeKey(prop));
           const propertyExists = hasProperty(path, prop);
 
           if (propertyExists) {

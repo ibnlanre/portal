@@ -1,5 +1,7 @@
+import type { BuiltIn } from "@/create-store/types/built-in";
 import type { Contains } from "@/create-store/types/contains";
 import type { GenericObject } from "@/create-store/types/generic-object";
+import type { EscapeStoreKey } from "@/create-store/types/store-path";
 
 export type Paths<
   Store extends GenericObject,
@@ -19,26 +21,27 @@ type PathsHelper<
 > = Store extends GenericObject
   ? Contains<Store, Visited> extends 1
     ? never
-    : Store extends readonly unknown[]
+    : Store extends BuiltIn
       ? never
       : Exclude<
           {
             [Key in keyof Store]: Key extends number | string
               ? Store[Key] extends infer Value
                 ? NonNullable<Value> extends GenericObject
-                  ? NonNullable<Value> extends readonly unknown[]
-                    ? `${Key}`
-                    : | `${Key}`
-                      | JoinPaths<
-                          `${Key}`,
-                          PathsHelper<
-                            NonNullable<Value>,
-                            Delimiter,
-                            readonly [...Visited, Store]
-                          >,
-                          Delimiter
-                        >
-                  : `${Key}`
+                  ? NonNullable<Value> extends BuiltIn
+                    ? EscapeStoreKey<`${Key}`, Delimiter>
+                    :
+                        | EscapeStoreKey<`${Key}`, Delimiter>
+                        | JoinPaths<
+                            EscapeStoreKey<`${Key}`, Delimiter>,
+                            PathsHelper<
+                              NonNullable<Value>,
+                              Delimiter,
+                              readonly [...Visited, Store]
+                            >,
+                            Delimiter
+                          >
+                  : EscapeStoreKey<`${Key}`, Delimiter>
                 : never
               : never;
           }[keyof Store],

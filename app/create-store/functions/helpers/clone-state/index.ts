@@ -23,6 +23,11 @@ export function cloneState<State>(
   } else if (value instanceof Map) result = new Map();
   else if (value instanceof Set) result = new Set();
   else if (value instanceof ArrayBuffer) result = value.slice(0);
+  else if (
+    typeof SharedArrayBuffer !== "undefined" &&
+    value instanceof SharedArrayBuffer
+  )
+    result = value.slice(0);
   else if (ArrayBuffer.isView(value)) {
     const buffer = cloneState(value.buffer, seen);
     result =

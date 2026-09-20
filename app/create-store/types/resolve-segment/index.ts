@@ -1,21 +1,30 @@
+import type { BranchValue } from "@/create-store/types/branch-value";
+import type { BuiltIn } from "@/create-store/types/built-in";
 import type { GenericObject } from "@/create-store/types/generic-object";
-import type { Segments } from "@/create-store/types/segments";
 
 export type ResolveSegment<
   Store extends GenericObject,
-  Key extends Segments<Store, Delimiter>,
+  Key extends readonly (number | string)[],
   Delimiter extends string = ".",
-> = Key extends [infer Head, ...infer Tail]
-  ? Head extends keyof Store
-    ? Tail extends []
-      ? Store[Head]
-      : NonNullable<Store[Head]> extends GenericObject
-        ? Tail extends Segments<NonNullable<Store[Head]>, Delimiter>
-          ? | (Extract<Store[Head], null | undefined> extends never
-                ? never
-                : undefined)
-            | ResolveSegment<NonNullable<Store[Head]>, Tail, Delimiter>
-          : never
-        : never
-    : never
+> = ResolveSegments<Store, Key>;
+
+type ResolveSegments<
+  Store,
+  Key extends readonly (number | string)[],
+> = Key extends [infer Head, ...infer Tail extends (number | string)[]]
+  ? Store extends null | undefined
+    ? undefined
+    : Store extends BuiltIn
+      ? never
+      : Tail extends []
+        ? ValueAt<Store, Head>
+        : ResolveSegments<ValueAt<Store, Head>, Tail>
   : never;
+
+type ValueAt<Store, Head> = Head extends keyof Store
+  ? BranchValue<Store, Head>
+  : Head extends `${infer Numeric extends number}`
+    ? Numeric extends keyof Store
+      ? BranchValue<Store, Numeric>
+      : never
+    : never;
