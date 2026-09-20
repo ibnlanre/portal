@@ -18,10 +18,16 @@ import { isAccessor } from "@/create-store/functions/assertions/is-accessor";
 import { isDictionary } from "@/create-store/functions/assertions/is-dictionary";
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 import { isSetStateActionFunction } from "@/create-store/functions/assertions/is-set-state-action-function";
-import { createNotificationQueue } from "@/create-store/functions/helpers/create-notification-queue";
 import { cloneState } from "@/create-store/functions/helpers/clone-state";
+import { createNotificationQueue } from "@/create-store/functions/helpers/create-notification-queue";
+import { createSubscriptionRegistry } from "@/create-store/functions/helpers/create-subscription-registry";
 import { replace } from "@/create-store/functions/helpers/replace";
-import { escapeKey, overlappingPaths, readStorePath as resolvePath, splitStorePath as splitPath } from "@/create-store/functions/helpers/store-path";
+import {
+  escapeKey,
+  overlappingPaths,
+  readStorePath as resolvePath,
+  splitStorePath as splitPath,
+} from "@/create-store/functions/helpers/store-path";
 import { useStoreSnapshot } from "@/create-store/functions/hooks/use-store-snapshot";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
@@ -33,7 +39,24 @@ import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve
 export function createCompositeStore<State extends GenericObject>(
   initialState: State
 ): CompositeStore<State> {
-  const cache = new Map<string | undefined, CompositeStore<State>>();
+  // Handles stay identical for a location while anything still references them.
+  // Weak entries let transient lookups (event handlers, lists) be collected so
+  // dynamic dictionaries do not grow the handle cache without bound.
+  type Handle = CompositeStore<State>;
+  type CacheEntry = { handle: Handle } | { weak: WeakRef<Handle> };
+
+  const cache = new Map<string | undefined, CacheEntry>();
+  const finalizer =
+    typeof FinalizationRegistry === "function"
+      ? new FinalizationRegistry<{
+          key: string | undefined;
+          weak: WeakRef<Handle>;
+        }>((record) => {
+          const entry = cache.get(record.key);
+          if (entry && "weak" in entry && entry.weak === record.weak)
+            cache.delete(record.key);
+        })
+      : undefined;
   const baseline = cloneState(initialState);
   let state = baseline;
 
@@ -48,25 +71,20 @@ export function createCompositeStore<State extends GenericObject>(
     );
   }
 
-  const subscribers = new Map<Paths<State> | undefined, Set<Subscriber<unknown>>>();
-
-  function getSubscribersByPath<Path extends Paths<State>>(
-    path?: Path
-  ) {
-    if (!subscribers.has(path)) subscribers.set(path, new Set());
-    return subscribers.get(path)!;
-  }
+  const subscriptions = createSubscriptionRegistry<Paths<State> | undefined>();
 
   const enqueue = createNotificationQueue();
 
   function notifySubscribers(state: State, path?: Paths<State>) {
     const delivery: Array<() => void> = [];
-    subscribers.forEach((set, pathKey) => {
+    subscriptions.forEach((set, pathKey) => {
       if (overlappingPaths(path, pathKey)) {
         const value = resolvePath(state, pathKey);
-        set.forEach((subscriber) => delivery.push(() => {
-          if (set.has(subscriber)) subscriber(value);
-        }));
+        set.forEach((subscriber) =>
+          delivery.push(() => {
+            if (set.has(subscriber)) subscriber(value);
+          })
+        );
       }
     });
     enqueue(delivery);
@@ -89,11 +107,16 @@ export function createCompositeStore<State extends GenericObject>(
         index === keys.length - 1 ? value : update(previous, index + 1);
       if (exists && Object.is(previous, next)) return current;
       const record = isDictionary(current)
-        ? Object.create(Object.getPrototypeOf(current), Object.getOwnPropertyDescriptors(current))
+        ? Object.create(
+            Object.getPrototypeOf(current),
+            Object.getOwnPropertyDescriptors(current)
+          )
         : {};
       Object.defineProperty(record, key, {
         configurable: true,
-        enumerable: exists ? Object.prototype.propertyIsEnumerable.call(current, key) : true,
+        enumerable: exists
+          ? Object.prototype.propertyIsEnumerable.call(current, key)
+          : true,
         value: next,
         writable: true,
       });
@@ -125,7 +148,8 @@ export function createCompositeStore<State extends GenericObject>(
       const next = isSetStateActionFunction(action)
         ? action(cloneState(current))
         : action;
-      if (path !== undefined) setProperty(replace(current, cloneState(next)), path);
+      if (path !== undefined)
+        setProperty(replace(current, cloneState(next)), path);
       else setState(replace(state, cloneState(next)));
     };
   }
@@ -135,15 +159,9 @@ export function createCompositeStore<State extends GenericObject>(
     path?: Path,
     immediate?: boolean
   ) {
-    // The registry is heterogeneous; each set belongs to exactly one path.
-    const listeners = getSubscribersByPath(path) as Set<
-      Subscriber<StatePath<State, Path>>
-    >;
-    listeners.add(subscriber);
-    const unsubscribe = () => {
-      listeners.delete(subscriber);
-      if (!listeners.size) subscribers.delete(path);
-    };
+    const listeners = subscriber as Subscriber<unknown>;
+    subscriptions.add(path, listeners);
+    const unsubscribe = () => subscriptions.remove(path, listeners);
     try {
       if (immediate) subscriber(read(path) as Snapshot<StatePath<State, Path>>);
     } catch (error) {
@@ -225,9 +243,29 @@ export function createCompositeStore<State extends GenericObject>(
     };
   }
 
+  function readCachedHandle(key: string | undefined) {
+    const entry = cache.get(key);
+    if (!entry) return undefined;
+    if ("handle" in entry) return entry.handle;
+    const handle = entry.weak.deref();
+    if (handle === undefined) cache.delete(key);
+    return handle;
+  }
+
+  function cacheHandle(key: string | undefined, handle: Handle) {
+    if (typeof WeakRef !== "function") {
+      cache.set(key, { handle });
+      return;
+    }
+    const weak = new WeakRef(handle);
+    cache.set(key, { weak });
+    finalizer?.register(handle, { key, weak });
+  }
+
   function createProxy<Path extends Paths<State>>(path?: Path) {
     const key = path;
-    if (cache.has(key)) return cache.get(key)!;
+    const cached = readCachedHandle(key);
+    if (cached) return cached;
 
     const node = buildStore(path) as CompositeStore<State>;
 
@@ -302,7 +340,7 @@ export function createCompositeStore<State extends GenericObject>(
       },
     });
 
-    cache.set(key, proxy);
+    cacheHandle(key, proxy);
 
     return proxy;
   }

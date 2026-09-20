@@ -8,6 +8,11 @@ import type { Snapshot } from "@/create-store/types/snapshot";
  * when the matching key changes in another tab. Removal restores the baseline
  * captured at registration through normal $set semantics (objects deep-merge;
  * omitted keys are retained).
+ *
+ * Composed with a store subscription that persists writes, the restore
+ * notifies that subscriber and the baseline is written back; store and storage
+ * stay consistent on the same baseline. This is intended and deterministic.
+ *
  * Returns an idempotent cleanup function. SSR-safe — no-ops when
  * `window` is not available.
  *

@@ -36,4 +36,40 @@ describe("supported ownership boundaries", () => {
     expect(Object.keys(store.$get())).toEqual(["visible"]);
     expect(store.hidden.value.$get()).toBe(3);
   });
+
+  it("detaches frozen input records so writes never leak into them", () => {
+    const input: { nested: { count: number } } = Object.freeze({
+      nested: Object.freeze({ count: 1 }),
+    });
+    const store = createStore({ frozen: input });
+    store.frozen.nested.count.$set(2);
+
+    expect(store.frozen.nested.count.$get()).toBe(2);
+    expect(input.nested.count).toBe(1);
+  });
+
+  it("evaluates accessors once at ingestion and keeps opaque references", () => {
+    let reads = 0;
+    class Box {
+      constructor(public value: number) {}
+    }
+    const box = new Box(1);
+    const action = () => "invoked";
+    const store = createStore({
+      action,
+      box,
+      record: {
+        get size() {
+          reads += 1;
+          return { value: 1 };
+        },
+      },
+    });
+
+    expect(store.$get().box).toBe(box);
+    expect(store.$get().action).toBe(action);
+    store.record.size.value.$set(2);
+    expect(store.record.size.value.$get()).toBe(2);
+    expect(reads).toBe(1);
+  });
 });

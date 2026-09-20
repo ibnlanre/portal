@@ -116,3 +116,41 @@ for (const keys of [10, 100, 1000]) {
     });
   }
 }
+
+// Churn: repeated subscribe/unsubscribe across dynamic paths, then measure a
+// leaf write that shares no path with the retired subscriptions. Reclaimed
+// registry entries keep this cost flat as the historical path count grows.
+for (const churn of [0, 1_000, 10_000]) {
+  const churned = createStore({
+    entries: {} as Record<string, number>,
+    leaf: { value: 0 },
+  });
+  for (let index = 0; index < churn; index++) {
+    const unsubscribe = churned
+      .$at(`entries.key${index}`)
+      .$subscribe(() => {}, false);
+    unsubscribe();
+  }
+  let churnedValue = 0;
+  describe(`${churn} historical subscribe/unsubscribe paths`, () => {
+    bench(
+      "unrelated leaf write",
+      () => {
+        churned.leaf.value.$set(++churnedValue);
+      },
+      options
+    );
+  });
+}
+
+describe("transient handle churn", () => {
+  const store = createStore({ entries: {} as Record<string, number> });
+  bench(
+    "1,000 dynamic path lookups",
+    () => {
+      for (let index = 0; index < 1_000; index++)
+        store.$at(`entries.key${index}`).$get();
+    },
+    options
+  );
+});

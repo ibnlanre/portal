@@ -44,7 +44,7 @@ Whether you're building a small React component or a large-scale application, `@
   - [Actions as hooks](#actions-as-hooks)
   - [Asynchronous effects: `useAsync`](#asynchronous-effects-useasync)
   - [Memoized computations: `useSync`](#memoized-computations-usesync)
-  - [Deep dependency tracking: `useVersion`](#deep-dependency-tracking-useversion)
+  - [Dependency tracking: `useVersion`](#dependency-tracking-useversion)
   - [Handle circular references](#handle-circular-references)
   - [Handle arrays in stores](#handle-arrays-in-stores)
   - [Infer state types: `InferType`](#infer-state-types-infertype)
@@ -99,7 +99,7 @@ Whether you're building a small React component or a large-scale application, `@
 
 - **🛠️ Advanced Capabilities**
   - Async operations with built-in loading states
-  - Deep dependency tracking for computed values
+  - Positional dependency comparison for computed values
   - Interface normalization for complex objects
 
 ## Get started
@@ -145,30 +145,20 @@ You can add `@ibnlanre/portal` to your project using a package manager or by inc
 
 #### Using a CDN
 
-For projects that don't use a package manager (e.g., simple HTML pages or online playgrounds), you can include `@ibnlanre/portal` from a CDN:
-
-**Skypack**
+Portal is published as ESM and CJS for bundlers. It does not ship a standalone
+UMD or global build, so classic `<script src="...">` tags are not supported.
+For projects without a package manager, import the ESM entry from a module
+script through a CDN that rewrites dependencies:
 
 ```html
 <script type="module">
-  import { createStore } from "https://cdn.skypack.dev/@ibnlanre/portal";
-  // Use createStore and other exports here
+  import { createStore } from "https://esm.sh/@ibnlanre/portal";
+  const count = createStore(0);
 </script>
 ```
 
-**unpkg**
-
-```html
-<script src="https://unpkg.com/@ibnlanre/portal"></script>
-<!-- The library will be available globally, e.g., window.Portal.createStore -->
-```
-
-**jsDelivr**
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/@ibnlanre/portal"></script>
-<!-- The library will be available globally, e.g., window.Portal.createStore -->
-```
+React is a peer dependency; the CDN resolves it for the module graph. Prefer a
+bundler and a real package install for anything beyond experiments.
 
 ## Quick start
 
@@ -558,13 +548,13 @@ All store instances, whether primitive or composite, provide a core set of metho
 
 **Quick Reference Table:**
 
-| Method         | Use Case                                                          | Returns                   |
-| -------------- | ----------------------------------------------------------------- | ------------------------- |
-| `$get()`       | Retrieve current state or compute a derived value                 | `Snapshot<S>` or derived `R`  |
-| `$set()`       | Update state with a new value or updater function                 | `void`                    |
-| `$subscribe()` | Subscribe to state changes and react to updates                   | `unsubscribe` function    |
-| `$use()`       | Connect store to React component (hook)                           | `[state, setState]` tuple |
-| `$at()`        | Access deeply nested stores using dot-separated paths (Composite) | Nested `Store` instance   |
+| Method         | Use Case                                                          | Returns                      |
+| -------------- | ----------------------------------------------------------------- | ---------------------------- |
+| `$get()`       | Retrieve current state or compute a derived value                 | `Snapshot<S>` or derived `R` |
+| `$set()`       | Update state with a new value or updater function                 | `void`                       |
+| `$subscribe()` | Subscribe to state changes and react to updates                   | `unsubscribe` function       |
+| `$use()`       | Connect store to React component (hook)                           | `[state, setState]` tuple    |
+| `$at()`        | Access deeply nested stores using dot-separated paths (Composite) | Nested `Store` instance      |
 
 #### `$get()`
 
@@ -707,19 +697,21 @@ listStore.items.$set((prevItems) => [...prevItems, 7]);
 
 #### `$subscribe()`
 
-Subscribes a callback function to state changes. The callback receives the new state (and optionally the old state) whenever it changes. This method returns an `unsubscribe` function to stop listening for updates.
+Subscribes a callback function to state changes. The callback receives the committed state for the subscribed location, and this method returns an `unsubscribe` function to stop listening for updates. Notifications are synchronous and delivered after the write commits, in commit order; a listener that writes again during delivery does not reorder or roll back what later listeners see. Same-value writes still notify.
 
-By default, the callback is invoked immediately with the current state upon subscription. To prevent this initial invocation, pass `false` as the second argument.
+By default, the callback is invoked immediately with the current state upon subscription. To prevent this initial invocation, pass `false` as the second argument. When an immediate callback throws, the subscription is removed before the error propagates.
 
 **Syntax:**
 
 ```ts
-$subscribe(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean): () => void
+$subscribe(subscriber: (newState: S) => void, immediate?: boolean): () => void
 ```
 
-- **`subscriber`**: A function that is called when the state changes. It receives `newState` and optionally `oldState`.
-- **`immediate`** (optional, default `true`): If `true`, the `subscriber` is called immediately with the current state. If `false`, it's only called on subsequent changes. (On the initial immediate call, `oldState` is `undefined`.)
+- **`subscriber`**: A function that is called with the committed state when the subscribed location changes. It receives the new state only.
+- **`immediate`** (optional, default `true`): If `true`, the `subscriber` is called immediately with the current state. If `false`, it's only called on subsequent changes.
 - **Returns**: An `unsubscribe` function. Call this function to remove the subscription.
+
+If several subscribers are registered for overlapping locations, delivery follows commit order and every listener is invoked even when an earlier listener throws; a single failure is rethrown after delivery, and multiple failures are reported together as an `AggregateError`.
 
 **Examples:**
 
@@ -728,13 +720,12 @@ $subscribe(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean)
     ```ts
     const nameStore = createStore("Alex");
 
-    const unsubscribe = nameStore.$subscribe((newName, oldName) => {
-      console.log(`Name changed from "${oldName}" to "${newName}"`);
+    const unsubscribe = nameStore.$subscribe((newName) => {
+      console.log(`Name is now "${newName}"`);
     });
-    // Immediately logs: Name changed from "undefined" to "Alex"
-    // (oldState is undefined on the initial call if immediate: true)
+    // Immediately logs: Name is now "Alex"
 
-    nameStore.$set("Jordan"); // Logs: Name changed from "Alex" to "Jordan"
+    nameStore.$set("Jordan"); // Logs: Name is now "Jordan"
 
     unsubscribe(); // Stop listening to changes
     nameStore.$set("Casey"); // Nothing is logged
@@ -782,8 +773,8 @@ $subscribe(subscriber: (newState: S, oldState?: S) => void, immediate?: boolean)
 $at<N extends Store<any>>(path: string): N
 ```
 
-- **`path`**: A dot-separated string representing the path to the nested store (e.g., `"user.preferences.theme"`). TypeScript provides autocompletion for valid paths.
-- **Returns**: The nested `Store` instance (`N`).
+- **`path`**: A dot-separated string representing the path to the nested store (e.g., `"user.preferences.theme"`). TypeScript provides autocompletion for valid paths. A property whose name contains a dot or a backslash is addressed by escaping that character with a backslash: `appStore.$at("a\\.b")` reaches the literal `"a.b"` key and stays distinct from `appStore.a.b`. Path strings with an escape that is not `\\.` or `\\\\` are rejected with a `TypeError`.
+- **Returns**: The nested `Store` instance (`N`). `$at` returns a handle even when the addressed value is absent: reads return `undefined`, and a write materializes missing object parents. Dot access is different — it requires the property to be present initially or currently, and returns `undefined` otherwise.
 
 **Examples:**
 
@@ -848,10 +839,16 @@ $use<R>(
 ```
 
 - **`selector`** (optional): A function that takes the current store state (`S`) and returns a transformed value (`R`) for the component.
-- **`dependencies`** (optional): An array of dependencies for the `selector` function. The selector is re-evaluated if any of these dependencies change (similar to `React.useMemo`).
+- **`dependencies`** (optional): An array of dependencies for the `selector` function, compared position by position with `Object.is` like React's `useMemo` dependencies. A new object or function identity re-evaluates the selector even when its contents match.
 - **Returns**: A tuple:
   1.  `currentStateOrDerivedValue`: The current state (`S`) or the value returned by the `selector` (`R`).
-  2.  `setStateFunction`: A function to update the store's state. It accepts either a new value of type `S` or an updater function `(prevState: S) => S`.
+  2.  `setStateFunction`: A function that writes to the store the hook was called on, using `$set` semantics. It accepts either a new value of type `S` or an updater function `(prevState: S) => S`.
+
+Note that a selector narrows the value you read, not what the setter writes. `store.$use((state) => state.count)` returns `[count, setStore]`, where `setStore` still updates the root store. For a writable focused value, call `$use` on the branch instead:
+
+```ts
+const [count, setCount] = store.count.$use(); // a numeric useState-style pair
+```
 
 **Examples:**
 
@@ -1210,15 +1207,14 @@ function UserProfileComponent({ userId }: UserProfileComponentProps) {
 
 ### Memoized computations: `useSync`
 
-The `useSync` hook provides a `useMemo` implementation with deep dependency verification. It's designed to compute and memoize values based on complex dependencies, with automatic re-computation when any part of the dependency tree changes.
+The `useSync` hook computes and memoizes a value from a factory function and a React-style dependency list. Dependencies are compared position by position with `Object.is`, matching React's `useMemo` semantics; replacing a dependency with a new object, array, or function identity recomputes, even when contents look equal. Reordering the same values also recomputes, because each position is compared.
 
 **Key Features:**
 
-- **Deep dependency tracking**: Performs deep equality checks on complex objects and arrays
-- **Automatic memoization**: Only re-computes when dependencies actually change
-- **Complex object support**: Handles nested objects, arrays, and circular references
+- **Positional dependency tracking**: Compares each dependency slot with `Object.is`
+- **Automatic memoization**: Only re-computes when a dependency position actually changes
+- **Identity-aware**: Captured values in recreated closures are seen as changes
 - **Type safety**: Full TypeScript support with proper type inference
-- **Performance optimized**: Avoids unnecessary re-computations
 
 **Basic Usage:**
 
@@ -1266,16 +1262,15 @@ function ThemedComponent() {
 }
 ```
 
-### Deep dependency tracking: `useVersion`
+### Dependency tracking: `useVersion`
 
-The `useVersion` hook provides deep dependency comparison through deep equality checking, making it ideal for complex state management scenarios. It allows you to track changes in deeply nested objects and arrays, providing both deep equality checking and version tracking for React hooks. It's the foundational hook used internally by `useAsync` and `useSync`, but can also be used directly when you want to build custom hooks with deep dependency checking using native React hooks like `useMemo` or `useEffect`.
+The `useVersion` hook returns an incrementing version number that changes only when its input changes, comparing dependency arrays position by position with `Object.is`. It is the foundational hook used internally by `useAsync` and `useSync`, and can be used directly to build custom hooks with React-style dependency semantics.
 
 **Key Features:**
 
-- **Deep equality checking**: Performs deep comparison of complex objects, arrays, and nested structures
+- **Positional comparison**: Compares dependency arrays by position with `Object.is`, like React's `useMemo`
+- **Identity-aware**: New object, array, or function identities count as changes
 - **Version tracking**: Returns an incrementing version number that changes only when dependencies actually change
-- **Performance optimized**: Avoids unnecessary re-computations by detecting true changes
-- **Circular reference support**: Safely handles objects with circular references
 - **Type safety**: Full TypeScript support with proper type inference
 
 **Basic Usage:**
@@ -1310,7 +1305,7 @@ const actions = {
 const settingsStore = createStore(combine(state, actions));
 ```
 
-The `useVersion` hook is particularly useful when you want deep dependency tracking for custom hooks, or when native React hooks (`useMemo`, `useEffect`, `useCallback`) need to respond to changes in complex objects or arrays.
+The `useVersion` hook is particularly useful when you want React-style dependency tracking for custom hooks, or when native React hooks (`useMemo`, `useEffect`, `useCallback`) need to respond to identity changes in objects or arrays. Store snapshots are stable between writes, so reading a branch with `$get()` and passing that value as a dependency gives you stable comparisons until the branch changes.
 
 > **Tip:** Rather than using `useEffect` to sync the store state to an external service, consider using `$subscribe` for more efficient updates. This allows you to subscribe to changes in the store and react accordingly, while also providing a way to unsubscribe when no longer needed.
 

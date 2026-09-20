@@ -61,6 +61,18 @@ This is more efficient than subscribing to the root and filtering by path.
 synchronously when `$set` is called, so state is always consistent
 before the render completes.
 
+## Delivery and errors
+
+Delivery is synchronous and follows commit order. If a listener writes again
+while a notification is being delivered, the nested write is queued behind the
+current batch: no subscriber sees a newer snapshot and then an older one.
+
+A listener that throws does not strand the listeners registered after it. The
+remaining listeners still receive the committed value, and the error surfaces
+after delivery: a single failure is rethrown as-is, and multiple failures are
+reported together as an `AggregateError`. When an immediate callback throws
+during subscription, the subscription is removed before the error propagates.
+
 ## Notification boundaries
 
 Raw subscriptions are write-based. A write notifies the addressed path, its

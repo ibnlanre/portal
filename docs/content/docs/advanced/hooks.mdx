@@ -1,6 +1,6 @@
 ---
 title: Helpful Hooks
-description: Utilities for async work, memoization, and tracking nested dependencies.
+description: Utilities for async work, memoization, and dependency tracking.
 icon: RefreshCw
 ---
 
@@ -55,20 +55,21 @@ function UserProfile({ id }) {
 }
 ```
 
-## `useSync`: Deep Memoization
+## `useSync`: Memoized Values with React Dependency Semantics
 
-React's `useMemo` is great, but it relies on referential equality. If you pass a new object `{ x: 1 }` every time, `useMemo` will re-run every time.
-
-`useSync` is like `useMemo`, but it performs a **deep comparison** on dependencies. It only re-runs if the _values_ actually change.
+React's `useMemo` relies on referential equality: a dependency slot only counts
+as changed when `Object.is` says so. `useSync` keeps exactly those semantics and
+adds a `useMemo`-style factory signature, so derived values recompute when — and
+only when — a dependency position actually changes. Reordering the same values,
+or swapping in a new object, array, or function identity, counts as a change
+even when the contents look equal.
 
 ```tsx
 import { useSync } from "@ibnlanre/portal";
 
 function Chart({ config }) {
-  // config is an object like { color: 'red', points: [...] }
-  // Even if the parent passes a new object reference,
-  // useSync won't update unless the content changes.
-
+  // `config` is an object like { color: 'red', points: [...] }.
+  // Passing a new identity re-runs the calculation, matching useMemo:
   const processedData = useSync(() => {
     return expensiveCalculation(config);
   }, [config]);
@@ -77,23 +78,41 @@ function Chart({ config }) {
 }
 ```
 
-## `useVersion`: Deep Dependency Tracking
+Store snapshots work well as dependencies because they keep their identity
+between writes. Reading a branch and passing it as a dependency means the
+calculation re-runs exactly when that branch changes:
 
-If you're building your own hooks and need to trigger an effect only when an object deeply changes, `useVersion` is your friend.
+```tsx
+function Chart({ store }) {
+  const [config] = store.config.$use();
+  const processedData = useSync(() => expensiveCalculation(config), [config]);
+  return <Graph data={processedData} />;
+}
+```
 
-It returns a version number that increments only when the provided value changes deeply.
+## `useVersion`: Dependency Tracking for Custom Hooks
+
+If you're building your own hooks and want React's dependency behavior in one
+place, `useVersion` is your friend. It returns a version number that increments
+only when its input changes, comparing dependency arrays position by position
+with `Object.is` — the same rule React applies to `useMemo`, `useEffect`, and
+`useCallback` dependency lists.
 
 ```tsx
 import { useVersion } from "@ibnlanre/portal";
 import { useEffect } from "react";
 
-function AutoSave({ formState }) {
-  // 'version' only bumps when formState deeply changes
-  const version = useVersion(formState);
+function AutoSave({ draft }) {
+  // A new `draft` identity counts as a change; the same value does not.
+  const version = useVersion([draft]);
 
   useEffect(() => {
     console.log("Form changed! Saving...");
-    saveToApi(formState);
+    saveToApi(draft);
   }, [version]); // Dependency is a simple number
 }
 ```
+
+Stable store snapshots pair naturally with this hook: `store.form.$get()`
+returns the same object until that branch is written, so the version bumps
+exactly when the form state changes.

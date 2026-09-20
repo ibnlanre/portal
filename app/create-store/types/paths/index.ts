@@ -30,17 +30,16 @@ type PathsHelper<
                 ? NonNullable<Value> extends GenericObject
                   ? NonNullable<Value> extends BuiltIn
                     ? EscapeStoreKey<`${Key}`, Delimiter>
-                    :
-                        | EscapeStoreKey<`${Key}`, Delimiter>
-                        | JoinPaths<
-                            EscapeStoreKey<`${Key}`, Delimiter>,
-                            PathsHelper<
-                              NonNullable<Value>,
-                              Delimiter,
-                              readonly [...Visited, Store]
-                            >,
-                            Delimiter
-                          >
+                    : | EscapeStoreKey<`${Key}`, Delimiter>
+                      | JoinPaths<
+                          EscapeStoreKey<`${Key}`, Delimiter>,
+                          PathsHelper<
+                            NonNullable<Value>,
+                            Delimiter,
+                            readonly [...Visited, Store]
+                          >,
+                          Delimiter
+                        >
                   : EscapeStoreKey<`${Key}`, Delimiter>
                 : never
               : never;

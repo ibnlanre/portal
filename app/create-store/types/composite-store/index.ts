@@ -7,9 +7,11 @@ export type CompositeStore<Value extends GenericObject> =
   CompositeStoreValueResolver<Value> & KeyStore<Value>;
 
 type CompositeStoreValueResolver<State extends GenericObject> = {
-  readonly [Key in keyof State as Key extends keyof KeyStore<State> | symbol
-    ? never
-    : Key]:
+  readonly [
+    Key in keyof State as Key extends keyof KeyStore<State> | symbol
+      ? never
+      : Key
+  ]:
     | StoreValueResolver<BranchValue<State, Key>>
     | (string extends keyof State
         ? undefined

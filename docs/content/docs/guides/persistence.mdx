@@ -80,7 +80,7 @@ const stopSync = syncStorage(store, "consent", getConsent);
 
 Need your state accessible by the server? Or specifically need cookies? We've got you covered.
 
-**Note:** You can optional sign your cookies with a secret to prevent tampering!
+**Note:** Cookies can optionally be signed with a secret. Signing detects changes to the stored value, and when a secret is configured the adapter treats a value that fails verification as absent: reads return the fallback instead of trusting the unverified cookie. A secret that reaches the browser is readable by the browser's user, so signing is integrity hygiene — not a security boundary. Do not persist sensitive data in cookies.
 
 ```ts
 import { createStore, createCookieStorageAdapter } from "@ibnlanre/portal";
@@ -89,7 +89,7 @@ const [get, set] = createCookieStorageAdapter<{ theme: string }>("user-prefs", {
   path: "/",
   secure: true,
   maxAge: 3600 * 24 * 365, // 1 year
-  secret: "my-secret-key", // Enables signing!
+  secret: "my-secret-key", // Enables signed values
 });
 
 const prefsStore = createStore(get({ theme: "dark" }));
@@ -116,6 +116,10 @@ const [get, set] = createAsyncBrowserStorageAdapter("secure-data", {
   },
   async setItem(key, value) {
     await myDB.put(key, value);
+  },
+  async removeItem(key) {
+    // Required: clear this key when callers remove the value.
+    await myDB.delete(key);
   },
 
   // Optional: Encrypt before storing!
@@ -146,3 +150,15 @@ This is not exact object restoration. If the baseline is `{ a: 1 }` and the
 current value is `{ a: 9, b: 2 }`, restoring the baseline yields `{ a: 1, b: 2 }`.
 The extra key survives because objects deep-merge. Arrays and primitives replace
 the addressed value under the same normal `$set` rules.
+
+### What happens when a composed save is watching
+
+`syncStorage` restores the baseline through a normal `$set` on the store, so
+subscribers see it — including a persistence subscriber like
+`store.$subscribe(set, false)`. With that composition, an external removal
+restores the baseline **and** the subscriber writes that same baseline back to
+storage. Store and storage end up consistent on the baseline value, and
+dispatching the same removal again repeats the same result. This write-back is
+intended, deterministic behavior rather than an accident of two helpers: the
+resetting write is a real state change, and persisting state changes is exactly
+what the subscriber is for.

@@ -5,7 +5,7 @@ export default defineConfig({
   deps: {
     neverBundle: ["react", "react-dom"],
   },
-  dts: true,
+  dts: { generator: "tsc" },
   entry: ["index.ts"],
   format: ["esm", "cjs"],
   minify: true,

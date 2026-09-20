@@ -62,4 +62,37 @@ describe("storage synchronization contract", () => {
     );
     expect(store.$get()).toBe(0);
   });
+
+  it("keeps store and storage consistent when a composed save restores the baseline", () => {
+    localStorage.clear();
+    const store = createStore<{ count: number }>({ count: 1 });
+    const save = (value: { count: number }) =>
+      localStorage.setItem("composed", JSON.stringify(value));
+    cleanup.push(store.$subscribe(save, false));
+    cleanup.push(
+      syncStorage(store, "composed", () => {
+        const raw = localStorage.getItem("composed");
+        return raw === null
+          ? undefined
+          : (JSON.parse(raw) as { count: number });
+      })
+    );
+
+    store.count.$set(2);
+    expect(localStorage.getItem("composed")).toBe('{"count":2}');
+
+    localStorage.removeItem("composed");
+    const removal = new StorageEvent("storage", {
+      key: "composed",
+      newValue: null,
+      storageArea: localStorage,
+    });
+    window.dispatchEvent(removal);
+    expect(store.$get()).toEqual({ count: 1 });
+    expect(localStorage.getItem("composed")).toBe('{"count":1}');
+
+    window.dispatchEvent(removal);
+    expect(store.$get()).toEqual({ count: 1 });
+    expect(localStorage.getItem("composed")).toBe('{"count":1}');
+  });
 });

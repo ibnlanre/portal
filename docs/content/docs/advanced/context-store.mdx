@@ -26,15 +26,27 @@ const globalStore = createStore(0);
 
 `createContextStore` lets you define a "store creator" function. This function runs inside a Provider component, meaning it has access to props and hooks.
 
+Because a provider re-runs its factory on every render, initialize the store
+once with `useState` so the same instance survives rerenders:
+
 ```tsx
 import { createContextStore, createStore } from "@ibnlanre/portal";
+import { useState } from "react";
 
-// 1. Create the Context Store factory
+// 1. Create the Context Store factory.
+// The factory receives the props passed to the Provider.
 const [CounterProvider, useCounterStore] = createContextStore(
-  // This factory function receives the props passed to the Provider
-  (props: { start: number }) => createStore(props.start)
+  (props: { start: number }) => {
+    // Initialize once; later provider renders reuse this store.
+    const [store] = useState(() => createStore(props.start));
+    return store;
+  }
 );
 ```
+
+A factory that returns a fresh `createStore(...)` on every render resets state
+whenever the provider rerenders, so keep the lazy initializer as the default
+shape.
 
 Now you can use it in your app:
 
@@ -75,16 +87,19 @@ function CounterDisplay({ id }: { id: string }) {
 }
 ```
 
-## Advanced: Memoization
+## Recreating on purpose: memoized factories
 
-A store creator runs inside a React component, so you can use hooks like `useMemo` (or Portal's `useSync`) to prevent recreating the store on every render. Creators remain fully general — they can call any hook and build a store from anything, including values a schema cannot describe.
+Sometimes a new store _is_ the intent — for example when a `props.id` change should
+start a fresh instance. Key the factory to those props with `useMemo` or Portal's
+`useSync` so the store is replaced only when that key changes:
 
 ```tsx
 import { createContextStore, createStore, useSync } from "@ibnlanre/portal";
 
 const [UserProvider, useUserStore] = createContextStore(
   (props: { id: string; name: string }) => {
-    // Only recreate the store if props.id changes
+    // Recreate the store only when props.id changes; render-to-render
+    // rerenders with the same id keep the same instance.
     return useSync(() => {
       return createStore({ id: props.id, name: props.name });
     }, [props.id]);
@@ -92,19 +107,6 @@ const [UserProvider, useUserStore] = createContextStore(
 );
 ```
 
-## Provider lifetime
-
-The factory passed to `createContextStore` is called on each provider render.
-For a persistent instance, make it a hook that initializes the store once:
-
-```tsx
-import { useState } from "react";
-
-const [StableCounterProvider, useStableCounter] = createContextStore(
-  (initial: { count: number }) => useState(() => createStore(initial))[0]
-);
-```
-
-Later prop changes do not reset this instance. Choose a memoized factory keyed
-to props when changing those props should create a new store instead. Portal's
-context integration requires React 19.
+Creators remain fully general — they can call any hook and build a store from
+anything, including values a schema cannot describe. Portal's context
+integration requires React 19.

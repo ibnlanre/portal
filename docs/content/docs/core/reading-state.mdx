@@ -104,12 +104,51 @@ store.settings.theme.$get(); // "dark"
 
 ## Dynamic paths with `$at()`
 
-When the property name isn't known at write time:
+When the property name isn't known in code, `$at()` resolves a dot-separated
+path and returns a branch handle — even when the addressed value is absent:
 
 ```ts
 const key = "settings.theme";
 store.$at(key).$get(); // "dark"
 ```
+
+Absence is part of the read contract. For optional properties and dictionary
+keys, the result type includes `undefined`:
+
+```ts
+const store = createStore<{
+  profile?: { name: string };
+  users: Record<string, { name: string }>;
+}>({ users: {} });
+
+store.$at("profile.name").$get(); // undefined
+store.$at("users.missing.name").$get(); // undefined
+store.$at("users.new.name").$set("A"); // writes materialize the missing object
+```
+
+Dot access is stricter than `$at`: it only resolves a property that was present
+initially or is present now, so it may return `undefined` for a key that `$at`
+can still address. Reach for `$at` when a path is optional or dynamic; keep dot
+access for known shapes.
+
+### Dotted and escaped keys
+
+A dot separates segments. If a property name itself contains a dot or a
+backslash, escape that character with a backslash so the path stays literal:
+
+```ts
+const store = createStore({ a: { b: 2 }, "a.b": 1 });
+
+store.a.b.$get(); // 2
+store.$at("a.b").$get(); // 2 — the same structural path
+store.$at("a\\.b").$get(); // 1 — the literal "a.b" key
+store["a.b"].$get(); // 1 — bracket access matches the escaped path
+```
+
+Both locations are distinct for reads, writes, subscriptions, and handle
+identity. A path whose backslash is not part of `\\.` or `\\\\` is rejected with
+a `TypeError` rather than being silently re-routed; bracket access
+(`store["a.b"]`) escapes automatically.
 
 ## Cheap vs expensive selectors
 

@@ -17,10 +17,13 @@
   "homepage": "https://ibnlanre.github.io/portal/",
   "keywords": [
     "redux",
+    "react",
     "state",
+    "state-management",
     "store"
   ],
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -39,7 +42,6 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@ibnlanre/clone": "^0.5.1",
     "@tailwindcss/vite": "^4.3.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -61,11 +63,14 @@
   },
   "scripts": {
     "bench": "vitest bench --run --config vitest.bench.config.mts",
+    "bench:bundle": "node benchmarks/consumer.mjs",
+    "bench:memory": "node --expose-gc benchmarks/memory.mjs",
     "bench:size": "node benchmarks/size.mjs",
     "test:contracts": "vitest run create-store/contracts",
     "bundle": "tsdown --config tsdown.config.ts",
     "build": "pnpm run bundle",
     "check-exports": "attw --pack .",
+    "check-runtime": "node scripts/check-runtime.mjs",
     "coverage": "vitest run --coverage",
     "dev": "pnpm run watch",
     "dry-run": "npm publish --dry-run --no-git-checks",
@@ -73,7 +78,7 @@
     "minor": "npm version minor",
     "package": "npm publish --access public",
     "patch": "npm version patch",
-    "postbundle": "pnpm run check-exports",
+    "postbundle": "pnpm run check-exports && pnpm run check-runtime",
     "postpublish": "git push --follow-tags",
     "posttest": "pnpm run lint:check",
     "postversion": "pnpm run package",

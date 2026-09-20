@@ -27,20 +27,18 @@ Using TypeScript? Good news—we include type definitions automatically, so you 
 
 ### Using a CDN
 
-If you're not using a bundler, you can grab Portal directly from a CDN:
+If you're not using a bundler, you can load the ESM build from a CDN that
+rewrites dependencies. Portal does not ship a standalone UMD or global build,
+so classic `<script src="...">` tags are not supported.
 
 ```html
-<!-- Skypack -->
 <script type="module">
-  import { createStore } from "https://cdn.skypack.dev/@ibnlanre/portal";
+  import { createStore } from "https://esm.sh/@ibnlanre/portal";
+  const count = createStore(0);
 </script>
-
-<!-- unpkg -->
-<script src="https://unpkg.com/@ibnlanre/portal"></script>
-
-<!-- jsDelivr -->
-<script src="https://cdn.jsdelivr.net/npm/@ibnlanre/portal"></script>
 ```
+
+React is a peer dependency; the CDN resolves it for the module graph.
 
 ## Your first root store
 
@@ -101,9 +99,10 @@ const selection = createStore<string>();
 selection.$get(); // undefined
 ```
 
-An async initializer that resolves to a plain object is held by a primitive
-store. It wraps that object instead of creating a node per key, so await the
-data yourself when you want to reach properties by dot access.
+Both async forms resolve to a whole-value store. An async initializer that
+resolves to a plain object is held by a primitive store: it wraps that object
+instead of creating a node per key, so `await` the data yourself before calling
+`createStore` when you want to reach properties by dot access.
 
 ## Reach a branch directly or by path
 
