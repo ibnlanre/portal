@@ -68,12 +68,12 @@ are bytes.
 
 | Artifact           |   Bytes |
 | ------------------ | ------: |
-| npm tarball        |  87,164 |
-| Unpacked package   | 353,267 |
-| Built distribution | 346,301 |
-| Full ESM entry     |  18,512 |
-| Full ESM gzip      |   6,497 |
-| Full ESM Brotli    |   5,867 |
+| npm tarball        |  87,224 |
+| Unpacked package   | 355,745 |
+| Built distribution | 348,779 |
+| Full ESM entry     |  18,892 |
+| Full ESM gzip      |   6,549 |
+| Full ESM Brotli    |   5,923 |
 
 Tree-shaken consumer bundles via `bench:bundle` (esbuild, React external):
 

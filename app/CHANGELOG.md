@@ -1,3 +1,16 @@
+## 6.0.1 (2026-10-26)
+
+### Bug Fixes
+
+- `createLocalStorageAdapter` and `createSessionStorageAdapter` no longer throw
+  where the browser refuses storage (blocked site data, a sandboxed frame) or a
+  write (full storage). A refused read returns the fallback; a refused write or
+  removal is dropped. Both log through `console.error`, as `cookieStorage`
+  does. A custom `parse` or `stringify` still throws its own errors.
+- `syncStorage` ignores a `storage` event it cannot attribute to
+  `localStorage` where reading `window.localStorage` throws, instead of
+  throwing inside the listener.
+
 ## 6.0.0-alpha.0 (2026-09-17)
 
 ### BREAKING CHANGES
