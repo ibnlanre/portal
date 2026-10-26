@@ -21,10 +21,20 @@ export function createLocalStorageAdapter<State>(
   function getLocalStorageState(): State | undefined;
   function getLocalStorageState(fallback: State): State;
 
+  // A browser can refuse storage outright (blocked site data, a sandboxed
+  // frame) or a write (full storage): reads then fall back and writes are
+  // dropped, as cookieStorage does, rather than throwing into the caller.
   function getLocalStorageState(fallback?: State) {
     if (typeof window === "undefined") return fallback;
 
-    const value = localStorage.getItem(key);
+    let value: null | string = null;
+
+    try {
+      value = localStorage.getItem(key);
+    } catch (error) {
+      console.error("Error occurred while reading localStorage:", error);
+    }
+
     if (value) return parse(value);
 
     return fallback;
@@ -32,10 +42,15 @@ export function createLocalStorageAdapter<State>(
 
   const setLocalStorageState = (value?: Snapshot<State>) => {
     if (typeof window === "undefined") return;
-    if (value === undefined) return localStorage.removeItem(key);
 
-    const serializedValue = stringify(value);
-    localStorage.setItem(key, serializedValue);
+    const serializedValue = value === undefined ? undefined : stringify(value);
+
+    try {
+      if (serializedValue === undefined) localStorage.removeItem(key);
+      else localStorage.setItem(key, serializedValue);
+    } catch (error) {
+      console.error("Error occurred while writing localStorage:", error);
+    }
   };
 
   return [getLocalStorageState, setLocalStorageState];

@@ -83,3 +83,60 @@ describe("createLocalStorageAdapter", () => {
     expect(() => setLocalStorageState(undefined)).not.toThrow();
   });
 });
+
+describe("createLocalStorageAdapter where the browser refuses storage", () => {
+  const key = "refused-key";
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns the fallback when reading throws", () => {
+    vi.spyOn(localStorage, "getItem").mockImplementation(() => {
+      throw new DOMException("The operation is insecure.", "SecurityError");
+    });
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const [getLocalStorageState] = createLocalStorageAdapter<number>(key);
+
+    expect(getLocalStorageState(7)).toBe(7);
+    expect(getLocalStorageState()).toBeUndefined();
+    expect(error).toHaveBeenCalled();
+  });
+
+  it("drops a write the browser refuses, without throwing", () => {
+    vi.spyOn(localStorage, "setItem").mockImplementation(() => {
+      throw new DOMException(
+        "The quota has been exceeded.",
+        "QuotaExceededError"
+      );
+    });
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const [, setLocalStorageState] = createLocalStorageAdapter<number>(key);
+
+    expect(() => setLocalStorageState(1)).not.toThrow();
+    expect(error).toHaveBeenCalled();
+  });
+
+  it("drops a removal the browser refuses, without throwing", () => {
+    vi.spyOn(localStorage, "removeItem").mockImplementation(() => {
+      throw new DOMException("The operation is insecure.", "SecurityError");
+    });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const [, setLocalStorageState] = createLocalStorageAdapter<number>(key);
+
+    expect(() => setLocalStorageState(undefined)).not.toThrow();
+  });
+
+  it("still surfaces a custom stringify's own error", () => {
+    const [, setLocalStorageState] = createLocalStorageAdapter<number>(key, {
+      stringify: () => {
+        throw new Error("cannot serialise");
+      },
+    });
+
+    expect(() => setLocalStorageState(1)).toThrow("cannot serialise");
+  });
+});

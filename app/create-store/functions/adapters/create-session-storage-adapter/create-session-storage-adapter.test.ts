@@ -78,3 +78,63 @@ describe("createSessionStorageAdapter", () => {
     expect(state).toEqual(newState);
   });
 });
+
+describe("createSessionStorageAdapter where the browser refuses storage", () => {
+  const key = "refused-key";
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("returns the fallback when reading throws", () => {
+    vi.spyOn(sessionStorage, "getItem").mockImplementation(() => {
+      throw new DOMException("The operation is insecure.", "SecurityError");
+    });
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const [getSessionStorageState] = createSessionStorageAdapter<number>(key);
+
+    expect(getSessionStorageState(7)).toBe(7);
+    expect(getSessionStorageState()).toBeUndefined();
+    expect(error).toHaveBeenCalled();
+  });
+
+  it("drops a write the browser refuses, without throwing", () => {
+    vi.spyOn(sessionStorage, "setItem").mockImplementation(() => {
+      throw new DOMException(
+        "The quota has been exceeded.",
+        "QuotaExceededError"
+      );
+    });
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const [, setSessionStorageState] = createSessionStorageAdapter<number>(key);
+
+    expect(() => setSessionStorageState(1)).not.toThrow();
+    expect(error).toHaveBeenCalled();
+  });
+
+  it("drops a removal the browser refuses, without throwing", () => {
+    vi.spyOn(sessionStorage, "removeItem").mockImplementation(() => {
+      throw new DOMException("The operation is insecure.", "SecurityError");
+    });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const [, setSessionStorageState] = createSessionStorageAdapter<number>(key);
+
+    expect(() => setSessionStorageState(undefined)).not.toThrow();
+  });
+
+  it("still surfaces a custom stringify's own error", () => {
+    const [, setSessionStorageState] = createSessionStorageAdapter<number>(
+      key,
+      {
+        stringify: () => {
+          throw new Error("cannot serialise");
+        },
+      }
+    );
+
+    expect(() => setSessionStorageState(1)).toThrow("cannot serialise");
+  });
+});

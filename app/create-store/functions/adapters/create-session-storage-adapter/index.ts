@@ -21,10 +21,20 @@ export function createSessionStorageAdapter<State>(
   function getSessionStorageState(): State | undefined;
   function getSessionStorageState(fallback: State): State;
 
+  // A browser can refuse storage outright (blocked site data, a sandboxed
+  // frame) or a write (full storage): reads then fall back and writes are
+  // dropped, as cookieStorage does, rather than throwing into the caller.
   function getSessionStorageState(fallback?: State) {
     if (typeof window === "undefined") return fallback;
 
-    const value = sessionStorage.getItem(key);
+    let value: null | string = null;
+
+    try {
+      value = sessionStorage.getItem(key);
+    } catch (error) {
+      console.error("Error occurred while reading sessionStorage:", error);
+    }
+
     if (value) return parse(value);
 
     return fallback;
@@ -32,10 +42,15 @@ export function createSessionStorageAdapter<State>(
 
   const setSessionStorageState = (value?: Snapshot<State>) => {
     if (typeof window === "undefined") return;
-    if (value === undefined) return sessionStorage.removeItem(key);
 
-    const serializedValue = stringify(value);
-    sessionStorage.setItem(key, serializedValue);
+    const serializedValue = value === undefined ? undefined : stringify(value);
+
+    try {
+      if (serializedValue === undefined) sessionStorage.removeItem(key);
+      else sessionStorage.setItem(key, serializedValue);
+    } catch (error) {
+      console.error("Error occurred while writing sessionStorage:", error);
+    }
   };
 
   return [getSessionStorageState, setSessionStorageState];

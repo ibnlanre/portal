@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createStore } from "@/create-store";
 import { createLocalStorageAdapter } from "@/create-store/functions/adapters/create-local-storage-adapter";
@@ -60,5 +60,36 @@ describe("syncStorage", () => {
     );
 
     expect(store.$get()).toBe(0);
+  });
+});
+
+describe("syncStorage where the browser refuses localStorage", () => {
+  const key = "refused-key";
+
+  it("ignores a storage event it cannot attribute, without throwing", () => {
+    const [getCount] = createLocalStorageAdapter<number>(key);
+    const store = createStore(5);
+    syncStorage(store, key, getCount);
+
+    const descriptor = Object.getOwnPropertyDescriptor(window, "localStorage");
+    const area = window.localStorage;
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      get() {
+        throw new DOMException("The operation is insecure.", "SecurityError");
+      },
+    });
+
+    try {
+      expect(() =>
+        window.dispatchEvent(
+          new StorageEvent("storage", { key, storageArea: area })
+        )
+      ).not.toThrow();
+      expect(store.$get()).toBe(5);
+    } finally {
+      if (descriptor) Object.defineProperty(window, "localStorage", descriptor);
+      vi.restoreAllMocks();
+    }
   });
 });

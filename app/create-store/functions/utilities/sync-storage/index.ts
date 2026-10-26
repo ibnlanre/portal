@@ -1,33 +1,5 @@
 import type { Snapshot } from "@/create-store/types/snapshot";
 
-/**
- * @template State
- *
- * @description
- * Listens for cross-tab `storage` events and syncs the value into the store
- * when the matching key changes in another tab. Removal restores the baseline
- * captured at registration through normal $set semantics (objects deep-merge;
- * omitted keys are retained).
- *
- * Composed with a store subscription that persists writes, the restore
- * notifies that subscriber and the baseline is written back; store and storage
- * stay consistent on the same baseline. This is intended and deterministic.
- *
- * Returns an idempotent cleanup function. SSR-safe — no-ops when
- * `window` is not available.
- *
- * @param store A store with an `$set` method.
- * @param key   The localStorage key to watch.
- * @param get   A function to read the current value from storage.
- *
- * @example
- * ```ts
- * const [getCount, setCount] = createLocalStorageAdapter("count");
- * const store = createStore(getCount(0));
- *
- * syncStorage(store, "count", getCount);
- * ```
- */
 export function syncStorage<State>(
   store: {
     $get: () => Snapshot<State>;
@@ -42,7 +14,7 @@ export function syncStorage<State>(
 
   const onStorage = (event: StorageEvent) => {
     if (event.key !== null && event.key !== key) return;
-    if (event.storageArea && event.storageArea !== window.localStorage) return;
+    if (event.storageArea && event.storageArea !== readLocalStorage()) return;
 
     const value = get(undefined);
     store.$set(value === undefined ? initial : value);
@@ -50,4 +22,45 @@ export function syncStorage<State>(
 
   window.addEventListener("storage", onStorage);
   return () => window.removeEventListener("storage", onStorage);
+}
+
+/**
+ * @template State
+ *
+ * @description
+ * Listens for cross-tab `storage` events and syncs the value into the store
+ * when the matching key changes in another tab. Removal restores the baseline
+ * captured at registration through normal $set semantics (objects deep-merge;
+ * omitted keys are retained).
+ *
+ * Composed with a store subscription that persists writes, the restore
+ * notifies that subscriber and the baseline is written back; store and storage
+ * stay consistent on the same baseline. This is intended and deterministic.
+ *
+ * Returns an idempotent cleanup function. SSR-safe — no-ops when
+ * `window` is not available — and safe where the browser refuses
+ * localStorage: events it cannot attribute to localStorage are ignored.
+ *
+ * @param store A store with an `$set` method.
+ * @param key   The localStorage key to watch.
+ * @param get   A function to read the current value from storage.
+ *
+ * @example
+ * ```ts
+ * const [getCount, setCount] = createLocalStorageAdapter("count");
+ * const store = createStore(getCount(0));
+ *
+ * syncStorage(store, "count", getCount);
+ * ```
+ */
+/**
+ * The page's localStorage, or undefined where the browser refuses it (blocked
+ * site data, a sandboxed frame); reading `window.localStorage` then throws.
+ */
+function readLocalStorage(): Storage | undefined {
+  try {
+    return window.localStorage;
+  } catch {
+    return undefined;
+  }
 }
