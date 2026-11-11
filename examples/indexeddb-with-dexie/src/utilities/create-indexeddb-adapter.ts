@@ -1,6 +1,6 @@
 import {
+  asyncAdapter,
   type AsyncBrowserStorageTransforms,
-  createAsyncBrowserStorageAdapter,
 } from "@ibnlanre/portal";
 
 import { StoreDatabase } from "./store-database";
@@ -24,7 +24,7 @@ export function createIndexedDBAdapter<State, StoredState = State>(
     console.error("Failed to open IndexedDB:", error);
   });
 
-  return createAsyncBrowserStorageAdapter<State, StoredState>(key, {
+  return asyncAdapter<State, StoredState>(key, {
     ...transforms,
     getItem: async (key) => {
       try {

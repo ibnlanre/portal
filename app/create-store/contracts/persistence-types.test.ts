@@ -1,30 +1,28 @@
 import type { AsyncSetBrowserStorage } from "@/create-store/types/async-browser-storage-adapter";
-import type { Subscriber } from "@/create-store/types/subscriber";
 
-import { describe, it } from "vitest";
+import { describe, expectTypeOf, it } from "vitest";
 
-import { createStore } from "@/create-store";
-import { createLocalStorageAdapter } from "@/create-store/functions/adapters/create-local-storage-adapter";
+import { cookieAdapter } from "@/create-store/functions/adapters/cookie-adapter";
+import { localAdapter } from "@/create-store/functions/adapters/local-adapter";
+
+import { composite } from "../functions/library/composite";
+import { primitive } from "../functions/library/primitive";
+import { persist } from "../functions/utilities/persist";
 
 /**
- * The read surface is a `Snapshot`, which is read-only and types arrays as
- * `ReadonlyArray`. Persisting never mutates a value, so the storage setters
- * accept the snapshot type and a store can be wired straight into an adapter.
- *
- * `Snapshot` projects readonly *properties*, which stay assignable to mutable
- * ones, but `ReadonlyArray` is not assignable to `Array`. Every assignment
- * below is therefore enforced by `tsc --noEmit`, which is what keeps the
- * documented `store.$subscribe(set, false)` wiring working for array state.
+ * A read has exactly the state type, so a store can be wired straight into an
+ * adapter. Every assignment below is enforced by `tsc --noEmit`, which keeps the
+ * documented `store.$subscribe(set, { immediate: false })` wiring working for array state.
  */
 describe("persistence accepts the read surface", () => {
   it("accepts a top-level array state", () => {
-    const [getTodos, setTodos] = createLocalStorageAdapter<string[]>("todos");
+    const [getTodos, setTodos] = localAdapter<string[]>("todos");
 
-    const todos = createStore<string[]>(["a"]);
+    const todos = primitive<string[]>(["a"]);
 
-    const persist: Subscriber<string[]> = setTodos;
+    const persist: (value: string[]) => void = setTodos;
 
-    todos.$subscribe(persist, false);
+    todos.$subscribe(persist, { immediate: false });
     setTodos(todos.$get());
     setTodos([...todos.$get()]);
 
@@ -32,34 +30,70 @@ describe("persistence accepts the read surface", () => {
   });
 
   it("accepts an array nested inside an object state", () => {
-    const [, setPreferences] = createLocalStorageAdapter<{
+    const [, setPreferences] = localAdapter<{
       list: string[];
       theme: string;
     }>("preferences");
 
-    const preferences = createStore({ list: ["a"], theme: "light" });
+    const preferences = composite({ list: ["a"], theme: "light" });
 
-    const persist: Subscriber<{ list: string[]; theme: string }> =
+    const persist: (value: { list: string[]; theme: string }) => void =
       setPreferences;
 
-    preferences.$subscribe(persist, false);
+    preferences.$subscribe(persist, { immediate: false });
     setPreferences(preferences.$get());
   });
 
   it("accepts an async storage setter", () => {
-    const todos = createStore<string[]>(["a"]);
+    const todos = primitive<string[]>(["a"]);
 
     const setStoredTodos: AsyncSetBrowserStorage<string[]> = async () => {};
 
-    const persist: Subscriber<string[]> = setStoredTodos;
+    const persist: (value: string[]) => void = setStoredTodos;
 
-    todos.$subscribe(persist, false);
+    todos.$subscribe(persist, { immediate: false });
   });
 
   it("still accepts a mutable value written by hand", () => {
-    const [, setTodos] = createLocalStorageAdapter<string[]>("todos");
+    const [, setTodos] = localAdapter<string[]>("todos");
 
     setTodos(["mutable", "array"]);
     setTodos(undefined);
+  });
+
+  it("accepts a cookie setter, whose second parameter takes options", () => {
+    const [, setCookie] = cookieAdapter<string[]>("todos");
+    const todos = primitive<string[]>(["a"]);
+
+    todos.$subscribe(setCookie, { immediate: false });
+  });
+
+  it("returns the plain two-element tuple, with nothing added", () => {
+    const adapter = localAdapter<number>("k");
+    const [get, set] = adapter;
+    const pair: [typeof get, typeof set] = adapter;
+    void pair;
+    expectTypeOf(adapter.length).toEqualTypeOf<2>();
+    // @ts-expect-error a watcher is not part of the public adapter type
+    void adapter.watch;
+  });
+
+  it("lets persist take an adapter or a plain tuple, and only false for sync", () => {
+    const store = primitive(1);
+    persist(store, localAdapter<number>("k"));
+    persist(store, [() => 1, () => {}] as const);
+    persist(store, localAdapter<number>("k"), { sync: false });
+    // @ts-expect-error following is the default; the only option is false
+    persist(store, localAdapter<number>("k"), { sync: true });
+  });
+
+  it("takes subscribe options, never a boolean", () => {
+    const store = primitive(1);
+    store.$subscribe(() => {}, { immediate: false });
+    store.$subscribe(() => {});
+    // @ts-expect-error the boolean overload is gone
+    store.$subscribe(() => {}, false);
+    // @ts-expect-error the boolean overload is gone
+    store.$subscribe(() => {}, true);
   });
 });

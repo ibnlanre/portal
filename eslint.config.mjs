@@ -270,7 +270,7 @@ const portalHookLayerConfig = tseslint.config({
     "app/create-store/functions/hooks/**",
     "app/create-store/functions/library/create-composite-store/index.ts",
     "app/create-store/functions/library/create-primitive-store/index.ts",
-    "app/create-store/functions/library/create-context-store/create-context-store.test.tsx",
+    "app/create-store/functions/library/context-store/context-store.test.tsx",
   ],
   rules: {
     "@eslint-react/exhaustive-deps": "off",

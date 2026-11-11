@@ -3,8 +3,6 @@ import type { DependencyList } from "react";
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { combine } from "@/create-store/functions/helpers/combine";
-
 import { useSync } from "./index";
 
 describe("useSync", () => {
@@ -300,9 +298,13 @@ describe("useSync", () => {
     rerender({ deps: equalObj });
     expect(factory).toHaveBeenCalledTimes(2);
 
-    const changedObj = combine(complexObj, {
-      user: { profile: { name: "Jane" } },
-    });
+    const changedObj = {
+      ...complexObj,
+      user: {
+        ...complexObj.user,
+        profile: { ...complexObj.user.profile, name: "Jane" },
+      },
+    };
 
     rerender({ deps: changedObj });
     expect(factory).toHaveBeenCalledTimes(3);

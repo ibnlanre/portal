@@ -17,64 +17,169 @@ The pattern is always the same:
 
 ## Local Storage
 
-Use `createLocalStorageAdapter` to persist data in the browser permanently (until cleared).
+Use `localAdapter` to persist data in the browser permanently (until cleared).
 
 ```ts
-import { createStore, createLocalStorageAdapter } from "@ibnlanre/portal";
+import { localAdapter, primitive } from "@ibnlanre/portal";
 
 // 1. Create the adapter
-const [get, set] = createLocalStorageAdapter<number>("my-counter-key");
+const [get, set] = localAdapter<number>("my-counter-key");
 
 // 2. Initialize store with saved data (or 0 if empty)
-const counterStore = createStore(get(0));
+const counterStore = primitive(get(0));
 
 // 3. Save changes automatically
-counterStore.$subscribe(set, false); // 'false' skips initial save
+counterStore.$subscribe(set, { immediate: false }); // `immediate: false` skips the initial save
 ```
 
 That's it! Your counter now survives reloads.
 
 ## Session Storage
 
-If you only want data to persist while the tab is open, use `createSessionStorageAdapter`.
+If you only want data to persist while the tab is open, use `sessionAdapter`.
 
 ```ts
-import { createStore, createSessionStorageAdapter } from "@ibnlanre/portal";
+import { sessionAdapter, primitive } from "@ibnlanre/portal";
 
-const [get, set] = createSessionStorageAdapter<{ step: number }>(
+const [get, set] = sessionAdapter<{ step: number }>(
   "session-data"
 );
 
-const store = createStore(get({ step: 1 }));
+const store = primitive(get({ step: 1 }));
 
-store.$subscribe(set, false);
+store.$subscribe(set, { immediate: false });
 ```
 
-## Cross-tab Sync
+## Storage format and lifecycle
 
-When the same storage key changes in another tab, `syncStorage()` updates the store automatically. SSR-safe — no-ops when `window` is not available.
+The format of what is stored is an adapter concern; the lifecycle is
+`persist(store, adapter, options)`.
+
+Every adapter (local, session, cookie, custom, async) accepts `version`,
+`migrate` and `validate` beside `parse` and `stringify`:
 
 ```ts
 import {
-  createStore,
-  createLocalStorageAdapter,
-  syncStorage,
+  composite,
+  localAdapter,
+  persist,
+  primitive,
 } from "@ibnlanre/portal";
 
-const [getConsent, setConsent] = createLocalStorageAdapter<
-  "granted" | "denied" | null
->("consent");
+type Draft = { lines: string[]; note?: string };
 
-const store = createStore(getConsent(null));
+const adapter = localAdapter<Draft>("draft:u1:o1", {
+  version: 2,
+  migrate: (stored, from) => upgradeDraft(stored, from),
+});
+const store = composite({
+  lines: primitive<string[]>([]),
+  note: primitive<string | undefined>(undefined),
+});
 
-// Sync store → adapter
-store.$subscribe(setConsent, false);
+const persistence = persist(store, adapter, {
+  skipHydration: true, // SSR: render the initial value, then hydrate in an effect
+  onHydrated: (draft) => console.log("restored", draft),
+  // sync: false, // opt out of following other tabs
+});
 
-// Sync adapter → store (cross-tab)
-const stopSync = syncStorage(store, "consent", getConsent);
-// When this store owner is disposed:
-// stopSync();
+// client, in an effect
+useEffect(() => {
+  void persistence.hydrate();
+  return persistence.dispose;
+}, []);
+
+const [hydrated] = persistence.hydrated.$use(); // gate UI on the flag
 ```
+
+**Format (adapter options).**
+
+- Without `version`, adapters read and write the bare value. Nothing is
+  unwrapped.
+- With `version` set, writes are stored as `{ $version, state }` and reads accept
+  only that envelope: a stored value that is not an envelope is treated as
+  absent. An envelope whose `$version` differs from `version` goes through
+  `migrate(state, storedVersion)`; without `migrate`, or if it throws, it is
+  treated as absent.
+- Every adapter follows one rule for what it finds in storage: nothing stored is
+  absent, anything else goes through `parse`, and a parse failure or a `null` or
+  `undefined` parse result is absent. The default parser logs unparsable text
+  through `console.error` and treats it as absent.
+- The default codec is symmetric JSON: `stringify` is `JSON.stringify` and
+  `parse` is `JSON.parse`. A string is therefore stored JSON-quoted (`"dark"`,
+  not `dark`) and `"123"` stays a string. Text written without quotes by an
+  earlier version is not valid JSON, so it reads as absent. To keep readable raw
+  text, pass your own pair to the local, session, cookie or browser adapter; a
+  `parse` that returns `undefined` for anything it does not know makes that text
+  absent:
+
+  ```ts
+  const currency = localAdapter<string>("currency", {
+    parse: (value) => (isCode(value) ? value : undefined),
+    stringify: (value) => value,
+  });
+  ```
+
+  The async adapter has no text codec: it hands your `setItem` the value as
+  given, shaped by `beforeStorage` and `beforeUsage`.
+- `validate` checks a stored state after the envelope is unwrapped and after
+  `migrate` (for an unversioned adapter, on the parsed value). Return the state
+  to accept it, or `null` or `undefined` to treat it as absent: the adapter
+  returns its fallback, the store keeps its initial value, and nothing is
+  logged, because it is an intended filter. If `validate` throws, the value is
+  absent and the error is logged. **Without `validate`, a stored state with the
+  right envelope but the wrong shape is applied as it is.**
+
+  ```ts
+  import { z } from "zod";
+
+  const schema = z.object({ lines: z.array(z.string()), note: z.string() });
+
+  const adapter = localAdapter<Draft>("draft:u1:o1", {
+    validate: (state) => schema.safeParse(state).data,
+  });
+  ```
+- "Absent" means the adapter returns its fallback. The async adapter applies
+  the same rule to `beforeUsage`.
+- None of this needs a store, so an adapter can be tested on its own.
+
+**Lifecycle (`persist`).** `State` comes from the store, and the adapter must
+hold the same state, with no casts.
+
+- **No write before hydration.** Until storage has been read, nothing is
+  written, so an early `$set` cannot overwrite the stored value. Without
+  `skipHydration`, `persist` hydrates immediately (synchronously for sync
+  adapters).
+- **Absent means untouched, unless you changed it.** If storage holds nothing
+  and the store was not changed meanwhile, it keeps its initial value and nothing
+  is written. If it was changed before hydration finished (a collection entry
+  created and set in the same tick, or a store set before an async read
+  resolved), that value is saved once hydration finds nothing stored. If storage
+  does hold a value, the stored value wins and nothing is written.
+- **A failed read is "nothing stored".** If the adapter's read rejects (or
+  throws), `persist` logs it through `console.error`, marks the store hydrated,
+  and carries on: a later edit is saved, `persistor.hydrated` flips, and a value
+  set before the read failed is saved too, since there is nothing to keep. In a
+  collection, one failed entry does not hold `hydrated` back. There is no
+  `onError` option.
+- **Hydration writes.** The stored state is written with a plain `$set`: a
+  composite branch it omits keeps its initial value.
+- **No echo.** Updates `persist` makes itself (hydration, changes from `sync`)
+  are not written back: it skips its own updates, and skips any write that
+  would store what it last read from or wrote to storage.
+- **It follows other tabs.** A persisted store follows its storage: browser
+  storage is shared across the tabs and windows of the same site, so a change
+  another tab makes is read and written to this store, and nothing is written
+  back. If the value is removed (`removeItem`, `clear()`), the store is reset to
+  its initial value, again without writing back. Local storage is followed;
+  session storage is per tab by design, cookies cannot announce changes, and the
+  browser and async adapters follow nothing unless you supply a watcher (see
+  below). An adapter that cannot be followed is simply not followed: no error, no
+  warning.
+- **The tradeoff.** Another tab's write replaces this tab's in-memory value:
+  last write wins. Pass `sync: false` to opt out.
+- **`dispose()`** stops writing and watching and is idempotent; `store.$dispose()`
+  calls it for you.
 
 ## Cookie Storage
 
@@ -83,33 +188,30 @@ Need your state accessible by the server? Or specifically need cookies? We've go
 **Note:** Cookies can optionally be signed with a secret. Signing detects changes to the stored value, and when a secret is configured the adapter treats a value that fails verification as absent: reads return the fallback instead of trusting the unverified cookie. A secret that reaches the browser is readable by the browser's user, so signing is integrity hygiene — not a security boundary. Do not persist sensitive data in cookies.
 
 ```ts
-import { createStore, createCookieStorageAdapter } from "@ibnlanre/portal";
+import { cookieAdapter, primitive } from "@ibnlanre/portal";
 
-const [get, set] = createCookieStorageAdapter<{ theme: string }>("user-prefs", {
+const [get, set] = cookieAdapter<{ theme: string }>("user-prefs", {
   path: "/",
   secure: true,
   maxAge: 3600 * 24 * 365, // 1 year
   secret: "my-secret-key", // Enables signed values
 });
 
-const prefsStore = createStore(get({ theme: "dark" }));
+const prefsStore = primitive(get({ theme: "dark" }));
 
-prefsStore.$subscribe(set, false);
+prefsStore.$subscribe(set, { immediate: false });
 ```
 
 ## Custom Storage
 
 Have a weird use case? Storing data in `AsyncStorage`, `IndexedDB`, or a remote API?
 
-`createBrowserStorageAdapter` (sync) and `createAsyncBrowserStorageAdapter` (async) let you plug in any storage engine.
+`customAdapter` (sync) and `asyncAdapter` (async) let you plug in any storage engine.
 
 ```ts
-import {
-  createStore,
-  createAsyncBrowserStorageAdapter,
-} from "@ibnlanre/portal";
+import { asyncAdapter, primitive } from "@ibnlanre/portal";
 
-const [get, set] = createAsyncBrowserStorageAdapter("secure-data", {
+const [get, set] = asyncAdapter("secure-data", {
   async getItem(key) {
     // Your custom logic (e.g., IndexedDB)
     return await myDB.get(key);
@@ -134,31 +236,161 @@ const [get, set] = createAsyncBrowserStorageAdapter("secure-data", {
 
 // Use 'await' to get the initial state
 const initialState = await get({ sensitive: "default" });
-const store = createStore(initialState);
+const store = primitive(initialState);
 
-store.$subscribe(set, false);
+store.$subscribe(set, { immediate: false });
 ```
 
-## Cross-tab synchronization lifetime
+## Custom adapters and `watch`
 
-Call the cleanup returned by `syncStorage()` when its owner is disposed. On the
-server the cleanup is a no-op. Removing the external value, or clearing local storage, **restores the baseline
-through normal `$set` semantics**. The baseline is the value captured when
-synchronization began. This helper requires both `$get` and `$set`.
+Every adapter returns the plain pair `[get, set]` you destructure; nothing is
+added to it. `persist` learns that the stored value changed elsewhere from a
+watcher the adapter factory wired in, and what each adapter can use differs:
 
-This is not exact object restoration. If the baseline is `{ a: 1 }` and the
-current value is `{ a: 9, b: 2 }`, restoring the baseline yields `{ a: 1, b: 2 }`.
-The extra key survives because objects deep-merge. Arrays and primitives replace
-the addressed value under the same normal `$set` rules.
+| Adapter          | `watch`                                                      |
+| :--------------- | :----------------------------------------------------------- |
+| `localAdapter`   | none: built in, from `storage` events                        |
+| `sessionAdapter` | none: session storage is per tab                             |
+| `cookieAdapter`  | none: cookies cannot announce changes                        |
+| `customAdapter`  | a function (`StorageWatcher`): your own source               |
+| `asyncAdapter`   | `true` (other tabs over a `BroadcastChannel`), or a function |
 
-### What happens when a composed save is watching
+The common case is `asyncAdapter` with `watch: true`. The adapter tells other
+tabs after each write and removal, and hears theirs:
 
-`syncStorage` restores the baseline through a normal `$set` on the store, so
-subscribers see it — including a persistence subscriber like
-`store.$subscribe(set, false)`. With that composition, an external removal
-restores the baseline **and** the subscriber writes that same baseline back to
-storage. Store and storage end up consistent on the baseline value, and
-dispatching the same removal again repeats the same result. This write-back is
-intended, deterministic behavior rather than an accident of two helpers: the
-resetting write is a real state change, and persisting state changes is exactly
-what the subscriber is for.
+```ts
+const adapter = asyncAdapter<Draft>("draft", {
+  watch: true, // the channel is named after the key
+  getItem,
+  removeItem,
+  setItem,
+});
+persist(store, adapter); // follows other tabs; nothing is written back
+```
+
+- The announcement is sent only after the write succeeded (after the promise
+  resolved). A write that rejects announces nothing.
+- It carries only whether the value was removed. The receiving tab reads the new
+  value from storage itself.
+- Where `BroadcastChannel` does not exist (the server, old browsers), the adapter
+  posts and follows nothing, and does not throw.
+- The channel closes when the last `persist` following it is disposed.
+- It reaches tabs of the same origin only.
+
+For any other source (a socket, a service worker message, an IndexedDB signal),
+pass a function to `customAdapter` or `asyncAdapter`. It takes a listener, calls
+it with `{ removed }` when the stored value changes, and returns a function that
+stops listening. The adapter announces nothing in this form:
+
+```ts
+import type { StorageWatcher } from "@ibnlanre/portal";
+
+const watch: StorageWatcher = (listener) => {
+  const socket = subscribeToDrafts((removed) => listener({ removed }));
+  return () => socket.close();
+};
+
+const adapter = customAdapter<Draft>("draft", {
+  getItem: (key) => localStorage.getItem(key),
+  removeItem: (key) => localStorage.removeItem(key),
+  setItem: (key, value) => localStorage.setItem(key, value),
+  watch,
+});
+```
+
+`StorageWatcher` and `StorageChange` are the exported types. Pass the adapter
+itself to `persist`, not a re-assembled tuple: only the tuple a factory returned
+is followed, so `[...adapter]` or `[get, set]` rebuilt by hand follows nothing
+(and does not throw).
+
+For a collection, `persistor.hydrated` is consistent with a single store: when
+every read is synchronous it is `true` before `persist(...)` (or `hydrate()`)
+returns; when a read returns a promise it flips once, after all the entries that
+existed have settled. A read that rejects does not hold it back and is logged.
+Entries made later hydrate as they are made and never move the flag back. Each
+entry follows its own key and stops when it is disposed.
+
+**Typing.** `persist` infers the state from the store and accepts an adapter
+typed from your own interface: the store's state must be assignable to what the
+adapter stores, and what the adapter reads must be accepted as a write to the
+store. So an adapter for `interface Journal { checkDate?: string }` works for a
+store whose state has `checkDate: string | undefined`, with no cast. An adapter
+of an unrelated or narrower state is still rejected.
+
+If an adapter's `set` throws or rejects, `persist` reports it through
+`console.error` and the write that triggered it still succeeds.
+
+## Following lifetime
+
+`persist` follows the adapter's `watch` until you call `persistence.dispose()` or
+`store.$dispose()`. On the server there is no `window`, so there is nothing to
+follow.
+
+Removing the stored value, or clearing local storage, resets the store to its
+initial value. Neither a followed change nor a reset is written back to storage;
+the next real edit does. An external removal (another tab's `removeItem` or
+`clear`) therefore resets the store to its initial value without writing back,
+the store stays live, and a later local edit is persisted normally.
+
+### Following local storage in a test
+
+Local storage is followed through `storage` events. A real browser sends a fully
+populated event; a test has to as well. For a removal send `newValue: null`, and
+for a change send the stored text:
+
+```ts
+// another tab removed "draft": the store resets to its initial value
+window.dispatchEvent(
+  new StorageEvent("storage", {
+    key: "draft",
+    newValue: null,
+    storageArea: localStorage,
+  })
+);
+
+// another tab changed it
+localStorage.setItem("draft", JSON.stringify(next));
+window.dispatchEvent(
+  new StorageEvent("storage", {
+    key: "draft",
+    newValue: JSON.stringify(next),
+    storageArea: localStorage,
+  })
+);
+```
+
+The follower ignores events whose `storageArea` is not `localStorage`, and a
+missing `newValue` (`null`) means "removed" and resets the store. A bare
+`new StorageEvent("storage", { key })` therefore does not work as a change.
+
+### Removing collection entries
+
+For a collection persisted with `persist(collection, (key) => adapter)`,
+`drafts.$delete(key)` and `drafts.$clear()` reset each removed entry to its
+initial value, remove its stored key (the adapter's `set(undefined)` path), and
+then dispose it, all in one write. The reset is not written back, so the key is
+absent afterwards and a later `drafts(key)` makes a fresh entry that hydrates
+from the absent storage. Only collection-initiated removal wipes storage:
+`entry.$dispose()` stops that entry's writes and leaves its stored key.
+
+The storage removal of `$delete` and `$clear` applies only to **live** entries,
+the ones created in this visit. A stored key whose entry was never created (a
+draft of another person or organisation, a key from an older prefix) is not
+known to the collection and stays in storage. An app that must leave nothing
+behind sweeps those keys itself, after `$clear()`:
+
+```ts
+drafts.$clear(); // removes the keys of the live entries
+
+for (const key of Object.keys(localStorage)) {
+  if (key.startsWith("draft:")) localStorage.removeItem(key);
+}
+```
+
+### `version` and data that is already stored
+
+An unversioned adapter reads and writes bare JSON. With `version` set, writes
+are `{ $version, state }` and a bare stored value is read as absent, so adding
+`version` to an adapter that already has stored data drops that data. Add
+`version` at the moment the stored shape changes, together with a `migrate` that
+handles the old one.

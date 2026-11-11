@@ -2,7 +2,7 @@ export type { CookieOptions } from "@/cookie-storage/types/cookie-options";
 export type { CookieStorage } from "@/cookie-storage/types/cookie-storage";
 export type { CreateCookieKeyOptions } from "@/cookie-storage/types/create-cookie-key-options";
 export type { WordMappingSegments } from "@/cookie-storage/types/word-mapping-segments";
-export type { Assign } from "@/create-store/types/assign";
+export type { AnyStore } from "@/create-store/types/any-store";
 export type {
   AsyncBrowserStorageAdapterOptions,
   AsyncBrowserStorageTransforms,
@@ -16,7 +16,7 @@ export type {
   GetBrowserStorage,
   SetBrowserStorage,
 } from "@/create-store/types/browser-storage-adapter";
-export type { Combine } from "@/create-store/types/combine";
+export type { CollectionStore } from "@/create-store/types/collection-store";
 export type { CompositeStore } from "@/create-store/types/composite-store";
 export type { ContextStore } from "@/create-store/types/context-store";
 export type { ContextValue } from "@/create-store/types/context-value";
@@ -25,45 +25,44 @@ export type {
   GetCookieStorage,
   SetCookieStorage,
 } from "@/create-store/types/cookie-storage";
-export type { DeepPartial } from "@/create-store/types/deep-partial";
-export type { Dictionary } from "@/create-store/types/dictionary";
-export type { Factory } from "@/create-store/types/factory";
-export type { InferType } from "@/create-store/types/infer-type";
-export type { Initializer } from "@/create-store/types/initializer";
 export type {
   GetLocalStorage,
   SetLocalStorage,
 } from "@/create-store/types/local-storage";
-export type { PartialSetStateAction } from "@/create-store/types/partial-set-state-action";
-export type { PartialStateManager } from "@/create-store/types/partial-state-manager";
-export type { PartialStateSetter } from "@/create-store/types/partial-state-setter";
-export type { Paths } from "@/create-store/types/paths";
+export type { PersistAdapter } from "@/create-store/types/persist-adapter";
+export type { PersistOptions } from "@/create-store/types/persist-options";
+export type { PersistedEnvelope } from "@/create-store/types/persisted-envelope";
+export type { PersistedFormatOptions } from "@/create-store/types/persisted-format-options";
+export type { Persistor } from "@/create-store/types/persistor";
 export type { PrimitiveStore } from "@/create-store/types/primitive-store";
-export type { Replace } from "@/create-store/types/replace";
-export type { ResolvePath } from "@/create-store/types/resolve-path";
 export type { Selector } from "@/create-store/types/selector";
 export type {
   GetSessionStorage,
   SetSessionStorage,
 } from "@/create-store/types/session-storage";
-export type { Snapshot } from "@/create-store/types/snapshot";
-export type { StatePath } from "@/create-store/types/state-path";
+export type { SetOf } from "@/create-store/types/set-of";
+export type { Setter } from "@/create-store/types/setter";
+export type { StateOf } from "@/create-store/types/state-of";
 export type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
-export type { StoreValueResolver } from "@/create-store/types/store-value-resolver";
-export type { Subscriber } from "@/create-store/types/subscriber";
+export type { StorageChange } from "@/create-store/types/storage-change";
+export type { StorageWatcher } from "@/create-store/types/storage-watcher";
+export type { Store } from "@/create-store/types/store";
+export type { StoreInput } from "@/create-store/types/store-input";
+export type { StoreState } from "@/create-store/types/store-state";
+export type { SubscribeOptions } from "@/create-store/types/subscribe-options";
 
 export { cookieStorage } from "@/cookie-storage";
-export { createStore } from "@/create-store";
-export { createAsyncBrowserStorageAdapter } from "@/create-store/functions/adapters/create-async-browser-storage-adapter";
-export { createBrowserStorageAdapter } from "@/create-store/functions/adapters/create-browser-storage-adapter";
-export { createCookieStorageAdapter } from "@/create-store/functions/adapters/create-cookie-storage-adapter";
-export { createLocalStorageAdapter } from "@/create-store/functions/adapters/create-local-storage-adapter";
-export { createSessionStorageAdapter } from "@/create-store/functions/adapters/create-session-storage-adapter";
-export { combine } from "@/create-store/functions/helpers/combine";
+export { asyncAdapter } from "@/create-store/functions/adapters/async-adapter";
+export { cookieAdapter } from "@/create-store/functions/adapters/cookie-adapter";
+export { customAdapter } from "@/create-store/functions/adapters/custom-adapter";
+export { localAdapter } from "@/create-store/functions/adapters/local-adapter";
+export { sessionAdapter } from "@/create-store/functions/adapters/session-adapter";
+export { batch } from "@/create-store/functions/helpers/batch";
 export { useAsync } from "@/create-store/functions/hooks/use-async";
 export { useSync } from "@/create-store/functions/hooks/use-sync";
 export { useVersion } from "@/create-store/functions/hooks/use-version";
-export { createCompositeStore } from "@/create-store/functions/library/create-composite-store";
-export { createContextStore } from "@/create-store/functions/library/create-context-store";
-export { createPrimitiveStore } from "@/create-store/functions/library/create-primitive-store";
-export { syncStorage } from "@/create-store/functions/utilities/sync-storage";
+export { collection } from "@/create-store/functions/library/collection";
+export { composite } from "@/create-store/functions/library/composite";
+export { contextStore } from "@/create-store/functions/library/context-store";
+export { primitive } from "@/create-store/functions/library/primitive";
+export { persist } from "@/create-store/functions/utilities/persist";

@@ -1,157 +1,54 @@
 ---
-title: Reading State
-description: Read the root, a branch, or a leaf with $get and selectors.
+title: Reading state
+description: Reads return the value you gave, with the type you gave it.
 icon: Eye
 ---
 
-Use `$get()` for an imperative snapshot: in an event handler, a utility, or an
-action. Call it on the smallest store that contains the value you need.
+## Typed as given
+
+A store never rewrites your types. Whatever you put in comes back with the same
+type: a branded id, a `Date`, a class instance, an interface, a union, a tuple, a
+`Map`.
 
 ```ts
-import { createStore } from "@ibnlanre/portal";
-
-const countStore = createStore(10);
-countStore.$get(); // 10
+type Id = string & { __brand: "Id" };
+const selected = primitive<Id | null>(null);
+selected.$get(); // Id | null
 ```
 
-## Stable, read-only snapshots
+## Stable, shared values
 
-Portal owns its data: it copies supported values when they enter the store, not
-on every read. `$get()`, `$use()`, selector inputs, and subscriber values share
-read-only snapshots. Use `$set()` to change state; do not mutate a snapshot.
-The exported `Snapshot<State>` type describes this read-only view. Snapshots
-are not frozen at runtime, so JavaScript consumers must follow the same rule.
+Portal does not copy your values. `$get()`, `$use()`, selectors and subscribers
+share the store's own values: the reference you put in is the reference you read
+back. Use `$set()` to change state; do not mutate a read. Reads are not frozen at
+runtime, so the rule is yours to follow.
 
-Repeated reads return the same reference until that branch changes. Partial
-object writes preserve untouched branches, whether you write a leaf or the root:
+Repeated reads return the same reference until that store changes. A
+composite's `$get()` is rebuilt from its branches when one changes, and every
+untouched subtree keeps its identity:
 
 ```ts
-const store = createStore({
-  user: { name: "A" },
-  settings: { theme: "dark" },
+const app = composite({
+  left: composite({ value: 1 }),
+  right: composite({ value: 1 }),
 });
-const before = store.$get();
-store.$set({ user: { name: "B" } });
-const after = store.$get();
-
-before !== after; // true
-before.user !== after.user; // true
-before.settings === after.settings; // true
-store.settings.$get() === after.settings; // true
-before.user.name; // "A": earlier snapshots keep their values
+const before = app.$get();
+app.left.value.$set(2);
+app.$get().right === before.right; // true
 ```
 
-Plain objects and arrays share unchanged nested values; primitive equality uses
-`Object.is`. An unchanged merge retains the snapshot, but still notifies raw
-subscribers. Arrays replace as complete values: sharing an equal element does
-not merge omitted properties into that element.
+## What a composite reads as
 
-Selectors receive the snapshot itself. A selector may allocate a derived result,
-but any references it retains from its input are still read-only store data.
-
-## Ownership boundaries
-
-Initial values and `$set` inputs are copied, including mutable drafts returned
-by updater functions. Mutating a retained input or draft later does not change
-stored data. Plain objects, arrays, dates, maps, sets, regular expressions,
-ArrayBuffers, and their typed views are copied. Frozen records also become owned
-data; accessor properties are evaluated on ingestion.
-
-Structural sharing compares plain objects and arrays. Other supported built-ins
-are atomic replacements when supplied in an update; equal dates or maps are not
-compared by contents. Functions, custom class instances, promises, weak
-collections, and other opaque objects remain references. Their internal mutable
-state is outside Portal's ownership guarantee. Avoid mutating them in snapshots
-or drafts; prefer plain data for state that Portal should isolate and track.
-Mutable built-in methods such as `Date.setTime` must not be called on snapshots,
-even where TypeScript permits them.
-
-## Selectors and Fallbacks
-
-`$get()` accepts a **selector** function to derive a value. Use `??` on its result for a fallback:
+A composite reads as an object of its branches' states and its leaves' values.
+Methods are not state, so they are left out.
 
 ```ts
-const userStore = createStore({ firstName: "Alex", lastName: "Johnson" });
-
-// Derive a value with a selector
-userStore.$get((u) => `${u.firstName} ${u.lastName}`);
-// "Alex Johnson"
+const app = composite({ title: "", add() {} });
+app.$get(); // { title: "" }
 ```
 
-```ts
-const configStore = createStore({
-  apiUrl: undefined as string | undefined,
-});
+## Selecting
 
-// Fallback when the value is undefined
-configStore.apiUrl.$get(); // undefined
-configStore.apiUrl.$get() ?? "https://api.default.com"; // "https://api.default.com"
-```
-
-Selectors are pure functions — the store never caches derived results,
-so use them for cheap computations.
-
-## Reading from composite stores
-
-Each nested node is itself a store with `$get`:
-
-```ts
-const store = createStore({ settings: { theme: "dark" } });
-
-store.settings.$get(); // { theme: "dark" }
-store.settings.theme.$get(); // "dark"
-```
-
-## Dynamic paths with `$at()`
-
-When the property name isn't known in code, `$at()` resolves a dot-separated
-path and returns a branch handle — even when the addressed value is absent:
-
-```ts
-const key = "settings.theme";
-store.$at(key).$get(); // "dark"
-```
-
-Absence is part of the read contract. For optional properties and dictionary
-keys, the result type includes `undefined`:
-
-```ts
-const store = createStore<{
-  profile?: { name: string };
-  users: Record<string, { name: string }>;
-}>({ users: {} });
-
-store.$at("profile.name").$get(); // undefined
-store.$at("users.missing.name").$get(); // undefined
-store.$at("users.new.name").$set("A"); // writes materialize the missing object
-```
-
-Dot access is stricter than `$at`: it only resolves a property that was present
-initially or is present now, so it may return `undefined` for a key that `$at`
-can still address. Reach for `$at` when a path is optional or dynamic; keep dot
-access for known shapes.
-
-### Dotted and escaped keys
-
-A dot separates segments. If a property name itself contains a dot or a
-backslash, escape that character with a backslash so the path stays literal:
-
-```ts
-const store = createStore({ a: { b: 2 }, "a.b": 1 });
-
-store.a.b.$get(); // 2
-store.$at("a.b").$get(); // 2 — the same structural path
-store.$at("a\\.b").$get(); // 1 — the literal "a.b" key
-store["a.b"].$get(); // 1 — bracket access matches the escaped path
-```
-
-Both locations are distinct for reads, writes, subscriptions, and handle
-identity. A path whose backslash is not part of `\\.` or `\\\\` is rejected with
-a `TypeError` rather than being silently re-routed; bracket access
-(`store["a.b"]`) escapes automatically.
-
-## Cheap vs expensive selectors
-
-Selectors run synchronously inside `$get`. For expensive computations or
-React re-render gating, prefer `$use()` with a selector instead — it only
-re-runs when the source path changes.
+`$get(select)` and `$use(select)` pass the value to a selector. A selector may
+allocate a derived result, but anything it keeps from its input is still shared
+store data. `$use` re-renders only when the selected result changes (`Object.is`).

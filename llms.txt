@@ -1,234 +1,72 @@
-# @ibnlanre/portal for LLMs
+# @ibnlanre/portal
 
-`@ibnlanre/portal` is a TypeScript state management library. LLMs can use this library to manage and persist state across multiple interactions or contexts. This guide focuses on core functionalities relevant for LLM applications.
+> Stores you declare, composed into trees, typed exactly as you wrote them.
 
-## Core Concepts
+Three constructors, each declaring a kind: `primitive(initial)` is one whole
+value, `composite(shape)` is a tree of named branches (each a store), and
+`collection(make)` makes branches by string key on first use (`String(id)` for numeric ids). Nothing inspects a value
+to guess its kind.
 
-- **Store**: An object holding your application state. It can be a simple value (primitive) or a nested object (composite).
-- **Reactivity**: Stores notify subscribers of state changes.
-- **Immutability**: State updates produce new state objects, ensuring predictability.
+## Core
 
-## Installation
+```ts
+import { collection, composite, primitive } from "@ibnlanre/portal";
 
-For Node.js environments:
-```bash
-npm install @ibnlanre/portal
-# or
-pnpm add @ibnlanre/portal
-# or
-yarn add @ibnlanre/portal
-```
+const count = primitive(0);
+const picked = primitive<null | string>(null);
 
-For direct browser/CDN usage, refer to the main `README.md`.
-
-## Creating and Using a Store
-
-The `createStore` function initializes your state.
-
-```typescript
-import { createStore } from "@ibnlanre/portal";
-
-// Create a store with an initial value
-const simpleStore = createStore("initial value");
-
-// Create a store with an object
-const userStore = createStore({
-  id: "123",
-  preferences: {
-    theme: "dark",
+const app = composite({
+  user: composite({ name: "Taylor" }),
+  theme: primitive<"dark" | "light">("light"),
+  add() {
+    count.$set((n) => n + 1);
   },
 });
-```
 
-### Interacting with the Store
-
-- **`$get()`**: Retrieves the current state.
-  ```typescript
-  console.log(simpleStore.$get()); // "initial value"
-  console.log(userStore.preferences.theme.$get()); // "dark"
-  ```
-
-- **`$set()`**: Updates the state. For objects, it performs a deep partial update.
-  ```typescript
-  simpleStore.$set("new value");
-  userStore.preferences.$set({ theme: "light" });
-  // userStore state is now { id: "123", preferences: { theme: "light" } }
-  ```
-
-- **`$subscribe()`**: Subscribes to state changes. Returns an `unsubscribe` function.
-  ```typescript
-  const unsubscribe = simpleStore.$subscribe((newState, oldState) => {
-    console.log(`State changed from "${oldState}" to "${newState}"`);
-  });
-
-  simpleStore.$set("another value"); // Triggers the subscriber
-  unsubscribe(); // Stop listening to changes
-  ```
-
-- **`$at()`**: Accesses nested stores using a dot-separated path (for composite stores).
-  ```typescript
-  const themeStore = userStore.$at("preferences.theme");
-  console.log(themeStore.$get()); // "light"
-  themeStore.$set("blue");
-  console.log(userStore.preferences.theme.$get()); // "blue"
-  ```
-
-## State Persistence
-
-Persist store state across sessions using storage adapters. This is crucial for LLMs to remember context or data over time.
-
-**General Pattern:**
-1. Create an adapter (e.g., `createLocalStorageAdapter`).
-2. Initialize your store with the adapter's getter.
-3. Subscribe to store changes with the adapter's setter.
-
-### Local Storage Adapter
-
-Persists state in the browser's Local Storage.
-
-```typescript
-import { createStore, createLocalStorageAdapter } from "@ibnlanre/portal";
-
-const storageKey = "myApp.userPreferences";
-const [getStoredState, setStoredState] = createLocalStorageAdapter(storageKey);
-
-const persistentUserStore = createStore(getStoredState() || { theme: "default" });
-persistentUserStore.$subscribe(setStoredState);
-
-// Example usage:
-persistentUserStore.theme.$set("dark"); // State is saved to Local Storage
-```
-*Use a unique `storageKey` for each distinct piece of state you want to persist.*
-
-### Session Storage Adapter
-
-Persists state for the duration of the browser session.
-
-```typescript
-import { createStore, createSessionStorageAdapter } from "@ibnlanre/portal";
-
-const storageKey = "myApp.sessionData";
-const [getStoredState, setStoredState] = createSessionStorageAdapter(storageKey);
-
-const sessionStore = createStore(getStoredState() || { isActive: false });
-sessionStore.$subscribe(setStoredState);
-
-sessionStore.isActive.$set(true); // State is saved to Session Storage
-```
-
-### Cookie Storage Adapter
-
-Persists state in browser cookies. Useful for sharing state between client and server or across subdomains.
-
-```typescript
-import { createStore, createCookieStorageAdapter } from "@ibnlanre/portal";
-
-const cookieName = "user_session";
-const [getStoredState, setStoredState] = createCookieStorageAdapter(
-  cookieName,
-  {
-    // Optional: Configure cookie options like domain, path, maxAge, etc.
-    maxAge: 60 * 60 * 24 * 7, // 1 week
-    path: "/",
-  }
+const drafts = collection((id: string) =>
+  composite({ lines: primitive<string[]>([]) })
 );
-
-const cookieBackedStore = createStore(getStoredState() || { userId: null });
-cookieBackedStore.$subscribe(setStoredState);
-
-cookieBackedStore.userId.$set("user-abc-123"); // State is saved as a cookie
+drafts("acme").lines.$set(["a"]);
 ```
 
-## Direct Cookie Manipulation with `cookieStorage`
+Members of a composite shape: a store becomes that branch, a function stays a
+method, anything else (including a plain object) becomes a leaf made with
+`primitive`. Branch an object with `composite({ ... })`.
 
-Beyond state persistence adapters, `@ibnlanre/portal` also exports a `cookieStorage` object. This utility provides a direct, synchronous API for interacting with browser cookies, similar to `localStorage` and `sessionStorage`. It can be useful for scenarios where you need to read, write, or manage cookies outside the context of a portal store.
+Every store has `$get`, `$use`, `$set`, `$subscribe`, `$reset`, `$dispose` and
+`$onDispose`. `$set` on a primitive swaps the whole value. `$set` on a composite
+writes each listed branch by that branch's own rule and leaves the others
+alone; replace everything with `$reset()` then `$set(value)`.
+Reads return your own values with your own types; do not mutate them.
 
-```typescript
-import { cookieStorage } from "@ibnlanre/portal";
+## Batching
 
-// Set a cookie
-cookieStorage.setItem("myKey", "myValue");
-cookieStorage.setItem("anotherKey", "anotherValue", { path: "/", maxAge: 3600 }); // With options
+`batch(fn)` runs several writes as one outermost write: subscribers are called at
+most once, after `fn` returns; nested calls join the outer one. Replace
+everything with `batch(() => { store.$reset(); store.$set(value); })`.
 
-// Get a cookie
-const value = cookieStorage.getItem("myKey");
-console.log(value); // "myValue"
+## React
 
-// Remove a cookie
-cookieStorage.removeItem("anotherKey");
+`store.$use()` returns `[value, setter]`; `store.$use(select, deps?)` selects.
+Also `contextStore`, `useAsync`, `useSync`, `useVersion`.
 
-// Get the number of cookies
-console.log(cookieStorage.length);
+## Persistence
 
-// Get a cookie key by index
-const firstKey = cookieStorage.key(0);
-console.log(firstKey); // e.g., "myKey" (order may vary)
+```ts
+import { localAdapter, persist } from "@ibnlanre/portal";
 
-// Clear all cookies (be cautious with this in a shared environment)
-// cookieStorage.clear();
-
-// Sign and unsign cookie values (if you need to verify integrity)
-const secret = "your-secret-key";
-const originalValue = "sensitive-data";
-
-const signedValue = cookieStorage.sign(originalValue, secret);
-cookieStorage.setItem("signedData", signedValue);
-
-const retrievedSignedValue = cookieStorage.getItem("signedData");
-if (retrievedSignedValue) {
-  const unsignedValue = cookieStorage.unsign(retrievedSignedValue, secret);
-  if (unsignedValue === originalValue) {
-    console.log("Cookie integrity verified:", unsignedValue);
-  } else {
-    console.error("Cookie tampering detected or invalid secret!");
-  }
-}
+const adapter = localAdapter<State>("key", { version: 1, migrate, validate });
+const persistor = persist(store, adapter, { skipHydration: true, });
+await persistor.hydrate();
 ```
 
-**Methods and Properties of `cookieStorage`:**
+Adapters: `localAdapter`, `sessionAdapter`,
+`cookieAdapter`, `customAdapter`,
+`asyncAdapter`, each `(key, options?)`. For a collection,
+`persist(collection, (key) => adapter)`. `asyncAdapter` takes
+`watch: true` to follow other tabs of the origin, or `watch: fn`; `customAdapter`
+takes `watch: fn` for your own source. The others take no `watch`.
 
-- **`getItem(key: string): string | null`**: Retrieves the value of a cookie by its key.
-- **`setItem(key: string, value: string, options?: CookieOptions): void`**: Sets a cookie with a key, value, and optional `CookieOptions` (e.g., `path`, `domain`, `maxAge`, `expires`, `secure`, `sameSite`).
-- **`removeItem(key: string, options?: CookieOptions): void`**: Removes a cookie by its key.
-- **`clear(): void`**: Removes all cookies accessible by the current domain/path. **Use with caution.**
-- **`key(index: number): string | null`**: Retrieves the key of a cookie at a specific index.
-- **`length: number`**: Returns the number of cookies.
-- **`sign(value: string, secret: string): string`**: Signs a string value using a secret. Useful for ensuring cookie integrity.
-- **`unsign(signedValue: string, secret: string): string | false`**: Verifies and unsigns a previously signed string. Returns the original value if valid, `false` otherwise.
+## Cookies
 
-This `cookieStorage` utility is helpful for lower-level cookie operations when you don\'t need the full reactivity and structure of a portal store.
-
-## Asynchronous Initialization
-
-Initialize stores with data fetched asynchronously.
-
-```typescript
-import { createStore } from "@ibnlanre/portal";
-
-async function fetchInitialData() {
-  // Simulate API call
-  return new Promise((resolve) =>
-    setTimeout(() => resolve({ username: "Guest" }), 100)
-  );
-}
-
-// The store will be initialized once the promise resolves.
-const asyncStore = createStore(fetchInitialData());
-
-asyncStore.$subscribe((state) => {
-  if (state) { // Check if state is resolved
-    console.log("Async data loaded:", state.username.$get());
-  }
-});
-```
-*Until the promise resolves, `$get()` on the root of `asyncStore` might return the promise itself or an interim loading state. Access nested properties once resolved.*
-
-## Best Practices for LLMs
-
-- **Granular Stores**: Break down complex state into smaller, manageable stores.
-- **Persistence**: Use storage adapters for long-term memory or session continuity. Choose the adapter (Local Storage, Session Storage, Cookie) that best fits the data's lifecycle and security requirements.
-- **Clear Naming**: Use descriptive names for stores and keys for easier debugging and maintenance.
-- **Error Handling**: When using asynchronous initialization or persistence, implement appropriate error handling (e.g., for failed API calls or storage access issues).
-- **Selective Subscription**: Use `$at()` to subscribe to specific parts of a larger store to avoid unnecessary re-evaluations if only a small piece of data changes.
-
-This revised guide provides a focused overview for LLMs using `@ibnlanre/portal`. For more advanced features like React integration (`$use` hook) or detailed API options, refer to the main `README.md`.
+`cookieStorage` reads, writes and signs cookies directly.

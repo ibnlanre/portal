@@ -265,4 +265,4 @@ Feel free to improve these examples or add new ones! Some ideas:
 
 **Happy coding!** 🎉
 
-This example shows how powerful the combination of createStore + IndexedDB + Dexie can be for building robust, offline-capable applications with persistent state management.
+This example shows how powerful the combination of Portal stores + IndexedDB + Dexie can be for building robust, offline-capable applications with persistent state management.

@@ -1,23 +1,20 @@
 ---
 title: Introduction
-description: Give every branch of your React state the same composable store API.
+description: Stores you declare, composed into trees, typed exactly as you wrote them.
 icon: Boxes
 ---
 
-`@ibnlanre/portal` is a state-management library for React applications whose
-state has structure. Start from one root store, then read, update, subscribe to,
-or use the branch a feature actually owns.
+`@ibnlanre/portal` is a state library for React. You declare what each piece of
+state is, and compose pieces into a tree.
 
-**A branch is a store identified by its location in the state tree.**
-Its handle stays useful as the value at that location changes. Writes propagate
-through the tree; selectors gate store-driven React renders separately from raw
-subscriptions.
+- **`primitive`**: one whole value.
+- **`composite`**: named branches, each of them a store.
+- **`collection`**: branches made by key, on first use.
 
-It gives you:
-
-- One store API at the root and at every nested branch
-- Direct property access when the path is known, and `$at()` when it is dynamic
-- Type inference from the value used to create the store
+A kind is declared, never guessed. A branch is a store, so a part of your state
+has the same API as the whole: read it, write it, subscribe to it, use it in a
+component, reset it, dispose it. Reads return exactly the type you gave, so a
+branded id, a `Date`, a class instance or an interface comes back as written.
 
 ## Install
 
@@ -25,76 +22,34 @@ It gives you:
 pnpm add @ibnlanre/portal
 ```
 
-## Start with a branch
+## A first tree
 
 ```ts
-import { createStore } from "@ibnlanre/portal";
+import { collection, composite, primitive } from "@ibnlanre/portal";
 
-const app = createStore({
-  user: {
-    profile: {
-      name: "Taylor",
-      preferences: { theme: "light" },
-    },
+const app = composite({
+  theme: primitive<"dark" | "light">("light"),
+  picked: primitive<null | string>(null),
+  user: composite({ name: "Taylor" }),
+  toggle() {
+    app.theme.$set((theme) => (theme === "light" ? "dark" : "light"));
   },
 });
 
-const preferences = app.$at("user.profile.preferences");
+app.user.name.$set("Jordan");
+app.$get(); // { theme: "light", picked: null, user: { name: "Jordan" } }
 
-preferences.theme.$set("dark");
-console.log(preferences.$get()); // { theme: "dark" }
+const drafts = collection((id: string) =>
+  composite({ lines: primitive<string[]>([]) })
+);
+drafts("acme").lines.$set(["a"]); // made on first use
 ```
 
-## Two ways to reach the same store
+## What to read next
 
-```ts
-import { createStore } from "@ibnlanre/portal";
-
-const user = createStore({
-  profile: {
-    name: "Alex",
-    preferences: { theme: "light" },
-  },
-});
-
-user.profile.name.$set("Taylor");
-user.$at("profile.preferences.theme").$set("dark");
-```
-
-## Branches are durable handles
-
-Retain a branch once, then read its current value after an ancestor update:
-
-```ts
-const store = createStore({ user: { profile: { name: "Alex" } } });
-const profile = store.user.profile;
-const nextProfile = { name: "Taylor" };
-
-store.user.$set({ profile: nextProfile });
-
-profile.$get(); // { name: "Taylor" }
-profile === store.$at("user.profile"); // true
-```
-
-The handle identifies `user.profile`, not the object that initially occupied it.
-Object updates still deep-merge: fields omitted from `nextProfile` would survive.
-
-## Reach beyond the initial shape
-
-**Types do not create runtime properties.** Use `$at()` to address a declared
-path that is not present yet:
-
-```ts
-const account = createStore<{ profile?: { name: string } }>({});
-const name = account.$at("profile.name");
-
-name.$get(); // undefined
-name.$set("Taylor");
-account.$get(); // { profile: { name: "Taylor" } }
-
-account.$at("profile").$set(undefined);
-name.$get(); // undefined — the handle still addresses the same location
-```
-
-Writing through the handle creates missing object parents. Reading through it
-does not materialize them.
+- [Store API](/docs/core/store-api): the members every store has.
+- [Reading state](/docs/core/reading-state) and
+  [Setting state](/docs/core/setting-state).
+- [Subscriptions](/docs/core/subscriptions) and
+  [React integration](/docs/advanced/react-integration).
+- [Persistence](/docs/guides/persistence): adapters and `persist`.

@@ -35,11 +35,6 @@ export const docsTree: Root = {
           url: "/docs/advanced/actions",
         },
         {
-          name: "Organizing with combine()",
-          type: "page",
-          url: "/docs/advanced/combine",
-        },
-        {
           name: "Scoped Stores (Context)",
           type: "page",
           url: "/docs/advanced/context-store",

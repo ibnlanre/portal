@@ -1,11 +1,12 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { createStore } from "../index";
+import { composite } from "../functions/library/composite";
+import { primitive } from "../functions/library/primitive";
 
 describe("selector subscription contract", () => {
   it("shares the imperative snapshot with hooks and selectors across root merges", () => {
-    const store = createStore({ count: 0, user: { name: "A" } });
+    const store = composite({ count: 0, user: composite({ name: "A" }) });
     let renders = 0;
     const hook = renderHook(() => {
       renders++;
@@ -28,7 +29,7 @@ describe("selector subscription contract", () => {
   });
 
   it("uses the same snapshot for unselected hooks and imperative reads", () => {
-    const store = createStore([1, 2]);
+    const store = primitive([1, 2]);
     const hook = renderHook(() => store.$use()[0]);
     expect(hook.result.current).toBe(store.$get());
     act(() => store.$set([3]));
@@ -36,7 +37,7 @@ describe("selector subscription contract", () => {
   });
 
   it("renders only when the selected snapshot changes", () => {
-    const store = createStore({ count: 0, name: "A" });
+    const store = composite({ count: 0, name: "A" });
     let renders = 0;
     const hook = renderHook(() => {
       renders++;
@@ -51,7 +52,7 @@ describe("selector subscription contract", () => {
   });
 
   it("preserves an unchanged selected object across an unrelated leaf write", () => {
-    const store = createStore({ count: 0, user: { name: "A" } });
+    const store = composite({ count: 0, user: composite({ name: "A" }) });
     let renders = 0;
     const hook = renderHook(() => {
       renders++;
@@ -68,7 +69,7 @@ describe("selector subscription contract", () => {
   });
 
   it("gates focused branches and still observes ancestor writes", () => {
-    const store = createStore({ user: { age: 20, name: "A" } });
+    const store = composite({ user: composite({ age: 20, name: "A" }) });
     let renders = 0;
     const hook = renderHook(() => {
       renders++;
@@ -83,7 +84,7 @@ describe("selector subscription contract", () => {
   });
 
   it("gates primitive/array stores by the selection", () => {
-    const store = createStore([1, 2]);
+    const store = primitive([1, 2]);
     let renders = 0;
     const hook = renderHook(() => {
       renders++;
@@ -97,7 +98,7 @@ describe("selector subscription contract", () => {
   });
 
   it("refreshes selectors when captured props change", () => {
-    const store = createStore({ value: 2 });
+    const store = composite({ value: 2 });
     const hook = renderHook(
       ({ multiplier }) =>
         store.$use((s) => s.value * multiplier, [multiplier])[0],
@@ -110,7 +111,7 @@ describe("selector subscription contract", () => {
   });
 
   it("caches allocating selections between writes without looping", () => {
-    const store = createStore({ value: 1 });
+    const store = composite({ value: 1 });
     const hook = renderHook(
       () => store.$use((s) => ({ doubled: s.value * 2 }))[0]
     );

@@ -1,19 +1,24 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { cookieStorage, createCookieStorageAdapter } from "../../index";
+import { cookieAdapter, cookieStorage } from "../../index";
 
 const key = "portal-integrity-contract";
 afterEach(() => cookieStorage.removeItem(key));
 
 describe("cookie integrity boundary", () => {
   it("accepts a valid signed value and a valid signed empty payload", () => {
-    const [get, set] = createCookieStorageAdapter<{ role: string }>(key, {
+    const [get, set] = cookieAdapter<{ role: string }>(key, {
       secret: "secret",
     });
+
     set({ role: "reader" });
     expect(get()).toEqual({ role: "reader" });
     cookieStorage.setItem(key, cookieStorage.sign("", "secret"));
-    const [getText] = createCookieStorageAdapter<string>(key, {
+
+    // Verification accepts the empty payload; the default parser then treats
+    // empty text as absent, while a parser that takes text as is returns it.
+    const [getText] = cookieAdapter<string>(key, {
+      parse: (value) => value,
       secret: "secret",
     });
     expect(getText("fallback")).toBe("");
@@ -23,14 +28,19 @@ describe("cookie integrity boundary", () => {
     "rejects %s input with and without a fallback",
     (kind) => {
       const payload = JSON.stringify({ role: "admin" });
-      const value =
-        kind === "unsigned"
-          ? payload
-          : kind === "tampered"
-            ? cookieStorage.sign(payload, "secret") + "x"
-            : cookieStorage.sign(payload, "another-secret");
+      const sign = (kind: string) => {
+        switch (kind) {
+          case "tampered":
+            return cookieStorage.sign(payload, "secret") + "x";
+          case "unsigned":
+            return payload;
+          default:
+            return cookieStorage.sign(payload, "another-secret");
+        }
+      };
+      const value = sign(kind);
       cookieStorage.setItem(key, value);
-      const [get] = createCookieStorageAdapter<{ role: string }>(key, {
+      const [get] = cookieAdapter<{ role: string }>(key, {
         secret: "secret",
       });
       expect(get()).toBeUndefined();

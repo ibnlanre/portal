@@ -5,8 +5,9 @@ import { readFileSync } from "node:fs";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
 
-import { createContextStore } from "../functions/library/create-context-store";
-import { createStore } from "../index";
+import { composite } from "../functions/library/composite";
+import { contextStore } from "../functions/library/context-store";
+import { primitive } from "../functions/library/primitive";
 
 describe("React compatibility contract", () => {
   it("declares React 19 as the minimum supported major for the context API", () => {
@@ -18,8 +19,8 @@ describe("React compatibility contract", () => {
     }
   });
   it("supports React 19 context with an explicitly instance-stable factory", () => {
-    const [Provider, useStore] = createContextStore((value: number) => {
-      const [store] = useState(() => createStore(value));
+    const [Provider, useStore] = contextStore((value: number) => {
+      const [store] = useState(() => primitive(value));
       return store;
     });
     const wrapper = ({ children }: PropsWithChildren) => (

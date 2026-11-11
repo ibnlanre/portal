@@ -2,15 +2,18 @@
  * @template ReturnType
  *
  * @description
- * If the value is a string, it will attempt to parse it as JSON. If it fails, it will return the value as is.
+ * Parses a stored string as JSON. Text that is not valid JSON counts as an
+ * absent value: the error is logged through `console.error` and `undefined` is
+ * returned, so the adapter falls back instead of handing back the raw text.
  *
  * @param value The value to parse.
- * @returns The parsed value.
+ * @returns The parsed value, or `undefined` when it is not valid JSON.
  */
-export function tryParse<ReturnType>(value: string): ReturnType {
+export function tryParse<ReturnType>(value: string): ReturnType | undefined {
   try {
     return JSON.parse(value);
-  } catch {
-    return value as ReturnType;
+  } catch (error) {
+    console.error("Error occurred while parsing stored text as JSON:", error);
+    return undefined;
   }
 }

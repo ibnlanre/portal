@@ -1,4 +1,4 @@
-import { createStore } from "@ibnlanre/portal";
+import { primitive } from "@ibnlanre/portal";
 import { z } from "zod";
 
 import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
@@ -57,7 +57,7 @@ export const profileStore = {
     profileStore.profile.$set(undefined as unknown as UserProfile);
   },
 
-  profile: createStore(initialProfile),
+  profile: primitive(initialProfile),
 
   updatePreferences(preferences: Partial<Preferences>) {
     const currentProfile = profileStore.profile.$get();

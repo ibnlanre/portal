@@ -13,30 +13,30 @@ const deletions = missingGlobals.map((key) => {
 
 const failures = [];
 
-function smoke(name, createStore) {
+function smoke(name, { composite, primitive }) {
   try {
-    const store = createStore({ nested: { value: 1 }, other: 0 });
+    const store = composite({ nested: composite({ value: 1 }), other: 0 });
     store.nested.value.$set(2);
     if (store.nested.value.$get() !== 2) {
       throw new Error("nested write did not round-trip");
     }
-    if (store.$get().other !== 0) throw new Error("untouched value changed");
+    if (store.other.$get() !== 0) throw new Error("untouched value changed");
 
-    const primitive = createStore(0);
-    primitive.$set((current) => current + 1);
-    if (primitive.$get() !== 1) throw new Error("primitive write failed");
+    const counter = primitive(0);
+    counter.$set((current) => current + 1);
+    if (counter.$get() !== 1) throw new Error("primitive write failed");
   } catch (error) {
     failures.push(`${name}: ${error.message}`);
   }
 }
 
 const esm = await import("../dist/index.js");
-smoke("esm", esm.createStore);
+smoke("esm", esm);
 
 const { createRequire } = await import("node:module");
 const require = createRequire(import.meta.url);
 const cjs = require("../dist/index.cjs");
-smoke("cjs", cjs.createStore);
+smoke("cjs", cjs);
 
 const overview = deletions
   .map(([key, existed]) => `${key}:${existed ? "removed" : "absent"}`)

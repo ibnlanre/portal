@@ -1,8 +1,9 @@
-import { createStore } from "@ibnlanre/portal";
+import { composite, primitive } from "@ibnlanre/portal";
 import { z } from "zod";
 
 import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
 
+export const themeSchema = z.enum(["dark", "light", "system"]);
 export const preferencesSchema = z.object({
   autoSave: z.boolean(),
   language: z.string(),
@@ -15,10 +16,11 @@ export const preferencesSchema = z.object({
     email: z.boolean(),
     push: z.boolean(),
   }),
-  theme: z.enum(["dark", "light", "system"]),
+  theme: themeSchema,
 });
 
 export type AppPreferences = z.infer<typeof preferencesSchema>;
+export type Theme = z.infer<typeof themeSchema>;
 
 export const initialValue: AppPreferences = {
   autoSave: true,
@@ -39,10 +41,16 @@ const [getStoredValue, setStoredValue] =
   createIndexedDBAdapter<AppPreferences>("appPreferences");
 
 // Initialize with stored value or fallback to initial value
-export const preferencesStore = createStore(initialValue);
+export const preferencesStore = composite({
+  autoSave: initialValue.autoSave,
+  language: initialValue.language,
+  layout: composite(initialValue.layout),
+  notifications: composite(initialValue.notifications),
+  theme: primitive<Theme>(initialValue.theme),
+});
 
 // Load from IndexedDB when store is created
-getStoredValue(initialValue).then(preferencesStore.$set);
+getStoredValue(initialValue).then((stored) => preferencesStore.$set(stored));
 
 // Subscribe to store changes and auto-persist
 preferencesStore.$subscribe(setStoredValue);

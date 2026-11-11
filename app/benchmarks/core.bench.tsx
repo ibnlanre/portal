@@ -1,7 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { bench, describe } from "vitest";
 
-import { createStore } from "../create-store";
+import { collection } from "../create-store/functions/library/collection";
+import { composite } from "../create-store/functions/library/composite";
+import { primitive } from "../create-store/functions/library/primitive";
 
 // Short local baseline; increase duration for publication-quality measurements.
 const options = {
@@ -11,104 +13,54 @@ const options = {
   warmupTime: 30,
 };
 
-function fixture(keys: number, depth: number): Record<string, unknown> {
-  let tree: Record<string, unknown> = { value: 0 };
-  for (let i = 1; i < depth; i++) tree = { child: tree };
-  return {
-    entries: Object.fromEntries(
-      Array.from({ length: keys }, (_, i) => [`key${i}`, i])
-    ),
-    tree,
-  };
+function deepest(root: ReturnType<typeof tree>["nested"], depth: number) {
+  let node: any = root;
+  for (let level = 1; level < depth; level++) node = node.child;
+  return node as { value: ReturnType<typeof primitive<number>> };
+}
+
+function tree(keys: number, depth: number) {
+  let nested = composite({ value: 0 });
+  for (let level = 1; level < depth; level++) {
+    nested = composite({ child: nested }) as unknown as typeof nested;
+  }
+  const entries = composite(
+    Object.fromEntries(Array.from({ length: keys }, (_, i) => [`key${i}`, i]))
+  );
+  return { entries, nested };
 }
 
 for (const keys of [10, 100, 1000]) {
   for (const depth of [3, 6, 10]) {
-    describe(`${keys} keys / depth ${depth}`, () => {
-      const initial = fixture(keys, depth);
-      const path = [
-        "tree",
-        ...Array.from({ length: depth - 1 }, () => "child"),
-        "value",
-      ].join(".");
-      const parentPath = path.slice(0, path.lastIndexOf("."));
-      const store = createStore(initial);
+    describe(`${keys} leaves / depth ${depth}`, () => {
+      const root = composite(tree(keys, depth));
+      const leaf = deepest(root.nested as never, depth).value;
       let value = 0;
-      bench(
-        "creation",
-        () => {
-          createStore(initial);
-        },
-        options
-      );
-      bench(
-        "root $get (stable snapshot)",
-        () => {
-          store.$get();
-        },
-        options
-      );
-      bench(
-        "leaf $get",
-        () => {
-          store.$at(path).$get();
-        },
-        options
-      );
-      bench(
-        "leaf $set",
-        () => {
-          store.$at(path).$set(++value);
-        },
-        options
-      );
-      bench(
-        "parent $set",
-        () => {
-          store.$at(parentPath).$set({ value: ++value });
-        },
-        options
-      );
+
+      bench("creation", () => void composite(tree(keys, depth)), options);
+      bench("root $get (stable)", () => void root.$get(), options);
+      bench("leaf $get", () => void leaf.$get(), options);
+      bench("leaf $set", () => leaf.$set(++value), options);
 
       for (const count of [1, 100, 1000]) {
-        const fanout = createStore(initial);
+        const fanout = composite(tree(keys, depth));
+        const target = deepest(fanout.nested as never, depth).value;
         for (let i = 0; i < count; i++)
-          fanout.$at(path).$subscribe(() => {}, false);
+          target.$subscribe(() => {}, { immediate: false });
         bench(
           `leaf write / ${count} listeners`,
-          () => {
-            fanout.$at(path).$set(++value);
-          },
-          options
-        );
-        const distributed = createStore(initial);
-        for (let i = 0; i < count; i++)
-          distributed.$at(`entries.key${i % keys}`).$subscribe(() => {}, false);
-        bench(
-          `root write / ${count} distributed listeners`,
-          () => {
-            distributed.$set({ entries: { key0: ++value } });
-          },
+          () => target.$set(++value),
           options
         );
       }
 
-      const select = (state: Record<string, unknown>) =>
-        (state.entries as Record<string, number>).key0;
+      const select = (state: { entries: Record<string, number> }) =>
+        state.entries.key0;
       bench(
         "React mount + unrelated write + unmount",
         () => {
-          const hook = renderHook(() => store.$use(select));
-          act(() => store.$at(path).$set(++value));
-          hook.unmount();
-        },
-        options
-      );
-      bench(
-        "React mount + selected write + rerender + unmount",
-        () => {
-          const hook = renderHook(() => store.$use(select));
-          act(() => store.$at("entries").$set({ key0: ++value }));
+          const hook = renderHook(() => root.$use(select));
+          act(() => leaf.$set(++value));
           hook.unmount();
         },
         options
@@ -117,39 +69,15 @@ for (const keys of [10, 100, 1000]) {
   }
 }
 
-// Churn: repeated subscribe/unsubscribe across dynamic paths, then measure a
-// leaf write that shares no path with the retired subscriptions. Reclaimed
-// registry entries keep this cost flat as the historical path count grows.
-for (const churn of [0, 1_000, 10_000]) {
-  const churned = createStore({
-    entries: {} as Record<string, number>,
-    leaf: { value: 0 },
-  });
-  for (let index = 0; index < churn; index++) {
-    const unsubscribe = churned
-      .$at(`entries.key${index}`)
-      .$subscribe(() => {}, false);
-    unsubscribe();
-  }
-  let churnedValue = 0;
-  describe(`${churn} historical subscribe/unsubscribe paths`, () => {
-    bench(
-      "unrelated leaf write",
-      () => {
-        churned.leaf.value.$set(++churnedValue);
-      },
-      options
-    );
-  });
-}
-
-describe("transient handle churn", () => {
-  const store = createStore({ entries: {} as Record<string, number> });
+describe("collection", () => {
+  const drafts = collection((_key: string) => primitive(0));
+  let value = 0;
   bench(
-    "1,000 dynamic path lookups",
+    "1,000 entries made by key, then cleared",
     () => {
       for (let index = 0; index < 1_000; index++)
-        store.$at(`entries.key${index}`).$get();
+        drafts(String(index)).$set(++value);
+      drafts.$clear();
     },
     options
   );

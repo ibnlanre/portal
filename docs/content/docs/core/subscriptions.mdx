@@ -1,83 +1,57 @@
 ---
 title: Subscriptions
-description: Subscribe at the root, a focused branch, or an individual value.
-icon: Bell
+description: Listen to a store, a branch or a collection.
+icon: Radio
 ---
 
-Use `$subscribe()` for side effects outside React: persistence, logging, and
-integration work. Subscribe to the narrowest branch that owns the concern.
-
 ```ts
-import { createStore } from "@ibnlanre/portal";
+import { composite } from "@ibnlanre/portal";
 
-const store = createStore({ count: 0 });
+const store = composite({ count: 0, user: composite({ name: "A" }) });
 
-const unsubscribe = store.$subscribe((state) => {
-  console.log("State changed:", state);
-});
+const stop = store.$subscribe((state) => console.log(state));
+store.count.$set(1);
+stop();
 ```
 
 ## Immediate invocation
 
-By default, `$subscribe` fires immediately with the current value.
-Pass `false` as the second argument to only react to _future_ changes:
+`$subscribe` delivers the current value at once. Pass `{ immediate: false }` to hear only
+changes:
 
 ```ts
-// Only runs on subsequent changes
-store.$subscribe(handler, false);
+store.$subscribe(handler, { immediate: false });
 ```
 
 ## Unsubscribing
 
-`$subscribe` returns an unsubscribe function. Call it to stop listening:
+The returned function removes the subscription and is safe to call twice. A
+subscriber whose immediate call throws is removed.
+
+## Who hears a write
+
+A write notifies the written store, its descendants and every composite connected
+to it, however far, once per outermost write, even when the value is equal.
+Siblings do not hear it. A composite's subscribers hear any change of any
+connected store below it; a branch's subscribers hear only that branch and
+below. A subscriber is called at most once per outermost write, even when it was
+reached along several paths.
 
 ```ts
-const unsub = store.$subscribe(handler);
-
-// Later...
-unsub();
+store.user.name.$set("B"); // user, name and the root hear it; count does not
 ```
 
-## Subscribing to nested paths
-
-Composite stores let you subscribe to a specific nested node —
-you only get notified when that branch changes:
-
-```ts
-store.settings.$subscribe((settings) => {
-  console.log("Settings updated:", settings);
-});
-
-store.user.preferences.theme.$subscribe((theme) => {
-  console.log("Theme changed:", theme);
-});
-```
-
-This is more efficient than subscribing to the root and filtering by path.
-
-## SSR safety
-
-`$subscribe` works during server-side rendering. Subscribers fire
-synchronously when `$set` is called, so state is always consistent
-before the render completes.
+A write that touches several branches (a partial `$set` on a composite) is
+delivered once to each subscriber, after every branch is updated: a subscriber
+never observes a half-applied write.
 
 ## Delivery and errors
 
-Delivery is synchronous and follows commit order. If a listener writes again
-while a notification is being delivered, the nested write is queued behind the
-current batch: no subscriber sees a newer snapshot and then an older one.
+Delivery is synchronous. A write made by a subscriber is delivered after the
+current one, in order. If subscribers throw, the others still run, then the error
+is rethrown (several errors arrive together as an `AggregateError`).
 
-A listener that throws does not strand the listeners registered after it. The
-remaining listeners still receive the committed value, and the error surfaces
-after delivery: a single failure is rethrown as-is, and multiple failures are
-reported together as an `AggregateError`. When an immediate callback throws
-during subscription, the subscription is removed before the error propagates.
+## After disposal
 
-## Notification boundaries
-
-Raw subscriptions are write-based. A write notifies the addressed path, its
-ancestors, and all subscribed descendants, including descendants cleared to
-`undefined`. A root write notifies every subscriber. Unrelated sibling paths do
-not fire. Every successful `$set()` notifies these raw subscribers, including same-value
-leaf writes, empty object merges, and object merges whose contents are unchanged.
-React selector equality is a separate contract.
+A disposed store drops its subscribers. Subscribing to it delivers the current
+value once (unless `immediate` is `false`) and registers nothing.

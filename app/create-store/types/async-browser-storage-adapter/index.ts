@@ -1,12 +1,13 @@
-import type { Snapshot } from "@/create-store/types/snapshot";
+import type { PersistedFormatOptions } from "@/create-store/types/persisted-format-options";
+import type { StorageWatcher } from "@/create-store/types/storage-watcher";
 
 /**
  * An interface for a storage object.
  */
-export interface AsyncBrowserStorageAdapterOptions<
-  State,
-  StoredState = State,
-> extends AsyncBrowserStorageTransforms<State, StoredState> {
+export interface AsyncBrowserStorageAdapterOptions<State, StoredState = State>
+  extends
+    AsyncBrowserStorageTransforms<State, StoredState>,
+    PersistedFormatOptions<State> {
   /**
    * Returns the current value associated with the given key.
    *
@@ -17,7 +18,6 @@ export interface AsyncBrowserStorageAdapterOptions<
    * @returns The value associated with the key, or a sentinel value (`null`/`undefined`) if the key does not exist.
    */
   getItem(key: string): null | Promise<StoredState | undefined> | StoredState;
-
   /**
    * Removes the key/value pair with the given key, if a key/value pair with the given key exists.
    *
@@ -32,6 +32,17 @@ export interface AsyncBrowserStorageAdapterOptions<
    * @param value The value to set.
    */
   setItem(key: string, value: StoredState): Promise<void> | void;
+
+  /**
+   * How `persist` follows changes made elsewhere. `true` follows other tabs of
+   * the same site through a `BroadcastChannel` named after the adapter's key:
+   * the adapter announces each successful write or removal and hears theirs
+   * (nothing happens where `BroadcastChannel` does not exist). A function is
+   * your own source: it takes a listener, calls it with `{ removed }` when the
+   * stored value changes, returns a function that stops listening, and the
+   * adapter announces nothing. Without it the adapter is not followed.
+   */
+  watch?: StorageWatcher | true;
 }
 
 export interface AsyncBrowserStorageTransforms<State, StoredState = State> {
@@ -42,7 +53,7 @@ export interface AsyncBrowserStorageTransforms<State, StoredState = State> {
    * @param value The value to transform.
    * @returns The transformed value.
    */
-  beforeStorage?: (value: Snapshot<State>) => StoredState;
+  beforeStorage?: (value: State) => StoredState;
 
   /**
    * A function to transform the value after getting it from storage.
@@ -77,6 +88,4 @@ export interface AsyncGetBrowserStorage<State> {
  *
  * @param value The state to set in storage.
  */
-export type AsyncSetBrowserStorage<State> = (
-  value?: Snapshot<State>
-) => Promise<void>;
+export type AsyncSetBrowserStorage<State> = (value?: State) => Promise<void>;

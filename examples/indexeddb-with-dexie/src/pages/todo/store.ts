@@ -1,4 +1,4 @@
-import { createStore } from "@ibnlanre/portal";
+import { primitive } from "@ibnlanre/portal";
 import { z } from "zod";
 
 import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
@@ -36,7 +36,7 @@ export const todoStore = {
     todoStore.newTodoText.$set("");
   },
 
-  newTodoText: createStore(""),
+  newTodoText: primitive(""),
 
   removeTodo(id: string) {
     todoStore.todos.$set((prev) => prev.filter((todo) => todo.id !== id));
@@ -46,7 +46,7 @@ export const todoStore = {
     todoStore.newTodoText.$set(text);
   },
 
-  todos: createStore(initialTodos),
+  todos: primitive(initialTodos),
 
   toggleTodo(id: string) {
     todoStore.todos.$set((prev) =>

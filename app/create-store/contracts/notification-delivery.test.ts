@@ -1,13 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createStore } from "../index";
+import { composite } from "../functions/library/composite";
+import { primitive } from "../functions/library/primitive";
 
 describe("notification delivery", () => {
   it("delivers reentrant composite writes in commit order", () => {
-    const store = createStore({ a: 0, b: 0 });
+    const store = composite({ a: 0, b: 0 });
     const observed: unknown[] = [];
-    store.a.$subscribe(() => store.b.$set(1), false);
-    store.$subscribe((value) => observed.push(value), false);
+    store.a.$subscribe(() => store.b.$set(1), { immediate: false });
+    store.$subscribe((value) => observed.push(value), { immediate: false });
     store.a.$set(1);
     expect(observed).toEqual([
       { a: 1, b: 0 },
@@ -17,12 +18,15 @@ describe("notification delivery", () => {
   });
 
   it("delivers reentrant whole-value writes in commit order", () => {
-    const store = createStore(0);
+    const store = primitive(0);
     const observed: number[] = [];
-    store.$subscribe((value) => {
-      if (value === 1) store.$set(2);
-    }, false);
-    store.$subscribe((value) => observed.push(value), false);
+    store.$subscribe(
+      (value) => {
+        if (value === 1) store.$set(2);
+      },
+      { immediate: false }
+    );
+    store.$subscribe((value) => observed.push(value), { immediate: false });
     store.$set(1);
     expect(observed).toEqual([1, 2]);
   });
@@ -31,16 +35,19 @@ describe("notification delivery", () => {
     "%s drains delivery before reporting listener failures",
     (kind) => {
       const store =
-        kind === "primitive" ? createStore(0) : createStore({ value: 0 }).value;
+        kind === "primitive" ? primitive(0) : composite({ value: 0 }).value;
       const failure = new Error("listener failed");
       const observed: number[] = [];
-      store.$subscribe((value) => {
-        if (value === 1) {
-          store.$set(2);
-          throw failure;
-        }
-      }, false);
-      store.$subscribe((value) => observed.push(value), false);
+      store.$subscribe(
+        (value) => {
+          if (value === 1) {
+            store.$set(2);
+            throw failure;
+          }
+        },
+        { immediate: false }
+      );
+      store.$subscribe((value) => observed.push(value), { immediate: false });
       expect(() => store.$set(1)).toThrow(failure);
       expect(observed).toEqual([1, 2]);
       expect(store.$get()).toBe(2);
@@ -50,14 +57,17 @@ describe("notification delivery", () => {
   );
 
   it("reports all listener errors together after notifying healthy listeners", () => {
-    const store = createStore(0);
+    const store = primitive(0);
     const errors = [new Error("first"), new Error("second")];
     for (const error of errors)
-      store.$subscribe(() => {
-        throw error;
-      }, false);
+      store.$subscribe(
+        () => {
+          throw error;
+        },
+        { immediate: false }
+      );
     const healthy = vi.fn();
-    store.$subscribe(healthy, false);
+    store.$subscribe(healthy, { immediate: false });
     let caught: unknown;
     try {
       store.$set(1);
@@ -73,7 +83,7 @@ describe("notification delivery", () => {
     "%s removes a subscription whose immediate callback throws",
     (kind) => {
       const store =
-        kind === "primitive" ? createStore(0) : createStore({ value: 0 }).value;
+        kind === "primitive" ? primitive(0) : composite({ value: 0 }).value;
       const callback = vi.fn(() => {
         throw new Error("initial");
       });

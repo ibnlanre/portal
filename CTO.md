@@ -17,10 +17,10 @@ I’d proceed with:
 4. Run the docs build/typecheck after the rewrite.
 5. Commit the implementation and docs together once that example reads naturally.
 
-One thing I would be careful about in the docs: don’t make `defineStore` look like the new mandatory entry point. `createStore(value)` should still feel first-class. The distinction is now clean:
+One thing I would be careful about in the docs: don’t make `defineStore` look like the new mandatory entry point. `primitive(value)`, `composite(shape)` and `collection(make)` should still feel first-class. The distinction is now clean:
 
 ```ts
-createStore(value)
+composite(shape)
 ```
 
 for creating a store directly.

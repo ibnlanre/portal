@@ -15,7 +15,7 @@ const principles = [
   {
     detail:
       "Start at the root, then work at the exact branch your feature owns.",
-    example: 'app.$at("user.profile.preferences")',
+    example: "app.user.profile.preferences",
     icon: GitBranch,
     label: "Focus a branch",
   },
@@ -42,7 +42,7 @@ const modelRows = [
   },
   {
     detail: "Create a store scoped to the branch a feature needs.",
-    method: 'app.$at("user.profile.preferences")',
+    method: "app.user.profile.preferences",
     task: "Focus a nested branch",
   },
   {
@@ -154,32 +154,21 @@ function Home() {
               <pre>
                 <code>
                   <span className="portal-code-keyword">const</span> app =
-                  createStore({"{"}
+                  composite({"{"}
                   {"\n"}
-                  {"  "}user: {"{"}
+                  {"  "}user: composite({"{"}
                   {"\n"}
-                  {"    "}profile: {"{"}
+                  {"    "}profile: composite({"{"}
                   {"\n"}
-                  {"      "}preferences: {"{ theme: "}
-                  <span className="portal-code-value">&quot;{theme}&quot;</span>
-                  {" },"}
+                  {"      "}theme: &quot;{theme}&quot;,
                   {"\n"}
-                  {"    },"}
+                  {"    }),"}
                   {"\n"}
-                  {"  },"}
+                  {"  }),"}
                   {"\n"}
                   {"});"}
                   {"\n\n"}
-                  <span className="portal-code-keyword">const</span> preferences
-                  = app.
-                  <span className="portal-code-method">$at</span>({"\n"}
-                  {"  "}
-                  <span className="portal-code-value">
-                    &quot;user.profile.preferences&quot;
-                  </span>
-                  {"\n"}
-                  );{"\n\n"}
-                  preferences.theme.
+                  app.user.profile.theme.
                   <span className="portal-code-method">$set</span>(
                   <span className="portal-code-value">
                     &quot;{nextTheme}&quot;

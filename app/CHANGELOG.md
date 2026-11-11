@@ -1,8 +1,184 @@
+## 7.0.0-rc.0 (unreleased)
+
+### Breaking changes in this release
+
+This is a new major version, published first as a release candidate under the
+`rc` dist-tag. Install it pinned with `npm i @ibnlanre/portal@7.0.0-rc.0`;
+`latest` stays 6.0.1 until 7.0.0. Read these changes before upgrading from
+6.0.1. The store model is rebuilt around three
+constructors, and the old API is removed with no aliases.
+
+- **The factories are renamed, with no aliases.** `createLocalStorageAdapter` is
+  `localAdapter`, `createSessionStorageAdapter` is `sessionAdapter`,
+  `createCookieStorageAdapter` is `cookieAdapter`,
+  `createBrowserStorageAdapter` is `customAdapter`,
+  `createAsyncBrowserStorageAdapter` is `asyncAdapter`, and `createContextStore`
+  is `contextStore`. Signatures are unchanged (key first, options second).
+- **Default-written strings are JSON-quoted.** The default `stringify` is now
+  `JSON.stringify` (it used to write a string as raw text) and the default
+  `parse` is still `JSON.parse`, so every state round-trips: `"dark"` is stored
+  as `"dark"`, and `"123"` and `"true"` come back as strings. A string stored raw
+  by an earlier version is not valid JSON and reads as absent unless the adapter
+  is given a raw `parse` (and `stringify`). `safeStringify` is removed.
+- **`createStore` is removed.** A kind is declared, never detected. Use
+  `primitive(value)` for one whole value, `composite(shape)` for named branches,
+  and `collection(make)` for branches made by key. `createStore(0)` is
+  `primitive(0)`; `createStore({ a: 1 })` is `composite({ a: 1 })`; state a type
+  with `primitive<string | null>(null)`, with no cast.
+- **`createPrimitiveStore` and `createCompositeStore` are removed**, and so are
+  `CreatedStore`, `BuiltIn`, `Primitives`, `Reference` and every type that
+  existed to guess a kind.
+- **Members of a composite shape follow what you wrote.** A store is a branch
+  (the same object), a function is a method, and anything else is a leaf, a
+  `primitive(value)` made for you. A plain object is a leaf, not a branch; write
+  `composite({ ... })` to branch it. A store may be a
+  branch of any number of composites (`composite({ a })` and `composite({ a, b })`
+  share `a`, no copies); a composite connects by subscribing, and writes and
+  `$reset` pass through to shared branches. Shape keys `$get`, `$use`, `$set`, `$subscribe`, `$reset`,
+  `$dispose` and `$onDispose` are reserved and throw.
+- **A primitive never looks inside its value.** `$set` swaps the whole value; it
+  no longer deep-merges objects. Values are not copied: the store holds your
+  reference and reads return it. Updaters receive the current value and must
+  return a new one; do not mutate it.
+- **`$set` takes one argument and has one meaning per kind; there is no
+  `replace` option.** A composite writes each listed branch by that branch's own
+  rule (a composite branch recurses, a primitive branch swaps) and leaves the
+  others alone; its argument is typed per key from the declaration (`SetOf`), so
+  methods are not accepted and nothing is a `DeepPartial` of your types. Replace
+  everything with `$reset()` then `$set(value)`. A collection writes the listed
+  entries and creates missing ones; remove with `$delete` or `$clear`. Declared
+  keys are never dropped.
+- **Reads are typed exactly as you gave them.** The exported `Snapshot` type and
+  the deep `readonly` read types are removed.
+- **Async and initializer-returning-promise initial values are removed**
+  (`await createStore(promise)`): `await` first, then construct the store.
+- **`$subscribe` takes an options object, not a boolean:**
+  `$subscribe(fn, { immediate: false })`. `immediate` still defaults to `true`;
+  `$subscribe(fn, false)` is a type error, with no overload.
+- **`createStoreFamily` and `StoreFamily` are removed.** Use `collection`.
+- **`combine` and `Combine` are removed.** Spread instead:
+  `composite({ ...state, ...actions })`.
+- **`$at` and the path machinery are removed** (`Paths`, `ResolvePath`,
+  `StatePath`, and the helpers behind them). Reach a branch by property, or
+  address a keyed one with a `collection`.
+- **Removed types:** `PartialSetStateAction`, `PartialStateManager`,
+  `PartialStateSetter`, `ReplaceStateAction`, `Subscriber`, `StoreValueResolver`,
+  `InferType`, `Assign`, `DeepPartial`, `Dictionary`, `Factory`, `Initializer`,
+  `Replace`. Use `Store`, `Setter`, `PrimitiveStore`, `CompositeStore`,
+  `CollectionStore`, `StateOf` and `SetOf`.
+- **Notification** is write-based and synchronous: a subscriber is called at most
+  once per outermost write, for the written store, its descendants and every
+  composite connected to it, even for an equal value.
+  Subscribers receive only the value.
+- **The creator disposes.** Disposing a composite disposes the leaves it made and
+  disconnects from the stores it was handed, which stay alive; disposing a
+  collection disposes its entries. Disposing a store others hold leaves them able
+  to read its last value, and writes to it are no-ops.
+- **Every store has `$reset`, `$dispose` and `$onDispose`.**
+- **`persist` follows its storage by default.** A persisted store follows local
+  storage across tabs and windows of the same site: a change made elsewhere is
+  written to the store and nothing is written back, and a removed value resets
+  the store to its initial value. Another tab's write replaces this tab's
+  in-memory value (last write wins). The only option is `sync: false`, to opt out;
+  there is no `"restore"` mode. Adapters that cannot announce changes (session
+  storage, cookies, plain `[get, set]` tuples, browser and async adapters without
+  a supplied watcher) follow nothing, silently.
+- **Adapters still return the plain `[get, set]` tuple, unchanged.** `persist`
+  follows a tuple only if it is the very one a factory returned: a copy or a
+  hand-built tuple follows nothing. Custom adapters supply a `watch`
+  (`StorageWatcher`) through the options of `customAdapter` and
+  `asyncAdapter`.
+- **A `parse` result of `null` or `undefined` means "absent".** With a fallback
+  argument the adapter returns the fallback; without one it returns `undefined`.
+- **Stored data written by older versions can read as absent.** Without a
+  `version` option an adapter returns the stored value as is and never unwraps an
+  envelope. With `version`, a stored value that is not a `{ $version, state }`
+  envelope is absent (a bare value is not treated as version 0 and does not go
+  through `migrate`), and `migrate` runs only for an envelope whose `$version`
+  differs. The default parser logs unparsable text through `console.error` and
+  treats it as absent, so an empty stored string is absent too. All five adapters
+  apply one rule: nothing stored is absent, anything else goes through `parse`,
+  and a parse failure or a `null` or `undefined` result is absent.
+- **`syncStorage` and `SyncStorageOptions` are removed.** `persist` follows
+  storage by default (see above).
+
+### Features
+
+- A read that fails during hydration (rejects or throws) is treated as nothing
+  stored: it is logged, the store is hydrated, a later edit is saved, and a value
+  set before the failure is saved. One failed entry no longer keeps a
+  collection's `hydrated` false. There is no `onError` option.
+- `persist` accepts an adapter typed from your own interface. The store's state
+  must be assignable to what the adapter stores, and what the adapter reads must
+  be accepted as a write to the store, so an adapter for an interface with
+  optional fields (`checkDate?: string`) works for a store whose state has
+  `checkDate: string | undefined`, with no cast. `PersistAdapter` takes a second
+  type parameter, `Read`, defaulting to the first.
+- A change made before hydration finished is no longer lost when storage holds
+  nothing: an entry of a persisted collection created and set in the same tick
+  (`journals.$set({ id: journal })`), or a store set before an async read
+  resolved, is saved once hydration finds the key absent. A stored value still
+  wins and is not overwritten.
+- A collection's key is a plain `string` everywhere: `collection(make)` takes
+  `make: (key: string) => Entry`, `drafts(key)`, `$has` and `$delete` take a
+  string, `$keys()` is `string[]`, the state is `Record<string, …>`, and
+  `persist(collection, (key: string) => adapter)`. A number key is a type error;
+  convert a numeric id with `String(id)` at the call site. There is no runtime
+  coercion.
+- Adapters accept `validate?: (state: unknown) => State | null | undefined`
+  beside `migrate`. It runs after the envelope is unwrapped and after `migrate`
+  (on the parsed value when unversioned); `null` or `undefined` is absent
+  without a log, and a throw is absent and logged. Without it, a state with the
+  right envelope but the wrong shape is applied as it is.
+- Collection `$delete(key)` and `$clear()` reset each removed entry to its
+  initial value inside the same outermost write, then dispose it, so holders and
+  mounted components see the empty state, notified once. For a persisted
+  collection they also remove the entry's stored key, and the reset is not
+  written back. `entry.$dispose()` is unchanged and leaves the stored key. This
+  applies to live entries only; stored keys of entries never created are left,
+  and an app that must leave nothing behind sweeps them itself (documented).
+- `asyncAdapter` takes `watch: true | StorageWatcher`. `true` follows other tabs
+  of the origin over a `BroadcastChannel` named after the key, and the adapter
+  announces each successful write or removal, so it needs no hand-written
+  watcher (nothing happens where `BroadcastChannel` is missing). A function is
+  your own source and announces nothing. `customAdapter` takes `watch:
+  StorageWatcher` only. Local, session and cookie adapters take no `watch`.
+- Disposing a collection entry directly (`entry.$dispose()`) notifies the
+  collection and its holders once, as an outermost write. `persist` reports an
+  adapter whose `set` throws or rejects through `console.error` instead of
+  failing the write. All three store kinds are frozen, and a reserved shape key is
+  a type error as well as a runtime error.
+
+- `batch(fn)`, a top-level function (if both `fn` and delivery throw, an
+  `AggregateError` carries both errors): writes made inside `fn` are one outermost
+  write, so each subscriber is called at most once, after `fn` returns. Nested
+  calls join the outer one; if `fn` throws, the writes already applied stay and
+  delivery still happens once. A composite is replaced with
+  `batch(() => { store.$reset(); store.$set(value); })`.
+- `composite`, `primitive` and `collection` (see above), each store with `$get`,
+  `$use`, `$set`, `$subscribe`, `$reset`, `$dispose` and `$onDispose`. A
+  collection also has `$has`, `$keys`, `$delete` and `$clear`; an entry made by
+  reading does not notify, because reading must never cause an update.
+- `persist(store, adapter, { skipHydration, onHydrated, sync })` returns a
+  `Persistor`, `{ hydrate(), hydrated, dispose() }`, with the state type inferred
+  from the store. It writes nothing until storage has been read, never writes
+  back its own updates, and follows the adapter's `watch` by default
+  (`sync: false` opts out). For a collection, pass a function from key to adapter: every
+  entry is persisted under its own key and stops when it is disposed. The collection's
+  `hydrated` matches a single store: `true` before `persist(...)` returns when
+  every read is synchronous, otherwise it flips once after the entries that
+  existed have settled (a rejecting read does not hold it back and is logged).
+- Every storage adapter accepts `version` and `migrate` beside `parse` and
+  `stringify`. With `version`, writes are stored as `{ $version, state }`.
+- `customAdapter` and `asyncAdapter` take a `watch` option, which reports changes made
+  elsewhere; the local storage adapter wires its own from `storage` events.
+  `StorageWatcher` and `StorageChange` are exported.
+
 ## 6.0.1 (2026-10-26)
 
 ### Bug Fixes
 
-- `createLocalStorageAdapter` and `createSessionStorageAdapter` no longer throw
+- `localAdapter` and `sessionAdapter` no longer throw
   where the browser refuses storage (blocked site data, a sandboxed frame) or a
   write (full storage). A refused read returns the fallback; a refused write or
   removal is dropped. Both log through `console.error`, as `cookieStorage`

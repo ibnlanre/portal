@@ -1,181 +1,154 @@
 ---
 title: Store API
-description: The small store API you can use at the root or any nested branch.
-icon: Braces
+description: The members every store, branch and collection has.
+icon: Wrench
 ---
 
-**A branch is a store identified by its location in the state tree.**
-Retained handles follow subsequent values at that location.
+Every store made by `primitive`, `composite` or `collection`, and every branch of
+a composite, has the same members.
 
-Every Portal store has the same API. A root store, an object branch, and a
-single nested value all support the operations that make sense for state:
-read, write, subscribe, use in React, and—on composite stores—focus a path.
+| Member                           | Use                                          |
+| :------------------------------- | :------------------------------------------- |
+| `$get()` / `$get(select)`        | Read the value, or select from it.           |
+| `$use()` / `$use(select, deps?)` | Read in a component and re-render on change. |
+| `$set(value)` / `$set(updater)`  | Write.                                       |
+| `$subscribe(fn, options?)`       | Listen; returns an unsubscribe.              |
+| `$reset()`                       | Back to the initial value.                   |
+| `$dispose()`                     | End the store.                               |
+| `$onDispose(cleanup)`            | Run a cleanup when the store is disposed.    |
 
-## Cheat Sheet
+These names are reserved: a key of a `composite` shape may not use them.
 
-| I want to...            | Method            | Return Value              |
-| :---------------------- | :---------------- | :------------------------ |
-| **Read** the value once | `$get()`          | A read-only `Snapshot<S>` |
-| **Update** the value    | `$set(value)`     | `void`                    |
-| **Watch** for changes   | `$subscribe(fn)`  | `unsubscribe` function    |
-| **Use** in React        | `$use(selector?)` | `[value, setValue]`       |
-| **Access** a deep path  | `$at(path)`       | `Store` instance          |
-
----
-
-## Reading Data: `$get()`
-
-Reads return stable, read-only snapshots. Portal copies supported incoming values
-and preserves unchanged plain-object and array branches across writes. Use
-`$set()` to mutate state. See [Reading State](/docs/core/reading-state) for identity and
-ownership guarantees.
-
-Use `$get()` when you need to read the state imperatively—like inside an event handler, a utility function, or an action.
+## Reading: `$get()`
 
 ```ts
-import { createStore } from "@ibnlanre/portal";
-
-const countStore = createStore(10);
-const currentCount = countStore.$get(); // 10
+const app = composite({ user: composite({ name: "A" }), count: 0 });
+app.$get(); // { user: { name: "A" }, count: 0 }
+app.user.name.$get(); // "A"
+app.$get((state) => state.count);
 ```
 
-### Selectors and Fallbacks
+A read returns the store's own value with the type you gave it, stable by
+identity until it changes. It is shared: do not mutate it. See
+[Reading state](/docs/core/reading-state).
 
-`$get()` accepts a **selector** function to derive a value. Use `??` on its result when you need a fallback:
+## Writing: `$set()`
 
 ```ts
-const userStore = createStore({ firstName: "Alex", lastName: "Johnson" });
-
-// Derive a value with a selector
-userStore.$get((u) => `${u.firstName} ${u.lastName}`);
-// "Alex Johnson"
+app.count.$set(1);
+app.count.$set((count) => count + 1);
+app.$set({ user: { name: "B" } }); // merges into branches
 ```
 
-```ts
-const configStore = createStore({
-  apiUrl: undefined as string | undefined,
-});
-
-// Fallback when the value is undefined
-configStore.apiUrl.$get(); // undefined
-configStore.apiUrl.$get() ?? "https://api.default.com"; // "https://api.default.com"
-```
-
----
-
-## Writing Data: `$set()`
-
-Use `$set()` to update your state. You can pass a new value directly, or a **selector function** that receives the previous state and returns the new value.
-
-```ts
-const countStore = createStore(0);
-
-// Set directly
-countStore.$set(5);
-
-// Update based on previous value
-countStore.$set((prev) => prev + 1);
-```
-
-### Partial updates
-
-If your store holds an object, `$set()` automatically merges your changes. You don't need to spread the old state manually.
-
-```ts
-const settingsStore = createStore({
-  theme: "light",
-  fontSize: 12,
-  sidebar: { collapsed: false },
-});
-
-// Updates theme, keeps fontSize and sidebar intact
-settingsStore.$set({ theme: "dark" });
-```
-
-### Updating nested values
-
-Because Portal stores are recursive, you can update nested properties directly.
-
-```ts
-// Update deeply nested property
-settingsStore.sidebar.collapsed.$set(true);
-
-// Or update the parent object
-settingsStore.sidebar.$set({ collapsed: true });
-```
-
----
+See [Setting state](/docs/core/setting-state) for what a write means for each kind.
 
 ## Listening: `$subscribe()`
 
-Use `$subscribe()` to run a side effect when a write invalidates the subscribed path, even if its value is unchanged. This is great for logging, syncing to local storage, or triggering analytics.
+```ts
+const stop = app.user.$subscribe((user) => console.log(user));
+stop();
+```
+
+The current value is delivered at once unless the second argument is `{ immediate: false }`.
+See [Subscriptions](/docs/core/subscriptions).
+
+## Lifecycle
+
+`$reset()` returns a store (every branch, for a composite) to its initial value
+and notifies. `$dispose()` ends it: it drops its subscribers, runs the cleanups
+registered with `$onDispose()`, and makes later writes no-ops. Reads keep
+returning the last value, and it is safe to call twice. The creator disposes:
+disposing a composite disposes the leaves it made itself, unsubscribes from every
+store it was handed, and leaves those alive, including a store created inline in
+the shape (dispose that one as `app.cart.$dispose()`). Disposing a store that
+others hold leaves them able to read its last value; writes to it are no-ops.
+
+`$onDispose(cleanup)` ties work to a store's lifetime and returns a function
+that removes the cleanup. A cleanup registered on an already-disposed store runs
+at once.
 
 ```ts
-const unsubscribe = settingsStore.$subscribe((newValue) => {
-  console.log("Settings changed:", newValue);
+const timer = setInterval(() => app.count.$set((n) => n + 1), 1000);
+app.$onDispose(() => clearInterval(timer));
+app.$dispose(); // clears the timer
+```
+
+## Batching
+
+`batch(fn)` is a top-level function, not a store method. Writes made inside `fn`,
+to any stores, are one outermost write: subscribers are called at most once,
+after `fn` returns. Nested calls join the outer one, and if `fn` throws the
+writes already applied stay and delivery still happens once. If both `fn` and
+delivery throw, an `AggregateError` is thrown with `[fn's error, delivery's
+error]`, so neither is masked.
+
+```ts
+import { batch } from "@ibnlanre/portal";
+
+batch(() => {
+  cart.$reset();
+  cart.$set(next); // replace everything: subscribers hear one change
 });
-
-// Later... stop listening
-unsubscribe();
 ```
 
-> **Note:** By default, `$subscribe` runs immediately when you call it. Pass `false` as the second argument if you only want to react to _future_ changes.
+## Connection and sharing
+
+A store is an individual: it knows nothing about who holds it. A composite
+connects to each store in its shape by subscribing to it, and the same store can
+be a branch of any number of composites. Nothing is copied:
 
 ```ts
-// Only run on changes, not on initial subscription
-settingsStore.$subscribe(handler, false);
+const a = composite({ n: 1 });
+const c = composite({ a });
+const d = composite({ a, other: primitive("x") });
+
+c.a === a && d.a === a; // true
+a.n.$set(2); // c and d both see it
 ```
 
----
+Shapes are fixed at construction, so connections can only point at stores that
+already exist and a cycle cannot be built. Writes pass through: a partial `$set`
+on a composite writes each listed branch by that branch's own rule and
+leaves the others alone, and `$reset()` resets every branch. Because a
+shared branch is the same store, these also change the other composites that
+hold it. To get independence, build a second store.
 
-## React Integration: `$use()`
+A subscriber is called at most once per outermost write, even when the write
+reached it along several paths.
 
-If you're using React, `$use()` is your best friend. It subscribes to the store and re-renders your component whenever the value changes.
+A composite connects to its branches until it is disposed. One that is never
+disposed stays reachable from every branch it holds, so a composite built on
+every render and never disposed leaks into any long-lived branch it shares.
+After `composite.$dispose()`, a write to a shared branch no longer reaches it.
 
-```tsx
-function ThemeToggler() {
-  const [theme, setTheme] = settingsStore.theme.$use();
+Every store is frozen: adding, deleting or defining a property throws. A
+composite's enumerable keys are its branches and methods; the `$` members are
+hidden.
 
-  return (
-    <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-      Current: {theme}
-    </button>
-  );
-}
-```
+## Collections
 
-### Selecting data
-
-Just like `$get()`, you can pass a selector to `$use()` to subscribe only to a derived value. The selected result gates **store-driven renders using `Object.is`**. Parent renders and other hooks can still render the component.
-
-```tsx
-function SidebarStatus() {
-  // Store-driven renders are gated by the selected boolean
-  const [isCollapsed] = settingsStore.sidebar.$use((s) => s.collapsed);
-
-  return <div>{isCollapsed ? "Closed" : "Open"}</div>;
-}
-```
-
----
-
-## Dynamic Access: `$at()`
-
-Sometimes you don't know the property name ahead of time. `$at()` lets you access nested stores using a string path.
+`collection(make)` is callable and has `$has(key)`, `$keys()`, `$delete(key)` and
+`$clear()` besides the members above.
 
 ```ts
-const userStore = createStore({ preferences: { theme: "dark" } });
-
-const path = "preferences.theme";
-const themeStore = userStore.$at(path);
-
-console.log(themeStore.$get()); // "dark"
+const drafts = collection((id: string) =>
+  composite({ lines: primitive<string[]>([]) })
+);
+drafts("acme"); // made on first use
+drafts.$keys(); // ["acme"]
+drafts.$delete("acme"); // resets that entry, then disposes it
+drafts.$clear(); // resets and disposes all
 ```
 
-## Dynamic and optional paths
+`$delete` and `$clear` reset each removed entry to its initial value in the same
+write, so anything holding it (a mounted component, a subscriber) sees the empty
+state, and then dispose it. A persisted collection also removes the entry's
+stored key, but only for live entries (those created in this visit); `entry.$dispose()` alone leaves it. Stored keys of entries that were never created are
+left in storage: sweep them yourself, as the persistence guide shows. See
+[Persistence](/docs/guides/persistence).
 
-A property absent from the initial value has no dot-access handle until it is
-present in state. Use `$at()` for an absent declared path. It reads `undefined`
-until populated, and a write can create missing object parents. Handles remain
-bound to their paths when values are cleared and restored. Dictionary properties
-added through `$set()` become available through both dot access and `$at()`.
+Keys are plain strings, as object keys always are: `make` receives a `string`, `drafts(1)` is a type error, and `$keys()` is a `string[]`. A numeric id needs `String(id)` at the call site. An entry made by
+reading does not notify, because reading must never cause an update (it can run
+during a render). A collection's `$get()` and `$keys()` reflect the entries that
+exist. `$set`, `$reset`, `$delete`, `$clear`, `entry.$dispose()` and a change to an
+entry's own value notify. `drafts.$set({ acme: state })` creates an entry explicitly and notifies.

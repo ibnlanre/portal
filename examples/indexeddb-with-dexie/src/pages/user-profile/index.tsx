@@ -1,13 +1,13 @@
-import { createStore } from "@ibnlanre/portal";
+import { composite } from "@ibnlanre/portal";
 
 import { profileStore } from "./store";
 
-const loginStore = createStore({
-  form: {
+const loginStore = composite({
+  form: composite({
     avatar: "",
     email: "",
     name: "",
-  },
+  }),
 });
 
 export function UserProfile() {

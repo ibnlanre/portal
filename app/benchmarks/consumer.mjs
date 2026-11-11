@@ -27,7 +27,7 @@ cpSync(join(app, "package.json"), join(installed, "package.json"));
 
 const entries = {
   full: `export * from "@ibnlanre/portal";\n`,
-  minimal: `import { createStore } from "@ibnlanre/portal";\nexport const store = createStore({ count: 0 });\n`,
+  minimal: `import { primitive } from "@ibnlanre/portal";\nexport const store = primitive(0);\n`,
 };
 
 const results = {};
@@ -65,7 +65,7 @@ rmSync(directory, { force: true, recursive: true });
 console.log(
   JSON.stringify(
     {
-      note: "Minified consumer bundles of the built ESM entry via esbuild; React external. The minimal entry imports createStore only.",
+      note: "Minified consumer bundles of the built ESM entry via esbuild; React external. The minimal entry imports primitive only.",
       react: "external",
       ...results,
     },

@@ -1,6 +1,4 @@
-import type { Paths, ResolvePath } from "@ibnlanre/portal";
-
-import { type AppPreferences, preferencesStore } from "./store";
+import { preferencesSchema, preferencesStore } from "./store";
 
 export function Preferences() {
   const [preferences] = preferencesStore.$use();
@@ -12,13 +10,6 @@ export function Preferences() {
   //     </div>
   //   );
   // }
-
-  function handleUpdate(
-    path: Paths<AppPreferences>,
-    value: ResolvePath<AppPreferences, typeof path>
-  ) {
-    preferencesStore.$at(path).$set(value);
-  }
 
   return (
     <div className="space-y-8">
@@ -43,7 +34,9 @@ export function Preferences() {
               <input
                 checked={preferences.autoSave}
                 id="autoSave"
-                onChange={(e) => handleUpdate("autoSave", e.target.checked)}
+                onChange={(e) =>
+                  preferencesStore.autoSave.$set(e.target.checked)
+                }
                 type="checkbox"
               />
             </div>
@@ -54,7 +47,7 @@ export function Preferences() {
               </label>
               <select
                 id="language"
-                onChange={(e) => handleUpdate("language", e.target.value)}
+                onChange={(e) => preferencesStore.language.$set(e.target.value)}
                 value={preferences.language}
               >
                 <option value="en">English</option>
@@ -70,7 +63,11 @@ export function Preferences() {
               </label>
               <select
                 id="theme"
-                onChange={(e) => handleUpdate("theme", e.target.value)}
+                onChange={(e) =>
+                  preferencesStore.theme.$set(
+                    preferencesSchema.shape.theme.parse(e.target.value)
+                  )
+                }
                 value={preferences.theme}
               >
                 <option value="light">Light</option>
@@ -93,7 +90,7 @@ export function Preferences() {
                 checked={preferences.notifications.email}
                 id="emailNotifications"
                 onChange={(e) =>
-                  handleUpdate("notifications.email", e.target.checked)
+                  preferencesStore.notifications.email.$set(e.target.checked)
                 }
                 type="checkbox"
               />
@@ -107,7 +104,7 @@ export function Preferences() {
                 checked={preferences.notifications.push}
                 id="pushNotifications"
                 onChange={(e) =>
-                  handleUpdate("notifications.push", e.target.checked)
+                  preferencesStore.notifications.push.$set(e.target.checked)
                 }
                 type="checkbox"
               />
@@ -121,7 +118,7 @@ export function Preferences() {
                 checked={preferences.notifications.desktop}
                 id="desktopNotifications"
                 onChange={(e) =>
-                  handleUpdate("notifications.desktop", e.target.checked)
+                  preferencesStore.notifications.desktop.$set(e.target.checked)
                 }
                 type="checkbox"
               />
@@ -141,7 +138,7 @@ export function Preferences() {
                 checked={preferences.layout.sidebar}
                 id="sidebar"
                 onChange={(e) =>
-                  handleUpdate("layout.sidebar", e.target.checked)
+                  preferencesStore.layout.sidebar.$set(e.target.checked)
                 }
                 type="checkbox"
               />
@@ -155,7 +152,7 @@ export function Preferences() {
                 checked={preferences.layout.compactMode}
                 id="compactMode"
                 onChange={(e) =>
-                  handleUpdate("layout.compactMode", e.target.checked)
+                  preferencesStore.layout.compactMode.$set(e.target.checked)
                 }
                 type="checkbox"
               />

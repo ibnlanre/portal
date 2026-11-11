@@ -8,28 +8,33 @@ icon: CircleQuestionMark
 
 `$subscribe` calls the subscriber immediately by default so your UI and side effects can initialize from the current state.
 
-If you’re wiring persistence/hydration, pass `false` as the second argument:
+If you’re wiring persistence/hydration, pass `{ immediate: false }` as the second argument:
 
 ```ts
-store.$subscribe((state) => {
-  // persist
-}, false);
+store.$subscribe(
+  (state) => {
+    // persist
+  },
+  { immediate: false }
+);
 ```
 
 ## How do I update deep values?
 
-For composite stores you can either navigate through properties:
+Navigate through properties; every branch is a store you can pass around:
 
 ```ts
 store.user.preferences.theme.$set("dark");
+
+function Theme({ theme }: { theme: typeof store.user.preferences.theme }) {
+  const [value] = theme.$use();
+  return <span>{value}</span>;
+}
 ```
 
-…or select by path:
+For branches made by key, use `collection`:
 
 ```ts
-store.$at("user.preferences.theme").$set("dark");
+const drafts = collection((id: string) => composite({ note: "" }));
+drafts("acme").note.$set("hello");
 ```
-
-Use dot access when the branch is already known in your feature. Use `$at()`
-when the path is dynamic or when you want to pass a focused store boundary to
-reusable code.

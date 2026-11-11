@@ -1,7 +1,6 @@
 import type { DependencyList } from "react";
 
 import type { Selector } from "@/create-store/types/selector";
-import type { Snapshot } from "@/create-store/types/snapshot";
 
 import { useMemo, useSyncExternalStore } from "react";
 
@@ -9,7 +8,7 @@ import { useVersion } from "@/create-store/functions/hooks/use-version";
 import { resolveSelectorValue } from "@/create-store/functions/utilities/resolve-selector-value";
 
 /** Cache each selected snapshot until the source or selector changes. */
-export function useStoreSnapshot<State, Value = Snapshot<State>>(
+export function useStoreSnapshot<State, Value = State>(
   subscribe: (listener: () => void) => () => void,
   getSnapshot: () => State,
   selector?: Selector<State, Value>,

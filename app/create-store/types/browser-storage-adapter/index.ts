@@ -1,8 +1,16 @@
-import type { Snapshot } from "@/create-store/types/snapshot";
 import type { StorageAdapterOptions } from "@/create-store/types/storage-adapter";
+import type { StorageWatcher } from "@/create-store/types/storage-watcher";
 
 export interface BrowserStorageAdapterOptions<State>
-  extends StorageAdapterOptions<State>, StorageInterface {}
+  extends StorageAdapterOptions<State>, StorageInterface {
+  /**
+   * Your own source of external changes (a socket, a poll). It takes a
+   * listener, calls it with `{ removed }` when the stored value changes, and
+   * returns a function that stops listening. `persist` follows it; the adapter
+   * announces nothing itself. Without it the adapter is not followed.
+   */
+  watch?: StorageWatcher;
+}
 
 export interface GetBrowserStorage<State> {
   /**
@@ -27,7 +35,7 @@ export interface GetBrowserStorage<State> {
  *
  * @param value The state to set in storage.
  */
-export type SetBrowserStorage<State> = (value?: Snapshot<State>) => void;
+export type SetBrowserStorage<State> = (value?: State) => void;
 
 /**
  * An interface for a storage object.

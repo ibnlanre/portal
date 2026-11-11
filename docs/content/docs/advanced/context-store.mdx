@@ -11,40 +11,45 @@ than the whole application. It is especially useful when you need:
 2. It exists only for a specific part of your app (like a single tab in a dashboard).
 3. It has multiple instances active at once.
 
-`createContextStore()` gives you the best of both worlds: the power of Portal's API with the scoping of React Context.
+`contextStore()` gives you the best of both worlds: the power of Portal's API with the scoping of React Context.
 
 ## The Problem
 
-If you use a global `createStore()`, you can't easily initialize it with data from your component's props, because the store is created _before_ the component mounts.
+If you use a global store, you can't easily initialize it with data from your component's props, because the store is created _before_ the component mounts.
 
 ```tsx
 // ❌ Hard to pass 'initialCount' dynamically
-const globalStore = createStore(0);
+const globalStore = primitive(0);
 ```
 
 ## The Solution
 
-`createContextStore` lets you define a "store creator" function. This function runs inside a Provider component, meaning it has access to props and hooks.
+`contextStore` lets you define a "store creator" function. This function runs inside a Provider component, meaning it has access to props and hooks.
 
 Because a provider re-runs its factory on every render, initialize the store
 once with `useState` so the same instance survives rerenders:
 
 ```tsx
-import { createContextStore, createStore } from "@ibnlanre/portal";
+import { contextStore, primitive } from "@ibnlanre/portal";
 import { useState } from "react";
 
 // 1. Create the Context Store factory.
 // The factory receives the props passed to the Provider.
-const [CounterProvider, useCounterStore] = createContextStore(
+const [CounterProvider, useCounterStore] = contextStore(
   (props: { start: number }) => {
     // Initialize once; later provider renders reuse this store.
-    const [store] = useState(() => createStore(props.start));
+    const [store] = useState(() => primitive(props.start));
     return store;
   }
 );
 ```
 
-A factory that returns a fresh `createStore(...)` on every render resets state
+A composite connects to the stores it holds until it is disposed. If the factory
+builds a `composite` that holds a long-lived store and you do not dispose it when
+the provider unmounts, the composite stays connected to that store. Dispose it in
+an effect cleanup, or keep the long-lived store out of per-render composites.
+
+A factory that returns a fresh `primitive(...)` on every render resets state
 whenever the provider rerenders, so keep the lazy initializer as the default
 shape.
 
@@ -94,14 +99,14 @@ start a fresh instance. Key the factory to those props with `useMemo` or Portal'
 `useSync` so the store is replaced only when that key changes:
 
 ```tsx
-import { createContextStore, createStore, useSync } from "@ibnlanre/portal";
+import { composite, contextStore, useSync } from "@ibnlanre/portal";
 
-const [UserProvider, useUserStore] = createContextStore(
+const [UserProvider, useUserStore] = contextStore(
   (props: { id: string; name: string }) => {
     // Recreate the store only when props.id changes; render-to-render
     // rerenders with the same id keep the same instance.
     return useSync(() => {
-      return createStore({ id: props.id, name: props.name });
+      return composite({ id: props.id, name: props.name });
     }, [props.id]);
   }
 );

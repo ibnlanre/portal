@@ -9,7 +9,6 @@
     "core/subscriptions",
     "---Advanced---",
     "advanced/actions",
-    "advanced/combine",
     "advanced/context-store",
     "advanced/hooks",
     "advanced/react-integration",

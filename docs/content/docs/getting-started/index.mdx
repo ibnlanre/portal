@@ -1,177 +1,79 @@
 ---
-title: Get Started
-description: Install Portal, create one root store, and focus the state branch your feature needs.
-icon: Play
+title: Getting started
+description: Install Portal and make your first stores.
+icon: Rocket
 ---
 
-Portal is most useful when a feature needs a focused part of a larger state
-tree. Create one root store, then treat a nested branch as a store in its own
-right. The API stays the same at every level.
-
-## Installation
-
-You can add Portal to your project using your favorite package manager:
-
 ```bash
-# npm
-npm install @ibnlanre/portal
-
-# pnpm
 pnpm add @ibnlanre/portal
-
-# yarn
-yarn add @ibnlanre/portal
 ```
 
-Using TypeScript? Good news—we include type definitions automatically, so you don't need to install any extra `@types` packages.
+Portal needs React 19 for the hooks. The stores themselves work without React.
 
-### Using a CDN
-
-If you're not using a bundler, you can load the ESM build from a CDN that
-rewrites dependencies. Portal does not ship a standalone UMD or global build,
-so classic `<script src="...">` tags are not supported.
-
-```html
-<script type="module">
-  import { createStore } from "https://esm.sh/@ibnlanre/portal";
-  const count = createStore(0);
-</script>
-```
-
-React is a peer dependency; the CDN resolves it for the module graph.
-
-## Your first root store
-
-`createStore` takes your state's initial value as its single argument — Portal infers the state's type directly from that value, so no schema is required.
+## A value: `primitive`
 
 ```ts
-import { createStore } from "@ibnlanre/portal";
+import { primitive } from "@ibnlanre/portal";
 
-const app = createStore({
-  user: {
-    profile: {
-      name: "Alex",
-      preferences: { theme: "dark", compact: false },
-    },
+const count = primitive(0);
+count.$set((current) => current + 1);
+count.$get(); // 1
+```
+
+`primitive` takes a value or an initializer, `primitive(() => 0)`. It never
+looks inside the value: a write swaps it, and a read returns the very reference
+you gave. State a type in one place, the type argument:
+
+```ts
+const picked = primitive<null | string>(null); // no cast
+```
+
+## A tree: `composite`
+
+```ts
+import { composite, primitive } from "@ibnlanre/portal";
+
+const app = composite({
+  cart: composite({ items: primitive<string[]>([]) }),
+  title: "",
+  add(item: string) {
+    app.cart.items.$set((items) => [...items, item]);
   },
 });
-
-const preferences = app.$at("user.profile.preferences");
-
-// This is a store scoped to that branch.
-preferences.$set({ compact: true });
-preferences.theme.$set("light");
 ```
 
-## Other ways to supply the initial value
+Each member is decided by what you wrote. A store becomes that branch. A
+function becomes a method. Anything else, including a plain object, becomes a
+leaf: a `primitive` made for you. To branch an object, write
+`composite({ ... })`.
 
-A value written inline is the usual form, and it is the only one that infers the
-state's type from the value itself. Three other forms are accepted.
-
-A factory defers the work of building the value until the store is created:
+## Branches by key: `collection`
 
 ```ts
-import { createStore } from "@ibnlanre/portal";
+import { collection, composite, primitive } from "@ibnlanre/portal";
 
-const count = createStore(() => 0);
-count.$get(); // 0
+const drafts = collection((organisation: string) =>
+  composite({ lines: primitive<string[]>([]) })
+);
+
+drafts("acme").lines.$set(["a"]);
+drafts.$has("acme"); // true
+drafts.$delete("acme");
 ```
 
-An async initializer returns a promise for the store, so `await` it before
-reading. A promise of a value is accepted directly as well.
-
-```ts
-const fetchCount = async () => {
-  const response = await fetch("https://api.example.com/count");
-  const data = await response.json();
-  return data.count;
-};
-
-const count = await createStore(fetchCount);
-count.$set(78);
-```
-
-An omitted value creates a store typed `State | undefined`, which you seed once
-the value becomes available:
-
-```ts
-const selection = createStore<string>();
-selection.$get(); // undefined
-```
-
-Both async forms resolve to a whole-value store. An async initializer that
-resolves to a plain object is held by a primitive store: it wraps that object
-instead of creating a node per key, so `await` the data yourself before calling
-`createStore` when you want to reach properties by dot access.
-
-## Reach a branch directly or by path
-
-Use dot access when the path is known in code. Use `$at()` when a path is
-assembled dynamically or passed into a reusable feature.
-
-```ts
-import { createStore } from "@ibnlanre/portal";
-
-const app = createStore({
-  user: {
-    settings: {
-      theme: "dark",
-      notifications: { email: true, push: false },
-    },
-  },
-});
-
-app.user.settings.theme.$set("light");
-
-const notifications = app.$at("user.settings.notifications");
-notifications.$set({ push: true });
-```
-
-## Reacting to changes
-
-You can listen at the root, a branch, or a leaf. Subscribe as close to the
-work as possible so the callback receives the value it needs.
-
-By default, the subscription runs immediately with the current value, so you don't miss anything.
-
-```ts
-const unsubscribe = countStore.$subscribe((newValue) => {
-  console.log("Count is now:", newValue);
-});
-
-countStore.$set(10);
-// Console: "Count is now: 10"
-
-// Stop listening when you're done
-unsubscribe();
-```
-
-## Using with React
-
-If you're using React, Portal provides a unified `$use()` hook that serves as both a selector and a subscriber.
+## In a component
 
 ```tsx
-import { createStore } from "@ibnlanre/portal";
-
-const countStore = createStore(0);
-
-function Counter() {
-  // Automatically re-renders when countStore changes
-  const [count, setCount] = countStore.$use();
-
-  return <button onClick={() => setCount(count + 1)}>Count is {count}</button>;
+function Title() {
+  const [title, setTitle] = app.title.$use();
+  return <input value={title} onChange={(e) => setTitle(e.target.value)} />;
 }
 ```
 
-## Core concepts
-
-Here's a quick map of the concepts you'll use most often:
-
-| Method            | Description                                                           |
-| :---------------- | :-------------------------------------------------------------------- |
-| **`createStore`** | Creates a new observable store from an initial value (type inferred). |
-
-| **`$get`** | reads the current value (without subscribing). |
-| **`$set`** | Updates the value (merges objects, replaces primitives). |
-| **`$use`** | React hook to read values and re-render on changes. |
-| **`$subscribe`** | Native subscription for non-React code (logs, analytics, etc). |
+| Export         | What it is                                   |
+| :------------- | :------------------------------------------- |
+| `primitive`    | One whole value.                             |
+| `composite`    | A tree of named branches.                    |
+| `collection`   | Branches made by key.                        |
+| `persist`      | Hydrate and save a store through an adapter. |
+| `contextStore` | A store scoped to a React provider.          |

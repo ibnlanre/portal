@@ -1,18 +1,19 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { createStore } from "../index";
+import { composite } from "../functions/library/composite";
+import { primitive } from "../functions/library/primitive";
 
 describe("store lifetime contract", () => {
   it("isolates separately created stores", () => {
     const initial = { count: 0 };
-    const a = createStore(initial);
-    const b = createStore(initial);
+    const a = composite(initial);
+    const b = composite(initial);
     a.count.$set(1);
     expect(b.count.$get()).toBe(0);
   });
   it("stops invoking selectors after unmount and reconnects to the latest state", () => {
-    const store = createStore({ count: 0 });
+    const store = composite({ count: 0 });
     const select = vi.fn((s: { count: number }) => s.count);
     const first = renderHook(() => store.$use(select)[0]);
     first.unmount();
@@ -23,8 +24,8 @@ describe("store lifetime contract", () => {
     expect(second.result.current).toBe(1);
   });
   it("switches subscriptions and setters when a component receives another store", () => {
-    const a = createStore({ count: 1 });
-    const b = createStore({ count: 2 });
+    const a = composite({ count: 1 });
+    const b = composite({ count: 2 });
     const hook = renderHook(({ store }) => store.count.$use(), {
       initialProps: { store: a },
     });
@@ -37,11 +38,11 @@ describe("store lifetime contract", () => {
     expect(hook.result.current[0]).toBe(3);
   });
   it("one subscriber cleanup does not detach other subscribers", () => {
-    const store = createStore(0);
+    const store = primitive(0);
     const a = vi.fn();
     const b = vi.fn();
-    const off = store.$subscribe(a, false);
-    store.$subscribe(b, false);
+    const off = store.$subscribe(a, { immediate: false });
+    store.$subscribe(b, { immediate: false });
     off();
     off();
     store.$set(1);

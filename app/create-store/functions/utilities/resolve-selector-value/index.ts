@@ -1,12 +1,11 @@
 import type { Selector } from "@/create-store/types/selector";
-import type { Snapshot } from "@/create-store/types/snapshot";
 
 import { isFunction } from "@/create-store/functions/assertions/is-function";
 
-export function resolveSelectorValue<State, Value = Snapshot<State>>(
+export function resolveSelectorValue<State, Value = State>(
   state: State,
   selector?: Selector<State, Value>
 ) {
-  if (isFunction(selector)) return selector(state as Snapshot<State>);
+  if (isFunction(selector)) return selector(state);
   return state as unknown as Value;
 }

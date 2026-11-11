@@ -104,3 +104,25 @@ When setting cookies, you can use these options:
 | `secure`   | `boolean`                     | Only send over HTTPS           |
 | `sameSite` | `'lax' \| 'strict' \| 'none'` | CORS policy                    |
 | `domain`   | `string`                      | Domain scope                   |
+
+## Cookies through `cookieAdapter`
+
+`cookieAdapter(key, options?)` uses the same default codec as the other adapters:
+a string is stored JSON-quoted (`"dark"`), and a signed cookie (`secret`) signs
+that text. To keep a readable value, pass your own pair; a `parse` that returns
+`undefined` for anything it does not know makes that cookie absent:
+
+```ts
+const currency = cookieAdapter<string>("currency", {
+  parse: (value) => (isCode(value) ? value : undefined),
+  stringify: (value) => value,
+});
+```
+
+Two traps:
+
+- **The value is not URL-encoded in either direction.** A value that contains
+  `;` (or other characters a cookie cannot hold) breaks the cookie. Encode it in
+  your own `stringify` and decode it in `parse` if that can happen.
+- **`httpOnly` cannot be set from JavaScript.** Browsers ignore a cookie written
+  with it through `document.cookie`; set it from the server with `Set-Cookie`.

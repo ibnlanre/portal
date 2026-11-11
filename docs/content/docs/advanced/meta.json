@@ -1,10 +1,4 @@
 {
-  "pages": [
-    "actions",
-    "combine",
-    "hooks",
-    "react-integration",
-    "context-store"
-  ],
+  "pages": ["actions", "hooks", "react-integration", "context-store"],
   "title": "Advanced"
 }

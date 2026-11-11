@@ -1,4 +1,4 @@
-import { createStore } from "@ibnlanre/portal";
+import { composite } from "@ibnlanre/portal";
 
 import { createIndexedDBAdapter } from "@/utilities/create-indexeddb-adapter";
 
@@ -9,7 +9,7 @@ const [getStoredCount, setStoredCount] =
 const initialCount = await getStoredCount(0);
 
 // Create the store
-export const counterStore = createStore({
+export const counterStore = composite({
   decrement() {
     counterStore.value.$set((prev) => prev - 1);
   },
@@ -23,6 +23,9 @@ export const counterStore = createStore({
 });
 
 // Subscribe to store changes and auto-persist
-counterStore.$subscribe(({ value }) => {
-  setStoredCount(value);
-}, false);
+counterStore.$subscribe(
+  ({ value }) => {
+    setStoredCount(value);
+  },
+  { immediate: false }
+);

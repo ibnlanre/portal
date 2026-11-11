@@ -22,9 +22,7 @@ describe("dependency identity and order", () => {
   it("recomputes synchronous values for reordered dependencies", () => {
     const { rerender, result } = renderHook(
       ({ values }) => useSync(() => values.join("-"), values),
-      {
-        initialProps: { values: [1, 2] },
-      }
+      { initialProps: { values: [1, 2] } }
     );
     expect(result.current).toBe("1-2");
     rerender({ values: [2, 1] });
@@ -35,9 +33,7 @@ describe("dependency identity and order", () => {
     const make = (value: number) => () => value;
     const { rerender, result } = renderHook(
       ({ callback }) => useSync(callback, [callback]),
-      {
-        initialProps: { callback: make(1) },
-      }
+      { initialProps: { callback: make(1) } }
     );
     expect(result.current).toBe(1);
     rerender({ callback: make(2) });
@@ -48,9 +44,7 @@ describe("dependency identity and order", () => {
     const make = (value: number) => async () => value;
     const { rerender, result } = renderHook(
       ({ callback }) => useAsync(callback, [callback]),
-      {
-        initialProps: { callback: make(1) },
-      }
+      { initialProps: { callback: make(1) } }
     );
     await waitFor(() => expect(result.current.data).toBe(1));
     rerender({ callback: make(2) });

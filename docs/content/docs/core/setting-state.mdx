@@ -1,91 +1,85 @@
 ---
-title: Setting State
-description: Update a leaf directly or merge the object branch that owns it.
+title: Setting state
+description: One meaning per kind: swap a primitive, write listed branches of a composite.
 icon: Shield
 ---
 
-`$set` merges plain-object updates into the current store value and replaces
-non-object values such as numbers, strings, and arrays. Use it on the leaf when
-you have one value to change, or on the branch when the update belongs together.
+## Primitives swap
 
-You can also pass an **updater function** that receives a mutable defensive copy of the current value and returns an update:
+`$set` on a primitive swaps the whole value. It never merges, even for objects:
 
 ```ts
-import { createStore } from "@ibnlanre/portal";
-
-const countStore = createStore(0);
-
-// Set directly
-countStore.$set(5);
-
-// Update based on previous value
-countStore.$set((prev) => prev + 1);
+const settings = primitive<{ a?: number; b?: number }>({ a: 1, b: 2 });
+settings.$set({ a: 3 });
+settings.$get(); // { a: 3 }
 ```
 
-## Object merging
-
-When you pass a plain object to `$set`, it's deep-merged into the current state:
+The updater form receives the current value and must return a new one:
 
 ```ts
-const store = createStore({ settings: { theme: "dark", fontSize: 14 } });
-
-// Merges: theme is updated, fontSize is kept
-store.settings.$set({ theme: "light" });
-// Result: { theme: "light", fontSize: 14 }
+const count = primitive(0);
+count.$set((current) => current + 1);
 ```
 
-`$set()` preserves references for unchanged plain-object and array branches.
-The separate `combine()` utility is available for general object merging:
+To store a function in a primitive, give the initializer `() => fn` and write
+with an updater. A function passed to `$set` is treated as an updater.
+
+## Composites merge
+
+A write to a composite with a partial state merges into its branches. Branches
+the state omits are left alone:
 
 ```ts
-import { combine } from "@ibnlanre/portal";
-
-const merged = combine({ a: 1 }, { b: 2 }); // { a: 1, b: 2 }
-```
-
-## Union Values
-
-Sometimes a single value needs to be one of several types — like a number or an object. `createStore()` derives the store type from the initial value, so when that value's type is a union, declare it explicitly (via a type argument or `as`), and the store is a `PrimitiveStore`.
-
-```ts
-const store = createStore<number | { count: number }>(5);
-
-// store is PrimitiveStore<number | { count: number }>
-
-store.$get(); // 5
-store.$set(42); // now a number — valid
-store.$set({ count: 10 }); // now an object — also valid
-```
-
-This is intentional. A union means the value can be _any_ branch at any time. Because the initial value is a primitive, `store` is a `PrimitiveStore` — exposing typed dot-access on a value that could be a number tomorrow would be unsound.
-
-If you need typed dot-access, seed the store with an object (e.g. `createStore({ count: 5 })`) so a `CompositeStore` is created — a primitive-backed store can't expose property access.
-
-## Clearing values and preserving keys
-
-`$set` deep-merges plain objects and replaces other values, including arrays,
-`null`, and `undefined`. Omitted object keys survive a merge. Setting a property
-to `undefined` retains its key; it does not delete it. Direct assignment or
-`delete` on a store proxy does not mutate state. Portal does not currently expose
-an explicit object-replacement or key-deletion method.
-
-## Defensive updater drafts
-
-Updater functions receive an isolated copy, so they can mutate that draft and
-return it. Portal copies the returned update before storing it; retaining and
-mutating the draft afterward cannot silently alter state. If the updater throws,
-its draft is discarded and no write is published.
-
-```ts
-const store = createStore({ user: { name: "A" }, tags: ["portal"] });
-store.$set((draft) => {
-  draft.user.name = "Ridwan";
-  draft.tags.push("react");
-  return draft;
+const app = composite({
+  count: 0,
+  user: composite({ age: 1, name: "A" }),
 });
+app.$set({ user: { name: "B" } });
+app.$get(); // { count: 0, user: { age: 1, name: "B" } }
 ```
 
-Return the draft or a partial update explicitly. This is not a recipe API that
-commits a draft when the callback returns `undefined`. The returned value still
-follows normal `$set` merge/replacement semantics. See [ownership boundaries](/docs/core/reading-state#ownership-boundaries)
-for opaque values that are retained by reference.
+Declared keys are structural: they are never dropped, and keys you did not
+declare are ignored. A composite branch recurses; a primitive branch, including
+a leaf that holds an object, is swapped whole. The argument is typed per key from
+your declaration, so methods are not accepted and there is no `DeepPartial` over
+your own types.
+
+## Replacing everything
+
+There is no replace option. Replacing everything is `$reset()` and then
+`$set(value)`. Wrap the pair in `batch` so subscribers hear it once, after both:
+
+```ts
+import { batch } from "@ibnlanre/portal";
+
+batch(() => {
+  app.$reset();
+  app.$set({ count: 5, user: { name: "C" } });
+});
+// user.age is back to its initial value, 1
+```
+
+## Batching
+
+`batch(fn)` runs `fn` as one outermost write, whichever stores it writes to.
+Everything written inside is applied at once, and each subscriber is called at
+most once, after `fn` returns. Nested `batch` calls join the outer one. If `fn`
+throws, the writes already applied stay applied and delivery still happens once.
+
+## Resetting
+
+`$reset()` returns a store to its initial value; on a composite it resets every
+branch. A primitive returns to its initial reference.
+
+## Collections
+
+```ts
+drafts.$set({ acme: { lines: ["a"] } }); // writes listed entries, making missing ones
+drafts.$delete("acme"); // removing is explicit
+drafts.$clear(); // or $reset(): disposes every entry
+```
+
+## Updaters that throw
+
+An updater runs before anything is written, so a throwing updater publishes
+nothing.
