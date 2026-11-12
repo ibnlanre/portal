@@ -1,6 +1,6 @@
 {
   "name": "@ibnlanre/portal",
-  "version": "7.0.0-rc.0",
+  "version": "7.0.0-rc.1",
   "description": "Typed, branch-oriented state for structured React applications.",
   "author": {
     "email": "olaitanlanre28@gmail.com",
