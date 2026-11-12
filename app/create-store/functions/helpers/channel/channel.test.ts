@@ -1,7 +1,14 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fakeBroadcastChannel } from "./fake-broadcast-channel";
-import { channel } from "./index";
+
+// The shared channel is module state, so each test gets a fresh copy of it.
+let channel: typeof import("./index").channel;
+
+beforeEach(async () => {
+  vi.resetModules();
+  ({ channel } = await import("./index"));
+});
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -63,6 +70,19 @@ describe("channel", () => {
     fake.failPost = true;
     expect(() => channel("c").post({ removed: false })).not.toThrow();
     expect(error).toHaveBeenCalledTimes(1);
+  });
+
+  it("shares one channel between every key and tells watchers only of their own", () => {
+    const fake = fakeBroadcastChannel();
+    const heardA = vi.fn();
+    const heardB = vi.fn();
+    channel("a").watch(heardA);
+    channel("b").watch(heardB);
+    expect(fake.created).toBe(1);
+
+    channel("a").post({ removed: true });
+    expect(heardA).toHaveBeenCalledWith({ removed: true });
+    expect(heardB).not.toHaveBeenCalled();
   });
 
   it("does nothing where there is no BroadcastChannel", () => {

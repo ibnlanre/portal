@@ -1,4 +1,6 @@
 import type { AnyStore } from "@/create-store/types/any-store";
+import type { CollectionPersistOptions } from "@/create-store/types/collection-persist-options";
+import type { CollectionPersistor } from "@/create-store/types/collection-persistor";
 import type { CollectionStore } from "@/create-store/types/collection-store";
 import type { PersistAdapter } from "@/create-store/types/persist-adapter";
 import type { PersistOptions } from "@/create-store/types/persist-options";
@@ -21,6 +23,7 @@ import { persistStore } from "@/create-store/functions/utilities/persist-store";
  *
  * For a collection, pass a function from key to adapter: every entry is
  * persisted under its own key, as it is made, and stops when it is disposed.
+ * `wait` debounces writes and `onError` receives failures; see `PersistOptions`.
  *
  * @example
  * ```ts
@@ -34,8 +37,8 @@ export function persist<Entry extends AnyStore>(
   adapterFor: (
     key: string
   ) => PersistAdapter<StoreState<Entry>, StoreInput<Entry>>,
-  options?: PersistOptions<StoreState<Entry>>
-): Persistor;
+  options?: CollectionPersistOptions<StoreState<Entry>>
+): CollectionPersistor;
 export function persist<State, Input>(
   store: Store<State, Input>,
   adapter: PersistAdapter<NoInfer<State>, NoInfer<Input>>,
@@ -44,7 +47,7 @@ export function persist<State, Input>(
 export function persist(
   store: any,
   adapter: any,
-  options: PersistOptions<any> = {}
+  options: CollectionPersistOptions<any> = {}
 ): Persistor {
   const hooks = collectionHooks(store);
   if (hooks) return persistCollection(store, hooks, adapter, options);

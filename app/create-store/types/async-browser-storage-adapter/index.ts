@@ -35,7 +35,7 @@ export interface AsyncBrowserStorageAdapterOptions<State, StoredState = State>
 
   /**
    * How `persist` follows changes made elsewhere. `true` follows other tabs of
-   * the same site through a `BroadcastChannel` named after the adapter's key:
+   * the same site through one `BroadcastChannel` per origin that carries the adapter's key:
    * the adapter announces each successful write or removal and hears theirs
    * (nothing happens where `BroadcastChannel` does not exist). A function is
    * your own source: it takes a listener, calls it with `{ removed }` when the

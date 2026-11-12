@@ -16,7 +16,10 @@ export type {
   GetBrowserStorage,
   SetBrowserStorage,
 } from "@/create-store/types/browser-storage-adapter";
+export type { CollectionPersistOptions } from "@/create-store/types/collection-persist-options";
+export type { CollectionPersistor } from "@/create-store/types/collection-persistor";
 export type { CollectionStore } from "@/create-store/types/collection-store";
+
 export type { CompositeStore } from "@/create-store/types/composite-store";
 export type { ContextStore } from "@/create-store/types/context-store";
 export type { ContextValue } from "@/create-store/types/context-value";
@@ -30,11 +33,13 @@ export type {
   SetLocalStorage,
 } from "@/create-store/types/local-storage";
 export type { PersistAdapter } from "@/create-store/types/persist-adapter";
+export type { PersistContext } from "@/create-store/types/persist-context";
 export type { PersistOptions } from "@/create-store/types/persist-options";
 export type { PersistedEnvelope } from "@/create-store/types/persisted-envelope";
 export type { PersistedFormatOptions } from "@/create-store/types/persisted-format-options";
 export type { Persistor } from "@/create-store/types/persistor";
 export type { PrimitiveStore } from "@/create-store/types/primitive-store";
+export type { RefStore } from "@/create-store/types/ref-store";
 export type { Selector } from "@/create-store/types/selector";
 export type {
   GetSessionStorage,
@@ -65,4 +70,5 @@ export { collection } from "@/create-store/functions/library/collection";
 export { composite } from "@/create-store/functions/library/composite";
 export { contextStore } from "@/create-store/functions/library/context-store";
 export { primitive } from "@/create-store/functions/library/primitive";
+export { ref } from "@/create-store/functions/library/ref";
 export { persist } from "@/create-store/functions/utilities/persist";

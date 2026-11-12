@@ -10,6 +10,7 @@ import { createDisposer } from "@/create-store/functions/helpers/create-disposer
 import { defineStore } from "@/create-store/functions/helpers/define-store";
 import { disposeNode } from "@/create-store/functions/helpers/dispose-node";
 import { nodeOf } from "@/create-store/functions/helpers/nodes";
+import { isRef } from "@/create-store/functions/helpers/refs";
 import { primitive } from "@/create-store/functions/library/primitive";
 
 const reserved = new Set([
@@ -33,7 +34,9 @@ const reserved = new Set([
  * branch's own rule (a composite branch recurses, a primitive branch swaps) and
  * leaves the others alone; `$reset` resets every branch. Both pass through to
  * shared branches. Disposing a composite disposes only the
- * leaves it made and disconnects from the rest, which stay alive.
+ * leaves it made and disconnects from the rest, which stay alive. A `ref` is a
+ * member too, but it is outside the state: never read, written or reset by the
+ * composite.
  *
  * Throws if a key is reserved (`$get`, `$use`, `$set`, `$subscribe`, `$reset`,
  * `$dispose`, `$onDispose`). Symbol keys are ignored.
@@ -44,6 +47,7 @@ export function composite<Shape extends GenericObject>(
   const branches = new Map<string, StoreNode>();
   const stores = new Map<string, any>();
   const methods = new Map<string, unknown>();
+  const refs = new Map<string, unknown>();
   const owned = new Set<StoreNode>();
   let cache: Record<string, unknown> | undefined;
   let fresh = false;
@@ -94,6 +98,10 @@ export function composite<Shape extends GenericObject>(
 
   for (const key of Object.keys(shape)) {
     const member: unknown = shape[key];
+    if (isRef(member)) {
+      refs.set(key, member);
+      continue;
+    }
     if (typeof member === "function" && !isStore(member)) {
       methods.set(key, member);
       continue;
@@ -132,6 +140,9 @@ export function composite<Shape extends GenericObject>(
   node.api = api;
   for (const [key, store] of stores) {
     Object.defineProperty(api, key, { enumerable: true, value: store });
+  }
+  for (const [key, held] of refs) {
+    Object.defineProperty(api, key, { enumerable: true, value: held });
   }
   for (const [key, method] of methods) {
     Object.defineProperty(api, key, { enumerable: true, value: method });

@@ -5,6 +5,7 @@ import type { Store } from "@/create-store/types/store";
 
 import { isPromise } from "@/create-store/functions/assertions/is-promise";
 import { compare } from "@/create-store/functions/helpers/compare";
+import { fail } from "@/create-store/functions/helpers/fail";
 import { watcherOf } from "@/create-store/functions/helpers/watchers";
 import { primitive } from "@/create-store/functions/library/primitive";
 
@@ -14,13 +15,21 @@ import { primitive } from "@/create-store/functions/library/primitive";
  * @template State The store's state, which the adapter must hold too.
  * @param store The store to persist.
  * @param adapter The adapter returned by a storage factory.
- * @param options Hydration and following options.
+ * @param options Hydration, following, pacing and error options.
+ * @param key The entry's key, when the store is an entry of a collection.
  * @returns The handle that hydrates and disposes the persistence.
  */
 export function persistStore<State>(
   store: Store<State, State>,
   adapter: PersistAdapter<State>,
-  { onHydrated, skipHydration = false, sync }: PersistOptions<State> = {}
+  {
+    onError,
+    onHydrated,
+    skipHydration = false,
+    sync,
+    wait = 0,
+  }: PersistOptions<State> = {},
+  key?: string
 ): Persistor {
   const [get, set] = adapter;
 
@@ -44,6 +53,10 @@ export function persistStore<State>(
   // saved: it was made before hydration finished, so it was not written then.
   const created = store.$get();
 
+  function context(action: "read" | "remove" | "write") {
+    return key === undefined ? { action } : { action, key };
+  }
+
   function update(change: () => void) {
     applying = true;
     try {
@@ -65,7 +78,7 @@ export function persistStore<State>(
       const current = store.$get();
       if (!Object.is(current, created)) {
         last = current;
-        save(current);
+        void save(current);
       }
     }
     onHydrated?.(store.$get());
@@ -78,7 +91,7 @@ export function persistStore<State>(
     // A read that fails counts as nothing stored: it is logged, the store
     // becomes hydrated, and a value set meanwhile is saved like any other.
     const failed = (error: unknown) => {
-      console.error("Error occurred while reading persisted state:", error);
+      fail(onError, error, context("read"));
       apply(undefined);
     };
 
@@ -114,31 +127,62 @@ export function persistStore<State>(
     };
     const stored = get();
 
-    if (isPromise<State | undefined>(stored)) void stored.then(receive);
-    else receive(stored);
+    if (isPromise<State | undefined>(stored)) {
+      stored.then(receive, (error: unknown) => {
+        fail(onError, error, context("read"));
+      });
+    } else receive(stored);
   }
 
   // A failing adapter must not fail the write that triggered it.
-  function save(value: State) {
+  function save(value: State): Promise<void> {
     const report = (error: unknown) => {
-      console.error("Error occurred while persisting state:", error);
+      fail(onError, error, context("write"));
     };
 
     try {
       const saved = set(value);
-      if (isPromise(saved)) saved.catch(report);
+      if (isPromise(saved)) return saved.then(undefined, report);
     } catch (error) {
       report(error);
     }
+
+    return Promise.resolve();
+  }
+
+  // With `wait`, a change marks the store dirty and restarts the window; when
+  // it ends, the store's current value is written unless storage already holds
+  // it, which is how a change followed from another tab wins over a pending one.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let dirty = false;
+
+  function flush(): Promise<void> {
+    clearTimeout(timer);
+    timer = undefined;
+    if (!dirty) return Promise.resolve();
+
+    dirty = false;
+    const value = store.$get();
+    if (compare(value, last)) return Promise.resolve();
+
+    last = value;
+    return save(value);
   }
 
   const unsubscribe = store.$subscribe(
     (value) => {
       if (disposed || applying || !hydrated.$get()) return;
+      if (wait > 0) {
+        dirty = true;
+        clearTimeout(timer);
+        timer = setTimeout(() => void flush(), wait);
+        return;
+      }
+
       if (compare(value, last)) return;
 
       last = value;
-      save(value);
+      void save(value);
     },
     { immediate: false }
   );
@@ -147,6 +191,7 @@ export function persistStore<State>(
 
   function dispose() {
     if (disposed) return;
+    void flush();
     disposed = true;
 
     unsubscribe();
@@ -162,5 +207,5 @@ export function persistStore<State>(
     });
   }
 
-  return { dispose, hydrate, hydrated };
+  return { dispose, flush, hydrate, hydrated };
 }

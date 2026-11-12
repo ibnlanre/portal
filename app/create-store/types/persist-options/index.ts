@@ -1,4 +1,13 @@
+import type { PersistContext } from "@/create-store/types/persist-context";
+
 export interface PersistOptions<State> {
+  /**
+   * Called when reading, writing or removing fails, with the error and where it
+   * happened (and the key, for a collection's entry). Without it the error is
+   * logged through `console.error`. A throwing handler is logged and ignored: a
+   * failing adapter never breaks the store.
+   */
+  onError?: (error: unknown, context: PersistContext) => void;
   /** Runs after a stored state has been applied, or found to be absent. */
   onHydrated?: (state: State) => void;
   /**
@@ -14,4 +23,14 @@ export interface PersistOptions<State> {
    * followed.
    */
   sync?: false;
+
+  /**
+   * Debounces writes: a change is written `wait` milliseconds after the last
+   * one, and only the last value is written. `persistor.flush()` writes the
+   * pending value at once, and disposing flushes it. Reading, hydration and
+   * followed changes are never delayed; a change followed from storage while a
+   * write is pending wins, and the pending value is dropped. Default: write at
+   * once.
+   */
+  wait?: number;
 }

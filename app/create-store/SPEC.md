@@ -41,8 +41,19 @@ Decided by what the user wrote, with no guessing:
 | The member is                                                                                          | It becomes                                |
 | ------------------------------------------------------------------------------------------------------ | ----------------------------------------- |
 | a store made by `primitive`, `composite` or `collection`                                               | that store, as a branch (the same object) |
+| a `ref(value)`                                                                                         | that ref, a member outside the state      |
 | a function                                                                                             | a method, exposed as written; not state   |
 | anything else (scalar, array, `null`, `undefined`, `Date`, `Map`, `Set`, class instance, plain object) | a leaf: `primitive(value)` made for you   |
+
+**`ref(value)` is a fourth declared kind**: one value held by reference, outside
+the reactive tree (a promise queue, a database handle). It has `$get`, `$set`,
+`$dispose` and `$onDispose` and nothing to subscribe to. In a composite it is a
+member you read and write, but it never notifies, is not in `$get()` or in what
+subscribers receive, is not written by a partial `$set` (the key is a type
+error) and is not reset by `$reset()`. The value is typed exactly as given, and a
+function is stored as a value. It is handed to the composite like any store, so
+the creator disposes it. Resetting every reactive leaf while leaving refs alone
+is what makes a separate "exclude from reset" option unnecessary.
 
 A plain object is a leaf. To branch it, write `composite({ ... })`. **Decision
 D1:** strictness first, because loosening later is not breaking and tightening
@@ -221,6 +232,21 @@ collection's `hydrated` back. `PersistAdapter<Written, Read = Written>` types
 user's own interface (optional fields) fits without casts and an unrelated one
 does not.
 
+**Pacing and errors.** `wait` (ms) debounces writes, trailing: each change
+restarts the window and only the last value is written; `persistor.flush()`
+writes it at once, and disposing the persistor or the store flushes. Reads,
+hydration and followed changes are never delayed, and a change followed from
+another tab while a write is pending wins (the pending value is dropped).
+`onError(error, { action: "read" | "write" | "remove", key? })` receives each
+failure instead of `console.error`; a throwing handler is logged and ignored.
+
+**A collection's persistor** also has `hydratedOf(key)`, a `PrimitiveStore<boolean>`
+per key that flips when that entry's own read settles (a failure counts), goes
+back to `false` when the entry ends, and starts `false` for a key with no entry
+yet; and `keys()`, which resolves what the `keys` option of
+`persist(collection, adapterFor, { keys })` returns, or `undefined` without one.
+The collection-level `hydrated` is unchanged.
+
 Hydration with nothing stored: if the store was changed before hydration finished
 (an entry created and set in one tick, a store set before an async read
 resolved) and the read resolves to absent, `persist` saves the current value once
@@ -247,7 +273,9 @@ nothing is written back.
   announce changes). `customAdapter` takes `watch?: StorageWatcher`, your own
   source, registered as given; it announces nothing. `asyncAdapter` takes
   `watch?: true | StorageWatcher`: `true` follows other tabs of the origin
-  through a `BroadcastChannel` named after the key and posts `{ removed }` after
+  through one `BroadcastChannel` per origin, shared by every `watch: true`
+  adapter (a message names its key, and a collection of thousands of entries
+  holds one channel, closed when the last watcher stops), and posts `{ removed }` after
   a successful write or removal (nothing happens without `BroadcastChannel`); a
   function is your own watcher and posts nothing. There is no string form.
   Session storage is per tab by design and cookies cannot announce changes, so

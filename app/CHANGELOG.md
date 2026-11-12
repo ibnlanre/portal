@@ -1,4 +1,38 @@
-## 7.0.0-rc.0 (unreleased)
+## 7.0.0-rc.1 (unreleased)
+
+### Breaking and behaviour changes
+
+- **`watch: true` shares one channel per origin.** Every `watch: true` adapter
+  of a page now uses a single `BroadcastChannel`, and a message names its key,
+  instead of one channel per adapter named after its key. A persisted collection
+  of thousands of entries opens one channel. The channel closes when the last
+  watcher stops. Adapters of the same key in one tab still hear each other.
+- **`ref` is a new declared kind.** A `ref(value)` member of a composite is
+  outside the state: not in `$get()`, not in subscription deliveries, not
+  written by a partial `$set`, and not reset by `$reset()`. A function in a
+  shape is still a method, and a bare value still becomes a reactive leaf, so
+  existing shapes do not change.
+
+### Features
+
+- `ref(value)` holds a value by reference, outside the reactive tree (a promise
+  queue, a database handle): `$get`, `$set`, `$dispose`, `$onDispose`, typed
+  exactly as given. `RefStore` is exported. Because a composite's `$reset()`
+  leaves refs alone, no separate "exclude from reset" option is needed.
+- `persist(store, adapter, { wait })` debounces writes (trailing, last value
+  only). `persistor.flush()` writes the pending value at once, and disposing the
+  persistor or the store flushes. A change followed from another tab while a
+  write is pending wins and drops the pending value.
+- `persist(store, adapter, { onError })` receives read, write and remove
+  failures with `{ action, key? }`; without it `console.error` is unchanged. A
+  throwing handler is logged and ignored.
+- A collection's persistor has `hydratedOf(key)`, a per-entry boolean store,
+  and `keys()`, which resolves the new `keys` option of
+  `persist(collection, adapterFor, { keys })` (`undefined` without one).
+  `CollectionPersistor`, `CollectionPersistOptions` and `PersistContext` are
+  exported.
+
+## 7.0.0-rc.0
 
 ### Breaking changes in this release
 

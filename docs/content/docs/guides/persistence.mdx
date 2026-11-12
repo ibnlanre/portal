@@ -260,7 +260,7 @@ tabs after each write and removal, and hears theirs:
 
 ```ts
 const adapter = asyncAdapter<Draft>("draft", {
-  watch: true, // the channel is named after the key
+  watch: true, // one channel per origin, shared; messages carry the key
   getItem,
   removeItem,
   setItem,
@@ -272,6 +272,9 @@ persist(store, adapter); // follows other tabs; nothing is written back
   resolved). A write that rejects announces nothing.
 - It carries only whether the value was removed. The receiving tab reads the new
   value from storage itself.
+- All `watch: true` adapters of a page share one `BroadcastChannel`, and each
+  message names its key, so a persisted collection of thousands of entries holds
+  one channel, not one per entry.
 - Where `BroadcastChannel` does not exist (the server, old browsers), the adapter
   posts and follows nothing, and does not throw.
 - The channel closes when the last `persist` following it is disposed.
@@ -319,6 +322,41 @@ of an unrelated or narrower state is still rejected.
 
 If an adapter's `set` throws or rejects, `persist` reports it through
 `console.error` and the write that triggered it still succeeds.
+
+## Pacing writes with `wait`
+
+By default every change is written at once. `wait` (milliseconds) makes writes a
+trailing debounce: each change restarts the window, and only the last value is
+written.
+
+```ts
+const persistor = persist(draft, adapter, { wait: 300 });
+
+persistor.flush(); // write the pending value now; resolves once stored
+persistor.dispose(); // also flushes, so no pending write is lost
+```
+
+Reading, hydration and followed changes are never delayed. If another tab's
+change is followed while a write is pending, the other tab wins: the pending
+value is dropped and nothing is written back.
+
+## Reporting failures with `onError`
+
+A read, write or removal that fails is logged with `console.error` by default.
+Pass `onError` to receive it with where it happened (and the key, for a
+collection's entry); the default log is then skipped:
+
+```ts
+persist(drafts, adapterFor, {
+  onError(error, { action, key }) {
+    // action: "read" | "write" | "remove"; key: the entry, in a collection
+    report(error, action, key);
+  },
+});
+```
+
+A handler that throws is logged and ignored, so a failing adapter or handler
+never breaks the store.
 
 ## Following lifetime
 
@@ -386,6 +424,25 @@ for (const key of Object.keys(localStorage)) {
   if (key.startsWith("draft:")) localStorage.removeItem(key);
 }
 ```
+
+### Which entries are hydrated, and which exist
+
+A collection's persistor tells you per entry:
+
+```ts
+const persistor = persist(drafts, adapterFor, {
+  keys: () => listDraftKeys(), // optional: what your storage can list
+});
+
+persistor.hydratedOf("acme").$get(); // false until acme's own read settles
+await persistor.keys(); // ["acme", ...], or undefined without `keys`
+```
+
+`hydratedOf(key)` returns the same boolean store every time. It flips when that
+entry's read settles (a failed read counts, with nothing stored), goes back to
+`false` if the entry is removed, and starts `false` for a key with no entry yet.
+The collection-level `persistor.hydrated` is unchanged: it flips once the
+entries that existed have settled.
 
 ### `version` and data that is already stored
 

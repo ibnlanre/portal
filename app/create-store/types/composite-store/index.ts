@@ -2,6 +2,7 @@ import type { AnyStore } from "@/create-store/types/any-store";
 import type { GenericFunction } from "@/create-store/types/generic-function";
 import type { GenericObject } from "@/create-store/types/generic-object";
 import type { PrimitiveStore } from "@/create-store/types/primitive-store";
+import type { RefStore } from "@/create-store/types/ref-store";
 import type { ReservedKey } from "@/create-store/types/reserved-key";
 import type { SetOf } from "@/create-store/types/set-of";
 import type { StateOf } from "@/create-store/types/state-of";
@@ -19,5 +20,7 @@ type Members<Shape> = {
     ? Shape[Key]
     : [Shape[Key]] extends [GenericFunction]
       ? Shape[Key]
-      : PrimitiveStore<Shape[Key]>;
+      : [Shape[Key]] extends [RefStore<any>]
+        ? Shape[Key]
+        : PrimitiveStore<Shape[Key]>;
 };

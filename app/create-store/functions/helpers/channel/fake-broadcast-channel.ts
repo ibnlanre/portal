@@ -3,17 +3,18 @@ import { vi } from "vitest";
 /**
  * A stand-in for `BroadcastChannel` for tests: it delivers to every other open
  * channel with the same name and never to the one that posted, and it counts
- * the channels left open.
+ * the channels left open and ever created.
  */
 export function fakeBroadcastChannel() {
   const open = new Set<Fake>();
-  const state = { failPost: false };
+  const state = { created: 0, failPost: false };
 
   class Fake {
     closed = false;
     listeners = new Set<(event: { data: unknown }) => void>();
     constructor(public name: string) {
       open.add(this);
+      state.created++;
     }
     addEventListener(
       _type: string,
@@ -43,6 +44,10 @@ export function fakeBroadcastChannel() {
 
   vi.stubGlobal("BroadcastChannel", Fake);
   return {
+    /** How many channels were ever constructed. */
+    get created() {
+      return state.created;
+    },
     get failPost() {
       return state.failPost;
     },

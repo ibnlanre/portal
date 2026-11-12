@@ -19,6 +19,32 @@ a composite, has the same members.
 
 These names are reserved: a key of a `composite` shape may not use them.
 
+## `ref`: a value outside the state
+
+`ref(value)` holds one value by reference with no reactivity: `$get`, `$set`,
+`$dispose` and `$onDispose`, and nothing to subscribe to. Use it for what must
+live inside a store but is not state, such as a promise queue or a database
+handle. The value keeps exactly the type you gave it.
+
+```ts
+import { composite, ref } from "@ibnlanre/portal";
+
+const connection = composite({
+  status: "idle",
+  queue: ref(new PromiseQueue()),
+});
+
+connection.queue.$get().add(task); // read and use it
+connection.queue.$set(new PromiseQueue()); // swap it; nobody is notified
+connection.$get(); // { status: "idle" }: refs are not in the snapshot
+connection.$reset(); // resets `status`, leaves `queue` alone
+```
+
+In a composite a ref is never in `$get()` or in what subscribers receive, is not
+written by a partial `$set` (the key is a type error) and is not touched by
+`$reset()`. Like any store handed to a composite, it is not disposed with it.
+A function is stored as a value, not called as an updater.
+
 ## Reading: `$get()`
 
 ```ts

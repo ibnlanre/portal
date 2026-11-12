@@ -1,10 +1,13 @@
 import type { AnyStore } from "@/create-store/types/any-store";
 import type { CollectionHooks } from "@/create-store/types/collection-hooks";
+import type { CollectionPersistOptions } from "@/create-store/types/collection-persist-options";
+import type { CollectionPersistor } from "@/create-store/types/collection-persistor";
 import type { PersistAdapter } from "@/create-store/types/persist-adapter";
-import type { PersistOptions } from "@/create-store/types/persist-options";
 import type { Persistor } from "@/create-store/types/persistor";
+import type { PrimitiveStore } from "@/create-store/types/primitive-store";
 
 import { isPromise } from "@/create-store/functions/assertions/is-promise";
+import { fail } from "@/create-store/functions/helpers/fail";
 import { primitive } from "@/create-store/functions/library/primitive";
 import { persistStore } from "@/create-store/functions/utilities/persist-store";
 
@@ -21,16 +24,26 @@ export function persistCollection(
   store: AnyStore,
   hooks: CollectionHooks,
   adapterFor: (key: string) => PersistAdapter<unknown>,
-  options: PersistOptions<unknown>
-): Persistor {
+  { keys, ...options }: CollectionPersistOptions<unknown>
+): CollectionPersistor {
   const hydrated = primitive(false);
   const persistors = new Map<AnyStore, Persistor>();
   const adapters = new Map<AnyStore, PersistAdapter<unknown>>();
   const selfStarted = new WeakSet<AnyStore>();
+  const flags = new Map<string, PrimitiveStore<boolean>>();
 
   let started = !options.skipHydration;
   let disposed = false;
   let detach = () => {};
+
+  function flagOf(key: string) {
+    let flag = flags.get(key);
+    if (!flag) {
+      flag = primitive(false);
+      flags.set(key, flag);
+    }
+    return flag;
+  }
 
   function track(key: string, entry: AnyStore) {
     if (disposed || persistors.has(entry)) return;
@@ -39,13 +52,24 @@ export function persistCollection(
     const adapter = adapterFor(key);
     adapters.set(entry, adapter);
 
-    const persistor = persistStore(entry, adapter, {
-      ...options,
-      skipHydration: !started,
-    });
+    const persistor = persistStore(
+      entry,
+      adapter,
+      { ...options, skipHydration: !started },
+      key
+    );
 
     persistors.set(entry, persistor);
+
+    // The entry's own flag follows the entry's persistence, and starts over
+    // when the entry ends.
+    const flag = flagOf(key);
+    const stopFollowing = persistor.hydrated.$subscribe((value) => {
+      flag.$set(value);
+    });
     entry.$onDispose(() => {
+      stopFollowing();
+      flag.$set(false);
       persistors.delete(entry);
       adapters.delete(entry);
     });
@@ -54,19 +78,19 @@ export function persistCollection(
   // Removing an entry through the collection removes its stored key too. The
   // entry stops persisting first, so the reset that precedes its disposal is
   // not written back.
-  function forget(_key: string, entry: AnyStore) {
+  function forget(key: string, entry: AnyStore) {
     const adapter = adapters.get(entry);
     if (!adapter) return;
 
     persistors.get(entry)?.dispose();
     const report = (error: unknown) => {
-      console.error("Error occurred while removing persisted state:", error);
+      fail(options.onError, error, { action: "remove", key });
     };
 
     try {
       const [, store] = adapter;
       const removed = store(undefined);
-      if (isPromise(removed)) removed.catch(report);
+      if (isPromise(removed)) removed.then(undefined, report);
     } catch (error) {
       report(error);
     }
@@ -144,5 +168,22 @@ export function persistCollection(
     });
   }
 
-  return { dispose, hydrate, hydrated };
+  function flush(): Promise<void> {
+    return Promise.all(
+      Array.from(persistors.values(), (persistor) => persistor.flush())
+    ).then(() => {});
+  }
+
+  async function listKeys() {
+    return keys ? await keys() : undefined;
+  }
+
+  return {
+    dispose,
+    flush,
+    hydrate,
+    hydrated,
+    hydratedOf: flagOf,
+    keys: listKeys,
+  };
 }
